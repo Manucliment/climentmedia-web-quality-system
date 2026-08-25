@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MOLDE 04 — tabla-comparativa</title>
+<title>MOULD 04 — comparison table</title>
 <!--
   PRIMITIVA: tabla-comparativa      FAMILIA: cuerpo
   ORIGEN: ESCRITO DESDE CERO. La libreria no tiene ninguna tabla responsive.
@@ -98,8 +98,8 @@
 
 <section class="sec" data-sec="alternativas">
   <div class="sec__in">
-    <h2 class="sec__h">En qu&eacute; se diferencian, campo a campo</h2>
-    <p class="sec__sub">Cuatro criterios, tres opciones. M&aacute;s de eso no se compara: se hojea.</p>
+    <h2 class="sec__h">How they differ, field by field</h2>
+    <p class="sec__sub">Four criteria, three options. More than that is not compared: it is skimmed.</p>
 
     <!-- ⚠️ Los role="..." NO son decorativos ni redundantes: `display:grid/flex`
          sobre <tr>/<td> BORRA la semantica de tabla en Chrome, Firefox y Safari.
@@ -109,41 +109,41 @@
     <table class="m04-tc" role="table">
       <thead role="rowgroup">
         <tr role="row">
-          <th role="columnheader" scope="col">Criterio</th>
-          <th role="columnheader" scope="col">Opci&oacute;n A</th>
-          <th role="columnheader" scope="col">Opci&oacute;n B</th>
-          <th role="columnheader" scope="col" class="m04-propia">Opci&oacute;n C</th>
+          <th role="columnheader" scope="col">Criterion</th>
+          <th role="columnheader" scope="col">Option A</th>
+          <th role="columnheader" scope="col">Option B</th>
+          <th role="columnheader" scope="col" class="m04-propia">Option C</th>
         </tr>
       </thead>
       <tbody role="rowgroup">
         <tr role="row">
-          <th role="rowheader" scope="row">Primer criterio</th>
-          <td role="cell" data-col="Opci&oacute;n A"><span class="m04-no">No</span></td>
-          <td role="cell" data-col="Opci&oacute;n B"><b>Parcial</b></td>
-          <td role="cell" data-col="Opci&oacute;n C"><span class="m04-si">S&iacute;</span></td>
+          <th role="rowheader" scope="row">First criterion</th>
+          <td role="cell" data-col="Option A"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Option B"><b>Partial</b></td>
+          <td role="cell" data-col="Option C"><span class="m04-si">S&iacute;</span></td>
         </tr>
         <tr role="row">
-          <th role="rowheader" scope="row">Segundo criterio</th>
-          <td role="cell" data-col="Opci&oacute;n A"><b>3 d&iacute;as</b></td>
-          <td role="cell" data-col="Opci&oacute;n B"><b>1 d&iacute;a</b></td>
-          <td role="cell" data-col="Opci&oacute;n C"><b>2 horas</b></td>
+          <th role="rowheader" scope="row">Second criterion</th>
+          <td role="cell" data-col="Option A"><b>3 days</b></td>
+          <td role="cell" data-col="Option B"><b>1 day</b></td>
+          <td role="cell" data-col="Option C"><b>2 hours</b></td>
         </tr>
         <tr role="row">
-          <th role="rowheader" scope="row">Tercer criterio, con nombre largo</th>
-          <td role="cell" data-col="Opci&oacute;n A"><span class="m04-no">No</span></td>
-          <td role="cell" data-col="Opci&oacute;n B"><span class="m04-no">No</span></td>
-          <td role="cell" data-col="Opci&oacute;n C"><span class="m04-si">S&iacute;</span></td>
+          <th role="rowheader" scope="row">Third criterion, with a long name</th>
+          <td role="cell" data-col="Option A"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Option B"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Option C"><span class="m04-si">S&iacute;</span></td>
         </tr>
         <tr role="row">
-          <th role="rowheader" scope="row">Cuarto criterio</th>
-          <td role="cell" data-col="Opci&oacute;n A"><b>Incluido</b></td>
-          <td role="cell" data-col="Opci&oacute;n B"><b>Aparte</b></td>
-          <td role="cell" data-col="Opci&oacute;n C"><b>Incluido</b></td>
+          <th role="rowheader" scope="row">Fourth criterion</th>
+          <td role="cell" data-col="Option A"><b>Included</b></td>
+          <td role="cell" data-col="Option B"><b>Aside</b></td>
+          <td role="cell" data-col="Option C"><b>Included</b></td>
         </tr>
       </tbody>
     </table>
 
-    <p class="nota">Lo que no cabe en seis palabras va aqu&iacute;, no dentro de la celda.</p>
+    <p class="nota">What does not fit in six words goes here, not inside the cell.</p>
   </div>
 </section>
 
