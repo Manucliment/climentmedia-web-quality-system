@@ -7,7 +7,7 @@ authors:
     given-names: Manuel
     affiliation: Climent Media
     website: "https://climentmedia.com"
-repository-code: "https://github.com/Manucliment/web-quality-system"
+repository-code: "https://github.com/Manucliment/climentmedia-web-quality-system"
 url: "https://climentmedia.com"
 abstract: >-
   A complete method and gate suite for building, migrating, auditing and
