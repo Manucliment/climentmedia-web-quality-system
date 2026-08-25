@@ -1,0 +1,894 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pagina compuesta con el repertorio de moldes</title>
+<style>/* --- _tokens.css --- */
+/* =============================================================================
+ *  _tokens.css — LA IMPLEMENTACION de `11-medidas.md` §6
+ * =============================================================================
+ *  Esto NO es una escala nueva. Es el §6 de `11-medidas.md` en un fichero que el
+ *  navegador puede cargar. Mismos NOMBRES y mismos VALORES. Si algun dia difieren,
+ *  el que manda es `11-medidas.md` §6 y este fichero esta roto.
+ *
+ *  QUE PASO EL 10-ago-2026 (por lo que este fichero se reescribio)
+ *  ---------------------------------------------------------------
+ *  La primera version de esta carpeta invento su propia escala el MISMO dia en que
+ *  `11-medidas.md` §6 declaraba la suya "ya en produccion, NO se reinventa":
+ *
+ *    | concepto        | lo que invento _tokens.css | lo que dice 11-medidas §6 |
+ *    |-----------------|----------------------------|---------------------------|
+ *    | contenedor      | `--ancho: 1120px`          | `--wrap: 1120px`          |
+ *    | columna de texto| `--texto: 62ch`            | `--measure: 34em`         |
+ *    | tamanos         | 6 fijos (`--t0`..`--t5`)   | 7 con `clamp()`           |
+ *    | cuerpo          | 17px                       | 16px                      |
+ *    | base espaciado  | 8px (`--e1`..`--e6`)       | 4px (`--space-1`..`-16`)  |
+ *    | breakpoints     | 2 (640, 1024)              | 3 (40rem, 64rem, 80rem)   |
+ *
+ *  Dos escalas incompatibles = dos sitios donde decidir lo mismo. Gana §6.
+ *
+ *  COMO SE USA
+ *  -----------
+ *  Los moldes lo cargan con `<link rel="stylesheet" href="_tokens.css">`, JUNTO A
+ *  `_base.css`. NO se copia dentro de cada molde: eso es lo que hacia que pegar dos
+ *  moldes en la misma pagina rompiera la maqueta (ganaba el ultimo `:root` pegado).
+ *
+ *  LAS TRES REGLAS
+ *  ---------------
+ *  1. Las lineas de MARCA se cambian por cliente. Las de MEDIDAS, no.
+ *  2. Ningun valor suelto en el CSS de un molde. Si hace falta un tamano que no
+ *     esta, o se usa el de al lado, o se cambia la escala entera (aqui, y en §6).
+ *  3. 🔴 **Cambiar un color de marca OBLIGA a re-medir el contraste.** No es un
+ *     consejo: hay un script y falla.
+ *         bash gate-estructura-pruebas/measure-contrast.sh
+ *     Los valores de fabrica de abajo estan MEDIDOS, no elegidos a ojo. La version
+ *     anterior daba **4,51:1** contra un minimo de 4,5 en los moldes 05, 10 y 12
+ *     (margen: 0,01) y **4,55:1** en el texto blanco del boton primario.
+ * ========================================================================== */
+
+:root{
+  /* ── MARCA · lo unico que se toca por cliente ────────────────────────────
+     Cada uno lleva al lado el ratio MEDIDO que tiene que seguir cumpliendo.
+     Cambiarlos sin correr `measure-contrast.sh` es como cambiarlos a ciegas. */
+  --tinta:#16181d;        /* texto principal      · 16,7:1 sobre --papel      */
+  --papel:#ffffff;        /* fondo de pagina                                  */
+  --acento:#1d4ed8;       /* UN acento. No tres.  · blanco encima = 6,70:1    */
+  --tenue:#59616f;        /* texto secundario     · 5,82:1 sobre --caja       */
+  --tenue-inv:#c9ced8;    /* secundario en seccion oscura · 11,2:1 sobre tinta*/
+  --linea:#e4e6eb;        /* filetes DECORATIVOS. No delimitan controles.     */
+  --linea-fuerte:#8b929e; /* borde de control (boton fantasma) · 3,13:1       */
+  --caja:#f6f7f9;         /* fondo de tarjeta / banda alterna                 */
+
+  /* ── ANCHOS · 11-medidas §6 ──────────────────────────────────────────────
+     --wrap     contenedor general. 1120px es lo que MIDEN site-d, site-b y
+                site-c, y coincide con reuma.nl.
+     --measure  LA COLUMNA DE TEXTO. Va en `em`, no en px: escala con el tamano
+                del propio parrafo. 34em = ~65ch = 66-77 caracteres reales.
+     --measure-max  ⚠️ NO equivale a 80 CPL: eso solo se cumple en la fuente con
+                la que se calibro (§1.3). Medido fuera de ella, 42em cae entre
+                ~77 y ~89 CPL segun fuente e idioma, y el gate ya canto tres
+                paginas por DEBAJO de 42em y por ENCIMA de 80 CPL. Es un tope de
+                CONTENEDOR, no una garantia de caracteres: **el CPL se mide**.  */
+  --wrap:          1120px;
+  --wrap-wide:     1280px;   /* solo rejillas y medios, NUNCA texto corrido    */
+  --measure:       34em;     /* objetivo de prosa                              */
+  --measure-max:   42em;     /* tope de contenedor. Ver aviso de arriba.       */
+  --measure-lead:  28em;     /* entradillas y subtitulos: mas corto a proposito*/
+
+  /* Dos anchos derivados que §6 no nombra porque son de MAQUETA, no de prosa.
+     Existen porque tres moldes los necesitaban y los escribian sueltos (760px,
+     820px, 920px). Ahora son dos valores, con nombre, en un solo sitio.       */
+  --wrap-flujo:    48rem;    /* 768px · cadenas y cronologias: lectura vertical*/
+  --wrap-spec:     58rem;    /* 928px · tablas de especificacion               */
+
+  /* ── TIPOGRAFIA · 7 escalones, ratio 1,20-1,33 ───────────────────────────
+     Ya en produccion en climentmedia/styles.css. NO se reinventa.            */
+  --fs-display: clamp(2.6rem, 7vw, 5rem);      /* h1            ~42-80px      */
+  --fs-title:   clamp(1.9rem, 4.2vw, 3rem);    /* h2            ~30-48px      */
+  --fs-section: clamp(1.4rem, 2.4vw, 1.75rem); /* h3            ~22-28px      */
+  --fs-lead:    1.2rem;                        /* entradilla     19,2px       */
+  --fs-body:    1rem;                          /* cuerpo         16px         */
+  --fs-small:   0.875rem;                      /* pies, meta     14px         */
+  --fs-micro:   0.75rem;                       /* etiquetas      12px         */
+
+  /* Interlineado: WCAG SC 1.4.8 pide >=1,5 en parrafo. Los titulares bajan
+     porque a 48px un 1,5 separa demasiado.                                   */
+  --lh-body: 1.6;  --lh-lead: 1.5;  --lh-title: 1.15;  --lh-display: 1.05;
+
+  /* El PESO tambien es jerarquia.                                            */
+  --fw-body: 400;  --fw-medium: 500;  --fw-bold: 700;  --fw-black: 800;
+
+  /* ── ESPACIADO · base 4px, 8 escalones ───────────────────────────────── */
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+
+  /* ── RITMO DE SECCION ────────────────────────────────────────────────────
+     Regla: padding de seccion >= 2x el gap mayor de dentro, o el ojo no agrupa.
+     `--section-y` maximo 72px contra `--grid-gap` maximo 32px = 2,25x. ✅     */
+  --section-y:     clamp(2.5rem, 5vw, 4.5rem);  /* 40px movil -> 72px desktop */
+  --section-y-lg:  clamp(3.5rem, 7vw, 6rem);    /* secciones ancla            */
+  --grid-gap:      clamp(1rem, 2vw, 2rem);      /* 16 -> 32px                 */
+
+  /* ── LO QUE §6 NO CUBRE ──────────────────────────────────────────────────
+     §6 habla de anchos, tipografia, espaciado y ritmo. El radio no sale ahi, y
+     un valor sin nombre acaba escrito a mano en quince sitios. UNO.           */
+  --r: 10px;
+}
+
+/* ── BREAKPOINTS · TRES, en rem, iguales en todos los proyectos ────────────
+   40rem/640 · 64rem/1024 · 80rem/1280. Mobile-first (min-width).
+   Casi ningun molde necesita los tres: `clamp()` y `auto-fit` se comen la
+   mayoria de los saltos, y un breakpoint que no existe no se puede romper.
+   ------------------------------------------------------------------------ */
+</style>
+<style>/* --- _base.css --- */
+/* =============================================================================
+ *  _base.css — EL CHASIS COMPARTIDO DE LOS 19 MOLDES
+ * =============================================================================
+ *  POR QUE EXISTE (medido el 10-ago-2026, y es el fallo que lo justifica)
+ *  ---------------------------------------------------------------------
+ *  Antes, cada molde traia su `<style>` entero con su propio `.sec__in`. Quince
+ *  moldes lo definian con CINCO anchos distintos — `var(--ancho)`, `var(--texto)`,
+ *  760px, 820px, 920px — y al componer una pagina **ganaba el ultimo pegado, para
+ *  toda la pagina**. Medido sobre la composicion de home: **4 de 7 secciones a
+ *  568px en vez de 1120**, y una rejilla de 6 celdas en columnas de 188,7px contra
+ *  un suelo documentado de ~260px. Colisionaban tambien `.sec{background}`,
+ *  `.rej`, `.paso`, `.btn` y `.nota`.
+ *
+ *  LA REGLA QUE SALE DE AHI
+ *  ------------------------
+ *   1. **El chasis se define UNA vez: aqui.** `.sec`, `.sec__in`, `.sec__h`,
+ *      `.sec__sub`, `.btn`, `.nota`, `.enlace`.
+ *   2. **Un molde solo declara SUS clases, y todas con prefijo `.mNN-`.**
+ *      Ningun molde vuelve a escribir un selector de este fichero. Ni con el
+ *      mismo valor: si dos moldes lo necesitan, es de aqui.
+ *   3. **Los anchos distintos NO son redefiniciones: son MODIFICADORES.**
+ *      `.sec__in--texto` · `.sec__in--flujo` · `.sec__in--spec` · `.sec__in--ancho`.
+ *      Un molde que necesita otro ancho anade una clase, no reescribe una.
+ *
+ *  Lo comprueba `gate-estructura-pruebas/chk-collisions.pl`, y **falla**.
+ *
+ *  COMO SE CARGA
+ *  -------------
+ *      <link rel="stylesheet" href="_tokens.css">
+ *      <link rel="stylesheet" href="_base.css">
+ *  En ese orden, y siempre los dos. Al componer una pagina van UNA sola vez,
+ *  delante de los bloques de los moldes (lo hace `mk-mould.sh`).
+ * ========================================================================== */
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--papel);
+  color:var(--tinta);
+  font:var(--fw-body) var(--fs-body)/var(--lh-body)
+       system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+
+/* Un ancla que salta a un titulo lo deja pegado al borde, o tapado por una
+   cabecera fija. Es comportamiento de PAGINA, no de molde: lo declaraba el 13 y
+   se lo aplicaba a cualquier otro molde que tuviera al lado. */
+:target{scroll-margin-top:var(--space-8)}
+
+/* ── LA SECCION ───────────────────────────────────────────────────────────
+   El padding lateral usa `--grid-gap` (16->32px) en vez de un breakpoint: la
+   media query que habia en los 19 moldes solo cambiaba estos dos numeros.     */
+.sec{padding:var(--section-y) var(--grid-gap)}
+.sec--ancla{padding-block:var(--section-y-lg)}   /* seccion que ancla la pagina */
+.sec--caja{background:var(--caja)}               /* banda alterna               */
+.sec--tinta{                                     /* banda oscura                */
+  background:var(--tinta);
+  color:var(--papel);
+  --tenue:var(--tenue-inv);                      /* el secundario se invierte   */
+  --linea:rgba(255,255,255,.18);
+}
+
+/* ── EL CONTENEDOR, Y SUS CUATRO ANCHOS ───────────────────────────────────
+   Esta es la pieza que rompia todo. Un solo `max-width` por defecto, y cuatro
+   modificadores con nombre. Nadie vuelve a escribir `.sec__in{max-width:...}`. */
+.sec__in       {max-width:var(--wrap);      margin-inline:auto}
+.sec__in--texto{max-width:var(--measure)}   /* prosa: FAQ, apartes, indice     */
+.sec__in--flujo{max-width:var(--wrap-flujo)}/* cadena, cronologia: vertical    */
+.sec__in--spec {max-width:var(--wrap-spec)} /* tabla de especificacion         */
+.sec__in--ancho{max-width:var(--wrap-wide)} /* rejillas y medios. NUNCA prosa. */
+
+/* ── CABECERA DE SECCION ──────────────────────────────────────────────────
+   El subtitulo sube con margen negativo en vez de obligar al `.sec__h` a tener
+   dos margenes distintos segun lo que venga detras. Un valor, no dos reglas.  */
+.sec__h{
+  margin:0 0 var(--space-8);
+  font-size:var(--fs-title);
+  line-height:var(--lh-title);
+  letter-spacing:-.02em;
+  font-weight:var(--fw-bold);
+  max-width:24ch;
+  text-wrap:balance;
+}
+.sec__sub{
+  margin:calc(-1 * var(--space-6)) 0 var(--space-8);
+  color:var(--tenue);
+  font-size:var(--fs-lead);
+  line-height:var(--lh-lead);
+  max-width:var(--measure-lead);
+}
+
+/* ── BOTONES ──────────────────────────────────────────────────────────────
+   Los definian 01, 10 y 11 con tres cuerpos distintos. Un boton que cambia de
+   forma entre el hero y el cierre es exactamente "cada seccion decidida por
+   separado", que es el problema que esta carpeta existe para arreglar.
+   `--1` = accion principal · `--2` = secundaria, SIN relleno. Nunca tres.     */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:var(--space-3) var(--space-6);
+  border-radius:var(--r);
+  border:1px solid transparent;
+  text-decoration:none;
+  font-size:var(--fs-small);
+  font-weight:var(--fw-medium);
+  line-height:1.2;
+  min-height:44px;                 /* diana tactil: 44px es el suelo de iOS/WCAG */
+  transition:opacity 180ms ease;
+}
+.btn:hover{opacity:.85}
+.btn:focus-visible{outline:2px solid var(--acento);outline-offset:3px}
+.btn--1{background:var(--acento);color:#fff}
+.btn--2{border-color:var(--linea-fuerte);color:var(--tinta);background:transparent}
+
+/* En banda oscura se invierten: el acento sobre --tinta no da 4,5:1. */
+.sec--tinta .btn--1{background:var(--papel);color:var(--tinta);border-color:var(--papel)}
+.sec--tinta .btn--2{border-color:rgba(255,255,255,.55);color:var(--papel)}
+.sec--tinta .btn:focus-visible{outline-color:var(--papel)}
+
+/* ── PIE DE SECCION ───────────────────────────────────────────────────────
+   La nota bajo una tabla o una escalera de precios. La declaraban 04 y 10 con
+   el MISMO cuerpo: prueba de que era de aqui desde el principio.              */
+.nota{
+  margin:var(--space-6) 0 0;
+  font-size:var(--fs-small);
+  color:var(--tenue);
+  max-width:var(--measure);
+}
+
+/* ── EL ENLACE CONTEXTUAL ─────────────────────────────────────────────────
+   🔴 El unico enlace que `12-enlazado-interno.md` cuenta como `en_prosa`: un
+   `<a>` DENTRO de un `<p>`, con ancla descriptiva. Los del nav y los botones no
+   cuentan. Once de los diecinueve moldes no tenian ningun elemento interactivo
+   y los que enlazaban usaban `href="#"`, asi que ninguna primitiva encarnaba el
+   enlace que de verdad pesa. Ahora lo traen 02 y 12, como ranura OBLIGATORIA.
+   Subrayado SIEMPRE: el color solo no distingue un enlace (WCAG SC 1.4.1).    */
+.enlace{
+  color:var(--acento);
+  text-decoration:underline;
+  text-underline-offset:.15em;
+  text-decoration-thickness:from-font;
+}
+.enlace:hover{text-decoration-thickness:2px}
+.enlace:focus-visible{outline:2px solid var(--acento);outline-offset:2px;border-radius:2px}
+.sec--tinta .enlace{color:var(--papel)}
+
+@media(prefers-reduced-motion:reduce){
+  .btn{transition:none}
+}
+</style>
+<style>/* --- molde 01 --- */
+/* LA PIEZA: la pastilla */
+  /* .m01-in: lo que el hero anade AL chasis. No lo sustituye. */
+  .m01-in{display:flex;flex-direction:column;align-items:center;
+          gap:var(--space-6);text-align:center}
+
+  /* LA PIEZA: la pastilla. Seis sombras en capas = acabado de cristal.
+     Van escritas aqui, no en un token: no las usa ningun otro molde. */
+  .m01-pastilla{display:inline-flex;align-items:center;gap:.4rem;
+            border-radius:999px;padding:.3rem .75rem;background:var(--caja);
+            box-shadow:inset 0 .5px .5px 0 rgba(255,255,255,.55),
+                       inset 0 1px 3px 0 rgba(255,255,255,.35),
+                       inset 0 2px 8px 0 rgba(255,255,255,.15),
+                       0 .5px .5px 0 rgba(22,24,29,.05),
+                       0 1px 1px -.5px rgba(22,24,29,.05),
+                       0 2px 2px -1px rgba(22,24,29,.05);
+            font-size:var(--fs-small);font-weight:600;letter-spacing:.05em;
+            text-transform:uppercase;color:var(--tenue)}
+  .m01-pastilla i{width:7px;height:7px;border-radius:50%;background:var(--acento);flex:none}
+
+  /* El h1 del hero es el UNICO --fs-display de la pagina. El clamp se come
+     el breakpoint que antes hacia falta para agrandarlo. */
+  .m01-h1{margin:0;font-size:var(--fs-display);line-height:var(--lh-display);
+          letter-spacing:-.02em;font-weight:var(--fw-black);
+          max-width:18ch;text-wrap:balance}
+  .m01-sub{margin:0;max-width:var(--measure-lead);color:var(--tenue);
+           font-size:var(--fs-lead);line-height:var(--lh-lead)}
+
+  /* Acciones: DOS. La segunda sin relleno. */
+  .m01-acciones{display:flex;flex-direction:column;gap:var(--space-4);width:100%;max-width:320px}
+
+  /* Prueba pegada al hero: cifra corta, no un parrafo */
+  .m01-prueba{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--space-4) var(--space-8);
+          margin-top:var(--space-4);color:var(--tenue);font-size:var(--fs-small)}
+  .m01-prueba b{color:var(--tinta);font-size:var(--fs-body)}
+
+  @media(min-width:40rem){
+    .m01-acciones{flex-direction:row;justify-content:center;max-width:none}
+  }
+</style>
+<style>/* --- molde 06 --- */
+/* La jerarquia va por TAMANO, PESO y COLOR, nunca por `opacity`: un texto a
+     opacity .4 sobre --tinta da 3,80:1 y se cae de AA sin que nadie lo vea. */
+  .m06-h{margin:0 0 var(--space-6);font-size:var(--fs-micro);
+         font-weight:var(--fw-bold);letter-spacing:.12em;
+         text-transform:uppercase;color:var(--tenue)}
+
+  .m06-datos{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-6);
+         list-style:none;margin:0;padding:0}
+  .m06-dato{display:flex;flex-direction:column;gap:.2rem}
+  .m06-dato b{font-size:var(--fs-title);line-height:1;font-weight:700;letter-spacing:-.03em;
+          font-variant-numeric:tabular-nums}
+  .m06-dato span{font-size:var(--fs-small);line-height:1.4;max-width:22ch}
+  /* La fuente de la cifra, no un adjetivo. Es lo que la hace creible. */
+  .m06-dato em{font-style:normal;font-size:var(--fs-micro);color:var(--tenue)}
+
+  @media(min-width:40rem){
+    .m06-datos{grid-template-columns:repeat(4,1fr);gap:var(--space-8)}
+  }
+</style>
+<style>/* --- molde 03 --- */
+/* LA REJILLA: los filetes dibujan la rejilla, no hay tarjetas con sombra. */
+  .m03-rej{display:grid;grid-template-columns:1fr;gap:0;
+       border-top:1px solid var(--linea)}
+
+  .m03-cel{position:relative;display:flex;flex-direction:column;
+       gap:var(--space-4);padding:var(--space-6);
+       border-bottom:1px solid var(--linea)}
+
+  /* ROBADO de web-feature-grid-001: cruz en cada esquina. Coste cero, sin JS. */
+  .m03-cruz{position:absolute;width:9px;height:9px;color:var(--linea);z-index:1}
+  .m03-cruz--tl{top:-4.5px;left:-4.5px} .m03-cruz--tr{top:-4.5px;right:-4.5px}
+  .m03-cruz--bl{bottom:-4.5px;left:-4.5px} .m03-cruz--br{bottom:-4.5px;right:-4.5px}
+
+  .m03-cel__n{font-size:var(--fs-small);font-weight:700;letter-spacing:.12em;
+          color:var(--acento);font-variant-numeric:tabular-nums}
+  .m03-cel h3{margin:0;font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+  .m03-cel p{margin:0;color:var(--tenue);font-size:var(--fs-body);line-height:1.55}
+  /* El pie se pega abajo: es lo que alinea las celdas entre si. */
+  .m03-cel__pie{margin-top:auto;padding-top:var(--space-4);font-size:var(--fs-small);
+            color:var(--tenue);border-top:1px dashed var(--linea)}
+
+  @media(min-width:40rem){
+.m03-rej{grid-template-columns:repeat(2,1fr);
+         border-left:1px solid var(--linea);border-right:1px solid var(--linea)}
+    .m03-cel{min-height:15rem;border-right:1px solid var(--linea)}
+    .m03-cel:nth-child(2n){border-right:0}
+  }
+  @media(min-width:64rem){
+.m03-rej{grid-template-columns:repeat(3,1fr)}
+    .m03-cel{border-right:1px solid var(--linea)}
+    .m03-cel:nth-child(2n){border-right:1px solid var(--linea)}
+    .m03-cel:nth-child(3n){border-right:0}
+  }
+</style>
+<style>/* --- molde 02 --- */
+/* LA PIEZA: la fila. Una fila = una idea. */
+  .m02-par{display:grid;gap:var(--space-6);align-items:center;
+       padding-block:var(--space-8);border-top:1px solid var(--linea)}
+  .m02-par:first-of-type{border-top:0;padding-top:0}
+
+  .m02-par__txt > *{margin:0}
+  .m02-par__txt > * + *{margin-top:var(--space-4)}
+  .m02-par__n{font-size:var(--fs-small);font-weight:700;letter-spacing:.12em;
+          color:var(--acento);font-variant-numeric:tabular-nums}
+  .m02-par__txt h3{font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+  /* La columna de texto NUNCA pasa de aqui, aunque la fila sea ancha. */
+  .m02-par__txt p{color:var(--tenue);max-width:var(--measure)}
+
+  /* Un dato duro debajo del parrafo: es lo que hace que la fila no sea prosa. */
+  .m02-par__dato{display:inline-flex;align-items:baseline;gap:.4rem;
+             font-size:var(--fs-small);color:var(--tenue);
+             border-left:2px solid var(--acento);padding-left:var(--space-4)}
+  .m02-par__dato b{font-size:var(--fs-section);color:var(--tinta);font-variant-numeric:tabular-nums}
+
+  .m02-par__media{margin:0}
+  .m02-par__media img{display:block;width:100%;height:auto;border-radius:var(--r);
+                  border:1px solid var(--linea);background:var(--caja)}
+  .m02-par__media figcaption{margin-top:var(--space-2);font-size:var(--fs-small);color:var(--tenue)}
+
+  @media(min-width:40rem){
+.m02-par{grid-template-columns:1fr 1fr;gap:var(--space-16)}
+    /* Alternar con `order`, NO con row-reverse: el DOM manda y se lee igual. */
+    .m02-par--dcha .m02-par__txt{order:2}
+    .m02-par--dcha .m02-par__media{order:1}
+  }
+</style>
+<style>/* --- molde 16 --- */
+.m16-gal{display:grid;grid-template-columns:1fr;gap:var(--space-6);
+       list-style:none;margin:0;padding:0}
+
+  /* La celda es un <a>: asi funciona con teclado sin anadir JS. */
+  .m16-gal a{position:relative;display:block;overflow:hidden;
+         border-radius:var(--r);background:var(--caja);
+         text-decoration:none;color:inherit}
+  .m16-gal img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover}
+  /* ⛔ La imagen NO se toca: ni scale ni rotate. Esa es la parte descartada. */
+
+  .m16-gal figcaption{padding:var(--space-4) 0 0;font-size:var(--fs-body);line-height:1.4}
+  .m16-gal figcaption span{display:block;font-size:var(--fs-small);color:var(--tenue)}
+
+  /* EL INDICADOR: lo unico que se mueve, y solo con opacity/transform. */
+  .m16-ind{position:absolute;inset:0;margin:auto;
+       width:52px;height:52px;border-radius:50%;
+       display:grid;place-items:center;
+       background:rgba(22,24,29,.6);color:#fff;
+       opacity:0;transform:scale(.7);pointer-events:none;
+       transition:opacity 200ms ease, transform 200ms ease}
+  .m16-gal a:hover .m16-ind,
+  .m16-gal a:focus-visible .m16-ind{opacity:1;transform:scale(1)}
+  .m16-gal a:focus-visible{outline:2px solid var(--acento);outline-offset:3px}
+  .m16-ind svg{width:18px;height:18px}
+
+  /* La alternativa SIN estado: visible siempre, tambien en tactil. */
+  .m16-cuenta{position:absolute;right:.6rem;bottom:.6rem;
+          font-size:var(--fs-small);font-weight:600;color:#fff;
+          background:rgba(22,24,29,.7);padding:.15rem .5rem;border-radius:999px}
+
+  @media(min-width:40rem){
+.m16-gal{grid-template-columns:repeat(3,1fr)}
+  }
+  @media(prefers-reduced-motion:reduce){
+.m16-ind{transition:none}
+  }
+</style>
+<style>/* --- molde 09 --- */
+/* La cita ancla: la mejor que haya, a lo ancho. */
+  .m09-cita{margin:0 0 var(--space-8);padding:0 0 0 var(--space-6);
+        border-left:3px solid var(--acento)}
+  .m09-cita blockquote{margin:0;font-size:var(--fs-section);line-height:1.45;
+                   letter-spacing:-.01em;max-width:34ch;text-wrap:balance}
+  .m09-cita figcaption{margin-top:var(--space-4);font-size:var(--fs-small);color:var(--tenue);
+                       max-width:var(--measure)}
+  .m09-cita figcaption b{color:var(--tinta);font-weight:600}
+
+  .m09-tarjetas{display:grid;grid-template-columns:1fr;gap:var(--space-6);
+            list-style:none;margin:0;padding:0}
+  .m09-tj{background:var(--caja);border-radius:var(--r);padding:var(--space-6);
+      display:flex;flex-direction:column;gap:var(--space-4)}
+  .m09-tj p{margin:0;font-size:var(--fs-body);line-height:1.55}
+  .m09-tj__quien{margin-top:auto;display:flex;align-items:center;gap:var(--space-4);
+             font-size:var(--fs-small);color:var(--tenue)}
+  /* Iniciales, no una foto generada. */
+  .m09-tj__ini{flex:none;width:32px;height:32px;border-radius:50%;
+           display:grid;place-items:center;background:var(--papel);
+           border:1px solid var(--linea);font-weight:700;
+           font-size:var(--fs-small);color:var(--tinta)}
+  .m09-tj__quien b{color:var(--tinta);font-weight:600}
+
+  /* max-width obligatorio: sin el, a 1120px esta linea daba 172 caracteres. */
+  .m09-pie{margin:var(--space-6) 0 0;font-size:var(--fs-small);color:var(--tenue);max-width:var(--measure)}
+
+  @media(min-width:40rem){
+.m09-cita blockquote{font-size:var(--fs-title);line-height:1.3;max-width:26ch}
+    .m09-tarjetas{grid-template-columns:repeat(3,1fr);gap:var(--space-6)}
+  }
+</style>
+<style>/* --- molde 05 --- */
+.m05-pasos{display:grid;grid-template-columns:1fr;gap:var(--space-6);
+         list-style:none;margin:0;padding:0;counter-reset:paso}
+  .m05-paso{border-top:2px solid var(--tinta);padding-top:var(--space-6);counter-increment:paso}
+  /* El numero sale de CSS: renumerar es reordenar el HTML, sin tocar textos. */
+  .m05-paso::before{content:counter(paso,decimal-leading-zero);
+                display:block;margin-bottom:var(--space-6);
+                font-size:var(--fs-small);font-weight:700;letter-spacing:.14em;
+                color:var(--acento);font-variant-numeric:tabular-nums}
+  .m05-paso h3{margin:0 0 var(--space-2);font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+  .m05-paso p{margin:0;color:var(--tenue);font-size:var(--fs-body);line-height:1.55;max-width:40ch}
+  .m05-paso__meta{display:inline-block;margin-top:var(--space-4);font-size:var(--fs-small);
+              color:var(--tenue);background:var(--papel);
+              border:1px solid var(--linea);border-radius:999px;padding:.15rem .6rem}
+
+  @media(min-width:40rem){
+.m05-pasos{grid-template-columns:repeat(2,1fr);gap:var(--space-8)}
+  }
+  @media(min-width:64rem){
+.m05-pasos{grid-template-columns:repeat(4,1fr)}
+  }
+</style>
+<style>/* --- molde 08 --- */
+/* El contenedor NO es --wrap: un FAQ a 1120px da lineas de 140 caracteres. Se
+     acota a la columna de lectura, y eso NO se hace redefiniendo .sec__in (eso
+     se lo comia toda la pagina al componer): se hace poniendo el modificador
+     `sec__in--texto` en el HTML. Ver _base.css. */
+
+  .m08-faq{border-top:1px solid var(--linea)}
+  .m08-faq details{border-bottom:1px solid var(--linea)}
+
+  .m08-faq summary{display:flex;align-items:center;justify-content:space-between;
+               gap:var(--space-4);min-height:48px;padding:var(--space-4) 0;
+               font-size:var(--fs-body);font-weight:600;line-height:1.4;
+               cursor:pointer;list-style:none}
+  .m08-faq summary::-webkit-details-marker{display:none}
+  .m08-faq summary:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+  .m08-faq summary:hover{color:var(--acento)}
+
+  /* El signo: lo unico que se mueve, y se mueve con transform. */
+  .m08-faq summary::after{content:"+";flex:none;font-size:var(--fs-section);font-weight:400;
+                      color:var(--tenue);line-height:1;
+                      transition:transform 180ms ease}
+  .m08-faq details[open] summary::after{transform:rotate(45deg)}
+
+  /* max-width EN EL PROPIO PARRAFO, no solo en el contenedor: `ch` se resuelve
+     con la fuente DEL ELEMENTO, y la respuesta va en --fs-body (mas pequena que el
+     cuerpo), asi que en un contenedor "de 62ch" caian 90 caracteres por linea.
+     Lo cazo `gate-estructura.m08-js` la primera vez que se corrio (10-ago). */
+  .m08-faq__r{margin:0 0 var(--space-6);color:var(--tenue);font-size:var(--fs-body);line-height:1.6;max-width:var(--measure)}
+  .m08-faq__r + .m08-faq__r{margin-top:calc(var(--space-6) * -1 + var(--space-4))}
+  @media(prefers-reduced-motion:reduce){
+.m08-faq summary::after{transition:none}
+  }
+</style>
+<style>/* --- molde 11 --- */
+/* .m11-in: lo que el cierre anade AL chasis. */
+  .m11-in{display:grid;gap:var(--space-6);align-items:center}
+
+  .m11-h{margin:0 0 var(--space-2);font-size:var(--fs-title);
+         line-height:var(--lh-title);letter-spacing:-.02em;
+         font-weight:var(--fw-bold);max-width:20ch;text-wrap:balance}
+  /* En banda oscura el secundario NO es `opacity`: es --tenue, que dentro de
+     `.sec--tinta` vale --tenue-inv y da 11,2:1 medidos. `opacity:.5` daba 5,2 y
+     `opacity:.4` se caia de AA. Un valor que no se puede medir no se usa. */
+  .m11-sub{margin:0;color:var(--tenue);font-size:var(--fs-lead);
+           line-height:var(--lh-lead);max-width:var(--measure-lead)}
+  .m11-despues{margin:var(--space-4) 0 0;color:var(--tenue);
+               font-size:var(--fs-small);max-width:var(--measure-lead)}
+
+  .m11-acc{display:flex;flex-direction:column;gap:var(--space-4);align-items:stretch}
+  .m11-alt{text-align:center;font-size:var(--fs-small)}
+</style>
+<style>main{display:block}</style>
+</head><body>
+<nav><a href="/">Inicio</a> <a href="/servicios/">Servicios</a> <a href="/contacto/">Contacto</a></nav>
+<main>
+
+<section class="sec sec--ancla" data-sec="hero">
+  <div class="sec__in m01-in">
+
+    <p class="m01-pastilla"><i></i>Categoria &middot; ciudad</p>
+
+    <h1 class="m01-h1">Una frase que dice qu&eacute; hace y para qui&eacute;n</h1>
+
+    <p class="m01-sub">Una sola l&iacute;nea de apoyo que a&ntilde;ade el c&oacute;mo o el
+       porqu&eacute;. Si necesita dos frases, sobra una.</p>
+
+    <div class="m01-acciones">
+      <a class="btn btn--1" href="/contacto/">Acci&oacute;n principal</a>
+      <a class="btn btn--2" href="/servicios/">Acci&oacute;n secundaria</a>
+    </div>
+
+    <p class="m01-prueba">
+      <span><b>00</b> dato verificable</span>
+      <span><b>00</b> segundo dato</span>
+      <span><b>00</b> tercer dato</span>
+    </p>
+
+  </div>
+</section>
+
+
+<section class="sec sec--tinta" data-sec="prueba">
+  <div class="sec__in">
+    <h2 class="m06-h">Lo medido, no lo prometido</h2>
+    <ul class="m06-datos">
+      <li class="m06-dato"><b>00</b><span>Qu&eacute; cuenta esta cifra</span><em>fuente, fecha</em></li>
+      <li class="m06-dato"><b>00&nbsp;%</b><span>Segunda cifra</span><em>fuente, fecha</em></li>
+      <li class="m06-dato"><b>00</b><span>Tercera cifra</span><em>fuente, fecha</em></li>
+      <li class="m06-dato"><b>0,0&nbsp;h</b><span>Cuarta cifra</span><em>fuente, fecha</em></li>
+    </ul>
+  </div>
+</section>
+
+
+<section class="sec" data-sec="oferta">
+  <div class="sec__in">
+    <h2 class="sec__h">Seis capacidades, no seis adjetivos</h2>
+    <p class="sec__sub">Un subtitular de una l&iacute;nea. Si hace falta un p&aacute;rrafo
+       para explicar la rejilla, la rejilla est&aacute; mal.</p>
+
+    <div class="m03-rej">
+
+      <!-- ===== CELDA (patron repetible) ===== -->
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">01</p>
+        <h3>Nombre de la capacidad</h3>
+        <p>Qu&eacute; hace, en una o dos frases. No qu&eacute; bien lo hace.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">02</p>
+        <h3>Segunda capacidad</h3>
+        <p>Las celdas se alinean porque el pie va pegado abajo, no porque los
+           textos midan lo mismo.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">03</p>
+        <h3>Tercera</h3>
+        <p>Texto corto a prop&oacute;sito, para ver que la rejilla no baila.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">04</p>
+        <h3>Cuarta capacidad</h3>
+        <p>Aqu&iacute; un texto deliberadamente m&aacute;s largo, con dos frases enteras, para
+           comprobar que la celda crece hacia abajo y el pie se queda pegado al
+           fondo sin descolocar a las vecinas.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">05</p>
+        <h3>Quinta</h3>
+        <p>Con seis celdas la rejilla cierra a 2 y a 3 columnas. Con cinco, no.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">06</p>
+        <h3>Sexta capacidad</h3>
+        <p>Seis es el m&aacute;ximo. A partir de ah&iacute; nadie las lee todas.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+
+<section class="sec" data-sec="oferta">
+  <div class="sec__in">
+    <h2 class="sec__h">Un titular que enmarca las tres ideas de abajo</h2>
+
+    <!-- ===== FILA (patron repetible) ===== -->
+    <div class="m02-par">
+      <div class="m02-par__txt">
+        <p class="m02-par__n">01</p>
+        <h3>La idea, en una frase</h3>
+        <!-- RANURA OBLIGATORIA · enlace contextual. Ver la cabecera. -->
+        <p>El parrafo que antes iba suelto. Aqui cabe entero, pero acotado a
+           ~60 palabras y a la columna de lectura, que es donde se lee sin volver
+           a empezar la linea. Y lleva dentro
+           <a class="enlace" href="/servicios/">un enlace a la pagina que lo
+           desarrolla</a>, que es el unico enlace que cuenta como contextual.</p>
+        <p class="m02-par__dato"><b>00&nbsp;%</b> lo que demuestra la idea</p>
+      </div>
+      <figure class="m02-par__media">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Crect width='800' height='500' fill='%23f6f7f9'/%3E%3C/svg%3E"
+             width="800" height="500" alt="Descripcion real de lo que se ve, sin atribuir">
+        <figcaption>Pie que dice qu&eacute; se est&aacute; mirando.</figcaption>
+      </figure>
+    </div>
+
+    <!-- ===== FILA invertida: se anade --dcha, nada mas ===== -->
+    <div class="m02-par m02-par--dcha">
+      <div class="m02-par__txt">
+        <p class="m02-par__n">02</p>
+        <h3>La segunda idea</h3>
+        <p>Misma forma. Lo unico que cambia es la clase del contenedor; el orden
+           del HTML sigue siendo texto primero, para que el lector de pantalla y
+           el movil lean lo mismo.</p>
+        <p class="m02-par__dato"><b>00</b> unidad</p>
+      </div>
+      <figure class="m02-par__media">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Crect width='800' height='500' fill='%23eef0f4'/%3E%3C/svg%3E"
+             width="800" height="500" alt="Descripcion real de lo que se ve">
+        <figcaption>Otro pie.</figcaption>
+      </figure>
+    </div>
+
+    <div class="m02-par">
+      <div class="m02-par__txt">
+        <p class="m02-par__n">03</p>
+        <h3>La tercera y &uacute;ltima</h3>
+        <p>Tres o cuatro filas es el rango bueno. A partir de cinco, se parte en
+           dos secciones con su propio titular.</p>
+        <p class="m02-par__dato"><b>00</b> unidad</p>
+      </div>
+      <figure class="m02-par__media">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Crect width='800' height='500' fill='%23f6f7f9'/%3E%3C/svg%3E"
+             width="800" height="500" alt="Descripcion real de lo que se ve">
+        <figcaption>Otro pie m&aacute;s.</figcaption>
+      </figure>
+    </div>
+
+  </div>
+</section>
+
+
+<section class="sec" data-sec="evidencia">
+  <div class="sec__in">
+    <h2 class="sec__h">Trabajo real</h2>
+
+    <ul class="m16-gal">
+      <li><figure style="margin:0"><a href="/casos/">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect width='400' height='500' fill='%23e9ebef'/%3E%3C/svg%3E"
+             width="400" height="500" alt="Descripcion real de lo que se ve, sin atribuir">
+        <span class="m16-ind" aria-hidden="true"><svg viewBox="0 0 16 15" fill="none"><path d="M7.86 1l6.32 6.03m0 0L7.86 13.06m6.32-6.03H1.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="m16-cuenta">+4</span>
+      </a><figcaption>T&iacute;tulo del caso<span>Qu&eacute; se hizo</span></figcaption></figure></li>
+
+      <li><figure style="margin:0"><a href="/precios/">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect width='400' height='500' fill='%23dfe2e8'/%3E%3C/svg%3E"
+             width="400" height="500" alt="Descripcion real de lo que se ve">
+        <span class="m16-ind" aria-hidden="true"><svg viewBox="0 0 16 15" fill="none"><path d="M7.86 1l6.32 6.03m0 0L7.86 13.06m6.32-6.03H1.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="m16-cuenta">+2</span>
+      </a><figcaption>T&iacute;tulo del caso<span>Qu&eacute; se hizo</span></figcaption></figure></li>
+
+      <li><figure style="margin:0"><a href="/zonas/">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect width='400' height='500' fill='%23e9ebef'/%3E%3C/svg%3E"
+             width="400" height="500" alt="Descripcion real de lo que se ve">
+        <span class="m16-ind" aria-hidden="true"><svg viewBox="0 0 16 15" fill="none"><path d="M7.86 1l6.32 6.03m0 0L7.86 13.06m6.32-6.03H1.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="m16-cuenta">+7</span>
+      </a><figcaption>T&iacute;tulo del caso<span>Qu&eacute; se hizo</span></figcaption></figure></li>
+    </ul>
+  </div>
+</section>
+
+
+<section class="sec" data-sec="evidencia">
+  <div class="sec__in">
+    <h2 class="sec__h">Lo que dicen los que ya han pasado por aqu&iacute;</h2>
+
+    <figure class="m09-cita">
+      <blockquote>La frase textual, transcrita. Concreta, con un detalle que
+        nadie inventar&iacute;a.</blockquote>
+      <figcaption><b>Nombre Apellido</b> &middot; cargo, empresa &middot; permiso por escrito</figcaption>
+    </figure>
+
+    <ul class="m09-tarjetas">
+      <li class="m09-tj">
+        <p>Segunda cita, m&aacute;s corta. Con una pega dentro: es lo que la hace
+           cre&iacute;ble.</p>
+        <p class="m09-tj__quien"><span class="m09-tj__ini" aria-hidden="true">NA</span>
+           <span><b>Nombre A.</b><br>cargo</span></p>
+      </li>
+      <li class="m09-tj">
+        <p>Tercera cita, de longitud parecida a la anterior para que ninguna
+           parezca de relleno.</p>
+        <p class="m09-tj__quien"><span class="m09-tj__ini" aria-hidden="true">NB</span>
+           <span><b>Nombre B.</b><br>cargo</span></p>
+      </li>
+      <li class="m09-tj">
+        <p>Cuarta cita. Tres o seis, nunca cuatro o cinco: la fila queda coja.</p>
+        <p class="m09-tj__quien"><span class="m09-tj__ini" aria-hidden="true">NC</span>
+           <span><b>Nombre C.</b><br>cargo</span></p>
+      </li>
+    </ul>
+
+    <p class="m09-pie">Transcritos de conversaciones reales, publicados con permiso.
+       No se publican las capturas.</p>
+  </div>
+</section>
+
+
+<section class="sec sec--caja" data-sec="proceso">
+  <div class="sec__in">
+    <h2 class="sec__h">C&oacute;mo funciona, en cuatro pasos</h2>
+
+    <ol class="m05-pasos">
+      <li class="m05-paso">
+        <h3>Primer paso</h3>
+        <p>Qu&eacute; pasa, en una frase. En segunda persona: lo hace &eacute;l, no nosotros.</p>
+        <p class="m05-paso__meta">2 minutos</p>
+      </li>
+      <li class="m05-paso">
+        <h3>Segundo paso</h3>
+        <p>La etiqueta de tiempo baja la ansiedad m&aacute;s que cualquier adjetivo.</p>
+        <p class="m05-paso__meta">El mismo d&iacute;a</p>
+      </li>
+      <li class="m05-paso">
+        <h3>Tercer paso</h3>
+        <p>Si un paso necesita dos frases largas, dentro hay dos pasos.</p>
+        <p class="m05-paso__meta">24 horas</p>
+      </li>
+      <li class="m05-paso">
+        <h3>Cuarto paso</h3>
+        <p>Cuatro es c&oacute;modo: cierra a 2x2 y a 4x1 sin dejar huecos.</p>
+        <p class="m05-paso__meta">Cuando quieras</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+
+<section class="sec" data-sec="objeciones">
+  <div class="sec__in sec__in--texto">
+    <h2 class="sec__h">Preguntas que nos hacen de verdad</h2>
+
+    <div class="m08-faq">
+
+      <details open>
+        <summary>La primera pregunta, tal y como la escribe un cliente</summary>
+        <p class="m08-faq__r">La respuesta, directa en la primera frase. Si la primera
+           frase no responde, el resto no se lee.</p>
+      </details>
+
+      <details>
+        <summary>Una pregunta inc&oacute;moda, respondida sin rodeos</summary>
+        <p class="m08-faq__r">Las inc&oacute;modas son las que dan credibilidad al resto.
+           Un FAQ donde todas las respuestas son buenas noticias no lo lee nadie.</p>
+      </details>
+
+      <details>
+        <summary>&iquest;Cu&aacute;nto cuesta?</summary>
+        <p class="m08-faq__r">Si hay precio, va aqu&iacute;. Si no lo hay, se dice de qu&eacute;
+           depende y cu&aacute;l es el rango.</p>
+      </details>
+
+      <details>
+        <summary>Una cuarta pregunta</summary>
+        <p class="m08-faq__r">Entre 4 y 8. Con menos de 4 no compensa el acorde&oacute;n;
+           con m&aacute;s de 8, la pregunta de cada uno est&aacute; enterrada.</p>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- ⚠️ MUESTRA. Rellenar con las preguntas reales o BORRAR este bloque entero. -->
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"PREGUNTA 1","acceptedAnswer":{"@type":"Answer","text":"RESPUESTA 1"}},
+    {"@type":"Question","name":"PREGUNTA 2","acceptedAnswer":{"@type":"Answer","text":"RESPUESTA 2"}}
+  ]
+}
+</script>
+
+
+<section class="sec sec--tinta sec--ancla" data-sec="cierre">
+  <div class="sec__in m11-in">
+    <div>
+      <h2 class="m11-h">Una frase que recoge al que ya est&aacute; convencido</h2>
+      <p class="m11-sub">Sin repetir el titular de arriba. Lo que falta aqu&iacute; no
+         es convencer: es quitar la &uacute;ltima duda.</p>
+      <p class="m11-despues">Al pulsar: qu&eacute; pasa, qui&eacute;n responde y en cu&aacute;nto tiempo.</p>
+    </div>
+    <div class="m11-acc">
+      <a class="btn btn--1" href="/guia/">Acci&oacute;n principal</a>
+      <a class="enlace m11-alt" href="/contacto/">o la alternativa para quien no est&aacute; listo</a>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer><a href="/legal/">Aviso legal</a></footer>
+</body></html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 03 — rejilla-caracteristicas</title>
+<!--
+  PRIMITIVA: rejilla-caracteristicas   FAMILIA: cuerpo
+  ORIGEN: web-feature-grid-001 (ref-usevault-featuregrid.html). Se toma la
+          estructura de celda y las cuatro cruces de esquina. Ni copy ni marca.
+
+  QUE TRABAJO HACE: lista N capacidades comparables de un vistazo. El lector
+  barre en Z y se queda con las que le tocan.
+
+  ⚠️ AVISO DE SOBREUSO — leerlo antes de usarla.
+  En el censo del 10-ago, `grid-tarjetas` era el 17,5% de nuestras secciones y
+  `prosa` el 26,3%: entre las dos, el 44%. La variedad efectiva de primitivas era
+  de 2 en 5 de 7 paginas. Es decir: cuando no escribimos prosa, ponemos esto.
+  → REGLA: **una sola rejilla de tarjetas por pagina.** Si la pagina pide dos,
+  la segunda es `lista-comprobacion`, `tabla-comparativa` o `par-alterno`.
+
+  CUANDO: 3, 4 o 6 elementos del MISMO tipo, sin orden entre ellos.
+  CUANDO NO:
+   - Si los elementos tienen orden -> `pasos-numerados`.
+   - Si hay que compararlos campo a campo -> `tabla-comparativa`.
+   - Con 2 elementos: una rejilla de 2 es un par, y se ve mejor con `par-alterno`.
+   - Con 5 o 7: queda una fila coja. O se ajusta el numero, o se cambia de
+     primitiva. Un hueco vacio en la ultima fila es el tell mas visible.
+
+  QUE LO ROMPE:
+   - Textos de longitud muy distinta entre celdas: la rejilla baila. Por eso la
+     celda tiene ALTURA MINIMA y el contenido se alinea arriba y abajo.
+   - Iconos genericos de libreria: no aportan y delatan la plantilla. Si no hay
+     un icono con significado, se usa el numero o nada.
+   - Poner un enlace por celda cuando no hay pagina detras.
+
+  MOVIL (390px): 1 columna. Se quita la altura minima (a una columna no hay nada
+  con que alinearse y solo genera huecos), y las cruces de esquina se conservan
+  porque no cuestan nada.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="oferta". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m03-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* LA REJILLA: los filetes dibujan la rejilla, no hay tarjetas con sombra. */
+  .m03-rej{display:grid;grid-template-columns:1fr;gap:0;
+       border-top:1px solid var(--linea)}
+
+  .m03-cel{position:relative;display:flex;flex-direction:column;
+       gap:var(--space-4);padding:var(--space-6);
+       border-bottom:1px solid var(--linea)}
+
+  /* ROBADO de web-feature-grid-001: cruz en cada esquina. Coste cero, sin JS. */
+  .m03-cruz{position:absolute;width:9px;height:9px;color:var(--linea);z-index:1}
+  .m03-cruz--tl{top:-4.5px;left:-4.5px} .m03-cruz--tr{top:-4.5px;right:-4.5px}
+  .m03-cruz--bl{bottom:-4.5px;left:-4.5px} .m03-cruz--br{bottom:-4.5px;right:-4.5px}
+
+  .m03-cel__n{font-size:var(--fs-small);font-weight:700;letter-spacing:.12em;
+          color:var(--acento);font-variant-numeric:tabular-nums}
+  .m03-cel h3{margin:0;font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+  .m03-cel p{margin:0;color:var(--tenue);font-size:var(--fs-body);line-height:1.55}
+  /* El pie se pega abajo: es lo que alinea las celdas entre si. */
+  .m03-cel__pie{margin-top:auto;padding-top:var(--space-4);font-size:var(--fs-small);
+            color:var(--tenue);border-top:1px dashed var(--linea)}
+
+  @media(min-width:40rem){
+.m03-rej{grid-template-columns:repeat(2,1fr);
+         border-left:1px solid var(--linea);border-right:1px solid var(--linea)}
+    .m03-cel{min-height:15rem;border-right:1px solid var(--linea)}
+    .m03-cel:nth-child(2n){border-right:0}
+  }
+  @media(min-width:64rem){
+.m03-rej{grid-template-columns:repeat(3,1fr)}
+    .m03-cel{border-right:1px solid var(--linea)}
+    .m03-cel:nth-child(2n){border-right:1px solid var(--linea)}
+    .m03-cel:nth-child(3n){border-right:0}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="oferta">
+  <div class="sec__in">
+    <h2 class="sec__h">Seis capacidades, no seis adjetivos</h2>
+    <p class="sec__sub">Un subtitular de una l&iacute;nea. Si hace falta un p&aacute;rrafo
+       para explicar la rejilla, la rejilla est&aacute; mal.</p>
+
+    <div class="m03-rej">
+
+      <!-- ===== CELDA (patron repetible) ===== -->
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">01</p>
+        <h3>Nombre de la capacidad</h3>
+        <p>Qu&eacute; hace, en una o dos frases. No qu&eacute; bien lo hace.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">02</p>
+        <h3>Segunda capacidad</h3>
+        <p>Las celdas se alinean porque el pie va pegado abajo, no porque los
+           textos midan lo mismo.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">03</p>
+        <h3>Tercera</h3>
+        <p>Texto corto a prop&oacute;sito, para ver que la rejilla no baila.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">04</p>
+        <h3>Cuarta capacidad</h3>
+        <p>Aqu&iacute; un texto deliberadamente m&aacute;s largo, con dos frases enteras, para
+           comprobar que la celda crece hacia abajo y el pie se queda pegado al
+           fondo sin descolocar a las vecinas.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">05</p>
+        <h3>Quinta</h3>
+        <p>Con seis celdas la rejilla cierra a 2 y a 3 columnas. Con cinco, no.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+      <article class="m03-cel">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">06</p>
+        <h3>Sexta capacidad</h3>
+        <p>Seis es el m&aacute;ximo. A partir de ah&iacute; nadie las lee todas.</p>
+        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

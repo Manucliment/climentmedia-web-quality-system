@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 16 — galeria-con-indicador</title>
+<!--
+  PRIMITIVA: galeria-con-indicador  FAMILIA: cuerpo
+  ORIGEN: web-media-group-001 (ref-omnerat-mediagroup.html). Se toma el
+          INDICADOR y se descarta el parallax del original.
+
+  ⚠️ ESTE MOLDE CORRIGIO UN VEREDICTO MIO Y POR ESO ESTA AQUI. Lo habia
+  descartado por "escala las imagenes al hover"; al abrir el marcado, las
+  imagenes llevan `scale3d(1,1,1)` — NO se escalan. Lo impreciso era la
+  descripcion, no la fuente. Cuarta vez que abrir el markup cambia el veredicto.
+
+  🔑 QUE ROBA: para decir "hay mas aqui" NO hace falta tocar la imagen. Basta con
+  un affordance propio que entra al hover Y AL FOCO. Se lee igual, no deforma el
+  contenido y no cae en el tell de plantilla (la imagen que hace zoom).
+
+  QUE TRABAJO HACE: ensena trabajo real sin convertir la pagina en un catalogo.
+
+  CUANDO: portfolio, casos, instalaciones, producto fotografiable.
+  CUANDO NO:
+   - Si las fotos son de banco de imagenes. Una galeria de stock es peor que no
+     tener galeria: dice que no hay trabajo que ensenar.
+   - 🔴 Si las imagenes son generadas y representan al equipo, el local o un
+     resultado del cliente. Una foto generada de "nuestro equipo" es una
+     afirmacion falsa sobre personas que existen.
+   - Si solo hay 2 imagenes: van dentro de `par-alterno`.
+
+  QUE LA ROMPE:
+   - `alt=""` en las tres, como hacia el original. Nuestro estandar exige alt
+     real y descriptivo, sin atribuir ("Fisioterapeuta en una sesion a domicilio",
+     no "Nuestra fisioterapeuta Lena").
+   - El indicador solo al hover: en tactil no hay hover y el affordance no existe
+     jamas. Por eso va tambien en `:focus-visible`, y hay una variante `.cuenta`
+     que no depende de ningun estado.
+   - Imagenes sin `width`/`height`: provoca CLS y lo penaliza Core Web Vitals.
+   - Animar la entrada del indicador con `width`/`height`: solo `opacity` y
+     `transform`.
+
+  MOVIL (390px): 1 columna. El indicador de hover no aparece nunca (no hay
+  puntero) — POR ESO la cuenta "+N" es visible siempre y no depende del hover.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="evidencia". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m16-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+.m16-gal{display:grid;grid-template-columns:1fr;gap:var(--space-6);
+       list-style:none;margin:0;padding:0}
+
+  /* La celda es un <a>: asi funciona con teclado sin anadir JS. */
+  .m16-gal a{position:relative;display:block;overflow:hidden;
+         border-radius:var(--r);background:var(--caja);
+         text-decoration:none;color:inherit}
+  .m16-gal img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover}
+  /* ⛔ La imagen NO se toca: ni scale ni rotate. Esa es la parte descartada. */
+
+  .m16-gal figcaption{padding:var(--space-4) 0 0;font-size:var(--fs-body);line-height:1.4}
+  .m16-gal figcaption span{display:block;font-size:var(--fs-small);color:var(--tenue)}
+
+  /* EL INDICADOR: lo unico que se mueve, y solo con opacity/transform. */
+  .m16-ind{position:absolute;inset:0;margin:auto;
+       width:52px;height:52px;border-radius:50%;
+       display:grid;place-items:center;
+       background:rgba(22,24,29,.6);color:#fff;
+       opacity:0;transform:scale(.7);pointer-events:none;
+       transition:opacity 200ms ease, transform 200ms ease}
+  .m16-gal a:hover .m16-ind,
+  .m16-gal a:focus-visible .m16-ind{opacity:1;transform:scale(1)}
+  .m16-gal a:focus-visible{outline:2px solid var(--acento);outline-offset:3px}
+  .m16-ind svg{width:18px;height:18px}
+
+  /* La alternativa SIN estado: visible siempre, tambien en tactil. */
+  .m16-cuenta{position:absolute;right:.6rem;bottom:.6rem;
+          font-size:var(--fs-small);font-weight:600;color:#fff;
+          background:rgba(22,24,29,.7);padding:.15rem .5rem;border-radius:999px}
+
+  @media(min-width:40rem){
+.m16-gal{grid-template-columns:repeat(3,1fr)}
+  }
+  @media(prefers-reduced-motion:reduce){
+.m16-ind{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="evidencia">
+  <div class="sec__in">
+    <h2 class="sec__h">Trabajo real</h2>
+
+    <ul class="m16-gal">
+      <li><figure style="margin:0"><a href="#">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect width='400' height='500' fill='%23e9ebef'/%3E%3C/svg%3E"
+             width="400" height="500" alt="Descripcion real de lo que se ve, sin atribuir">
+        <span class="m16-ind" aria-hidden="true"><svg viewBox="0 0 16 15" fill="none"><path d="M7.86 1l6.32 6.03m0 0L7.86 13.06m6.32-6.03H1.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="m16-cuenta">+4</span>
+      </a><figcaption>T&iacute;tulo del caso<span>Qu&eacute; se hizo</span></figcaption></figure></li>
+
+      <li><figure style="margin:0"><a href="#">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect width='400' height='500' fill='%23dfe2e8'/%3E%3C/svg%3E"
+             width="400" height="500" alt="Descripcion real de lo que se ve">
+        <span class="m16-ind" aria-hidden="true"><svg viewBox="0 0 16 15" fill="none"><path d="M7.86 1l6.32 6.03m0 0L7.86 13.06m6.32-6.03H1.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="m16-cuenta">+2</span>
+      </a><figcaption>T&iacute;tulo del caso<span>Qu&eacute; se hizo</span></figcaption></figure></li>
+
+      <li><figure style="margin:0"><a href="#">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect width='400' height='500' fill='%23e9ebef'/%3E%3C/svg%3E"
+             width="400" height="500" alt="Descripcion real de lo que se ve">
+        <span class="m16-ind" aria-hidden="true"><svg viewBox="0 0 16 15" fill="none"><path d="M7.86 1l6.32 6.03m0 0L7.86 13.06m6.32-6.03H1.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="m16-cuenta">+7</span>
+      </a><figcaption>T&iacute;tulo del caso<span>Qu&eacute; se hizo</span></figcaption></figure></li>
+    </ul>
+  </div>
+</section>
+
+</body>
+</html>

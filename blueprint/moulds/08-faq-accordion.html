@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 08 — acordeon-faq</title>
+<!--
+  PRIMITIVA: acordeon-faq           FAMILIA: cierre
+  ORIGEN: `web-faq-001`, registrado en el INDEX de moldes como "construido y
+          verificado en produccion en site-a-web, PENDIENTE de extraer a
+          molde". Esto es esa extraccion.
+
+  QUE TRABAJO HACE: mete 8 respuestas en el alto de 2 sin esconder nada de los
+  buscadores (el texto esta SIEMPRE en el DOM, `<details>` cerrado no es
+  `display:none` del contenido a efectos de indexacion).
+
+  CUANDO: al final de cualquier pagina con objeciones previsibles. Es tambien la
+          unica primitiva que da `FAQPage` en schema.org sin inventar nada.
+  CUANDO NO:
+   - Si las preguntas no son suyas de verdad. Un FAQ inventado para meter
+     keywords se nota y Google ya no muestra rich results de FAQ salvo en sitios
+     de salud y gobierno: el beneficio SEO que justificaba inventarlas ya no
+     existe. Quedan por utilidad, o no quedan.
+   - Para contenido principal. Si la respuesta es lo que la gente viene a leer,
+     no se esconde tras un clic.
+
+  QUE LO ROMPE:
+   - Animar la apertura con `height`: `<details>` no anima altura de forma fiable
+     y ademas es reflow por fotograma. Aqui NO se anima la apertura; solo gira el
+     signo, que es `transform`. Se abre de golpe y se ve mejor asi.
+   - Meter un <h3> dentro del <summary> y ADEMAS estilarlo como titulo: el
+     lector de pantalla anuncia "boton, encabezado nivel 3" y sobra uno. Aqui el
+     <summary> es el control y el titulo, y se estila directamente.
+   - `open` en todos: entonces no es un acordeon, es una lista. Como mucho, el
+     primero abierto.
+
+  MOVIL (390px): identico, una columna. El area de toque del <summary> ocupa el
+  ancho entero y tiene 48px de alto minimo, que es el minimo tactil real.
+
+  ⚠️ EL JSON-LD DE ABAJO ES UNA MUESTRA: si se copia el molde y no se cambian
+  las preguntas, se publica un FAQPage con texto de relleno. O se rellena, o se
+  borra el <script> entero.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="objeciones". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m08-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* El contenedor NO es --wrap: un FAQ a 1120px da lineas de 140 caracteres. Se
+     acota a la columna de lectura, y eso NO se hace redefiniendo .sec__in (eso
+     se lo comia toda la pagina al componer): se hace poniendo el modificador
+     `sec__in--texto` en el HTML. Ver _base.css. */
+
+  .m08-faq{border-top:1px solid var(--linea)}
+  .m08-faq details{border-bottom:1px solid var(--linea)}
+
+  .m08-faq summary{display:flex;align-items:center;justify-content:space-between;
+               gap:var(--space-4);min-height:48px;padding:var(--space-4) 0;
+               font-size:var(--fs-body);font-weight:600;line-height:1.4;
+               cursor:pointer;list-style:none}
+  .m08-faq summary::-webkit-details-marker{display:none}
+  .m08-faq summary:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+  .m08-faq summary:hover{color:var(--acento)}
+
+  /* El signo: lo unico que se mueve, y se mueve con transform. */
+  .m08-faq summary::after{content:"+";flex:none;font-size:var(--fs-section);font-weight:400;
+                      color:var(--tenue);line-height:1;
+                      transition:transform 180ms ease}
+  .m08-faq details[open] summary::after{transform:rotate(45deg)}
+
+  /* max-width EN EL PROPIO PARRAFO, no solo en el contenedor: `ch` se resuelve
+     con la fuente DEL ELEMENTO, y la respuesta va en --fs-body (mas pequena que el
+     cuerpo), asi que en un contenedor "de 62ch" caian 90 caracteres por linea.
+     Lo cazo `gate-estructura.m08-js` la primera vez que se corrio (10-ago). */
+  .m08-faq__r{margin:0 0 var(--space-6);color:var(--tenue);font-size:var(--fs-body);line-height:1.6;max-width:var(--measure)}
+  .m08-faq__r + .m08-faq__r{margin-top:calc(var(--space-6) * -1 + var(--space-4))}
+  @media(prefers-reduced-motion:reduce){
+.m08-faq summary::after{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="objeciones">
+  <div class="sec__in sec__in--texto">
+    <h2 class="sec__h">Preguntas que nos hacen de verdad</h2>
+
+    <div class="m08-faq">
+
+      <details open>
+        <summary>La primera pregunta, tal y como la escribe un cliente</summary>
+        <p class="m08-faq__r">La respuesta, directa en la primera frase. Si la primera
+           frase no responde, el resto no se lee.</p>
+      </details>
+
+      <details>
+        <summary>Una pregunta inc&oacute;moda, respondida sin rodeos</summary>
+        <p class="m08-faq__r">Las inc&oacute;modas son las que dan credibilidad al resto.
+           Un FAQ donde todas las respuestas son buenas noticias no lo lee nadie.</p>
+      </details>
+
+      <details>
+        <summary>&iquest;Cu&aacute;nto cuesta?</summary>
+        <p class="m08-faq__r">Si hay precio, va aqu&iacute;. Si no lo hay, se dice de qu&eacute;
+           depende y cu&aacute;l es el rango.</p>
+      </details>
+
+      <details>
+        <summary>Una cuarta pregunta</summary>
+        <p class="m08-faq__r">Entre 4 y 8. Con menos de 4 no compensa el acorde&oacute;n;
+           con m&aacute;s de 8, la pregunta de cada uno est&aacute; enterrada.</p>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- ⚠️ MUESTRA. Rellenar con las preguntas reales o BORRAR este bloque entero. -->
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"PREGUNTA 1","acceptedAnswer":{"@type":"Answer","text":"RESPUESTA 1"}},
+    {"@type":"Question","name":"PREGUNTA 2","acceptedAnswer":{"@type":"Answer","text":"RESPUESTA 2"}}
+  ]
+}
+</script>
+
+</body>
+</html>

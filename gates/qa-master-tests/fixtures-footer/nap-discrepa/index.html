@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El pie dice otro telefono | Fixture EST-12c</title>
+<meta name="description" content="Fixture de la bateria: el telefono del pie y el del schema son distintos. Las dos cosas son HTML valido por separado y ningun gate lo miraba.">
+<link rel="canonical" href="https://fixture.test/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"Ejemplo",
+ "telephone":"+34 600 00 00 00","address":{"@type":"PostalAddress","addressLocality":"Madrid"}}
+</script>
+</head>
+<body>
+<!-- CASO ROJO de EST-12c, y es el defecto de las DOS LISTAS para el mismo hecho
+     -el mismo que caza R6 con las migas-. El schema publica un numero y el pie
+     ensena otro: Google reparte el del schema y quien llama al de la pagina va
+     a otro sitio. Las dos cosas son validas por separado, y por eso no lo
+     miraba nada. -->
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Fixture del NAP que no cuadra</h1><p>El pie y el schema no dicen lo mismo.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+<footer>
+  <p>Ejemplo &middot; Madrid &middot; <a href="tel:+34911234567">91 123 45 67</a></p>
+  <nav aria-label="Legal">
+    <a href="/aviso-legal/">Aviso legal</a>
+    <a href="/politica-privacidad/">Privacidad</a>
+  </nav>
+  <p><a href="https://climentmedia.com/agency/">Web hecha por Climent Media</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 04 — tabla-comparativa</title>
+<!--
+  PRIMITIVA: tabla-comparativa      FAMILIA: cuerpo
+  ORIGEN: ESCRITO DESDE CERO. La libreria no tiene ninguna tabla responsive.
+          El unico pariente es ref-aubard-skillstable.html, que es un lienzo de
+          1000x980 px para una IMAGEN de LinkedIn: no tiene ni un breakpoint.
+
+  🔴 ESTE ES EL CASO DIFICIL QUE PIDE EL ENCARGO, Y TIENE UNA RESPUESTA CLARA:
+  a 390px una tabla NO se hace scrollable, se CONVIERTE EN FICHAS.
+  El scroll horizontal esconde justo la columna que importa (la ultima suele ser
+  "nosotros"), obliga a recordar la cabecera mientras se desplaza, y en un movil
+  compite con el gesto de scroll de la pagina. La conversion a fichas se hace
+  con `content: attr(data-col)` en un ::before: el nombre de columna viaja EN EL
+  HTML, una sola vez, y no hay que duplicar la tabla en dos maquetas.
+
+  ⚠️ Lo que NO se puede hacer: `display:block` sobre <table> rompe la semantica
+  de tabla para los lectores de pantalla. Por eso las filas pasan a fichas con
+  `display:grid` MANTENIENDO los roles ARIA explicitos (role="table"/"row"/"cell"),
+  que es lo unico que sobrevive al cambio de `display`. Sin esos roles, un
+  usuario de lector de pantalla pierde la tabla entera en movil y no se entera.
+
+  QUE TRABAJO HACE: responde "¿en que se diferencia esto de lo otro?" sin que el
+  lector tenga que construir la comparacion en su cabeza leyendo dos parrafos.
+
+  CUANDO: 2-4 opciones x 4-8 criterios. Comparativas, planes, "nosotros vs".
+  CUANDO NO:
+   - Una sola opcion: eso es una ficha de especificacion -> `tabla-especificacion`.
+   - Mas de 4 columnas: no cabe ni en escritorio. Se parte por familias.
+   - Si todas las celdas son "si": la tabla no esta comparando nada, esta
+     vendiendo. Se cambia por `lista-comprobacion`.
+
+  QUE LA ROMPE:
+   - Celdas con frases largas: la tabla se estira y pierde el barrido. Limite
+     ~6 palabras por celda. Lo que no cabe va en una nota debajo.
+   - Marcar la columna propia con color de acento en TODAS las celdas: se lee
+     como publicidad y deja de creerse. Se marca solo la cabecera.
+   - `border-collapse:collapse` + `border-radius` en la tabla: el radio no se
+     aplica a las celdas y quedan esquinas cuadradas asomando.
+
+  MOVIL (390px): cada fila = una ficha con el criterio como titulo y una linea
+  por opcion, con su nombre de columna delante. Verificado a 390px de ancho real.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="alternativas". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m04-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* ── BASE: movil primero. La tabla YA es una lista de fichas. ──────────── */
+  .m04-tc{width:100%;border-collapse:collapse;text-align:left}
+  .m04-tc thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);
+            white-space:nowrap} /* cabecera oculta VISUALMENTE, no del arbol */
+  .m04-tc tbody tr{display:grid;gap:var(--space-2);
+               border:1px solid var(--linea);border-radius:var(--r);
+               padding:var(--space-6);margin-bottom:var(--space-4)}
+  .m04-tc tbody th{font-size:var(--fs-section);line-height:1.3;font-weight:700;
+               letter-spacing:-.01em;padding:0 0 var(--space-2);
+               border-bottom:1px solid var(--linea);margin-bottom:var(--space-2)}
+  .m04-tc tbody td{display:flex;justify-content:space-between;gap:var(--space-4);
+               font-size:var(--fs-body);padding:.15rem 0;border:0}
+  /* EL MECANISMO: el nombre de columna viaja en data-col, no duplicado. */
+  .m04-tc tbody td::before{content:attr(data-col);color:var(--tenue);
+                       font-size:var(--fs-small);text-transform:uppercase;
+                       letter-spacing:.06em;font-weight:600;flex:none}
+  .m04-tc td b{font-weight:600}
+  .m04-si{color:var(--acento);font-weight:700}
+  .m04-no{color:var(--tenue)}
+
+  /* ── ESCRITORIO: a partir de 640px vuelve a ser una tabla de verdad. ───── */
+  @media(min-width:40rem){
+    .m04-tc thead{position:static;width:auto;height:auto;clip:auto}
+    .m04-tc tbody tr{display:table-row;border:0;border-radius:0;padding:0;margin:0}
+    .m04-tc tbody th{display:table-cell;font-size:var(--fs-body);font-weight:600;
+                 border-bottom:1px solid var(--linea);margin:0;
+                 padding:var(--space-4) var(--space-4) var(--space-4) 0}
+    .m04-tc tbody td{display:table-cell;padding:var(--space-4);
+                 border-bottom:1px solid var(--linea);
+                 border-left:1px solid var(--linea)}
+    .m04-tc tbody td::before{content:none} /* la cabecera real vuelve a existir */
+    .m04-tc thead th{font-size:var(--fs-small);text-transform:uppercase;letter-spacing:.06em;
+                 color:var(--tenue);font-weight:700;padding:0 var(--space-4) var(--space-4);
+                 border-bottom:2px solid var(--linea);vertical-align:bottom}
+    .m04-tc thead th:first-child{padding-left:0}
+    /* Solo la CABECERA de la columna propia se marca. Las celdas, no. */
+    .m04-tc thead th.m04-propia{color:var(--acento)}
+    .m04-tc tbody tr:last-child th, .m04-tc tbody tr:last-child td{border-bottom:0}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="alternativas">
+  <div class="sec__in">
+    <h2 class="sec__h">En qu&eacute; se diferencian, campo a campo</h2>
+    <p class="sec__sub">Cuatro criterios, tres opciones. M&aacute;s de eso no se compara: se hojea.</p>
+
+    <!-- ⚠️ Los role="..." NO son decorativos ni redundantes: `display:grid/flex`
+         sobre <tr>/<td> BORRA la semantica de tabla en Chrome, Firefox y Safari.
+         Sin ellos, a 390px un lector de pantalla anuncia una lista de textos
+         sueltos y la comparacion desaparece para quien no la ve. Se ponen en
+         TODOS los niveles: quitar uno solo rompe la cadena. -->
+    <table class="m04-tc" role="table">
+      <thead role="rowgroup">
+        <tr role="row">
+          <th role="columnheader" scope="col">Criterio</th>
+          <th role="columnheader" scope="col">Opci&oacute;n A</th>
+          <th role="columnheader" scope="col">Opci&oacute;n B</th>
+          <th role="columnheader" scope="col" class="m04-propia">Opci&oacute;n C</th>
+        </tr>
+      </thead>
+      <tbody role="rowgroup">
+        <tr role="row">
+          <th role="rowheader" scope="row">Primer criterio</th>
+          <td role="cell" data-col="Opci&oacute;n A"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Opci&oacute;n B"><b>Parcial</b></td>
+          <td role="cell" data-col="Opci&oacute;n C"><span class="m04-si">S&iacute;</span></td>
+        </tr>
+        <tr role="row">
+          <th role="rowheader" scope="row">Segundo criterio</th>
+          <td role="cell" data-col="Opci&oacute;n A"><b>3 d&iacute;as</b></td>
+          <td role="cell" data-col="Opci&oacute;n B"><b>1 d&iacute;a</b></td>
+          <td role="cell" data-col="Opci&oacute;n C"><b>2 horas</b></td>
+        </tr>
+        <tr role="row">
+          <th role="rowheader" scope="row">Tercer criterio, con nombre largo</th>
+          <td role="cell" data-col="Opci&oacute;n A"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Opci&oacute;n B"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Opci&oacute;n C"><span class="m04-si">S&iacute;</span></td>
+        </tr>
+        <tr role="row">
+          <th role="rowheader" scope="row">Cuarto criterio</th>
+          <td role="cell" data-col="Opci&oacute;n A"><b>Incluido</b></td>
+          <td role="cell" data-col="Opci&oacute;n B"><b>Aparte</b></td>
+          <td role="cell" data-col="Opci&oacute;n C"><b>Incluido</b></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="nota">Lo que no cabe en seis palabras va aqu&iacute;, no dentro de la celda.</p>
+  </div>
+</section>
+
+</body>
+</html>

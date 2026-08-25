@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ruta rota en NUESTRA zona | Fixture de REN-13</title>
+<meta name="description" content="Fixture de la bateria: el control negativo del arreglo de REN-13. Declara un CSS bajo /css/, que SI es del arbol, y que no existe. Tiene que seguir saliendo FALLO.">
+<link rel="canonical" href="https://fixture.test/">
+<link rel="stylesheet" href="/css/styles.css">
+<link rel="stylesheet" href="/css/esta-no-existe.css">
+</head>
+<!-- 🔴 CONTROL NEGATIVO, Y ES EL QUE DE VERDAD PRUEBA EL ARREGLO. La pregunta
+     que hay que saber contestar de cualquier gate es «¿que tendria que ocurrir
+     para que se pusiera ROJO?». Si al dejar de acusar a `/wp-content/` REN-13
+     dejara de acusar tambien a una ruta MAL ESCRITA de las nuestras, el arreglo
+     habria cambiado un falso positivo por un falso negativo, que es peor.
+     `/css/` SI esta en el arbol: la zona es nuestra y este 404 es un defecto
+     de verdad. Tiene que salir FALLO. -->
+<body>
+<main>
+  <section><h1>Ruta rota en nuestra zona</h1>
+    <p>El CSS de arriba esta mal escrito y vive en una carpeta que servimos nosotros.</p>
+  </section>
+</main>
+</body>
+</html>

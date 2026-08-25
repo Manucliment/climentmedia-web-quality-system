@@ -15,8 +15,8 @@ A checklist that does not grow from its own failures is out of date in a month.
 If you are touching a gate, a program or the documentation, this goes first:
 
 ```bash
-bash gates/tests/run-all.sh              # every battery + docs + coverage
-bash gates/tests/run-all.sh --fast       # skips the slow ones (three need a browser)
+bash gates/run-all.sh              # every battery + docs + coverage
+bash gates/run-all.sh --fast       # skips the slow ones (three need a browser)
 perl gates/doc-gate.pl                   # documentation only
 perl gates/coverage.pl --which           # which checks have no fixture
 ```
@@ -34,9 +34,22 @@ And **do not pipe it through `tail`** — the exit code you read is `tail`'s, no
 battery's, so a battery killed halfway comes out green. Let it run to a file:
 
 ```bash
-nohup bash gates/tests/run-all.sh > /tmp/battery.txt 2>&1 &
-until grep -q "cases green" /tmp/battery.txt; do sleep 15; done
+bash gates/run-all.sh > /tmp/battery.txt 2>&1
 ```
+
+Then read the file. **Do not detach it with `nohup … &`** if whatever launched it may itself
+be backgrounded or time-limited: doing exactly that killed a run after 2 banks of 22 and
+reported success, because the wrapper exited and took the detached job with it. The summary
+in the file stopped at bank 2 and nothing said so. If you need to wait on it, wait for the
+final line rather than for the process:
+
+```bash
+until grep -q "en verde" /tmp/battery.txt; do sleep 15; done
+```
+
+Waiting on the **result** rather than on the process also sidesteps a nastier one: a `pgrep`
+pattern that travels inside the very command doing the waiting matches itself, and the loop
+never ends.
 
 ---
 

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indice de agentes | Fixture de tipo declarado</title>
+<meta name="description" content="Fixture de la bateria: una pagina que DECLARA su tipo con data-tipo=hub. Sin el atributo, el gate la inferiria por la ruta y la auditaria como pagina de servicio.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- La ruta de esta pagina es la raiz, asi que el gate la inferiria «home».
+     Con data-tipo="hub" tiene que salir HUB en el resumen de tipos. -->
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Los agentes que corremos</h1><p>Un indice, no una pagina de venta.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <!-- 18-ago-2026 · `calificacion` es OBLIGATORIA en un hub (09 §2.5): es lo que
+       distingue un indice de un menu. Faltaba aqui porque faltaba en la tabla del
+       gate, que llevaba tres roles desde que se escribio. Ahora la tabla es una
+       sola y vive en references/anatomia.tsv. -->
+  <section data-sec="calificacion"><h2>Cual te sirve</h2><p>Si vendes por llamada, el primero.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+</body>
+</html>

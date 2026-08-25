@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pie correcto | Fixture EST-12</title>
+<meta name="description" content="Fixture de la bateria: un pie con sus legales, el telefono coincidiendo con el del schema y un enlace de autoria con ancla descriptiva.">
+<link rel="canonical" href="https://fixture.test/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"Ejemplo",
+ "telephone":"+34 600 00 00 00","address":{"@type":"PostalAddress","addressLocality":"Madrid"}}
+</script>
+</head>
+<body>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Fixture del pie correcto</h1><p>La maqueta no es lo que se mide aqui.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+<footer>
+  <!-- El telefono es EL MISMO que el del JSON-LD, escrito de otra forma. El
+       gate compara por los ultimos 9 digitos a proposito: el prefijo se escribe
+       de tres maneras (+34, 0034, sin nada) y eso no es una discrepancia. -->
+  <p>Ejemplo &middot; Madrid &middot; <a href="tel:+34600000000">600 00 00 00</a></p>
+  <nav aria-label="Legal">
+    <a href="/aviso-legal/">Aviso legal</a>
+    <a href="/politica-privacidad/">Privacidad</a>
+    <a href="/politica-de-cookies/">Cookies</a>
+  </nav>
+  <!-- Enlace de AUTORIA: ancla descriptiva, no la marca pelada. Lo que se evita
+       es que las cinco webs lleven el mismo texto -- eso es lo que Google lee
+       como red de enlaces. -->
+  <p><a href="https://climentmedia.com/agency/">Dise&ntilde;o y medici&oacute;n web por Climent Media</a></p>
+</footer>
+</body>
+</html>

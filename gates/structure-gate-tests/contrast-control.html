@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control de CONTRASTE — valores con ratio conocido</title>
+<style>
+:root{
+  --ancho:1120px; --texto:62ch;
+  --papel:#ffffff; --tinta:#16181d; --tenue:#6b7280; --caja:#f6f7f9;
+}
+body{margin:0;background:var(--papel);color:var(--tinta);
+     font:400 17px/1.6 system-ui,sans-serif}
+main{max-width:var(--ancho);margin-inline:auto;padding:2rem}
+section{max-width:var(--ancho);margin-block:2rem}
+p{max-width:var(--texto)}
+
+/* ---- LOS QUE DEBEN FALLAR ---- */
+.malo-gris   {color:#999999}                    /* 2,85:1 sobre blanco */
+.malo-oklch  {color:oklch(85% 0.02 260)}        /* claro; sintaxis oklch: getComputedStyle NO da rgb() */
+.malo-caja   {color:#a9adb5;background:var(--caja)}
+.malo-alfa   {color:rgba(22,24,29,.28)}          /* tinta al 28 % sobre blanco */
+
+/* ---- LOS QUE DEBEN PASAR ---- */
+.ok-tinta    {color:var(--tinta)}                /* ~16:1 */
+.ok-tenue    {color:var(--tenue)}                /* 4,83:1 — Tailwind gray-500, valor de referencia */
+.ok-oklch    {color:oklch(45% 0.15 258)}         /* oscuro en oklch: debe PASAR */
+.ok-grande   {color:#949494;font-size:30px;font-weight:400}  /* 3,03:1 con umbral 3:1 por texto grande */
+
+/* ---- NO MEDIBLE: texto sobre imagen ---- */
+.sobre-foto  {background-image:linear-gradient(90deg,#333,#ddd);color:#fff;padding:1rem}
+</style>
+</head>
+<body>
+<nav><a href="/">Inicio</a></nav>
+<main>
+<section>
+  <h1>Control de contraste</h1>
+  <p class="malo-gris">FALLA gris 999999 sobre blanco, ratio conocido 2,85:1.</p>
+  <p class="malo-oklch">FALLA oklch claro sobre blanco. Aqui es donde getComputedStyle devuelve oklch y no rgb.</p>
+  <p class="malo-caja">FALLA gris claro sobre la caja f6f7f9.</p>
+  <p class="malo-alfa">FALLA tinta con alfa 0,28 sobre blanco: hay que componer, no leer el color a pelo.</p>
+</section>
+<section>
+  <h2>Los que tienen que pasar</h2>
+  <p class="ok-tinta">PASA la tinta principal sobre papel.</p>
+  <p class="ok-tenue">PASA el gris tenue 6b7280 sobre blanco, ratio de referencia 4,83:1.</p>
+  <p class="ok-oklch">PASA un oklch oscuro: la regla no puede acusar a un color solo por su sintaxis.</p>
+  <p class="ok-grande">PASA por ser texto grande: 30px baja el umbral de 4,5 a 3:1 (WCAG 2.1 SC 1.4.3).</p>
+</section>
+<section>
+  <p class="sobre-foto">NO MEDIBLE: esto va sobre un degradado. No medible no es aprobado.</p>
+</section>
+</main>
+<footer><a href="/legal/">Aviso legal</a></footer>
+</body>
+</html>

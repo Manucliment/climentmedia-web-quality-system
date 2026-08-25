@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 09 — prueba-social</title>
+<!--
+  PRIMITIVA: prueba-social          FAMILIA: cuerpo
+  ORIGEN: `web-testimonios-001`, salido de El Destino de Site C (2026-08-06). Aqui
+          esta extraido a molde; alli vive dentro de `site-e-web/_gen.ps1`.
+
+  QUE TRABAJO HACE: pone en boca de otro lo que la pagina no puede decir de si
+  misma. Una cita ancha (la mejor) + tarjetas (el resto).
+
+  🔴 LAS DOS REGLAS QUE NO SE NEGOCIAN, LAS DOS APRENDIDAS PAGANDO
+  1. NUNCA se publican las capturas de WhatsApp. Llevan telefono, foto de perfil
+     y hora de ultima conexion. Se TRANSCRIBE el texto; los originales se guardan
+     como prueba de autenticidad y no se publican. Y hace falta permiso del
+     cliente final, no del nuestro.
+  2. SIN schema `Review` / `AggregateRating` sobre uno mismo. Google penaliza las
+     resenas que una web publica sobre si misma y ahi caen las acciones
+     manuales. Por eso este molde NO trae JSON-LD.
+
+  Y la regla de reparto de Site C: solo en paginas que no tengan ya los suyos. Alli
+  5 paginas de ciudad traian 9 testimonios propios cada una y anadir los nuestros
+  dejaba 12 en una pagina. Ademas: un autor, una tarjeta por seccion.
+
+  CUANDO: despues de la seccion que genera la duda, no al final de todo.
+  CUANDO NO:
+   - Sin permiso escrito. Sin excepciones.
+   - Si solo hay uno. Un testimonio solo se lee como el unico que hay. Va como
+     cita dentro de otra seccion (`aparte-nota`), no como seccion propia.
+   - Testimonios genericos ("muy profesionales, todo genial"): no prueban nada.
+     Vale mas uno concreto y con pega que tres entusiastas.
+
+  QUE LA ROMPE:
+   - Estrellas dibujadas. Si no hay resenas verificadas detras, son decoracion
+     que finge ser dato.
+   - Foto generada del autor. Es una afirmacion falsa sobre una persona real.
+     O es su foto, o van las iniciales.
+   - Citas de longitud muy distinta: la de 40 palabras al lado de la de 8 hace
+     que la corta parezca inventada.
+
+  MOVIL (390px): la cita destacada mantiene su tamano (es el ancla) y las
+  tarjetas se apilan.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="evidencia". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m09-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* La cita ancla: la mejor que haya, a lo ancho. */
+  .m09-cita{margin:0 0 var(--space-8);padding:0 0 0 var(--space-6);
+        border-left:3px solid var(--acento)}
+  .m09-cita blockquote{margin:0;font-size:var(--fs-section);line-height:1.45;
+                   letter-spacing:-.01em;max-width:34ch;text-wrap:balance}
+  .m09-cita figcaption{margin-top:var(--space-4);font-size:var(--fs-small);color:var(--tenue);
+                       max-width:var(--measure)}
+  .m09-cita figcaption b{color:var(--tinta);font-weight:600}
+
+  .m09-tarjetas{display:grid;grid-template-columns:1fr;gap:var(--space-6);
+            list-style:none;margin:0;padding:0}
+  .m09-tj{background:var(--caja);border-radius:var(--r);padding:var(--space-6);
+      display:flex;flex-direction:column;gap:var(--space-4)}
+  .m09-tj p{margin:0;font-size:var(--fs-body);line-height:1.55}
+  .m09-tj__quien{margin-top:auto;display:flex;align-items:center;gap:var(--space-4);
+             font-size:var(--fs-small);color:var(--tenue)}
+  /* Iniciales, no una foto generada. */
+  .m09-tj__ini{flex:none;width:32px;height:32px;border-radius:50%;
+           display:grid;place-items:center;background:var(--papel);
+           border:1px solid var(--linea);font-weight:700;
+           font-size:var(--fs-small);color:var(--tinta)}
+  .m09-tj__quien b{color:var(--tinta);font-weight:600}
+
+  /* max-width obligatorio: sin el, a 1120px esta linea daba 172 caracteres. */
+  .m09-pie{margin:var(--space-6) 0 0;font-size:var(--fs-small);color:var(--tenue);max-width:var(--measure)}
+
+  @media(min-width:40rem){
+.m09-cita blockquote{font-size:var(--fs-title);line-height:1.3;max-width:26ch}
+    .m09-tarjetas{grid-template-columns:repeat(3,1fr);gap:var(--space-6)}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="evidencia">
+  <div class="sec__in">
+    <h2 class="sec__h">Lo que dicen los que ya han pasado por aqu&iacute;</h2>
+
+    <figure class="m09-cita">
+      <blockquote>La frase textual, transcrita. Concreta, con un detalle que
+        nadie inventar&iacute;a.</blockquote>
+      <figcaption><b>Nombre Apellido</b> &middot; cargo, empresa &middot; permiso por escrito</figcaption>
+    </figure>
+
+    <ul class="m09-tarjetas">
+      <li class="m09-tj">
+        <p>Segunda cita, m&aacute;s corta. Con una pega dentro: es lo que la hace
+           cre&iacute;ble.</p>
+        <p class="m09-tj__quien"><span class="m09-tj__ini" aria-hidden="true">NA</span>
+           <span><b>Nombre A.</b><br>cargo</span></p>
+      </li>
+      <li class="m09-tj">
+        <p>Tercera cita, de longitud parecida a la anterior para que ninguna
+           parezca de relleno.</p>
+        <p class="m09-tj__quien"><span class="m09-tj__ini" aria-hidden="true">NB</span>
+           <span><b>Nombre B.</b><br>cargo</span></p>
+      </li>
+      <li class="m09-tj">
+        <p>Cuarta cita. Tres o seis, nunca cuatro o cinco: la fila queda coja.</p>
+        <p class="m09-tj__quien"><span class="m09-tj__ini" aria-hidden="true">NC</span>
+           <span><b>Nombre C.</b><br>cargo</span></p>
+      </li>
+    </ul>
+
+    <p class="m09-pie">Transcritos de conversaciones reales, publicados con permiso.
+       No se publican las capturas.</p>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un boton que anuncia un panel que no existe | Climent Media</title>
+<meta name="description" content="Fixture de EST-10b: el control declara aria-controls a un id que no esta en la pagina. Con teclado, el foco se queda muerto y no abre nada.">
+<link rel="canonical" href="https://climentmedia.com/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite"}</script>
+</head>
+<body>
+<header>
+  <nav aria-label="Principal">
+    <a href="/producto/">Producto</a>
+    <button aria-expanded="false" aria-controls="panel-que-no-existe">Abrir</button>
+  </nav>
+</header>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Portada</h1><p>Texto suficiente para que la pagina no parezca vacia y el gate mida lo que toca.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a></p></section>
+</main>
+</body>
+</html>

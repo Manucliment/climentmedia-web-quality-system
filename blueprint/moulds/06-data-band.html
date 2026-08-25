@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 06 — banda-datos</title>
+<!--
+  PRIMITIVA: banda-datos            FAMILIA: cuerpo (respiro)
+  ORIGEN: ESCRITO DESDE CERO como molde, pero la pieza YA EXISTE en produccion:
+          `.aud-stats` / `.aud-stat` en climentmedia.com/ad-account-audit/.
+          ⚠️ En el barrido del 10-ago esta primitiva salio 0 en las 7 paginas del
+          contraste y estuve a punto de darla por inexistente. Estaba fuera de la
+          MUESTRA, no del repertorio. Lo pille abriendo un fichero tras un cero
+          de grep — que es exactamente la regla de la casa.
+
+  QUE TRABAJO HACE: corta una tirada larga de lectura con cuatro cifras. Es un
+  respiro visual que ademas es prueba. Dos trabajos por el precio de uno.
+
+  CUANDO: entre dos secciones densas. Despues del hero. Antes del cierre.
+  CUANDO NO:
+   - Si las cifras no son verificables. Una banda de datos inventados es la
+     forma mas rapida de perder credibilidad, porque son lo unico que se lee.
+   - Si solo hay dos cifras: eso va en el hero como `.prueba`.
+   - Dos bandas en la misma pagina. Pierde el efecto de respiro y se lee como
+     relleno.
+
+  QUE LA ROMPE:
+   - Cifras con unidades largas dentro del numero ("1.250 pacientes/ano"): el
+     numero deja de barrerse. La unidad va en la etiqueta de abajo.
+   - Animar el conteo con JS: obliga a cargar script para ver el contenido, y si
+     el JS falla la seccion queda a cero. El numero va escrito en el HTML.
+   - Centrar el texto de la etiqueta si tiene mas de 4 palabras: no es una
+     etiqueta, es una frase, y va en otra primitiva.
+
+  MOVIL (390px): 2x2. NO 1x4 — cuatro cifras apiladas ocupan casi una pantalla
+  entera y dejan de leerse como un bloque. A 2x2 sigue siendo un respiro.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="prueba". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m06-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* La jerarquia va por TAMANO, PESO y COLOR, nunca por `opacity`: un texto a
+     opacity .4 sobre --tinta da 3,80:1 y se cae de AA sin que nadie lo vea. */
+  .m06-h{margin:0 0 var(--space-6);font-size:var(--fs-micro);
+         font-weight:var(--fw-bold);letter-spacing:.12em;
+         text-transform:uppercase;color:var(--tenue)}
+
+  .m06-datos{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-6);
+         list-style:none;margin:0;padding:0}
+  .m06-dato{display:flex;flex-direction:column;gap:.2rem}
+  .m06-dato b{font-size:var(--fs-title);line-height:1;font-weight:700;letter-spacing:-.03em;
+          font-variant-numeric:tabular-nums}
+  .m06-dato span{font-size:var(--fs-small);line-height:1.4;max-width:22ch}
+  /* La fuente de la cifra, no un adjetivo. Es lo que la hace creible. */
+  .m06-dato em{font-style:normal;font-size:var(--fs-micro);color:var(--tenue)}
+
+  @media(min-width:40rem){
+    .m06-datos{grid-template-columns:repeat(4,1fr);gap:var(--space-8)}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec sec--tinta" data-sec="prueba">
+  <div class="sec__in">
+    <h2 class="m06-h">Lo medido, no lo prometido</h2>
+    <ul class="m06-datos">
+      <li class="m06-dato"><b>00</b><span>Qu&eacute; cuenta esta cifra</span><em>fuente, fecha</em></li>
+      <li class="m06-dato"><b>00&nbsp;%</b><span>Segunda cifra</span><em>fuente, fecha</em></li>
+      <li class="m06-dato"><b>00</b><span>Tercera cifra</span><em>fuente, fecha</em></li>
+      <li class="m06-dato"><b>0,0&nbsp;h</b><span>Cuarta cifra</span><em>fuente, fecha</em></li>
+    </ul>
+  </div>
+</section>
+
+</body>
+</html>

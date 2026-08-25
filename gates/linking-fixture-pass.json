@@ -1,0 +1,58 @@
+{
+  "site": "ejemplo-correcto.test",
+  "start": "https://ejemplo-correcto.test/",
+  "sitemap": [
+    "https://ejemplo-correcto.test/",
+    "https://ejemplo-correcto.test/guias",
+    "https://ejemplo-correcto.test/guias/precio",
+    "https://ejemplo-correcto.test/guias/plazos"
+  ],
+  "pages": {
+    "https://ejemplo-correcto.test/": {
+      "status": 200, "depth": 0, "redirects": 0, "reached_by_crawl": true, "in_sitemap": true,
+      "title": "Home", "in_unique": 3, "in_body": 3,
+      "out_internal_unique": 3, "out_chrome": 4, "out_body": 3, "out_prose": 2, "out_external_unique": 1,
+      "has_breadcrumb_schema": false, "has_breadcrumb_visible": false,
+      "out_targets": ["https://ejemplo-correcto.test/guias"],
+      "inbound": [
+        {"from":"https://ejemplo-correcto.test/guias","text":"volver al inicio","region":"body","prose":true},
+        {"from":"https://ejemplo-correcto.test/guias/precio","text":"Ejemplo Correcto","region":"body","prose":true},
+        {"from":"https://ejemplo-correcto.test/guias/plazos","text":"Ejemplo Correcto","region":"body","prose":true}
+      ]
+    },
+    "https://ejemplo-correcto.test/guias": {
+      "status": 200, "depth": 1, "redirects": 0, "reached_by_crawl": true, "in_sitemap": true,
+      "title": "Guias", "in_unique": 3, "in_body": 3,
+      "out_internal_unique": 3, "out_chrome": 4, "out_body": 4, "out_prose": 3, "out_external_unique": 0,
+      "has_breadcrumb_schema": true, "has_breadcrumb_visible": true,
+      "out_targets": ["https://ejemplo-correcto.test/","https://ejemplo-correcto.test/guias/precio","https://ejemplo-correcto.test/guias/plazos"],
+      "inbound": [
+        {"from":"https://ejemplo-correcto.test/","text":"todas las guias de contratacion","region":"body","prose":true},
+        {"from":"https://ejemplo-correcto.test/guias/precio","text":"indice de guias","region":"body","prose":true},
+        {"from":"https://ejemplo-correcto.test/guias/plazos","text":"indice de guias","region":"body","prose":true}
+      ]
+    },
+    "https://ejemplo-correcto.test/guias/precio": {
+      "status": 200, "depth": 2, "redirects": 0, "reached_by_crawl": true, "in_sitemap": true,
+      "title": "Cuanto cuesta", "in_unique": 2, "in_body": 2,
+      "out_internal_unique": 3, "out_chrome": 4, "out_body": 3, "out_prose": 3, "out_external_unique": 0,
+      "has_breadcrumb_schema": true, "has_breadcrumb_visible": true,
+      "out_targets": ["https://ejemplo-correcto.test/","https://ejemplo-correcto.test/guias","https://ejemplo-correcto.test/guias/plazos"],
+      "inbound": [
+        {"from":"https://ejemplo-correcto.test/guias","text":"cuanto cuesta una reforma","region":"body","prose":true},
+        {"from":"https://ejemplo-correcto.test/guias/plazos","text":"lo que cuesta cada fase","region":"body","prose":true}
+      ]
+    },
+    "https://ejemplo-correcto.test/guias/plazos": {
+      "status": 200, "depth": 2, "redirects": 0, "reached_by_crawl": true, "in_sitemap": true,
+      "title": "Cuanto tarda", "in_unique": 2, "in_body": 2,
+      "out_internal_unique": 3, "out_chrome": 4, "out_body": 3, "out_prose": 3, "out_external_unique": 0,
+      "has_breadcrumb_schema": true, "has_breadcrumb_visible": true,
+      "out_targets": ["https://ejemplo-correcto.test/","https://ejemplo-correcto.test/guias","https://ejemplo-correcto.test/guias/precio"],
+      "inbound": [
+        {"from":"https://ejemplo-correcto.test/guias","text":"cuanto tarda una reforma","region":"body","prose":true},
+        {"from":"https://ejemplo-correcto.test/guias/precio","text":"los plazos reales de obra","region":"body","prose":true}
+      ]
+    }
+  }
+}

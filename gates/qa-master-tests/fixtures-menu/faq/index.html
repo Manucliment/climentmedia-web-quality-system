@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acordeon de FAQ | Fixture EST-10</title>
+<meta name="description" content="Fixture de la bateria: un acordeon de preguntas frecuentes usa aria-controls y sus paneles tienen CERO enlaces. Es legitimo, y el check no debe acusarlo.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- EL CONTROL NEGATIVO que hace falta para creerse el check.
+     `aria-controls` no es exclusivo de los menus: un acordeon de FAQ lo usa
+     igual, y sus paneles tienen CERO enlaces con toda la razon. Sin acotar el
+     check a <header>/<nav>, este fichero saldria en rojo y el gate acusaria a
+     las FAQ de las 5 webs. Aqui el acordeon vive dentro de <main>, que es donde
+     va, y el menu de arriba no tiene desplegables. -->
+<header>
+  <nav aria-label="Principal">
+    <a href="/producto/">Producto</a>
+    <a href="/agentes/">Agentes</a>
+  </nav>
+</header>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Fixture del acordeon</h1><p>El menu no tiene desplegables; el acordeon si usa aria-controls.</p></section>
+  <section data-sec="catalogo">
+    <h2>Preguntas frecuentes</h2>
+    <button aria-expanded="false" aria-controls="faq-1">Cuanto tarda?</button>
+    <div id="faq-1" hidden><p>Entre dos y tres semanas, sin enlaces dentro.</p></div>
+    <button aria-expanded="false" aria-controls="faq-2">Que incluye?</button>
+    <div id="faq-2" hidden><p>La maqueta, el contenido y la medicion.</p></div>
+  </section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Site repositories the documentation gate should also check.
+#
+# One absolute path per line. Blank lines and `#` comments are ignored.
+# Copy this file to `site-repos.conf` and edit. With no such file, the runner
+# says so out loud rather than printing nothing — because printing nothing reads
+# as "checked, all fine", and that is the failure this system exists to stop.
+#
+# WHY THIS EXISTS: a site repository's own CLAUDE.md is the documentation that
+# drifts hardest. Nobody re-reads it and no program was looking at it. The first
+# run across a real estate produced three findings — and all three were false
+# positives of the gate, which is what led to narrowing check D1. See trap §27.
+
+# /home/you/projects/example-site
+# /home/you/projects/another-site

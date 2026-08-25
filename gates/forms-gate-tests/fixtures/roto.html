@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Formulario roto | Fixture del paso 10</title>
+<style>
+  body { font: 16px/1.5 system-ui; margin: 2rem; }
+  /* A PROPOSITO: ni una regla para el formulario. Es el defecto real de
+     site-d, donde el <form> llevaba class="lead" -que en su hoja era la
+     ENTRADILLA, un parrafo-, asi que buscar `.lead` en el CSS DEVOLVIA una
+     regla y parecia estilado. */
+  .lead { font-size: 1.15rem; max-width: 62ch; }
+</style>
+</head>
+<body>
+<!-- CASO ROJO del paso 10. Reproduce, uno a uno, defectos que han estado EN
+     PRODUCCION en webs de cliente:
+       F3 · el cepo se ve (site-d, ahora mismo en vivo)
+       F4 · envio por mailto: (la web original de site-d)
+       F2 · un campo sin etiqueta
+       F6 · sin casilla de consentimiento
+       F5 · el "boton" es un <div> -- con teclado no se puede enviar -->
+<main>
+  <h1>Pide tu cita</h1>
+  <form class="lead" action="mailto:info@ejemplo.test">
+    <label for="nombre">Nombre</label>
+    <input id="nombre" name="nombre" type="text" required>
+
+    <!-- F2: sin etiqueta. El placeholder NO cuenta. -->
+    <input name="email" type="email" placeholder="Tu correo" required>
+
+    <!-- F3: EL CEPO. Sin CSS se pinta en pantalla con su etiqueta legible. -->
+    <label for="website">No rellenar</label>
+    <input id="website" name="website" type="text" autocomplete="off">
+
+    <label for="mensaje">Mensaje</label>
+    <textarea id="mensaje" name="mensaje"></textarea>
+
+    <!-- F5: no es un boton. -->
+    <div class="boton" onclick="this.form.submit()">Enviar</div>
+  </form>
+</main>
+</body>
+</html>

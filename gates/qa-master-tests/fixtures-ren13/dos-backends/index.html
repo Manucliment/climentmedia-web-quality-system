@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dos backends bajo un dominio | Fixture de REN-13</title>
+<meta name="description" content="Fixture de la bateria: una pagina del arbol estatico que declara una imagen servida por OTRO backend del mismo dominio. En modo candidato esa imagen no existe, y acusarla bloquearia un despliegue por un hueco del instrumento.">
+<link rel="canonical" href="https://fixture.test/">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<!-- 🔴 LA FORMA EXACTA DE site-b.example, 24-ago-2026. El dominio lo sirven DOS
+     webs: nuestro arbol estatico y un WordPress. Las fichas declaran 330
+     imagenes bajo `/wp-content/uploads/`, que jamas estaran en el arbol que
+     desplegamos —las sirve el otro backend— y que en PRODUCCION responden las
+     330 con 200 (medido).
+     El candidato sirve SOLO el arbol, asi que ahi dan 404 por construccion.
+     REN-13 las acusaba y dejaba el veredicto en FALLA: un despliegue bloqueado
+     por algo que no esta roto.
+     El discriminador correcto no es «existe el fichero» sino DE QUIEN ES LA
+     ZONA: `/css/` esta en el arbol -> la servimos nosotros -> un 404 ahi es
+     nuestro. `/wp-content/` no esta -> la sirve otro -> aqui no hay pregunta
+     que hacer, la contesta produccion. -->
+<body>
+<main>
+  <section><h1>Dos backends bajo un dominio</h1>
+    <p>Esta pagina la sirve el arbol estatico. La foto de abajo la sirve el WordPress del mismo dominio.</p>
+    <img src="/wp-content/uploads/2024/08/foto-del-otro-backend.jpg" alt="Foto servida por el otro backend" width="600" height="600">
+  </section>
+</main>
+</body>
+</html>

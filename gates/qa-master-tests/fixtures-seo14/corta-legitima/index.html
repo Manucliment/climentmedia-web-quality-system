@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- FIXTURE SEO-14 · PAGINA CORTA LEGITIMA.
+     Copia de la forma de site-a.example/merci: HTML estatico completo, corta
+     porque da las gracias. 132 caracteres de texto en la region de contenido
+     (medidos, no estimados), 1 h1, sin marcador de carga y sin contenedor
+     vacio. TIENE QUE PASAR SEO-14.
+     Con el umbral viejo (menos de 200 caracteres) salia acusada: 132 cae dentro
+     de la banda 40..199, que es justo donde vive site-a.example/merci (171).
+     OJO: en este comentario no puede aparecer NINGUNA etiqueta entre angulos.
+     La primera version llevaba escrita la palabra main entre angulos y el
+     buscador de la region de contenido la caso A ELLA, con lo que el fixture
+     media 299 caracteres y pasaba tambien con el codigo viejo: no probaba nada. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gracias por tu solicitud | Fixture</title>
+<meta name="description" content="Tu solicitud se ha enviado correctamente. El equipo te llamara en cuanto la revise, dentro del horario de atencion.">
+<link rel="canonical" href="https://site-d.example/">
+<meta name="robots" content="noindex,follow">
+<meta property="og:image" content="https://site-d.example/og.jpg">
+<meta property="og:image:alt" content="Gracias por tu solicitud">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Fixture"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://site-d.example/"}]}]}</script>
+</head>
+<body>
+<header><nav aria-label="Principal"><a href="/">Inicio</a></nav></header>
+<main id="main">
+<section class="section"><div class="wrap">
+<h1>Gracias por tu solicitud</h1>
+<p>Hemos recibido tu solicitud. Nuestro equipo te llamara en cuanto la revise, dentro del horario de atencion.</p>
+</div></section>
+</main>
+<footer><p>Fixture de prueba.</p></footer>
+</body>
+</html>

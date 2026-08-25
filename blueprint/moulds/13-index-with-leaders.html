@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 13 — indice-con-guias</title>
+<!--
+  PRIMITIVA: indice-con-guias       FAMILIA: entrada / navegacion interna
+  ORIGEN: ref-vicky.html (arquetipo LISTA/pack: portada + indice numerado con
+          puntos-guia). El original es un lienzo FIJO de 820px para una imagen de
+          LinkedIn — no tiene ni un breakpoint ni un enlace. Aqui se traduce a
+          navegacion web real: enlaces, teclado y responsive.
+
+  QUE TRABAJO HACE: da a una pagina larga un mapa y un ancla. Y de paso resuelve
+  el problema de fondo del diagnostico: una pagina de 8 secciones sin indice se
+  lee como un articulo; con indice se lee como un documento.
+
+  CUANDO: cualquier pagina de mas de ~5 secciones. Guias, comparativas largas,
+          documentacion, paginas de aprendizaje. Es lo primero que hay que
+          anadirle a `/learn/`.
+  CUANDO NO:
+   - Paginas de menos de 4 secciones: el indice ocupa mas que lo que indexa.
+   - Landings comerciales: el indice invita a saltarse el argumento.
+
+  QUE LO ROMPE:
+   - Que los textos del indice no sean LITERALMENTE los <h2> de la pagina. Si no
+     coinciden, el lector no encuentra la seccion a la que ha saltado.
+   - Los puntos-guia hechos con "......" escritos: se leen en voz alta uno a uno.
+     Aqui son un borde punteado de un <span> vacio y aria-hidden.
+   - Olvidar `scroll-margin-top` en los destinos: con cabecera fija, al saltar el
+     titulo queda debajo de la cabecera y parece que no ha funcionado.
+
+  MOVIL (390px): 1 columna y los puntos-guia DESAPARECEN por debajo de 640px.
+  A 390 el titulo ya ocupa casi el ancho y la guia queda de 6px: ruido. La
+  numeracion sigue dando la estructura.
+  ROL (09-tipos-de-pagina.md seccion 1): NINGUNO DE LOS 14 LE SIRVE, y por eso
+          este molde NO emite `data-sec`. Es un indice INTERNO de la pagina: no
+          es `mapa` (ese es geografico: zonas, como llegar), no es `catalogo`
+          (esos son los hijos de un hub, paginas distintas), y no es `hermanos`
+          (esos son enlaces laterales del cluster). Falta un rol `indice` en la
+          lista de seccion 1. Registrado el 10-ago-2026; NO se inventa aqui,
+          porque un rol que solo existe en un molde no lo comprueba nadie.
+          Mientras tanto, la pagina que use este molde pone el `data-sec` que le
+          corresponda por su anatomia, o lo deja sin poner a sabiendas.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m13-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* El `scroll-margin-top` de `:target` (sin el, al saltar, el titulo queda tapado
+     por la cabecera fija) esta en _base.css: es comportamiento de PAGINA, y un
+     molde que declara un selector global se lo aplica a todo lo que tenga al lado. */
+
+  .m13-idx{border-top:2px solid var(--tinta);margin:0;padding:0;
+       list-style:none;counter-reset:idx}
+  .m13-idx li{counter-increment:idx;border-bottom:1px solid var(--linea)}
+
+  .m13-idx a{display:flex;align-items:baseline;gap:var(--space-4);
+         padding:.7rem 0;text-decoration:none;color:var(--tinta);
+         font-size:var(--fs-body);line-height:1.4}
+  .m13-idx a:hover{color:var(--acento)}
+  .m13-idx a:focus-visible{outline:2px solid var(--acento);outline-offset:-2px}
+
+  .m13-idx a::before{content:counter(idx,decimal-leading-zero);
+                 flex:none;color:var(--tenue);font-size:var(--fs-small);
+                 font-weight:700;letter-spacing:.06em;
+                 font-variant-numeric:tabular-nums}
+  .m13-idx__t{flex:none;max-width:calc(100% - 5rem)}
+  /* Los puntos-guia: un borde, no caracteres. No se leen en voz alta. */
+  .m13-idx__g{display:none}
+  .m13-idx__n{margin-left:auto;flex:none;color:var(--tenue);font-size:var(--fs-small)}
+
+  @media(min-width:40rem){
+.m13-idx__g{display:block;flex:1;min-width:2rem;
+            border-bottom:1px dotted var(--linea);transform:translateY(-.35em)}
+    .m13-idx__n{margin-left:0}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec">
+  <div class="sec__in sec__in--texto">
+    <h2 class="sec__h">En esta p&aacute;gina</h2>
+    <p class="sec__sub">Los textos son literalmente los t&iacute;tulos de abajo.</p>
+
+    <ol class="m13-idx">
+      <li><a href="#s1"><span class="m13-idx__t">El primer apartado</span>
+        <span class="m13-idx__g" aria-hidden="true"></span><span class="m13-idx__n">3 min</span></a></li>
+      <li><a href="#s2"><span class="m13-idx__t">El segundo, con t&iacute;tulo m&aacute;s largo</span>
+        <span class="m13-idx__g" aria-hidden="true"></span><span class="m13-idx__n">5 min</span></a></li>
+      <li><a href="#s3"><span class="m13-idx__t">El tercero</span>
+        <span class="m13-idx__g" aria-hidden="true"></span><span class="m13-idx__n">2 min</span></a></li>
+      <li><a href="#s4"><span class="m13-idx__t">El cuarto</span>
+        <span class="m13-idx__g" aria-hidden="true"></span><span class="m13-idx__n">4 min</span></a></li>
+      <li><a href="#s5"><span class="m13-idx__t">Preguntas frecuentes</span>
+        <span class="m13-idx__g" aria-hidden="true"></span><span class="m13-idx__n">3 min</span></a></li>
+    </ol>
+  </div>
+</section>
+
+<!-- destinos, para poder probar el salto -->
+<section class="sec" id="s1"><div class="sec__in"><h2 class="sec__h">El primer apartado</h2><p>Contenido.</p></div></section>
+<section class="sec" id="s2"><div class="sec__in"><h2 class="sec__h">El segundo, con t&iacute;tulo m&aacute;s largo</h2><p>Contenido.</p></div></section>
+
+</body>
+</html>

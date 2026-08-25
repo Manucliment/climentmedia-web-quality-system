@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!-- FIXTURE SEO-14 · EL RODEO. Mismo esqueleto que el fixture `esqueleto`, pero
+     con una miga y un parrafo de relleno alrededor para pasar de los 40
+     caracteres. La pagina sigue sin existir sin JS: la cascara no es la pagina,
+     y no trae ni su h1. TIENE QUE FALLAR SEO-14, por el segundo camino.
+     Existe para que el arreglo no se pueda rodear engordando el contorno.
+     OJO: en este comentario no puede aparecer NINGUNA etiqueta entre angulos. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha de producto | Fixture</title>
+<meta name="description" content="Elige medida, acabado y extras, mira el precio final actualizado y compra online con garantia de tres anos.">
+<link rel="canonical" href="https://site-d.example/">
+<meta property="og:image" content="https://site-d.example/og.jpg">
+<meta property="og:image:alt" content="Ficha de producto">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Fixture"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://site-d.example/"}]}]}</script>
+</head>
+<body>
+<main id="main">
+<nav class="crumbs" aria-label="Miga"><ol><li><a href="/">Inicio</a></li><li><a href="/catalogo">Catalogo</a></li><li aria-current="page">Ficha</li></ol></nav>
+<p>Cargando la ficha del producto. Si no ves nada, activa JavaScript en tu navegador.</p>
+<div id="product"><div class="container"><div class="skeleton" style="height:60vh"></div></div></div>
+</main>
+<script type="module">
+  import { initProduct } from './js/product.js';
+  initProduct(document.getElementById('product'));
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es" data-tipo="servicio">
+<head>
+<meta charset="utf-8">
+<title>Rejilla estrujada — fixture rojo 24-ago-2026</title>
+<!--
+  🔴 NEGATIVO de ANCHO-MIN. TIENE QUE FALLAR.
+
+  Es la pareja de `button-row.html`. Los dos tienen una seccion cuyo
+  contenedor mide 510px, muy por debajo del 75 % de los 1120px que el propio
+  sitio declara. La diferencia es QUE hay dentro:
+
+    button-row.html  -> dos <a class="btn">   =  una fila de CTAs. PASA.
+    grid-squeezed.html-> tres tarjetas de texto = una rejilla.   FALLA.
+
+  Existe para que el arreglo del 24-ago no se pueda relajar. Aquel dia se enseño
+  a `celdasDe` a ignorar las acciones; si mañana alguien ensancha esa exclusion
+  -por ejemplo ignorando cualquier hijo con un enlace dentro- las tarjetas de
+  abajo, que llevan su enlace, dejarian de contar y este fixture pasaria a verde
+  sin que nadie se enterase. Un gate que solo tiene casos positivos se relaja
+  solo, y nadie lo nota hasta que deja pasar una web rota.
+
+  ESPERADO: FALLA, y por ANCHO-MIN. Si falla por otra cosa, el caso ya no mide
+  lo que dice medir y hay que arreglarlo, no cambiar el esperado.
+-->
+<style>
+  :root{--ancho:1120px}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif; font-size:17px; line-height:1.6;
+       background:#140d1f; color:#e8e2f0; margin:0}
+  .env{max-width:var(--ancho); margin:0 auto; padding-inline:24px}
+  section{padding:56px 0}
+  h1{font-size:2.4rem; margin:0 0 .75rem}
+  h2{font-size:1.5rem; margin:0 0 .75rem; color:#e3c37a}
+  p{max-width:68ch}
+  .btn{display:inline-block; padding:14px 22px; border-radius:10px;
+       background:#e3c37a; color:#241a10; font-weight:600; text-decoration:none}
+  /* AQUI esta el defecto: la rejilla de tarjetas encerrada en 510px. */
+  .rejilla-mala{list-style:none; padding:0; margin:2rem auto 0; display:grid; gap:22px;
+                grid-template-columns:repeat(3,1fr); max-width:510px}
+  .tar{background:#1e1430; border:1px solid #33254d; border-radius:12px; padding:16px}
+  details{border-top:1px solid #33254d; padding:12px 0}
+</style>
+</head>
+<body>
+<main>
+  <section class="env" data-sec="hero">
+    <h1>Terapia de pareja a distancia</h1>
+    <p>Sesiones por videollamada, en español, y siempre con la misma terapeuta.</p>
+    <p><a class="btn" href="https://wa.me/34600000000">Escribirme por WhatsApp</a></p>
+  </section>
+
+  <!-- Sin .env A PROPOSITO: asi el elemento mas ancho CON max-width de esta
+       seccion es la propia rejilla (510px), que es como estaba en la web real
+       donde se vio el fallo. Con un .env de 1120 alrededor, contenedorDe() se
+       queda con el .env y ANCHO-MIN no llega a mirar la rejilla. -->
+  <section data-sec="oferta" style="padding-inline:24px">
+    <h2>Lo que incluye cada sesión</h2>
+    <ul class="rejilla-mala">
+      <li class="tar"><h3><a href="/primera/">Primera consulta</a></h3><p>Una hora para entender qué está pasando y decidir si esto encaja contigo.</p></li>
+      <li class="tar"><h3><a href="/plan/">Plan por escrito</a></h3><p>Un documento con los pasos, los plazos y lo que se espera de cada parte.</p></li>
+      <li class="tar"><h3><a href="/seguimiento/">Seguimiento</a></h3><p>Revisión cada quince días para ajustar lo que no esté funcionando bien.</p></li>
+    </ul>
+  </section>
+
+  <section class="env" data-sec="objeciones">
+    <h2>Preguntas frecuentes</h2>
+    <details><summary>¿Funciona a distancia igual que en persona?</summary><p>En terapia de pareja la evidencia disponible no encuentra diferencias relevantes entre el formato presencial y el formato por videollamada, siempre que la conexión sea estable y el espacio sea privado para las dos personas.</p></details>
+    <details><summary>¿Cuántas sesiones hacen falta?</summary><p>Depende del caso, y por eso la primera consulta sirve para estimarlo. La mayoría de procesos se resuelven entre ocho y doce sesiones, repartidas a lo largo de tres o cuatro meses de trabajo continuado.</p></details>
+    <details><summary>¿Y si una de las dos personas no quiere venir?</summary><p>Se puede empezar igualmente. Buena parte del trabajo inicial consiste en entender la posición de quien sí acude, y con frecuencia eso cambia la disposición de la otra parte en pocas semanas.</p></details>
+  </section>
+
+  <section class="env" data-sec="cierre">
+    <h2>¿Hablamos?</h2>
+    <p>Cuéntame qué está pasando y te digo si puedo ayudarte.</p>
+    <p><a class="btn" href="https://wa.me/34600000000">Escribirme por WhatsApp</a></p>
+  </section>
+</main>
+</body>
+</html>

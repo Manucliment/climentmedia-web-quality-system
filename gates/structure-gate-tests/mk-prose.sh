@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Fabrica la PAGINA-PROSA de control: 8 secciones de h2 + parrafos.
+# Es el control negativo que define el encargo: si el gate no la caza, no sirve.
+set -u
+OUT="$1"
+{
+cat <<'HEAD'
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guia completa de ROAS para operadores de ads</title>
+<style>
+ :root{--tinta:#16181d;--papel:#fff;--acento:#2f6fed}
+ *{box-sizing:border-box}
+ body{margin:0;font:17px/1.7 system-ui,sans-serif;color:var(--tinta);background:var(--papel)}
+ nav,footer{padding:16px 24px;background:#f6f7f9;font-size:15px}
+ nav a,footer a{margin-right:16px;color:var(--acento)}
+ main{max-width:860px;margin:0 auto;padding:40px 24px}
+ h1{font-size:2.6rem;line-height:1.15;margin:0 0 20px}
+ h2{font-size:1.7rem;margin:36px 0 12px}
+ p{margin:0 0 18px}
+</style></head><body>
+<nav><a href="/">Inicio</a><a href="/learn/">Learn</a><a href="/agency/">Agencia</a><a href="/contacto/">Contacto</a></nav>
+<main>
+<h1>Guia completa de ROAS para operadores de ads</h1>
+<p>Esta pagina explica que es un buen ROAS, por que la respuesta depende del margen y del ciclo de compra, y como se decide un objetivo que no destruya volumen. Todo lo que viene a continuacion sale de cuentas reales gestionadas durante los ultimos cuatro anos.</p>
+HEAD
+i=1
+for t in "Que significa realmente el ROAS" \
+         "Por que el promedio del sector no sirve" \
+         "El margen manda sobre el multiplicador" \
+         "El ciclo de compra cambia la lectura" \
+         "Atribucion: lo que la plataforma se apunta" \
+         "Como fijar el objetivo sin matar el volumen" \
+         "Los tres errores que vemos cada semana" \
+         "Que revisar cada lunes por la manana"; do
+  echo "<h2>$t</h2>"
+  echo "<p>Parrafo primero de la seccion $i. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>"
+  echo "<p>Parrafo segundo de la seccion $i. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>"
+  echo "<p>Parrafo tercero de la seccion $i. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>"
+  echo "<p>Parrafo cuarto y ultimo de la seccion $i, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>"
+  i=$((i+1))
+done
+cat <<'TAIL'
+</main>
+<footer><a href="/">Inicio</a><a href="/legal/">Aviso legal</a></footer>
+</body></html>
+TAIL
+} > "$OUT"
+echo "escrito $OUT  $(wc -c < "$OUT") bytes"

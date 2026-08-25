@@ -1,0 +1,69 @@
+# =============================================================================
+#  compliance.conf.example  ·  las webs que entran en la matriz
+# =============================================================================
+#  Lo lee references/compliance.pl. Anadir una web es anadir un bloque; no hay
+#  que tocar el script.
+#
+#  🔴 `modo` NO ES DECORATIVO. Los cinco sitios sirven rutas de forma distinta y
+#     el auditor viejo daba 332 FALLOS FALSOS por resolver /services como
+#     services/index.html en un sitio que sirve services.html sin extension.
+#     compliance.pl VERIFICA el modo declarado contra el repo antes de medir y
+#     ABORTA esa web si no casa. Un modo mal declarado no produce una matriz con
+#     ruido: produce una matriz que miente entera.
+#
+#     plano-ext       /x.html  <->  repo/x.html            (shop.site-b.example)
+#     plano-sin-ext   /x       <->  repo/x.html            (site-a.example)
+#     dir-barra       /x/      <->  repo/x/index.html      (climentmedia, site-c)
+#     dir-sin-barra   /x       <->  repo/x/index.html      (site-d.example)
+#
+#  `no_aplica` EXIGE un porque despues de `:`. Sin porque, el script muere.
+#  Una lista de exclusiones sin motivo es el sitio donde se esconde la deriva.
+# =============================================================================
+
+[cm]
+nombre    = climentmedia.com
+dominio   = https://climentmedia.com
+repo      = /path/to/climentmedia-website
+modo      = dir-barra
+contacto  =
+gracias   =
+max_urls  = 25
+# La home de climentmedia es la nuestra: si algo falla aqui, falla en el sitio
+# donde vive el estandar. Es el control mas duro que tenemos.
+
+[site-a]
+nombre    = site-a.example
+dominio   = https://site-a.example
+repo      = /path/to/site-a-web
+modo      = plano-sin-ext
+contacto  = /contact
+gracias   = /merci
+max_urls  = 25
+
+[mob]
+nombre    = shop.site-b.example
+dominio   = https://shop.site-b.example
+repo      = /path/to/site-b-web
+modo      = plano-ext
+contacto  = /contactos.html
+gracias   =
+max_urls  = 25
+no_aplica = OR-03 : no hay web de origen; la tienda se construyo de cero sobre el WordPress de site-b.example, no se migro una pagina a pagina
+
+[site-c]
+nombre    = site-c.example
+dominio   = https://site-c.example
+repo      = /path/to/site-e-web
+modo      = dir-barra
+contacto  = /contacto/
+gracias   = /gracias/
+max_urls  = 25
+
+[bc]
+nombre    = site-d.example
+dominio   = https://site-d.example
+repo      = /path/to/site-d-web
+modo      = dir-sin-barra
+contacto  = /contacto
+gracias   = /gracias
+max_urls  = 25

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!-- FIXTURE SEO-14 · EL DEFECTO, aislado de site-b.
+     La region de contenido servida esta VACIA y hay senal POSITIVA de montaje:
+     marcador de carga mas un contenedor vacio que el guion de la pagina nombra.
+     TIENE QUE FALLAR SEO-14. Pesa lo mismo que la corta legitima: lo que los
+     separa NO es el tamano del fichero.
+     OJO: en este comentario no puede aparecer NINGUNA etiqueta entre angulos. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogo | Fixture</title>
+<meta name="description" content="Todo el catalogo, con sus medidas, acabados y precios, listo para comprar online con envio incluido.">
+<link rel="canonical" href="https://site-d.example/">
+<meta property="og:image" content="https://site-d.example/og.jpg">
+<meta property="og:image:alt" content="Catalogo">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Fixture"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://site-d.example/"}]}]}</script>
+</head>
+<body>
+<div id="app-header"></div>
+<main id="main"><div id="shop"><div class="container"><div class="skeleton" style="height:60vh"></div></div></div></main>
+<div id="app-footer"></div>
+<script type="module">
+  import { initShop } from './js/shop.js';
+  initShop(document.getElementById('shop'));
+</script>
+</body>
+</html>

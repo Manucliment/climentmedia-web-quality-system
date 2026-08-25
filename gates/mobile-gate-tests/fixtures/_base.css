@@ -1,0 +1,17 @@
+/* Estilos MINIMOS compartidos por las fixtures. Autocontenido a proposito: una
+   fixtura que depende del CSS de una web viva caduca el dia que se arregla esa
+   web -- ya paso con `bateria-gate-cache-caliente`. */
+* { box-sizing: border-box; margin: 0; }
+body { font: 16px/1.5 system-ui, sans-serif; color: #111; }
+header.nav { position: sticky; top: 0; z-index: 50; height: 64px; background: #fff;
+             border-bottom: 1px solid #ddd; display: flex; align-items: center; padding: 0 16px; }
+main { padding: 16px; }
+h1 { font-size: 30px; line-height: 1.2; margin: 12px 0; }
+p { margin: 12px 0; }
+.btn { display: inline-block; padding: 14px 20px; background: #06c; color: #fff;
+       text-decoration: none; border-radius: 8px; border: 0; font: inherit; cursor: pointer; }
+.relleno { height: 1400px; background: #f6f6f6; margin-top: 16px; }
+/* cromo flotante de abajo, el que tapa */
+.banner { position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; background: #fff;
+          border-top: 1px solid #ccc; padding: 16px; }
+.banner--alto { height: 320px; }

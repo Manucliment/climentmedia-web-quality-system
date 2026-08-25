@@ -1,0 +1,5 @@
+{ "_caso": "FRONTERA · guia larga (pagina de PROSA de 12,4 pantallas). El umbral de 6 pantallas NO le aplica: la sospecha de metodo de la sintesis dice que el gate lo aplicaba a paginas de prosa (4 de 15) y por eso salia 12 FALLA de 15. Con CTAs repartidos y sin bloques desbordados, DEBE PASAR.",
+  "innerWidth": 1280, "innerHeight": 720, "url": "https://climentmedia.com/learn/ejemplo/",
+  "screens": 12.4, "blocks": 41, "blocks_over_1screen": 0, "ctas": 4, "buttons_visibles": 0,
+  "max_gap_screens": 2.1, "es_pagina_prosa": true,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0 }

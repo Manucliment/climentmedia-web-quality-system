@@ -1,0 +1,10 @@
+/* Fixture del CENTINELA de A11Y-03z.
+   Una regla cuyo texto y cuyo fondo son EL MISMO color: en una web real eso no
+   existe (seria un texto invisible), asi que si el gate lo mide es que el gate
+   se ha equivocado. El caso original venia de tirar el alfa de
+   `rgba(var(--ok-rgb), .16)`. El centinela tiene que gritar, y NO contarlo
+   como fallo de contraste. */
+:root { --mismo: #333333; }
+body { background: #ffffff; }
+.imposible { color: var(--mismo); background: var(--mismo); }
+.buena     { color: #000000;      background: #ffffff; }

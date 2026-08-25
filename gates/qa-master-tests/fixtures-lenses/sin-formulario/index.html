@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture de medicion en su peor version | Climent Media</title>
+<meta name="description" content="Una pagina que carga el contenedor antes de declarar el consentimiento, con un formulario sin guarda de doble envio ni region viva de errores.">
+<link rel="canonical" href="https://climentmedia.com/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite"}</script>
+<!-- 🔴 MED-02 · GTM PRIMERO y el consent default DESPUES. El banner se ve igual
+     de bien, y el contenedor ya ha puesto cookies antes de que nadie acepte
+     nada. No se detecta mirando la pagina: hay que mirar el ORDEN. -->
+<script>gtag("consent","default",{"ad_storage":"denied"});</script>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-ABC1234');</script>
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://climentmedia.com/assets/og.png">
+</head>
+<body>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Portada</h1><p>Texto de la portada, suficientemente largo para que ninguna lente se queje de que la pagina esta vacia.</p></section>
+  <section data-sec="catalogo">
+    <h2>Pide cita</h2>
+    <!-- 🔴 A11Y-10 · sin aria-live ni role=alert: cuando el envio falla, quien
+         usa lector de pantalla no se entera de nada. -->
+    <div data-no-es-form action="/contacto.php" method="post"><p role="alert" aria-live="polite" id="err"></p>
+      <label for="n">Nombre</label><input id="n" name="nombre" type="text" autocomplete="name">
+      <label for="e">Correo</label><input id="e" name="email" type="email" autocomplete="email">
+      <button type="submit">Enviar</button>
+    </div>
+  </section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a></p></section>
+</main>
+<script src="/script.js" defer></script>
+</body>
+</html>

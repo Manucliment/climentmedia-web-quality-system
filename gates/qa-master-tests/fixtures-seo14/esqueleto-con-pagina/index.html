@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!-- FIXTURE SEO-14 · LA FRONTERA. Usa un marcador de carga igual que los otros
+     dos, pero la pagina SI viene servida: su h1 y su texto estan en el HTML, y
+     el esqueleto solo cubre un bloque que el JS enriquece (como catGrid en la
+     home de site-b, que tiene que seguir pasando).
+     TIENE QUE PASAR SEO-14: usar JS no es el defecto; el defecto es que la
+     pagina no exista sin el. Sin este caso, el arreglo seria «prohibido usar
+     JS», que es otra cosa.
+     OJO: en este comentario no puede aparecer NINGUNA etiqueta entre angulos. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Espejos LED a medida | Fixture</title>
+<meta name="description" content="Fabricamos espejos LED a medida con retroiluminacion, antivaho y garantia de tres anos, con envio a toda la peninsula.">
+<link rel="canonical" href="https://site-d.example/">
+<meta property="og:image" content="https://site-d.example/og.jpg">
+<meta property="og:image:alt" content="Espejos LED a medida">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Fixture"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://site-d.example/"}]}]}</script>
+</head>
+<body>
+<main id="main">
+<section class="section"><div class="wrap">
+<h1>Espejos LED a medida</h1>
+<p>Fabricamos cada espejo con la medida exacta de tu bano, con retroiluminacion regulable, sistema antivaho y garantia de tres anos. El precio se cierra antes de fabricar, sin sorpresas al montar.</p>
+<p>Trabajamos con instaladores en toda la peninsula y el plazo habitual de entrega es de dos a tres semanas desde que se aprueba el diseno definitivo.</p>
+</div></section>
+<section class="section"><div class="wrap">
+<h2>Los mas pedidos este mes</h2>
+<div id="masVendidos"><div class="skeleton" style="height:20vh"></div></div>
+</div></section>
+</main>
+<script type="module">
+  import { initTop } from './js/top.js';
+  initTop(document.getElementById('masVendidos'));
+</script>
+</body>
+</html>

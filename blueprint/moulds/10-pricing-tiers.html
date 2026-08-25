@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 10 — escalera-precios</title>
+<!--
+  PRIMITIVA: escalera-precios       FAMILIA: cuerpo
+  ORIGEN: ESCRITO DESDE CERO.
+  ⚠️ En el barrido del 10-ago esta primitiva salio 0, pero NO porque no la
+  tengamos: `#featGrid` y `.shop-grid` de shop.site-b.example los rellena JS por
+  fetch y quedan vacios en headless. La medicion decia "no existe" cuando lo que
+  pasaba es que no se podia ver. Se escribe aqui en HTML plano justamente por
+  eso: una escalera de precios que necesita JS para existir no la indexa nadie y
+  no la puede auditar nadie.
+
+  QUE TRABAJO HACE: convierte "¿cuanto cuesta?" en una decision entre 3 opciones
+  en lugar de un formulario de contacto.
+
+  CUANDO: hay precios publicos, o al menos rangos y un "desde".
+  CUANDO NO:
+   - Si el precio depende siempre del caso. Entonces la honestidad es un rango y
+     que de que depende, no tres columnas inventadas.
+   - Con mas de 3 planes: el cuarto no lo elige nadie y hace dudar de los otros.
+   - Si los planes se diferencian por cantidad y no por naturaleza: eso es un
+     selector, no tres tarjetas.
+
+  QUE LA ROMPE:
+   - 🔴 ESCRIBIR EL IMPORTE A MANO cuando existe una fuente de verdad. En
+     climentmedia.com los importes NO van en el HTML: se leen del catalogo de
+     Stripe a traves del backend, porque duplicarlos ya salio mal una vez.
+     Si el proyecto tiene catalogo, el numero se pinta desde ahi.
+   - Marcar el plan del medio como "recomendado" cuando no lo es. Se marca el que
+     de verdad compra la mayoria.
+   - Listas de ventajas de longitud distinta por columna: la mas corta parece
+     peor de lo que es. Se listan los MISMOS conceptos en las tres, y lo que no
+     lleva un plan se dice.
+
+  MOVIL (390px): 1 columna, y el plan destacado va PRIMERO (con `order`), no en
+  medio. En escritorio el del medio destaca por posicion; apilado, la posicion
+  del medio no significa nada.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="oferta". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m10-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+.m10-planes{display:flex;flex-direction:column;gap:var(--space-6);
+          list-style:none;margin:0;padding:0}
+
+  .m10-plan{display:flex;flex-direction:column;gap:var(--space-4);
+        background:var(--papel);border:1px solid var(--linea);
+        border-radius:var(--r);padding:var(--space-6)}
+  .m10-plan--dest{border-color:var(--acento);order:-1}  /* primero en movil */
+
+  .m10-plan__et{font-size:var(--fs-small);font-weight:700;letter-spacing:.1em;
+            text-transform:uppercase;color:var(--tenue)}
+  .m10-plan--dest .m10-plan__et{color:var(--acento)}
+  .m10-plan h3{margin:0;font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+  .m10-plan__p{margin:0;display:flex;align-items:baseline;gap:.3rem}
+  .m10-plan__p b{font-size:var(--fs-title);line-height:1;letter-spacing:-.03em;
+             font-variant-numeric:tabular-nums}
+  .m10-plan__p span{font-size:var(--fs-small);color:var(--tenue)}
+  .m10-plan__para{margin:0;font-size:var(--fs-body);color:var(--tenue)}
+
+  .m10-plan ul{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;
+           font-size:var(--fs-body)}
+  .m10-plan li{position:relative;padding-left:1.4rem;line-height:1.45}
+  .m10-plan li::before{content:"\2713";position:absolute;left:0;color:var(--acento);font-weight:700}
+  .m10-plan li.m10-off{color:var(--tenue)}
+  .m10-plan li.m10-off::before{content:"\2013";color:var(--tenue)}
+
+  /* El boton entero es de _base.css. Lo unico propio de la escalera es que
+     se pega al fondo de la ficha para que los tres queden a la misma altura. */
+  .m10-btn{margin-top:auto}
+
+  @media(min-width:40rem){
+.m10-planes{flex-direction:row;align-items:stretch}
+    .m10-planes > *{flex:1}
+    .m10-plan--dest{order:0}   /* en escritorio vuelve a su sitio */
+  }
+</style>
+</head>
+<body>
+
+<section class="sec sec--caja" data-sec="oferta">
+  <div class="sec__in">
+    <h2 class="sec__h">Precios</h2>
+    <p class="sec__sub">Los mismos conceptos en los tres. Lo que un plan no lleva, se dice.</p>
+
+    <ul class="m10-planes">
+
+      <li class="m10-plan">
+        <p class="m10-plan__et">Entrada</p>
+        <h3>Primer plan</h3>
+        <p class="m10-plan__p"><b>000&nbsp;&euro;</b><span>/ mes</span></p>
+        <p class="m10-plan__para">Para qui&eacute;n es, en una l&iacute;nea.</p>
+        <ul>
+          <li>Concepto uno</li>
+          <li>Concepto dos</li>
+          <li class="m10-off">Concepto tres</li>
+          <li class="m10-off">Concepto cuatro</li>
+        </ul>
+        <a class="btn btn--2 m10-btn" href="#">Empezar</a>
+      </li>
+
+      <li class="m10-plan m10-plan--dest">
+        <p class="m10-plan__et">El que elige la mayor&iacute;a</p>
+        <h3>Segundo plan</h3>
+        <p class="m10-plan__p"><b>000&nbsp;&euro;</b><span>/ mes</span></p>
+        <p class="m10-plan__para">Para qui&eacute;n es, en una l&iacute;nea.</p>
+        <ul>
+          <li>Concepto uno</li>
+          <li>Concepto dos</li>
+          <li>Concepto tres</li>
+          <li class="m10-off">Concepto cuatro</li>
+        </ul>
+        <a class="btn btn--1 m10-btn" href="#">Empezar</a>
+      </li>
+
+      <li class="m10-plan">
+        <p class="m10-plan__et">Completo</p>
+        <h3>Tercer plan</h3>
+        <p class="m10-plan__p"><b>000&nbsp;&euro;</b><span>/ mes</span></p>
+        <p class="m10-plan__para">Para qui&eacute;n es, en una l&iacute;nea.</p>
+        <ul>
+          <li>Concepto uno</li>
+          <li>Concepto dos</li>
+          <li>Concepto tres</li>
+          <li>Concepto cuatro</li>
+        </ul>
+        <a class="btn" href="#">Hablar</a>
+      </li>
+
+    </ul>
+
+    <p class="nota">IVA no incluido. Sin permanencia. Si el proyecto tiene
+       cat&aacute;logo de precios, estos importes se pintan desde &eacute;l, no se escriben aqu&iacute;.</p>
+  </div>
+</section>
+
+</body>
+</html>

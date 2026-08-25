@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture de accesibilidad en su peor version | Climent Media</title>
+<meta name="description" content="Una pagina con los cinco defectos de accesibilidad que mas se cuelan: SVG sin nombre, enlace mudo, dos main, campos sin autocomplete y un cepo alcanzable.">
+<link rel="canonical" href="https://climentmedia.com/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite"}</script>
+</head>
+<body>
+<!-- CASO ROJO de la lente de accesibilidad. Los cinco son HTML valido: ninguno
+     da error en ningun validador, y por eso viajan hasta produccion.
+       A11Y-05 el SVG decorativo sin aria-hidden: el lector lo anuncia
+       A11Y-06 un enlace que solo lleva un icono no tiene NOMBRE que anunciar
+       A11Y-07 DOS <main>: el salto "ir al contenido" deja de ser determinista
+       A11Y-09 campos sin autocomplete: el movil no autorrellena y se abandona
+       A11Y-11 el cepo con tabindex 0: quien navega con teclado CAE en el -->
+<main data-tipo="hub">
+  <section data-sec="hero">
+    <h1>Portada</h1>
+    <svg aria-hidden="true" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>
+    <a href="/otra/" aria-label="La hoja de ruta"><svg aria-hidden="true" viewBox="0 0 10 10"><path d="M1 1h8"/></svg></a>
+    <p>Texto de la portada, suficientemente largo para que ninguna lente se queje de que la pagina esta vacia.</p>
+  </section>
+  <section data-sec="catalogo">
+    <h2>Pide cita</h2>
+    <form action="/contacto.php" method="post">
+      <label for="n">Nombre</label><input id="n" name="nombre" type="text" autocomplete="name">
+      <label for="e">Correo</label><input id="e" name="email" type="email" autocomplete="email">
+      <div style="position:absolute;left:-9999px"><label for="w">No rellenar</label><input id="w" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true"></div>
+      <button type="submit">Enviar</button>
+    </form>
+  </section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a></p></section>
+</main>
+
+</body>
+</html>

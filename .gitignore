@@ -8,6 +8,13 @@ config.md
 _qa/
 *.bak-*
 
+# Battery run artefacts. `.ultima-bateria` records the LAST run, and committing it
+# is how a stale number gets quoted as current: a `--fast` run overwrites it with a
+# partial count that reads exactly like a full one.
+gates/.ultima-bateria
+gates/*-tests/work/
+gates/*-tests/out/
+
 # OS / editor noise
 .DS_Store
 Thumbs.db

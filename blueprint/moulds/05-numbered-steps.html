@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 05 — pasos-numerados</title>
+<!--
+  PRIMITIVA: pasos-numerados        FAMILIA: cuerpo
+  ORIGEN: web-steps-001 (ref-grovia-steps.html), VERSION B — la corregida.
+          El original anima `width` en un acordeon (50% <-> 25%): reflow en cada
+          fotograma, y en movil no hay puntero, asi que el paso "abierto" es
+          arbitrario. Se toma el RITMO (numero, titulo, frase corta, mucho aire)
+          y se tira el acordeon. Ya esta en produccion en site-a-web.
+
+  QUE TRABAJO HACE: responde "¿y esto como va?" con una secuencia que se lee de
+  un vistazo. Es la primitiva que mas baja la ansiedad antes de un formulario.
+
+  CUANDO: proceso, "como funciona", onboarding, que pasa despues de contactar.
+  CUANDO NO: si los elementos NO tienen orden. Numerar cosas que no van en orden
+             es mentir sobre la estructura -> `rejilla-caracteristicas`.
+
+  QUE LO ROMPE:
+   - Mas de 5 pasos: deja de ser un proceso y pasa a ser un manual.
+   - Pasos de longitud muy desigual: si el 2 ocupa el triple que el 1, es que
+     dentro del 2 hay dos pasos.
+   - Poner una flecha entre pasos en la version de 1 columna: a 390px apunta
+     hacia abajo y ocupa alto sin decir nada. El numero ya da el orden.
+
+  MOVIL (390px): 1 columna. El filete superior de cada paso se mantiene: es lo
+  que separa un paso del siguiente cuando no hay columnas.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="proceso". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m05-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+.m05-pasos{display:grid;grid-template-columns:1fr;gap:var(--space-6);
+         list-style:none;margin:0;padding:0;counter-reset:paso}
+  .m05-paso{border-top:2px solid var(--tinta);padding-top:var(--space-6);counter-increment:paso}
+  /* El numero sale de CSS: renumerar es reordenar el HTML, sin tocar textos. */
+  .m05-paso::before{content:counter(paso,decimal-leading-zero);
+                display:block;margin-bottom:var(--space-6);
+                font-size:var(--fs-small);font-weight:700;letter-spacing:.14em;
+                color:var(--acento);font-variant-numeric:tabular-nums}
+  .m05-paso h3{margin:0 0 var(--space-2);font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+  .m05-paso p{margin:0;color:var(--tenue);font-size:var(--fs-body);line-height:1.55;max-width:40ch}
+  .m05-paso__meta{display:inline-block;margin-top:var(--space-4);font-size:var(--fs-small);
+              color:var(--tenue);background:var(--papel);
+              border:1px solid var(--linea);border-radius:999px;padding:.15rem .6rem}
+
+  @media(min-width:40rem){
+.m05-pasos{grid-template-columns:repeat(2,1fr);gap:var(--space-8)}
+  }
+  @media(min-width:64rem){
+.m05-pasos{grid-template-columns:repeat(4,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec sec--caja" data-sec="proceso">
+  <div class="sec__in">
+    <h2 class="sec__h">C&oacute;mo funciona, en cuatro pasos</h2>
+
+    <ol class="m05-pasos">
+      <li class="m05-paso">
+        <h3>Primer paso</h3>
+        <p>Qu&eacute; pasa, en una frase. En segunda persona: lo hace &eacute;l, no nosotros.</p>
+        <p class="m05-paso__meta">2 minutos</p>
+      </li>
+      <li class="m05-paso">
+        <h3>Segundo paso</h3>
+        <p>La etiqueta de tiempo baja la ansiedad m&aacute;s que cualquier adjetivo.</p>
+        <p class="m05-paso__meta">El mismo d&iacute;a</p>
+      </li>
+      <li class="m05-paso">
+        <h3>Tercer paso</h3>
+        <p>Si un paso necesita dos frases largas, dentro hay dos pasos.</p>
+        <p class="m05-paso__meta">24 horas</p>
+      </li>
+      <li class="m05-paso">
+        <h3>Cuarto paso</h3>
+        <p>Cuatro es c&oacute;modo: cierra a 2x2 y a 4x1 sin dejar huecos.</p>
+        <p class="m05-paso__meta">Cuando quieras</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+</body>
+</html>
