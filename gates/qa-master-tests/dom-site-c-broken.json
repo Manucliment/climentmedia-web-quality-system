@@ -1,0 +1,5 @@
+{ "_caso": "CONTROL POSITIVO · site-c.example, la peor del gate de maqueta: 27,7 pantallas, 32 de 39 bloques sin CTA. Y los estados de contenido de G6. Tiene que cazar densidad Y estados.",
+  "innerWidth": 1280, "innerHeight": 720, "url": "https://site-c.example/",
+  "screens": 27.7, "blocks": 39, "blocks_over_1screen": 3, "ctas": 1, "buttons_visibles": 0,
+  "max_gap_screens": 6.0, "es_pagina_prosa": false,
+  "filas_cojas": 2, "titulares_huerfanos": 5, "alturas_desiguales": 1, "listas_de_uno": 1 }

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 12 — aparte-nota</title>
+<!--
+  PRIMITIVA: aparte-nota            FAMILIA: dentro del cuerpo (no es seccion)
+  ORIGEN: ESCRITO DESDE CERO.
+
+  QUE TRABAJO HACE: es la valvula de escape del sistema. Cuando una pagina tiene
+  que decir algo que NO encaja en ninguna otra primitiva (un aviso, una excepcion,
+  una definicion, la fuente de un dato), esto evita que vuelva a caer en un <p>
+  suelto. La mayoria de las paginas-prosa lo son porque no habia donde meter tres
+  frases sueltas.
+
+  ⚠️ ES LA ÚNICA PRIMITIVA DE LA CARPETA QUE NO ES UNA SECCION. Va DENTRO de otra
+  seccion, entre dos bloques. Por eso no lleva <section> ni contenedor propio:
+  hereda el ancho de quien la contiene, que debe ser la columna de lectura
+  (`sec__in--texto`). El <section> de este fichero es solo el marco de la demo.
+
+  🔴 RANURA OBLIGATORIA · EL ENLACE CONTEXTUAL
+  --------------------------------------------
+  Dos sitios, y los dos obligatorios cuando la variante se usa:
+   1. El parrafo de cuerpo que rodea al aparte lleva un <a class="enlace">.
+   2. La variante `--fuente` enlaza a DONDE se midio el dato. Una fuente sin
+      enlace es una afirmacion con tipografia de fuente.
+  `12-enlazado-interno.md` solo cuenta como contextual (`en_prosa`) un <a> dentro
+  de un <p>: ni el nav, ni el footer, ni los botones. El ancla dice adonde lleva.
+
+  CUANDO: un aviso legal corto, una excepcion importante, la fuente de un dato,
+          una definicion que hace falta para seguir leyendo.
+  CUANDO NO:
+   - Como sustituto de una seccion. Tres apartes seguidos son prosa con borde.
+     REGLA: maximo 2 por pagina, y nunca dos consecutivos.
+   - Para lo importante. Lo que va en un aparte se lee como secundario, porque
+     lo es. Si es lo principal, es una seccion.
+
+  QUE LA ROMPE:
+   - Emoji como unico portador del significado (⚠️ solo). Si el emoji no carga o
+     el lector de pantalla lo omite, el aviso se lee como texto normal. El tipo
+     va tambien en la etiqueta de texto.
+   - `role="alert"`: es para avisos que aparecen dinamicamente e interrumpen al
+     lector de pantalla. Un aviso estatico en una pagina NO lo lleva.
+   - Color como unica senal: quien no distingue rojo de gris no ve la diferencia
+     entre nota y aviso. Por eso cada variante lleva su etiqueta escrita.
+
+  MOVIL (390px): identico. Es una pieza de una sola columna por diseno.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="contexto". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m12-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* Ningun selector de elemento suelto (`h2{}`) ni de chasis (`.sec__in > p`):
+     los dos se escapaban a TODA la pagina en cuanto este molde se pegaba con
+     otro. Lo que es del molde lleva clase del molde. */
+  .m12-p{color:var(--tenue)}
+
+  /* LA PIEZA */
+  .m12-aparte{margin:var(--space-6) 0;padding:var(--space-4) var(--space-6);
+          border-left:3px solid var(--linea);background:var(--caja);
+          border-radius:0 var(--r) var(--r) 0}
+  .m12-aparte > *{margin:0}
+  .m12-aparte > * + *{margin-top:var(--space-2)}
+  /* La etiqueta escrita: el color y el simbolo NUNCA van solos. */
+  .m12-aparte__et{font-size:var(--fs-small);font-weight:700;letter-spacing:.08em;
+              text-transform:uppercase;color:var(--tenue)}
+  /* El contenedor va en `--measure` (34em) medidos con SU tamano de fuente.
+     El texto de dentro puede ser mas pequeno, y entonces en ese mismo ancho le
+     caben MAS caracteres: aqui llegue a medir 88 por linea. Por eso cada bloque
+     de texto lleva su propio tope, y por eso el CPL se MIDE en vez de deducirlo
+     del `em` (ver el aviso de --measure-max en _tokens.css). */
+  .m12-aparte p{font-size:var(--fs-body);line-height:1.55;color:var(--tinta);
+                max-width:var(--measure)}
+
+  /* Los dos unicos colores que no salen de la paleta: el ambar de aviso. Van
+     en el propio bloque, NO en `:root` (ahi pisaban la marca del cliente).
+     Medido: 5,51:1. */
+  .m12-aparte--aviso{--m12-aviso:#8a5a00;
+                     border-left-color:var(--m12-aviso);background:#fdf6e7}
+  .m12-aparte--aviso .m12-aparte__et{color:var(--m12-aviso)}
+
+  .m12-aparte--fuente{border-left-color:var(--acento);background:transparent;
+                  padding-block:0}
+  .m12-aparte--fuente .m12-aparte__et{color:var(--acento)}
+  .m12-aparte--fuente p{color:var(--tenue);font-size:var(--fs-small)}
+
+  /* Definicion: <dl> de verdad, no dos <p>. */
+  .m12-aparte--def dl{margin:0;display:grid;gap:.15rem}
+  .m12-aparte--def dt{font-weight:700;font-size:var(--fs-body)}
+  .m12-aparte--def dd{margin:0;font-size:var(--fs-body);color:var(--tenue);line-height:1.55}
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="contexto">
+  <div class="sec__in sec__in--texto">
+    <h2 class="sec__h">Una secci&oacute;n cualquiera</h2>
+    <!-- RANURA OBLIGATORIA · enlace contextual. Ver la cabecera. -->
+    <p class="m12-p">El texto normal de la secci&oacute;n va aqu&iacute;, en la columna de
+       lectura, y dentro de &eacute;l va el enlace que de verdad cuenta: uno a
+       <a class="enlace" href="/servicios/">la p&aacute;gina que resuelve esto</a>, con
+       ancla que dice ad&oacute;nde lleva.</p>
+
+    <!-- VARIANTE 1 · nota -->
+    <aside class="m12-aparte">
+      <p class="m12-aparte__et">Nota</p>
+      <p>Un apunte que ayuda pero no es imprescindible para seguir leyendo.</p>
+    </aside>
+
+    <p class="m12-p">Sigue el texto de la secci&oacute;n.</p>
+
+    <!-- VARIANTE 2 · aviso -->
+    <aside class="m12-aparte m12-aparte--aviso">
+      <p class="m12-aparte__et">Importante</p>
+      <p>Una excepci&oacute;n o una condici&oacute;n que cambia lo dicho arriba. El tipo va
+         escrito en la etiqueta, no solo en el color.</p>
+    </aside>
+
+    <p class="m12-p">Y sigue.</p>
+
+    <!-- VARIANTE 3 · definicion -->
+    <aside class="m12-aparte m12-aparte--def">
+      <p class="m12-aparte__et">Qu&eacute; significa</p>
+      <dl>
+        <dt>T&eacute;rmino</dt>
+        <dd>La definici&oacute;n, en una frase, sin remitir a otra p&aacute;gina.</dd>
+      </dl>
+    </aside>
+
+    <!-- VARIANTE 4 · fuente de un dato -->
+    <aside class="m12-aparte m12-aparte--fuente">
+      <p class="m12-aparte__et">Fuente</p>
+      <p>De d&oacute;nde sale la cifra de arriba, con fecha, y
+         <a class="enlace" href="/casos/">el caso donde se midi&oacute;</a>. Sin esto, un
+         dato es una afirmaci&oacute;n.</p>
+    </aside>
+  </div>
+</section>
+
+</body>
+</html>

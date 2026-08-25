@@ -1,0 +1,47 @@
+# =============================================================================
+#  anatomy.tsv — LA TABLA DE ANATOMIAS. UNA, y esta.
+# =============================================================================
+#  Fuente humana: 09-tipos-de-pagina.md §2, que se declara a si mismo «FUENTE
+#  UNICA de que secciones lleva cada tipo de pagina». Este fichero es esa misma
+#  tabla en forma legible por un programa. No es una segunda fuente: es la
+#  misma, y `anatomy.pl --gate` lo comprueba contando los OBL del markdown.
+#
+#  🔴 POR QUE EXISTE ESTE FICHERO (18-ago-2026)
+#  La tabla estaba escrita TRES veces —qa-master.pl, audit-vs-spec.pl y
+#  structure-gate.js— con un aviso en una de ellas que decia «duplicada A
+#  PROPOSITO: si 09 §2 cambia, se cambian LAS DOS». Cuando se midio, SIETE de
+#  los doce tipos discrepaban, y las dos que se prometian gemelas eran las que
+#  se habian ido del documento:
+#
+#    tipo         09 §2 dice                       lo que estaba escrito
+#    ficha        + prueba objeciones hermanos     qa/spec: solo hero oferta cierre
+#                                                  js: la clave se llamaba «producto»,
+#                                                  asi que NINGUNA pagina real la
+#                                                  encontraba y el check no miraba nada
+#    hub          + calificacion                   qa/spec: sin ella. Es la seccion
+#                                                  que distingue un hub de un menu
+#    guia         + objeciones                     qa/spec: sin ella
+#    comparativa  + objeciones                     qa/spec: sin ella
+#    precios      + prueba proceso                 qa/spec: sin ellas
+#    contacto     prueba es OBL; mapa es CONDICIONAL  qa/spec: exigian mapa y no prueba
+#    gracias      + cierre                         qa/spec: sin el
+#
+#  Es la trampa de §14 de 07-trampas.md aplicada a una tabla: copia y original
+#  no divergen «si» alguien se despista, divergen. La unica pregunta era cuando.
+#
+#  FORMATO   tipo | roles OBL (orden = orden en la pagina) | condicionales | § | OBL en el md | nota
+#  Los roles CONDICIONALES no se exigen: se aceptan si aparecen y no se echan
+#  de menos si no. El vocabulario de roles esta en 09 §1.
+# =============================================================================
+home|hero prueba oferta proceso cierre||2.1|5|
+servicio|hero oferta calificacion proceso objeciones hermanos cierre||2.2|7|
+ciudad|hero mapa oferta objeciones hermanos cierre||2.3|6|hero con el toponimo en el H1
+ficha|hero oferta prueba objeciones hermanos cierre||2.4|6|alias aceptado: producto
+hub|hero catalogo calificacion cierre||2.5|4|calificacion = como elegir entre los hijos
+guia|hero objeciones hermanos cierre||2.6|6|§2.6 comparte tabla con comparativa y marca OBL dos PRIMITIVAS (par-alterno, tabla-comparativa) que no son roles: por eso 6 marcas y 4 roles
+comparativa|hero alternativas objeciones hermanos cierre||2.6|6|idem guia
+precios|hero oferta prueba proceso objeciones cierre||2.8|6|
+contacto|hero prueba|formulario mapa|2.9|4|formulario OBL SI hay formulario · mapa OBL SI hay local: por eso 4 marcas y 2 roles exigidos
+gracias|hero proceso cierre||2.10|3|cierre = el siguiente paso, no el mismo
+legal|||2.11|0|prosa a proposito, sin anatomia y sin CTAs
+404|||2.11|0|un solo bloque: que ha pasado + 3-5 destinos

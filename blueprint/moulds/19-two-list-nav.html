@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 19 — nav-dos-listas</title>
+<!--
+  PRIMITIVA: nav-dos-listas         FAMILIA: chrome (cabecera)
+  ORIGEN: web-nav-001 (ref-reuma-megamenu.html). El molde original transcribe el
+          mega-menu entero y documenta SEIS defectos de ARIA del sitio de origen.
+          Aqui va la version reducida y arreglada.
+
+  🔑 LOS DOS ROBOS QUE IMPORTAN
+  1. EL PADRE PARTIDO EN DOS: un <a> real + un <button> aparte.
+     La etiqueta NAVEGA a la pagina de seccion; el chevron ABRE el panel.
+     Resuelve el fallo clasico del mega-menu: el padre suele ser "o navegable o
+     desplegable, nunca las dos", y en tactil un padre que solo despliega deja la
+     pagina de seccion INALCANZABLE. Dos controles, dos trabajos.
+  2. DOS LISTAS, NO UNA: `.menu--nav` (donde voy) y `.menu--util` (que hago:
+     buscar, entrar, contactar). Separarlas es lo que evita que el CTA se pierda
+     entre los enlaces de contenido.
+
+  ⛔ LO QUE NO SE COPIA DEL ORIGEN (son defectos reales de su markup):
+   - `id="NaN"` literal, tres veces: HTML invalido por IDs duplicados.
+   - `aria-haspopup` + `aria-expanded` en el <a>, que NO controla el panel: lo
+     controla el <button aria-controls>. El enlace anuncia un popup que no puede
+     abrir. ARIA duplicado y mentiroso.
+   - `role="menu"`/`menuitem` sobre enlaces de navegacion normales. Ese rol
+     promete semantica de menu de aplicacion (flechas, foco gestionado, Escape).
+     Si no se implementa, se ha firmado un contrato que no se cumple.
+     Navegacion de enlaces = <ul>/<li>/<a> y nada mas.
+   - `aria-hidden="true"` COMO MECANISMO DE OCULTADO: si el panel sigue enfocable,
+     el teclado tabula dentro de enlaces invisibles. Se oculta con [hidden].
+   - Duplicar los botones de sesion en un segundo nodo para movil.
+
+  ⚠️ Y la trampa de posicionamiento que costo una version: el ANCLA del panel es
+  la CABECERA, no el <li> del disparador. Con el <li> en `position:relative` y el
+  panel centrado sobre el, a 1280px el panel salia 154px FUERA por la izquierda.
+  Y NO lo delata un chequeo de scroll horizontal, porque desbordar hacia el
+  negativo no genera scroll. `.hd` ya esta posicionado (sticky) = ya es bloque
+  contenedor; basta con que el <li> NO sea relative.
+
+  CUANDO: >= 12 destinos, o varias familias de producto.
+  CUANDO NO: una web de servicios con 5 entradas. Ahi sobra: son 5 enlaces planos.
+
+  MOVIL (390px): el panel desplegable NO existe. Se muestra la lista plana
+  completa dentro de un <details> a ancho completo. Un mega-menu de dos columnas
+  a 390px es un panel que tapa la pagina entera y no aporta nada.
+  ROL (09-tipos-de-pagina.md seccion 1): NINGUNO, y es CORRECTO. Los roles de
+          seccion 1 describen secciones del CUERPO; esto es cromo de cabecera y
+          ni siquiera lleva <section>. En un barrido de secciones sale 0 y eso no
+          es un fallo. No emite `data-sec` a proposito.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m19-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* La cabecera es el ANCLA del panel. Ver la nota de arriba. */
+  .m19-hd{position:sticky;top:0;z-index:50;background:var(--papel);
+      border-bottom:1px solid var(--linea)}
+  .m19-hd__in{max-width:var(--wrap);margin-inline:auto;
+          display:flex;align-items:center;gap:var(--space-6);
+          padding:var(--space-4) var(--space-6)}
+  .m19-hd__logo{font-weight:800;letter-spacing:-.02em;text-decoration:none;
+            color:var(--tinta);font-size:var(--fs-body)}
+  .m19-hd__logo span{color:var(--acento)}
+
+  .m19-menu{display:flex;align-items:center;gap:.15rem;list-style:none;margin:0;padding:0}
+  .m19-menu a{text-decoration:none;color:var(--tinta);font-size:var(--fs-body);font-weight:500}
+  .m19-menu a:focus-visible,.m19-menu button:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+
+  /* ROBO #1: el padre partido — <a> que navega + <button> que despliega. */
+  .m19-padre{display:flex;align-items:center;border-radius:999px}
+  .m19-padre:hover{background:var(--caja)}
+  .m19-padre > a{padding:.45rem .2rem .45rem .7rem}
+  .m19-padre > button{display:grid;place-items:center;width:1.8rem;height:1.9rem;
+                  padding:0 .5rem 0 .2rem;background:none;border:0;cursor:pointer;
+                  color:var(--tenue)}
+  .m19-padre > button svg{width:11px;height:11px;transition:transform 180ms ease}
+  .m19-padre > button[aria-expanded=true] svg{transform:rotate(180deg)}
+
+  /* El panel: [hidden] de verdad, no aria-hidden. */
+  .m19-panel[hidden]{display:none}
+  .m19-panel{position:absolute;left:0;right:0;top:100%;
+         background:var(--papel);border-bottom:1px solid var(--linea);
+         box-shadow:0 12px 24px -12px rgba(22,24,29,.18)}
+  .m19-panel__in{max-width:var(--wrap);margin-inline:auto;padding:var(--space-6);
+             display:grid;gap:var(--space-6)}
+  .m19-panel ul{list-style:none;margin:0;padding:0;display:grid;gap:.1rem}
+  .m19-panel ul a{display:block;padding:.4rem 0;font-size:var(--fs-body)}
+  .m19-panel ul a:hover{color:var(--acento)}
+  /* ROBO #2b: la pieza destacada. Es OPCIONAL — no toda seccion necesita promo. */
+  .m19-promo{background:var(--caja);border-radius:var(--r);padding:var(--space-6)}
+  .m19-promo h3{margin:0 0 .3rem;font-size:var(--fs-body);line-height:1.3}
+  .m19-promo p{margin:0 0 var(--space-4);font-size:var(--fs-body);color:var(--tenue)}
+  .m19-promo a{font-size:var(--fs-body);color:var(--acento);font-weight:600}
+
+  /* ROBO #2: la segunda lista, la de "que hago". */
+  .m19-menu--util{margin-left:auto;gap:var(--space-4)}
+  .m19-menu--util .m19-cta{background:var(--acento);color:#fff;border-radius:var(--r);
+                   padding:.5rem 1rem;font-weight:600}
+
+  /* movil: sin panel, lista plana en un <details> */
+  .m19-movil{display:block;border-bottom:1px solid var(--linea)}
+  .m19-movil > summary{padding:var(--space-4) var(--space-6);cursor:pointer;
+                   font-size:var(--fs-body);font-weight:600;min-height:48px;
+                   display:flex;align-items:center}
+  .m19-movil ul{list-style:none;margin:0;padding:0 var(--space-6) var(--space-4)}
+  .m19-movil a{display:block;padding:.55rem 0;text-decoration:none;color:var(--tinta);
+           font-size:var(--fs-body)}
+  .m19-hd__esc{display:none}
+
+  .m19-cuerpo{max-width:var(--wrap);margin-inline:auto;padding:var(--space-8) var(--space-6)}
+  .m19-cuerpo p{max-width:var(--measure)}
+
+  @media(min-width:64rem){
+.m19-movil{display:none}
+    .m19-hd__esc{display:flex;align-items:center;gap:var(--space-6);flex:1}
+    .m19-panel__in{grid-template-columns:2fr 2fr 1.4fr}
+  }
+  @media(prefers-reduced-motion:reduce){
+.m19-padre > button svg{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="m19-hd">
+  <div class="m19-hd__in">
+    <a class="m19-hd__logo" href="#">Marca<span>.</span></a>
+
+    <!-- ESCRITORIO -->
+    <div class="m19-hd__esc">
+      <ul class="m19-menu m19-menu--nav">
+        <li class="m19-padre">
+          <a href="#">Secci&oacute;n</a>
+          <button type="button" aria-expanded="false" aria-controls="panel-1"
+                  aria-label="Abrir el submen&uacute; de Secci&oacute;n">
+            <svg viewBox="0 0 12 8" fill="none" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </li>
+        <li><a href="#" style="padding:.45rem .7rem;display:block">Otra</a></li>
+        <li><a href="#" style="padding:.45rem .7rem;display:block">Otra m&aacute;s</a></li>
+      </ul>
+
+      <ul class="m19-menu m19-menu--util">
+        <li><a href="#">Entrar</a></li>
+        <li><a class="m19-cta" href="#">Contactar</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- El panel cuelga de .hd, NO del <li>. Ver la nota del encabezado. -->
+  <div class="m19-panel" id="panel-1" hidden>
+    <div class="m19-panel__in">
+      <ul>
+        <li><a href="#">Destino uno</a></li>
+        <li><a href="#">Destino dos</a></li>
+        <li><a href="#">Destino tres</a></li>
+      </ul>
+      <ul>
+        <li><a href="#">Destino cuatro</a></li>
+        <li><a href="#">Destino cinco</a></li>
+        <li><a href="#">Destino seis</a></li>
+      </ul>
+      <div class="m19-promo">
+        <h3>La pieza destacada</h3>
+        <p>Un p&aacute;rrafo real. Es lo que hace que el men&uacute; se lea editorial y no como
+           fontaner&iacute;a. Es opcional.</p>
+        <a href="#">M&aacute;s sobre esto &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOVIL: lista plana, sin panel -->
+  <details class="m19-movil">
+    <summary>Men&uacute;</summary>
+    <ul>
+      <li><a href="#">Secci&oacute;n</a></li>
+      <li><a href="#">Destino uno</a></li>
+      <li><a href="#">Destino dos</a></li>
+      <li><a href="#">Otra</a></li>
+      <li><a href="#">Otra m&aacute;s</a></li>
+      <li><a href="#">Entrar</a></li>
+      <li><a href="#">Contactar</a></li>
+    </ul>
+  </details>
+</header>
+
+<main class="m19-cuerpo">
+  <p>Contenido de la p&aacute;gina, para ver la cabecera pegajosa al hacer scroll.</p>
+</main>
+
+<script>
+(function(){
+  var b = document.querySelector('.m19-padre > button');
+  var p = document.getElementById('panel-1');
+  function cerrar(){ b.setAttribute('aria-expanded','false'); p.hidden = true; }
+  b.addEventListener('click', function(){
+    var abierto = b.getAttribute('aria-expanded') === 'true';
+    b.setAttribute('aria-expanded', String(!abierto));
+    p.hidden = abierto;
+  });
+  // Escape cierra y devuelve el foco: si no, el foco se queda en un panel cerrado.
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !p.hidden) { cerrar(); b.focus(); }
+  });
+  document.addEventListener('click', function(e){
+    if (!p.hidden && !p.contains(e.target) && !b.contains(e.target)) cerrar();
+  });
+})();
+</script>
+</body>
+</html>

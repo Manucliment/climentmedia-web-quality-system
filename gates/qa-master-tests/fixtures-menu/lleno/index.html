@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desplegables que reparten | Fixture EST-10</title>
+<meta name="description" content="Fixture de la bateria: el mismo menu que el caso rojo, con el desplegable pobre ya colapsado a un enlace. Es exactamente el arreglo que se aplico a climentmedia.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- CASO VERDE de EST-10, y es el ARREGLO del caso rojo, no otro fichero: el
+     panel "p-agents" se ha colapsado a <a>. El panel que queda tiene 4 destinos
+     y sobrevive DOS <div> anidados, que es lo que rompe un `.*?</div>`. -->
+<header>
+  <nav aria-label="Principal">
+    <span class="droplink">
+      <a href="/producto/">Producto</a>
+      <button class="dropbtn" aria-expanded="false" aria-controls="p-producto"><span>Abrir</span></button>
+    </span>
+    <div class="megapanel" id="p-producto" hidden>
+      <ul>
+        <li><a href="/producto/meta/">Meta</a></li>
+        <li><a href="/producto/google/">Google</a></li>
+        <li><a href="/producto/precios/">Precios</a></li>
+      </ul>
+      <div class="promo"><div class="visual"></div><a href="/producto/como-funciona/">Como funciona</a></div>
+    </div>
+    <a href="/agentes/">Agentes</a>
+  </nav>
+</header>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Fixture del desplegable que reparte</h1><p>Mismo menu, con el pobre ya colapsado.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es" data-tipo="servicio">
+<head>
+<meta charset="utf-8">
+<title>Testimonios en rejilla — fixture verde 24-ago-2026</title>
+<!--
+  POSITIVO del aviso de cpl. TIENE QUE PASAR sin acusar «linea demasiado corta».
+
+  Es la pareja de `cpl-narrow-prose.html`. Los dos tienen parrafos de 200+
+  caracteres renderizados a ~285px. La diferencia es DONDE viven:
+
+    cpl-testimonial-grid.html -> dentro de una rejilla de 3 columnas. PASA.
+    cpl-narrow-prose.html      -> prosa corrida en su propia columna. FALLA.
+
+  El caso real: site-c.example/hipnosis-para-recuperar-a-tu-pareja-en-san-diego
+  medida a 1298px daba `cplMediana: 34` y avisaba de linea corta. De sus 12
+  «parrafos de lectura», 10 eran TESTIMONIOS dentro de tarjetas de 286px y uno
+  un peldano de escalera; el unico parrafo de prosa real median 493px a 17px,
+  o sea ~65 cpl, que esta perfectamente bien. El mismo aviso salia en las 5
+  paginas de ciudad y en /recuperar-el-amor/ — seis paginas acusadas, y cinco de
+  ellas son el destino de sus anuncios.
+
+  El filtro anterior era `len >= 200`, que es una PROXY: daba por hecho que una
+  celda de rejilla lleva texto corto. Un testimonio no lo lleva. El hecho no es
+  cuanto texto tiene sino donde vive, y eso se mide con las columnas del
+  contenedor.
+
+  ESPERADO: sin aviso de cpl. Si aparece, el filtro volvio a ser una proxy.
+-->
+<style>
+  :root{--ancho:1120px}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif; font-size:17px; line-height:1.6;
+       background:#140d1f; color:#e8e2f0; margin:0}
+  .env{max-width:var(--ancho); margin:0 auto; padding-inline:24px}
+  section{padding:56px 0}
+  h1{font-size:2.4rem; margin:0 0 .75rem}
+  h2{font-size:1.5rem; margin:0 0 1rem; color:#e3c37a}
+  h3{font-size:1.05rem; margin:0 0 .5rem}
+  p{max-width:68ch}
+  .btn{display:inline-block; padding:14px 22px; border-radius:10px;
+       background:#e3c37a; color:#241a10; font-weight:600; text-decoration:none}
+  /* Tres columnas de verdad: cada celda ronda los 285px, y esta bien. */
+  .testis{list-style:none; padding:0; margin:0; display:grid; gap:24px;
+          grid-template-columns:repeat(3,1fr)}
+  .testis li{background:#1e1430; border-radius:14px; padding:20px}
+  .testis p{font-size:.94rem; max-width:none; margin:0 0 .6rem}
+  .par{display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center}
+  .par img{width:100%; border-radius:14px}
+  figure{margin:0}
+</style>
+</head>
+<body>
+<main class="env">
+
+  <section data-sec="hero">
+    <h1>Hipnosis para recuperar a tu pareja</h1>
+    <p>Sesiones guiadas para trabajar el vinculo desde el subconsciente, con un
+      acompanamiento que empieza por escuchar lo que ha pasado antes de proponer
+      nada. La primera consulta sirve para ver si esto es para ti.</p>
+    <p><a class="btn" href="#contacto">Pedir una primera sesion</a></p>
+  </section>
+
+  <!-- Columna de lectura DE VERDAD: ~490px a 17px, unos 65 cpl. Cuenta. -->
+  <section data-sec="contexto">
+    <h2>Que es y como ayuda</h2>
+    <div class="par">
+      <div>
+        <p>La hipnosis no borra recuerdos ni obliga a nadie a sentir nada. Lo que
+          hace es bajar el ruido de la mente consciente para que se pueda mirar
+          de frente lo que duele, que suele ser justo lo que se lleva anos
+          esquivando. En esa calma aparecen los patrones que se repiten en cada
+          relacion, y verlos ya cambia algo.</p>
+        <p>El trabajo es progresivo y se nota en como reaccionas, no en lo que
+          hace la otra persona. Nadie puede prometerte un resultado sobre la
+          conducta de alguien que no esta en la sala, y quien te lo prometa te
+          esta vendiendo otra cosa. Lo que si se puede trabajar es tu parte.</p>
+      </div>
+      <figure>
+        <img src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect width='800' height='600' fill='%232b1d45'/%3E%3C/svg%3E"
+             alt="Sala de consulta" width="800" height="600">
+      </figure>
+    </div>
+  </section>
+
+  <!-- Los 200+ caracteres viven en celdas de 3 columnas: NO son lectura. -->
+  <section data-sec="prueba">
+    <h2>Lo que cuentan quienes ya vinieron</h2>
+    <ul class="testis">
+      <li>
+        <h3>Marta R.</h3>
+        <p>Llegue sin saber muy bien a que venia y con la sensacion de estar
+          haciendo el ridiculo. En la segunda sesion entendi que llevaba anos
+          repitiendo la misma discusion con personas distintas, y eso no me lo
+          habia dicho nadie antes de esa forma tan clara.</p>
+      </li>
+      <li>
+        <h3>Javier L.</h3>
+        <p>Lo que mas me sirvio fue que no me prometieran nada sobre ella. Vine
+          buscando que volviera y me fui entendiendo por que me habia ido yo
+          primero, aunque siguiera durmiendo en la misma casa. Tres meses
+          despues seguimos hablando, que ya es mas de lo que habia.</p>
+      </li>
+      <li>
+        <h3>Nuria P.</h3>
+        <p>Habia probado terapia de pareja y no funciono porque ibamos a
+          defendernos, no a escuchar. Aqui fui sola y fue justo lo contrario:
+          nadie a quien ganarle la razon. Salgo con herramientas para el dia que
+          la conversacion se pone dificil, que es casi siempre.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section data-sec="cta" id="contacto">
+    <h2>Primera consulta</h2>
+    <p>Cuentame por escrito que esta pasando y te digo con franqueza si creo que
+      esto te puede servir. Si no lo creo, te lo digo igual.</p>
+    <p><a class="btn" href="#contacto">Escribir ahora</a></p>
+  </section>
+
+</main>
+</body>
+</html>

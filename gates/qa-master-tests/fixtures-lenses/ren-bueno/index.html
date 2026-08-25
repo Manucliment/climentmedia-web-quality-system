@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture de rendimiento en su peor version | Climent Media</title>
+<meta name="description" content="Una pagina con las dos cosas que mas cuestan y menos se ven: imagenes sin dimensionar y un script que bloquea el pintado.">
+<link rel="canonical" href="https://climentmedia.com/">
+<!-- 🔴 REN-10 · un <script> SIN defer NI async en el <head> para el pintado
+     hasta que se descarga y ejecuta. En una web de captacion, eso es tiempo en
+     blanco antes de que el visitante vea el titular. -->
+<script src="/vendor.js" defer></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite"}</script>
+</head>
+<body>
+<main data-tipo="hub">
+  <!-- 🔴 REN-03 · <img> SIN width/height. El navegador no sabe cuanto hueco
+       reservar hasta que descarga el fichero, y el contenido salta cuando llega
+       (CLS). En site-a, 111 de 141 imagenes estaban asi. -->
+  <section data-sec="hero"><h1>Portada</h1><img src="/assets/foto.jpg" alt="Sala" width="1200" height="800"><p>Texto de la portada, suficientemente largo para que ninguna lente se queje de que la pagina esta vacia.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a></p></section>
+</main>
+</body>
+</html>

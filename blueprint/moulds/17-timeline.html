@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 17 — cronologia</title>
+<!--
+  PRIMITIVA: cronologia             FAMILIA: cuerpo
+  ORIGEN: ESCRITO DESDE CERO. La libreria no tiene ninguna linea de tiempo.
+
+  QUE TRABAJO HACE: ordena hechos en el tiempo con su ESTADO. Es la unica
+  primitiva del catalogo pensada para decir la verdad sobre lo que todavia no
+  esta hecho, y por eso lleva estado obligatorio en cada hito.
+
+  DIFERENCIA CON `pasos-numerados`: los pasos son lo que hara el LECTOR; la
+  cronologia es lo que ha hecho (o hara) el DUENO de la pagina. Un proceso de
+  contratacion son pasos; un roadmap es cronologia.
+
+  CUANDO: historia de la empresa, roadmap publico, fases de un proyecto, estado
+          de una migracion, "build in public".
+  CUANDO NO:
+   - Si todos los hitos son futuros. Una cronologia de promesas no es prueba de
+     nada; con 0 hechos, es una lista de deseos y se lee como tal.
+   - Si las fechas son vagas ("proximamente", "pronto"): o hay trimestre, o el
+     hito va sin fecha y con estado "sin fecha", que es mas honesto.
+
+  QUE LA ROMPE:
+   - Marcar como "hecho" algo que solo esta afirmado. La regla de la casa es
+     distinguir verificado en runtime de afirmado; esta primitiva existe para
+     sostener esa distincion, no para difuminarla.
+   - Hacer la linea con un `border-left` en el <li> y el punto con `::before`
+     sin `background` del papel: la linea atraviesa el punto y se ve un donut
+     partido. El punto tapa la linea, y para eso necesita fondo opaco.
+   - Mas de ~8 hitos: se agrupa por ano y el ano es el hito.
+
+  MOVIL (390px): identico, una sola columna. La cronologia NUNCA va a dos lados
+  (el zigzag centrado): a 390 colapsa a una columna igual, pero deja los hitos
+  con sangrias distintas segun si eran pares o impares y parece roto.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="contexto". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m17-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+.m17-cro{list-style:none;margin:0;padding:0}
+  .m17-hito{position:relative;padding:0 0 var(--space-8) var(--space-8);
+        border-left:2px solid var(--linea)}
+  .m17-hito:last-child{border-left-color:transparent;padding-bottom:0}
+
+  /* El punto necesita fondo opaco o la linea lo atraviesa. */
+  .m17-hito::before{content:"";position:absolute;left:-7px;top:.35rem;
+                width:12px;height:12px;border-radius:50%;
+                background:var(--papel);border:2px solid var(--linea);
+                box-sizing:border-box}
+  .m17-hito--hecho::before{background:var(--acento);border-color:var(--acento)}
+  .m17-hito--curso::before{border-color:var(--acento)}
+
+  .m17-hito__cab{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--space-4);
+             margin-bottom:.2rem}
+  .m17-hito time{font-size:var(--fs-small);font-weight:700;letter-spacing:.08em;
+             color:var(--tenue);font-variant-numeric:tabular-nums}
+  /* Estado en PALABRA, no solo en el color del punto. */
+  .m17-est{font-size:var(--fs-small);font-weight:700;letter-spacing:.06em;
+       text-transform:uppercase;border-radius:999px;padding:.1rem .5rem;
+       border:1px solid var(--linea);color:var(--tenue)}
+  .m17-est--hecho{color:var(--acento);border-color:var(--acento)}
+  .m17-est--curso{color:#8a5a00;border-color:#8a5a00}
+
+  .m17-hito h3{margin:0 0 .2rem;font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+  .m17-hito p{margin:0;color:var(--tenue);font-size:var(--fs-body);line-height:1.55;max-width:var(--measure)}
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="contexto">
+  <div class="sec__in sec__in--flujo">
+    <h2 class="sec__h">D&oacute;nde estamos, sin maquillar</h2>
+
+    <ol class="m17-cro">
+      <li class="m17-hito m17-hito--hecho">
+        <p class="m17-hito__cab"><time datetime="2026-03">Marzo 2026</time>
+           <span class="m17-est m17-est--hecho">Hecho</span></p>
+        <h3>Un hito que ocurri&oacute; de verdad</h3>
+        <p>Qu&eacute; cambi&oacute;. Verificable por alguien de fuera.</p>
+      </li>
+
+      <li class="m17-hito m17-hito--hecho">
+        <p class="m17-hito__cab"><time datetime="2026-06">Junio 2026</time>
+           <span class="m17-est m17-est--hecho">Hecho</span></p>
+        <h3>Otro hito real</h3>
+        <p>Qu&eacute; cambi&oacute;.</p>
+      </li>
+
+      <li class="m17-hito m17-hito--curso">
+        <p class="m17-hito__cab"><time datetime="2026-08">Agosto 2026</time>
+           <span class="m17-est m17-est--curso">En curso</span></p>
+        <h3>Lo que se est&aacute; haciendo ahora</h3>
+        <p>Y qu&eacute; falta para darlo por hecho.</p>
+      </li>
+
+      <li class="m17-hito">
+        <p class="m17-hito__cab"><time datetime="2026-Q4">Q4 2026</time>
+           <span class="m17-est">Previsto</span></p>
+        <h3>Lo siguiente</h3>
+        <p>Con trimestre, no con &laquo;pr&oacute;ximamente&raquo;.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+</body>
+</html>

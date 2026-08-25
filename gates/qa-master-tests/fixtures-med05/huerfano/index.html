@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gracias | Fixture de data-* huerfano</title>
+<meta name="description" content="Fixture de la bateria: emite un atributo de medicion que ningun script lee. Es la forma exacta del fallo mas caro del parque: la conversion muerta de site-d.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<!-- 🔴 `data-thanks` EMITIDO Y SIN LECTOR. Ningun .js del arbol lo busca, asi
+     que la conversion que deberia dispararse aqui no se dispara nunca, y nada
+     lo dice: la pagina responde 200 y se ve perfecta. -->
+<body data-thanks="thank_you_view">
+<main data-tipo="gracias">
+  <section data-sec="hero"><h1>Gracias</h1><p>Hemos recibido tu mensaje.</p></section>
+  <section data-sec="proceso"><h2>Que pasa ahora</h2><p>Te escribimos en 24 horas.</p></section>
+</main>
+<script src="script.js"></script>
+</body>
+</html>

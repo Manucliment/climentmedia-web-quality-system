@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desplegable medio vacio | Fixture EST-10</title>
+<meta name="description" content="Fixture de la bateria: un menu con un desplegable que promete un panel y entrega dos enlaces, uno de ellos el mismo del padre. Es el defecto real de climentmedia el 13-ago-2026.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- CASO ROJO de EST-10. El panel "p-agents" tiene DOS destinos distintos, y uno
+     es el mismo enlace del padre, asi que el desplegable no reparte nada.
+     El otro panel, "p-producto", tiene 4 y esta bien: el check tiene que
+     distinguirlos, no dar por mala la cabecera entera. -->
+<header>
+  <nav aria-label="Principal">
+    <span class="droplink">
+      <a href="/producto/">Producto</a>
+      <button class="dropbtn" aria-expanded="false" aria-controls="p-producto"><span>Abrir</span></button>
+    </span>
+    <div class="megapanel" id="p-producto" hidden>
+      <ul>
+        <li><a href="/producto/meta/">Meta</a></li>
+        <li><a href="/producto/google/">Google</a></li>
+        <li><a href="/producto/precios/">Precios</a></li>
+      </ul>
+      <div class="promo"><a href="/producto/como-funciona/">Como funciona</a></div>
+    </div>
+    <span class="droplink">
+      <a href="/agentes/">Agentes</a>
+      <button class="dropbtn" aria-expanded="false" aria-controls="p-agents"><span>Abrir</span></button>
+    </span>
+    <div class="megapanel" id="p-agents" hidden>
+      <ul>
+        <li><a href="/agentes/">Todos los agentes</a></li>
+      </ul>
+      <div class="promo"><a href="/producto/como-funciona/">Como funciona</a></div>
+    </div>
+  </nav>
+</header>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Fixture del desplegable pobre</h1><p>La maqueta esta bien: lo que falla es el menu.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+</body>
+</html>

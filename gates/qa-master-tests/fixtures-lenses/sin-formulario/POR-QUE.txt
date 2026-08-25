@@ -1,0 +1,3 @@
+# fixture: un sitio SIN NINGUN formulario.
+# Existe para el caso que faltaba: A11Y-09/10/11 no pueden DESAPARECER
+# del informe cuando no hay formulario. Antes del 19-ago-2026 desaparecian.

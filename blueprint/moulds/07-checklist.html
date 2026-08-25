@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 07 — lista-comprobacion</title>
+<!--
+  PRIMITIVA: lista-comprobacion     FAMILIA: cuerpo
+  ORIGEN: ESCRITO DESDE CERO. `web-chips-001` de site-a es pariente lejano
+          (pildoras enlazadas), pero no resuelve esto.
+
+  QUE TRABAJO HACE: sustituye el parrafo de "esto es para ti si..." por dos
+  columnas que el lector se auto-aplica en cuatro segundos. Es la primitiva que
+  mejor CALIFICA: la gente que no encaja se va sola, y eso es una funcion, no
+  una perdida.
+
+  POR QUE ESTA EN LA CARPETA: es el reemplazo directo mas barato de una tirada
+  de <p>. Cualquier parrafo que enumere condiciones ya es esta primitiva mal
+  maquetada. En el diagnostico, `%` de texto en <p> sueltos era 0,692 en las
+  nuestras contra 0,303 en los moldes ajenos; esta pieza es la que mas rapido
+  mueve ese numero sin tocar ni una palabra del texto.
+
+  CUANDO: cualificar (para quien si / para quien no), incluido vs no incluido,
+          requisitos, "que necesitas tener a mano".
+  CUANDO NO:
+   - Si la columna "no" esta vacia o es de mentira ("no es para quien no quiere
+     crecer"). Una columna NO deshonesta destruye la credibilidad de la de al
+     lado. Si no hay un "no" real, se usa una sola columna.
+   - Si los items necesitan explicacion de mas de una linea -> `par-alterno`.
+
+  QUE LA ROMPE:
+   - Usar iconos ✓/✗ como TEXTO dentro del <li>: un lector de pantalla lee
+     "marca de verificacion" en cada linea, 12 veces. Van como ::before
+     decorativo, y la distincion la lleva el <h3> de cada columna.
+   - Mas de 6 items por columna: deja de ser una comprobacion y es un indice.
+   - Columnas de longitud muy distinta: si una tiene 6 y otra 2, la de 2 parece
+     un descuido. Se igualan o se usa una sola.
+
+  MOVIL (390px): las dos columnas se apilan y la de "si" va primero. El borde
+  lateral de color se convierte en borde superior, que es lo unico que separa
+  visualmente dos listas apiladas sin meter mas alto.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="calificacion". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m07-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+.m07-cols{display:grid;grid-template-columns:1fr;gap:var(--space-6)}
+
+  .m07-col{background:var(--caja);border-radius:var(--r);padding:var(--space-6);
+       border-top:3px solid var(--linea)}
+  .m07-col--si{border-top-color:var(--acento)}
+  .m07-col h3{margin:0 0 var(--space-4);font-size:var(--fs-section);line-height:1.3;letter-spacing:-.01em}
+
+  .m07-col ul{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-4)}
+  .m07-col li{position:relative;padding-left:1.6rem;font-size:var(--fs-body);line-height:1.5}
+  /* La marca es DECORATIVA: no se lee. La distincion la da el <h3>. */
+  .m07-col li::before{position:absolute;left:0;top:0;font-weight:700}
+  .m07-col--si li::before{content:"\2713";color:var(--acento)}
+  .m07-col--no li::before{content:"\2013";color:var(--tenue)}
+  .m07-col--no li{color:var(--tenue)}
+
+  @media(min-width:40rem){
+.m07-cols{grid-template-columns:1fr 1fr;gap:var(--space-8)}
+    .m07-col{border-top:0;border-left:3px solid var(--linea);border-radius:0 var(--r) var(--r) 0}
+    .m07-col--si{border-left-color:var(--acento)}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="calificacion">
+  <div class="sec__in">
+    <h2 class="sec__h">Para qui&eacute;n es esto, y para qui&eacute;n no</h2>
+
+    <div class="m07-cols">
+
+      <div class="m07-col m07-col--si">
+        <h3>Encaja si&hellip;</h3>
+        <ul>
+          <li>Primera condici&oacute;n, concreta y comprobable por el lector.</li>
+          <li>Segunda condici&oacute;n.</li>
+          <li>Tercera condici&oacute;n.</li>
+          <li>Cuarta condici&oacute;n.</li>
+        </ul>
+      </div>
+
+      <div class="m07-col m07-col--no">
+        <h3>No encaja si&hellip;</h3>
+        <ul>
+          <li>Un caso real que de verdad rechazamos.</li>
+          <li>Otro caso real.</li>
+          <li>Un tercero.</li>
+          <li>Un cuarto, para que las dos columnas midan igual.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

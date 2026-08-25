@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pie sin legales y con la marca de ancla | Fixture EST-12b y EST-12e</title>
+<meta name="description" content="Fixture de la bateria: un pie con un solo enlace legal y con el enlace de autoria usando la marca pelada como ancla, que es el patron de red de enlaces.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- CASO ROJO doble:
+       EST-12b · un solo enlace legal. Un sitio que recoge datos y esconde su
+                 politica no tiene un problema de SEO: el visitante no puede
+                 ejercer nada.
+       EST-12e · el ancla del enlace de autoria es la MARCA PELADA. Repetida en
+                 el pie de las cinco webs, es exactamente la firma que Google
+                 lee como red de enlaces -- que es la razon por la que este
+                 backlink se pone con texto distinto en cada sitio.
+     Sin schema a proposito: sin `telephone` no hay dos listas que puedan
+     discrepar, y EST-12c no debe inventarse un defecto. -->
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Fixture del pie incompleto</h1><p>Falta media cosa.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+<footer>
+  <p>Ejemplo &middot; Madrid</p>
+  <nav aria-label="Legal">
+    <a href="/aviso-legal/">Aviso legal</a>
+  </nav>
+  <p><a href="https://climentmedia.com/">Climent Media</a></p>
+</footer>
+</body>
+</html>

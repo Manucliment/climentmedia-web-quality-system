@@ -433,5 +433,5 @@ while production served the old stylesheet.
 **Before touching the system itself** (a gate, a program, this documentation):
 
 ```bash
-bash gates/tests/run-all.sh     # every battery + documentation + coverage
+bash gates/run-all.sh     # every battery + documentation + coverage
 ```

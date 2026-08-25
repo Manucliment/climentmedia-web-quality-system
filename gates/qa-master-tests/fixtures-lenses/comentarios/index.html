@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Una pagina CORRECTA que habla de los defectos | Climent Media</title>
+<meta name="description" content="Fixture de control: una pagina sin ningun defecto, cuyos comentarios nombran el vocabulario que buscan los checks. Si alguno cambia de veredicto, lee prosa.">
+<link rel="canonical" href="https://climentmedia.com/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://climentmedia.com/assets/og.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite"}</script>
+<!-- Esta pagina es CORRECTA. Los comentarios nombran a proposito lo que buscan
+     los barridos, que es exactamente lo que hace una plantilla bien documentada:
+       · el segundo <h1> es el defecto que caza SEO-09b
+       · un <svg> decorativo necesita aria-hidden (A11Y-05)
+       · el contenedor GTM-ZZZ9999 va DESPUES del consent default (MED-02)
+       · el formulario necesita aria-live o role="alert" (A11Y-10)
+       · un <script src="/pesado.js"> sin defer bloquea el pintado (REN-10)
+       · nunca dos <main> en la misma pagina (A11Y-07)
+       · <h2> tras <h4> es un salto de nivel (A11Y-08) -->
+</head>
+<body>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Portada</h1><p>Texto de la portada, suficientemente largo para que ninguna lente se queje de que la pagina esta vacia y podamos medir lo que toca.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a></p></section>
+</main>
+</body>
+</html>

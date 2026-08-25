@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es" data-tipo="servicio">
+<head>
+<meta charset="utf-8">
+<title>Fila de botones — fixture 24-ago-2026</title>
+<!--
+  POSITIVO de ANCHO-MIN. Una fila de DOS BOTONES centrados no es una rejilla de
+  tarjetas estrujada: es estrecha A PROPOSITO.
+
+  Antes del 24-ago-2026 el gate la acusaba. `celdasDe` cuenta como celda a
+  cualquier hijo de un flex/grid con >=20 caracteres de texto, y un CTA lleva
+  texto -«Escribirme por WhatsApp» son 23-. Asi que dos botones pasaban por dos
+  celdas y su contenedor -510px- salia acusado de no llegar al 75 % del ancho
+  del sitio. Medido en site-c.example: saltaba en /recuperar-el-amor/ y en
+  /vidente-.../, las dos con «bloque 7, p.banda-btns a 510px», y ninguna de las
+  dos tenia una rejilla ahi.
+
+  ESPERADO: PASA. Su pareja roja es `grid-squeezed.html`, que con el mismo
+  contenedor estrecho SI tiene que fallar: si algun dia este fixture pasa
+  porque ANCHO-MIN ha dejado de mirar, aquel lo canta.
+-->
+<style>
+  :root{--ancho:1120px}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif; font-size:17px; line-height:1.6;
+       background:#140d1f; color:#e8e2f0; margin:0}
+  .env{max-width:var(--ancho); margin:0 auto; padding-inline:24px}
+  section{padding:56px 0}
+  h1{font-size:2.4rem; margin:0 0 .75rem}
+  h2{font-size:1.5rem; margin:0 0 .75rem; color:#e3c37a}
+  p{max-width:68ch}
+  .banda-btns{display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
+              max-width:510px; margin:1.5rem auto 0}
+  .btn{display:inline-block; padding:14px 22px; border-radius:10px;
+       background:#e3c37a; color:#241a10; font-weight:600; text-decoration:none}
+  .btn-2{background:transparent; color:#e3c37a; border:1px solid #e3c37a}
+  .rejilla{list-style:none; padding:0; margin:2rem 0 0; display:grid; gap:22px;
+           grid-template-columns:repeat(3,1fr); max-width:var(--ancho)}
+  .tar{background:#1e1430; border:1px solid #33254d; border-radius:12px; padding:20px}
+  details{border-top:1px solid #33254d; padding:12px 0}
+</style>
+</head>
+<body>
+<main>
+  <section class="env" data-sec="hero">
+    <h1>Terapia de pareja a distancia</h1>
+    <p>Sesiones por videollamada, en español, y siempre con la misma terapeuta.</p>
+    <p class="banda-btns">
+      <a class="btn" href="https://wa.me/34600000000">Escribirme por WhatsApp</a>
+      <a class="btn btn-2" href="/contacto/">Dejar mis datos</a>
+    </p>
+  </section>
+
+  <section class="env" data-sec="oferta">
+    <h2>Lo que incluye cada sesión</h2>
+    <ul class="rejilla">
+      <li class="tar"><h3>Primera consulta</h3><p>Una hora para entender qué está pasando y decidir si esto encaja contigo.</p></li>
+      <li class="tar"><h3>Plan por escrito</h3><p>Un documento con los pasos, los plazos y lo que se espera de cada parte.</p></li>
+      <li class="tar"><h3>Seguimiento</h3><p>Revisión cada quince días para ajustar lo que no esté funcionando bien.</p></li>
+    </ul>
+  </section>
+
+  <section class="env" data-sec="objeciones">
+    <h2>Preguntas frecuentes</h2>
+    <details><summary>¿Funciona a distancia igual que en persona?</summary><p>En terapia de pareja la evidencia disponible no encuentra diferencias relevantes entre el formato presencial y el formato por videollamada, siempre que la conexión sea estable y el espacio sea privado para las dos personas.</p></details>
+    <details><summary>¿Cuántas sesiones hacen falta?</summary><p>Depende del caso, y por eso la primera consulta sirve para estimarlo. La mayoría de procesos se resuelven entre ocho y doce sesiones, repartidas a lo largo de tres o cuatro meses de trabajo continuado.</p></details>
+    <details><summary>¿Y si una de las dos personas no quiere venir?</summary><p>Se puede empezar igualmente. Buena parte del trabajo inicial consiste en entender la posición de quien sí acude, y con frecuencia eso cambia la disposición de la otra parte en pocas semanas.</p></details>
+  </section>
+
+  <!-- Sin .env, igual que su pareja roja: el elemento mas ancho con max-width
+       es la fila de botones (510px). La UNICA diferencia entre los dos fixtures
+       es lo que hay dentro: botones aqui, tarjetas de texto alli. -->
+  <section data-sec="cierre" style="padding-inline:24px">
+    <h2>¿Hablamos?</h2>
+    <p>Cuéntame qué está pasando y te digo si puedo ayudarte.</p>
+    <p class="banda-btns">
+      <a class="btn" href="https://wa.me/34600000000">Escribirme por WhatsApp</a>
+      <a class="btn btn-2" href="/contacto/">Dejar mis datos</a>
+    </p>
+  </section>
+</main>
+</body>
+</html>

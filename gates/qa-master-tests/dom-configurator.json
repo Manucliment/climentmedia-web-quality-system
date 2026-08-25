@@ -1,0 +1,6 @@
+{ "_caso": "FRONTERA · pagina-configurador (shop.site-b.example/a-medida.html, medido 7-ago-2026). 0 CTA con clase reconocida y 14 <button> visibles. NO puede salir acusada: es la unica excepcion declarada de 08-qa-final.",
+  "innerWidth": 1280, "innerHeight": 720, "url": "https://shop.site-b.example/a-medida.html",
+  "screens": 5.3, "blocks": 9, "blocks_over_1screen": 0, "ctas": 0, "buttons_visibles": 14,
+  "max_gap_screens": 1.2, "es_pagina_prosa": false,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0,
+  "lcp_ms": 1800, "cls": 0.02, "overflow_horizontal": false }

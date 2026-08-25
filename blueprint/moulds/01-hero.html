@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 01 — hero-pastilla</title>
+<!--
+  PRIMITIVA: hero-pastilla          FAMILIA: entrada
+  ORIGEN: web-hero-001 (ref-norma-hero-badge.html). Se toma la ESTRUCTURA
+          (pastilla + h1 + subtitulo + par de acciones + prueba) y el acabado de
+          cristal de la pastilla. Ni el copy ni la marca del original.
+
+  QUE TRABAJO HACE: situa el sitio en una frase antes del titular, y pone la
+  primera accion por encima del pliegue. Es lo unico que lee el 60% de la gente.
+
+  CUANDO: home o landing comercial.
+  CUANDO NO: paginas interiores. Verificado en Site A a Domicile: la pastilla era
+             SOLO de la home; ponerla en las 17 invento un elemento que el
+             cliente no habia aprobado.
+
+  QUE LO ROMPE:
+   - h1 de mas de ~10 palabras: a 390px rompe en 5 lineas y empuja el CTA fuera.
+   - Poner 3 botones. Dos como maximo, y el segundo sin relleno.
+   - Animar la entrada con IntersectionObserver: por encima del pliegue se anima
+     con CSS puro o no se anima. `.reveal` deja opacity:0 hasta que carga el JS
+     y eso costo Speed Index 3,9 s en climentmedia.com.
+
+  MOVIL (390px): todo se apila y se centra igual; los botones pasan a ancho
+  completo. El bloque entero cabe en una pantalla.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="hero". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m01-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* LA PIEZA: la pastilla */
+  /* .m01-in: lo que el hero anade AL chasis. No lo sustituye. */
+  .m01-in{display:flex;flex-direction:column;align-items:center;
+          gap:var(--space-6);text-align:center}
+
+  /* LA PIEZA: la pastilla. Seis sombras en capas = acabado de cristal.
+     Van escritas aqui, no en un token: no las usa ningun otro molde. */
+  .m01-pastilla{display:inline-flex;align-items:center;gap:.4rem;
+            border-radius:999px;padding:.3rem .75rem;background:var(--caja);
+            box-shadow:inset 0 .5px .5px 0 rgba(255,255,255,.55),
+                       inset 0 1px 3px 0 rgba(255,255,255,.35),
+                       inset 0 2px 8px 0 rgba(255,255,255,.15),
+                       0 .5px .5px 0 rgba(22,24,29,.05),
+                       0 1px 1px -.5px rgba(22,24,29,.05),
+                       0 2px 2px -1px rgba(22,24,29,.05);
+            font-size:var(--fs-small);font-weight:600;letter-spacing:.05em;
+            text-transform:uppercase;color:var(--tenue)}
+  .m01-pastilla i{width:7px;height:7px;border-radius:50%;background:var(--acento);flex:none}
+
+  /* El h1 del hero es el UNICO --fs-display de la pagina. El clamp se come
+     el breakpoint que antes hacia falta para agrandarlo. */
+  .m01-h1{margin:0;font-size:var(--fs-display);line-height:var(--lh-display);
+          letter-spacing:-.02em;font-weight:var(--fw-black);
+          max-width:18ch;text-wrap:balance}
+  .m01-sub{margin:0;max-width:var(--measure-lead);color:var(--tenue);
+           font-size:var(--fs-lead);line-height:var(--lh-lead)}
+
+  /* Acciones: DOS. La segunda sin relleno. */
+  .m01-acciones{display:flex;flex-direction:column;gap:var(--space-4);width:100%;max-width:320px}
+
+  /* Prueba pegada al hero: cifra corta, no un parrafo */
+  .m01-prueba{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--space-4) var(--space-8);
+          margin-top:var(--space-4);color:var(--tenue);font-size:var(--fs-small)}
+  .m01-prueba b{color:var(--tinta);font-size:var(--fs-body)}
+
+  @media(min-width:40rem){
+    .m01-acciones{flex-direction:row;justify-content:center;max-width:none}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec sec--ancla" data-sec="hero">
+  <div class="sec__in m01-in">
+
+    <p class="m01-pastilla"><i></i>Categoria &middot; ciudad</p>
+
+    <h1 class="m01-h1">Una frase que dice qu&eacute; hace y para qui&eacute;n</h1>
+
+    <p class="m01-sub">Una sola l&iacute;nea de apoyo que a&ntilde;ade el c&oacute;mo o el
+       porqu&eacute;. Si necesita dos frases, sobra una.</p>
+
+    <div class="m01-acciones">
+      <a class="btn btn--1" href="#">Acci&oacute;n principal</a>
+      <a class="btn btn--2" href="#">Acci&oacute;n secundaria</a>
+    </div>
+
+    <p class="m01-prueba">
+      <span><b>00</b> dato verificable</span>
+      <span><b>00</b> segundo dato</span>
+      <span><b>00</b> tercer dato</span>
+    </p>
+
+  </div>
+</section>
+
+</body>
+</html>

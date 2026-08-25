@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Formulario correcto sin declarar la guarda | Fixture del paso 10</title>
+<style>
+  body { font: 16px/1.5 system-ui; margin: 2rem; }
+  .cita label { display: block; font-weight: 600; margin-top: .9rem; }
+  .cita input, .cita textarea { display: block; width: 100%; max-width: 40rem; padding: .6rem; }
+  .cita button { margin-top: 1rem; padding: .7rem 1.4rem; font: inherit; }
+  .cita__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .cita__consent { display: flex; gap: .5rem; align-items: flex-start; margin-top: 1rem; }
+  .cita__consent input { width: auto; }
+</style>
+</head>
+<body>
+<!-- Identico a `bueno.html` MENOS `data-guarda-doble`. Existe porque el caso de
+     F9 no se puede probar sobre `roto.html`: alli el "boton" es un <div>, F5 ya
+     falla, y F9 no llega a evaluarse -- que es lo correcto (sin boton de envio,
+     hablar de doble envio es ruido).
+     Este fixture prueba las DOS mitades de F9 a la vez:
+       · un formulario por lo demas PERFECTO sigue saliendo PASA, y
+       · aun asi el gate DICE que la guarda no esta verificada.
+     Que es justo el comportamiento que se quiere: no verificado no es un
+     aprobado, pero tampoco un fallo -- medir la guarda de verdad exige enviar
+     dos veces, y en una web viva son dos correos reales al cliente. -->
+<main>
+  <h1>Pide tu cita</h1>
+  <form class="cita" action="/contacto.php" method="post">
+    <label for="nombre">Nombre</label>
+    <input id="nombre" name="nombre" type="text" required>
+
+    <label for="email">Correo</label>
+    <input id="email" name="email" type="email" required>
+
+    <div class="cita__trap">
+      <label for="website">No rellenar</label>
+      <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+
+    <label for="mensaje">Mensaje</label>
+    <textarea id="mensaje" name="mensaje"></textarea>
+
+    <label class="cita__consent">
+      <input type="checkbox" name="consent" required>
+      <span>He leido y acepto la <a href="/politica-privacidad/">politica de privacidad</a>.</span>
+    </label>
+
+    <button type="submit">Enviar solicitud</button>
+  </form>
+</main>
+</body>
+</html>

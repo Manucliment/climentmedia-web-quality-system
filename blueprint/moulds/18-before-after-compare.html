@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 18 — comparador-antes-despues</title>
+<!--
+  PRIMITIVA: comparador-antes-despues   FAMILIA: cuerpo
+  ORIGEN: web-media-compare-012 (ref-site-d-before-after.html), a su vez
+          sacado del `BeforeAfter.tsx` de un cliente. ⚠️ Material de cliente: se
+          conserva la TECNICA, nunca sus imagenes.
+
+  🔑 QUE SE ROBA: el CONTRATO DE ACCESIBILIDAD, no el efecto. El efecto (una
+  imagen recortada sobre otra) lo hace cualquiera. Lo que casi nadie hace:
+     role="slider" + aria-valuemin/max/now + flechas en keydown
+  La mayoria de comparadores son solo `pointermove`: sin raton no se pueden usar
+  y un lector de pantalla no sabe que hay un control.
+
+  Y otros tres detalles que son la diferencia entre que funcione y que casi:
+   1. `pointer*`, NO `mouse*`. Un juego de eventos cubre raton, dedo y lapiz.
+      Con `mouse*` hay que duplicarlo en `touch*` y asi se cuelan los
+      comparadores que en movil no arrastran.
+   2. Los listeners de move/up van en WINDOW, no en el elemento. En el elemento,
+      al arrastrar rapido el puntero se sale y el arrastre se queda pegado.
+   3. Se mueve `clip-path`, que se compone en GPU. `width` habria repintado en
+      el hilo principal en cada fotograma.
+
+  QUE TRABAJO HACE: convierte una afirmacion ("mejoro mucho") en algo que el
+  lector comprueba el mismo. El patron no es "fotos": es EVIDENCIA VISUAL
+  COMPARADA — un informe antes y despues, un panel con y sin el hallazgo.
+
+  CUANDO: hay dos estados del MISMO objeto, alineados pixel a pixel.
+  CUANDO NO:
+   - 🔴 EN SALUD, NUNCA SIN CONSENTIMIENTO FIRMADO. Un antes/despues es
+     publicidad regulada en casi toda la UE. Y jamas con imagen generada.
+   - Si las dos imagenes no estan tomadas igual (otro angulo, otra luz): la
+     comparacion es falsa aunque las fotos sean reales.
+   - Si el cambio se explica mejor con una cifra -> `banda-datos`.
+
+  QUE LO ROMPE:
+   - Sin `touch-action:none` en el contenedor, arrastrar en movil hace scroll de
+     la pagina en vez de mover el control.
+   - Sin `user-select:none`, al arrastrar se selecciona el texto de la pagina.
+   - Si el JS falla, debe quedar algo util: por eso `--pos` tiene valor por
+     defecto en CSS (50%) y se ven las dos mitades sin JS ninguno.
+
+  MOVIL (390px): funciona igual con el dedo gracias a `pointer*`. El tirador es
+  de 44px, que es el minimo tactil.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="evidencia". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m18-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+.m18-ba{position:relative;overflow:hidden;border-radius:var(--r);
+      border:1px solid var(--linea);aspect-ratio:16/9;background:var(--caja);
+      user-select:none;touch-action:none}          /* los dos hacen falta */
+  .m18-ba__capa{position:absolute;inset:0;display:grid;place-items:center;
+            font-size:var(--fs-title);font-weight:800;letter-spacing:-.02em}
+  .m18-ba__antes{background:linear-gradient(135deg,#eceef2,#dfe2e8);color:var(--tenue);
+             justify-items:start;padding-left:8%}
+  /* La capa de arriba se RECORTA. clip-path se compone en GPU. */
+  .m18-ba__despues{background:linear-gradient(135deg,#dbe6ff,#bcd2ff);color:var(--acento);
+               justify-items:end;padding-right:8%;
+               clip-path:inset(0 0 0 var(--pos,50%))}
+  .m18-ba__div{position:absolute;top:0;bottom:0;width:2px;background:var(--acento);
+           left:var(--pos,50%);transform:translateX(-1px)}
+  .m18-ba__tir{position:absolute;top:50%;left:var(--pos,50%);
+           transform:translate(-50%,-50%);
+           width:44px;height:44px;border-radius:50%;      /* 44 = minimo tactil */
+           background:var(--papel);border:2px solid var(--acento);
+           color:var(--acento);cursor:grab;
+           display:grid;place-items:center;font-size:var(--fs-body)}
+  .m18-ba__tir:active{cursor:grabbing}
+  .m18-ba__tir:focus-visible{outline:2px solid var(--acento);outline-offset:3px}
+  .m18-ba__et{position:absolute;bottom:.7rem;font-size:var(--fs-small);font-weight:700;
+          letter-spacing:.1em;text-transform:uppercase;color:var(--tinta);
+          background:rgba(255,255,255,.75);padding:.2rem .55rem;border-radius:999px}
+  .m18-ba__et--i{left:.7rem} .m18-ba__et--d{right:.7rem;color:var(--acento)}
+  /* El pie SI lleva su propio tope: sin el, hereda los 768px del contenedor y
+     da capacidad para 104 caracteres por linea. Hoy el texto es corto y no se
+     nota — se nota el dia que alguien escribe un pie de verdad. */
+  .m18-pie{margin-top:var(--space-4);color:var(--tenue);font-size:var(--fs-body);
+           max-width:var(--measure)}
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="evidencia">
+  <div class="sec__in sec__in--flujo">
+    <h2 class="sec__h">Antes y despu&eacute;s</h2>
+    <p class="sec__sub">Arrastra, o <strong>enf&oacute;calo con el tabulador y usa las flechas</strong>.</p>
+
+    <figure style="margin:0">
+      <div class="m18-ba" id="ba">
+        <div class="m18-ba__capa m18-ba__antes">ANTES</div>
+        <div class="m18-ba__capa m18-ba__despues">DESPU&Eacute;S</div>
+        <div class="m18-ba__div" aria-hidden="true"></div>
+        <span class="m18-ba__et m18-ba__et--i">Estado 1</span>
+        <span class="m18-ba__et m18-ba__et--d">Estado 2</span>
+        <button class="m18-ba__tir" type="button" role="slider"
+                aria-label="Comparador antes y despu&eacute;s"
+                aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">&#8596;</button>
+      </div>
+      <figcaption class="m18-pie">Qu&eacute; se est&aacute; comparando, y con qu&eacute; permiso se publica.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<script>
+(function () {
+  var box = document.getElementById("ba");
+  var tir = box.querySelector(".m18-ba__tir");
+  var arrastrando = false;
+
+  function set(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    box.style.setProperty("--pos", pct + "%");
+    tir.setAttribute("aria-valuenow", Math.round(pct));
+  }
+  function desdeX(x) {
+    var r = box.getBoundingClientRect();
+    set(((x - r.left) / r.width) * 100);
+  }
+
+  tir.addEventListener("pointerdown", function (e) { arrastrando = true; e.preventDefault(); });
+  box.addEventListener("pointerdown", function (e) { desdeX(e.clientX); });
+
+  // En WINDOW, no en el elemento: si van en el elemento y el puntero se sale al
+  // arrastrar rapido, el arrastre se queda pegado.
+  window.addEventListener("pointermove", function (e) { if (arrastrando) desdeX(e.clientX); });
+  window.addEventListener("pointerup", function () { arrastrando = false; });
+  window.addEventListener("pointercancel", function () { arrastrando = false; });
+
+  tir.addEventListener("keydown", function (e) {
+    var n = Number(tir.getAttribute("aria-valuenow"));
+    if (e.key === "ArrowLeft")  { set(n - 5); e.preventDefault(); }
+    if (e.key === "ArrowRight") { set(n + 5); e.preventDefault(); }
+    if (e.key === "Home")       { set(0);   e.preventDefault(); }
+    if (e.key === "End")        { set(100); e.preventDefault(); }
+  });
+
+  set(50);
+})();
+</script>
+</body>
+</html>

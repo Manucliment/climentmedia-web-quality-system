@@ -1,0 +1,122 @@
+/* =============================================================================
+ *  _tokens.css — LA IMPLEMENTACION de `11-medidas.md` §6
+ * =============================================================================
+ *  Esto NO es una escala nueva. Es el §6 de `11-medidas.md` en un fichero que el
+ *  navegador puede cargar. Mismos NOMBRES y mismos VALORES. Si algun dia difieren,
+ *  el que manda es `11-medidas.md` §6 y este fichero esta roto.
+ *
+ *  QUE PASO EL 10-ago-2026 (por lo que este fichero se reescribio)
+ *  ---------------------------------------------------------------
+ *  La primera version de esta carpeta invento su propia escala el MISMO dia en que
+ *  `11-medidas.md` §6 declaraba la suya "ya en produccion, NO se reinventa":
+ *
+ *    | concepto        | lo que invento _tokens.css | lo que dice 11-medidas §6 |
+ *    |-----------------|----------------------------|---------------------------|
+ *    | contenedor      | `--ancho: 1120px`          | `--wrap: 1120px`          |
+ *    | columna de texto| `--texto: 62ch`            | `--measure: 34em`         |
+ *    | tamanos         | 6 fijos (`--t0`..`--t5`)   | 7 con `clamp()`           |
+ *    | cuerpo          | 17px                       | 16px                      |
+ *    | base espaciado  | 8px (`--e1`..`--e6`)       | 4px (`--space-1`..`-16`)  |
+ *    | breakpoints     | 2 (640, 1024)              | 3 (40rem, 64rem, 80rem)   |
+ *
+ *  Dos escalas incompatibles = dos sitios donde decidir lo mismo. Gana §6.
+ *
+ *  COMO SE USA
+ *  -----------
+ *  Los moldes lo cargan con `<link rel="stylesheet" href="_tokens.css">`, JUNTO A
+ *  `_base.css`. NO se copia dentro de cada molde: eso es lo que hacia que pegar dos
+ *  moldes en la misma pagina rompiera la maqueta (ganaba el ultimo `:root` pegado).
+ *
+ *  LAS TRES REGLAS
+ *  ---------------
+ *  1. Las lineas de MARCA se cambian por cliente. Las de MEDIDAS, no.
+ *  2. Ningun valor suelto en el CSS de un molde. Si hace falta un tamano que no
+ *     esta, o se usa el de al lado, o se cambia la escala entera (aqui, y en §6).
+ *  3. 🔴 **Cambiar un color de marca OBLIGA a re-medir el contraste.** No es un
+ *     consejo: hay un script y falla.
+ *         bash gate-estructura-pruebas/medir-contraste.sh
+ *     Los valores de fabrica de abajo estan MEDIDOS, no elegidos a ojo. La version
+ *     anterior daba **4,51:1** contra un minimo de 4,5 en los moldes 05, 10 y 12
+ *     (margen: 0,01) y **4,55:1** en el texto blanco del boton primario.
+ * ========================================================================== */
+
+:root{
+  /* ── MARCA · lo unico que se toca por cliente ────────────────────────────
+     Cada uno lleva al lado el ratio MEDIDO que tiene que seguir cumpliendo.
+     Cambiarlos sin correr `medir-contraste.sh` es como cambiarlos a ciegas. */
+  --tinta:#16181d;        /* texto principal      · 16,7:1 sobre --papel      */
+  --papel:#ffffff;        /* fondo de pagina                                  */
+  --acento:#1d4ed8;       /* UN acento. No tres.  · blanco encima = 6,70:1    */
+  --tenue:#59616f;        /* texto secundario     · 5,82:1 sobre --caja       */
+  --tenue-inv:#c9ced8;    /* secundario en seccion oscura · 11,2:1 sobre tinta*/
+  --linea:#e4e6eb;        /* filetes DECORATIVOS. No delimitan controles.     */
+  --linea-fuerte:#8b929e; /* borde de control (boton fantasma) · 3,13:1       */
+  --caja:#f6f7f9;         /* fondo de tarjeta / banda alterna                 */
+
+  /* ── ANCHOS · 11-medidas §6 ──────────────────────────────────────────────
+     --wrap     contenedor general. 1120px es lo que MIDEN site-d, site-b y
+                site-c, y coincide con reuma.nl.
+     --measure  LA COLUMNA DE TEXTO. Va en `em`, no en px: escala con el tamano
+                del propio parrafo. 34em = ~65ch = 66-77 caracteres reales.
+     --measure-max  ⚠️ NO equivale a 80 CPL: eso solo se cumple en la fuente con
+                la que se calibro (§1.3). Medido fuera de ella, 42em cae entre
+                ~77 y ~89 CPL segun fuente e idioma, y el gate ya canto tres
+                paginas por DEBAJO de 42em y por ENCIMA de 80 CPL. Es un tope de
+                CONTENEDOR, no una garantia de caracteres: **el CPL se mide**.  */
+  --wrap:          1120px;
+  --wrap-wide:     1280px;   /* solo rejillas y medios, NUNCA texto corrido    */
+  --measure:       34em;     /* objetivo de prosa                              */
+  --measure-max:   42em;     /* tope de contenedor. Ver aviso de arriba.       */
+  --measure-lead:  28em;     /* entradillas y subtitulos: mas corto a proposito*/
+
+  /* Dos anchos derivados que §6 no nombra porque son de MAQUETA, no de prosa.
+     Existen porque tres moldes los necesitaban y los escribian sueltos (760px,
+     820px, 920px). Ahora son dos valores, con nombre, en un solo sitio.       */
+  --wrap-flujo:    48rem;    /* 768px · cadenas y cronologias: lectura vertical*/
+  --wrap-spec:     58rem;    /* 928px · tablas de especificacion               */
+
+  /* ── TIPOGRAFIA · 7 escalones, ratio 1,20-1,33 ───────────────────────────
+     Ya en produccion en climentmedia/styles.css. NO se reinventa.            */
+  --fs-display: clamp(2.6rem, 7vw, 5rem);      /* h1            ~42-80px      */
+  --fs-title:   clamp(1.9rem, 4.2vw, 3rem);    /* h2            ~30-48px      */
+  --fs-section: clamp(1.4rem, 2.4vw, 1.75rem); /* h3            ~22-28px      */
+  --fs-lead:    1.2rem;                        /* entradilla     19,2px       */
+  --fs-body:    1rem;                          /* cuerpo         16px         */
+  --fs-small:   0.875rem;                      /* pies, meta     14px         */
+  --fs-micro:   0.75rem;                       /* etiquetas      12px         */
+
+  /* Interlineado: WCAG SC 1.4.8 pide >=1,5 en parrafo. Los titulares bajan
+     porque a 48px un 1,5 separa demasiado.                                   */
+  --lh-body: 1.6;  --lh-lead: 1.5;  --lh-title: 1.15;  --lh-display: 1.05;
+
+  /* El PESO tambien es jerarquia.                                            */
+  --fw-body: 400;  --fw-medium: 500;  --fw-bold: 700;  --fw-black: 800;
+
+  /* ── ESPACIADO · base 4px, 8 escalones ───────────────────────────────── */
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+
+  /* ── RITMO DE SECCION ────────────────────────────────────────────────────
+     Regla: padding de seccion >= 2x el gap mayor de dentro, o el ojo no agrupa.
+     `--section-y` maximo 72px contra `--grid-gap` maximo 32px = 2,25x. ✅     */
+  --section-y:     clamp(2.5rem, 5vw, 4.5rem);  /* 40px movil -> 72px desktop */
+  --section-y-lg:  clamp(3.5rem, 7vw, 6rem);    /* secciones ancla            */
+  --grid-gap:      clamp(1rem, 2vw, 2rem);      /* 16 -> 32px                 */
+
+  /* ── LO QUE §6 NO CUBRE ──────────────────────────────────────────────────
+     §6 habla de anchos, tipografia, espaciado y ritmo. El radio no sale ahi, y
+     un valor sin nombre acaba escrito a mano en quince sitios. UNO.           */
+  --r: 10px;
+}
+
+/* ── BREAKPOINTS · TRES, en rem, iguales en todos los proyectos ────────────
+   40rem/640 · 64rem/1024 · 80rem/1280. Mobile-first (min-width).
+   Casi ningun molde necesita los tres: `clamp()` y `auto-fit` se comen la
+   mayoria de los saltos, y un breakpoint que no existe no se puede romper.
+   ------------------------------------------------------------------------ */

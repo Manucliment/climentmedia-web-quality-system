@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 15 — tabla-especificacion</title>
+<!--
+  PRIMITIVA: tabla-especificacion   FAMILIA: cuerpo
+  ORIGEN: ref-aubard-skillstable.html (arquetipo SKILLS-TABLE + PERMISSION-COLUMN).
+          El original es un lienzo fijo de 1000x980 para una imagen de LinkedIn,
+          sin breakpoints. Se traduce a web.
+
+  🔑 LO QUE SE ROBA NO ES LA TABLA: ES LA COLUMNA DE VEREDICTO.
+  En el original, la columna "Type" declara el permiso de cada comando
+  (`read` vs `write`). Esa columna es lo que convierte una lista de items en una
+  declaracion comprobable. Aplicado a una web de cliente: no basta con listar lo
+  que incluye un servicio; hace falta una columna que diga en que condicion
+  queda cada cosa (incluido / a coste / no lo hacemos).
+
+  DIFERENCIA CON `tabla-comparativa`: esa compara N OPCIONES por M criterios.
+  Esta describe UNA cosa en M campos. Si solo hay una opcion, es esta.
+
+  QUE TRABAJO HACE: sustituye la lista de bullets de "que incluye" por algo que
+  se puede auditar. Es la primitiva mas honesta del catalogo, porque obliga a
+  rellenar una casilla por fila y ahi es donde salen los "no".
+
+  CUANDO: que incluye un servicio, alcance de un trabajo, especificaciones,
+          permisos, plazos.
+  CUANDO NO:
+   - Si todas las filas tienen el mismo veredicto: no hace falta la columna, y
+     probablemente tampoco la tabla.
+   - Si los campos no son homogeneos (una fila es un precio y otra una promesa):
+     no es una especificacion, es un cajon de sastre.
+
+  QUE LA ROMPE:
+   - Agrupar sin marcar el grupo: con 10 filas seguidas no se distingue el bloque
+     de research del de produccion. Aqui los grupos son <tbody> con su <th>
+     a ancho completo, que ademas es lo correcto semanticamente.
+   - Colores como unica senal del veredicto (ver `aparte-nota`): la palabra va
+     escrita.
+
+  MOVIL (390px): mismo mecanismo que `tabla-comparativa` — fichas con el nombre
+  de columna en `::before`, roles ARIA explicitos para no perder la tabla.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="oferta". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m15-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* ── movil primero: fichas ─────────────────────────────────────────────── */
+  .m15-esp{width:100%;border-collapse:collapse;text-align:left}
+  .m15-esp thead{position:absolute;width:1px;height:1px;overflow:hidden;
+             clip:rect(0 0 0 0);white-space:nowrap}
+  .m15-esp .m15-grupo th{display:block;padding:var(--space-6) 0 var(--space-2);
+                 font-size:var(--fs-small);font-weight:700;letter-spacing:.12em;
+                 text-transform:uppercase;color:var(--acento)}
+  .m15-esp tbody.m15-filas tr{display:grid;gap:.2rem;border:1px solid var(--linea);
+                      border-radius:var(--r);padding:var(--space-6);margin-bottom:var(--space-4)}
+  .m15-esp tbody.m15-filas th{font-size:var(--fs-body);font-weight:700;line-height:1.3;
+                      padding:0 0 var(--space-2);
+                      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .m15-esp tbody.m15-filas td{display:flex;justify-content:space-between;gap:var(--space-4);
+                      font-size:var(--fs-body);padding:.15rem 0;border:0;line-height:1.45}
+  .m15-esp tbody.m15-filas td::before{content:attr(data-col);flex:none;color:var(--tenue);
+                              font-size:var(--fs-small);text-transform:uppercase;
+                              letter-spacing:.06em;font-weight:600}
+
+  /* El veredicto: palabra + color, nunca solo color. */
+  .m15-v{font-weight:700;white-space:nowrap}
+  .m15-v--si{color:var(--acento)}
+  .m15-v--no{color:var(--tenue)}
+  .m15-v--cond{color:#8a5a00}
+
+  @media(min-width:40rem){
+.m15-esp thead{position:static;width:auto;height:auto;clip:auto}
+    .m15-esp thead th{font-size:var(--fs-small);text-transform:uppercase;letter-spacing:.06em;
+                  color:var(--tenue);font-weight:700;padding:0 var(--space-4) var(--space-4) 0;
+                  border-bottom:2px solid var(--linea)}
+    .m15-esp .m15-grupo th{display:table-cell;padding:var(--space-6) 0 var(--space-2);
+                   border-bottom:1px solid var(--linea)}
+    .m15-esp tbody.m15-filas tr{display:table-row;border:0;border-radius:0;padding:0;margin:0}
+    .m15-esp tbody.m15-filas th{display:table-cell;font-size:var(--fs-body);
+                        padding:var(--space-4) var(--space-4) var(--space-4) 0;
+                        border-bottom:1px solid var(--linea);vertical-align:top}
+    .m15-esp tbody.m15-filas td{display:table-cell;padding:var(--space-4) var(--space-4) var(--space-4) 0;
+                        border-bottom:1px solid var(--linea);vertical-align:top}
+    .m15-esp tbody.m15-filas td::before{content:none}
+    .m15-esp col.m15-c1{width:34%} .m15-esp col.m15-c2{width:18%}
+  }
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="oferta">
+  <div class="sec__in sec__in--spec">
+    <h2 class="sec__h">Qu&eacute; incluye, campo a campo</h2>
+    <p class="sec__sub">Cada fila tiene que llevar un veredicto. Si no se puede rellenar,
+       esa fila no est&aacute; decidida.</p>
+
+    <table class="m15-esp" role="table">
+      <colgroup><col class="m15-c1"><col class="m15-c2"><col></colgroup>
+      <thead role="rowgroup">
+        <tr role="row">
+          <th role="columnheader" scope="col">Elemento</th>
+          <th role="columnheader" scope="col">Veredicto</th>
+          <th role="columnheader" scope="col">Detalle</th>
+        </tr>
+      </thead>
+
+      <tbody role="rowgroup" class="m15-grupo">
+        <tr role="row"><th role="columnheader" colspan="3" scope="colgroup">Primer grupo</th></tr>
+      </tbody>
+      <tbody role="rowgroup" class="m15-filas">
+        <tr role="row">
+          <th role="rowheader" scope="row">primer-elemento</th>
+          <td role="cell" data-col="Veredicto"><span class="m15-v m15-v--si">Incluido</span></td>
+          <td role="cell" data-col="Detalle">Qu&eacute; cubre exactamente.</td>
+        </tr>
+        <tr role="row">
+          <th role="rowheader" scope="row">segundo-elemento</th>
+          <td role="cell" data-col="Veredicto"><span class="m15-v m15-v--cond">Con condici&oacute;n</span></td>
+          <td role="cell" data-col="Detalle">Cu&aacute;l es la condici&oacute;n, dicha aqu&iacute;.</td>
+        </tr>
+      </tbody>
+
+      <tbody role="rowgroup" class="m15-grupo">
+        <tr role="row"><th role="columnheader" colspan="3" scope="colgroup">Segundo grupo</th></tr>
+      </tbody>
+      <tbody role="rowgroup" class="m15-filas">
+        <tr role="row">
+          <th role="rowheader" scope="row">tercer-elemento</th>
+          <td role="cell" data-col="Veredicto"><span class="m15-v m15-v--si">Incluido</span></td>
+          <td role="cell" data-col="Detalle">Qu&eacute; cubre exactamente.</td>
+        </tr>
+        <tr role="row">
+          <th role="rowheader" scope="row">cuarto-elemento</th>
+          <td role="cell" data-col="Veredicto"><span class="m15-v m15-v--no">No lo hacemos</span></td>
+          <td role="cell" data-col="Detalle">Y a qui&eacute;n derivamos si hace falta.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</body>
+</html>

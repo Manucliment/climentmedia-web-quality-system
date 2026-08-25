@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOLDE 11 — cierre-cta</title>
+<!--
+  PRIMITIVA: cierre-cta             FAMILIA: cierre
+  ORIGEN: ESCRITO DESDE CERO.
+
+  POR QUE EXISTE, con el numero delante
+  -------------------------------------
+  `medir-pantallas.js` midio el 7-ago: site-c.example tiene 32 de 39 bloques
+  SIN un solo CTA, y site-a.example hace recorrer 7 pantallas seguidas sin nada
+  que pulsar (los 3 CTA estan todos en el hero). El visitante que se convence en
+  la seccion 6 no tiene donde hacerlo.
+  El gate exige >= 2 CTA por pagina y <= 2,5 pantallas seguidas sin ninguno.
+  Esta primitiva es la que cierra ese hueco por abajo; el hero lo cierra por
+  arriba. Entre las dos, ninguna pagina se queda sin salida.
+
+  QUE TRABAJO HACE: recoge al que ya esta convencido y le quita la ultima excusa.
+
+  CUANDO: al final de TODA pagina que quiera algo del lector.
+  CUANDO NO: en paginas legales o de utilidad pura (privacidad, 404 con
+             buscador). Meter un CTA comercial ahi es ruido.
+
+  QUE LO ROMPE:
+   - Poner tres acciones distintas. El cierre tiene UNA accion principal. La
+     alternativa es para el que no esta listo, y va como enlace, no como boton.
+   - Repetir el copy del hero literal. Si el lector ha llegado hasta aqui, ya
+     sabe qu&eacute; es: lo que le falta es saber qu&eacute; pasa despues de pulsar.
+   - Un formulario largo. Aqui va el gesto minimo; el formulario largo va en su
+     pagina.
+   - Fondo de acento a sangre + boton de acento: el boton desaparece dentro del
+     fondo. Si la banda es de color, el boton es del color del papel.
+
+  MOVIL (390px): el boton ocupa el ancho completo y la alternativa queda debajo.
+  La linea de "que pasa despues" se mantiene: es lo que sube la conversion.
+  ROL (09-tipos-de-pagina.md seccion 1): data-sec="cierre". Es el POR DEFECTO;
+          la pagina puede poner otro de la lista de seccion 1, pero alguno tiene que ir.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m11-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota: eso rompia la
+          composicion (ganaba el ultimo molde pegado). Lo comprueba chk-colisiones.pl.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* .m11-in: lo que el cierre anade AL chasis. */
+  .m11-in{display:grid;gap:var(--space-6);align-items:center}
+
+  .m11-h{margin:0 0 var(--space-2);font-size:var(--fs-title);
+         line-height:var(--lh-title);letter-spacing:-.02em;
+         font-weight:var(--fw-bold);max-width:20ch;text-wrap:balance}
+  /* En banda oscura el secundario NO es `opacity`: es --tenue, que dentro de
+     `.sec--tinta` vale --tenue-inv y da 11,2:1 medidos. `opacity:.5` daba 5,2 y
+     `opacity:.4` se caia de AA. Un valor que no se puede medir no se usa. */
+  .m11-sub{margin:0;color:var(--tenue);font-size:var(--fs-lead);
+           line-height:var(--lh-lead);max-width:var(--measure-lead)}
+  .m11-despues{margin:var(--space-4) 0 0;color:var(--tenue);
+               font-size:var(--fs-small);max-width:var(--measure-lead)}
+
+  .m11-acc{display:flex;flex-direction:column;gap:var(--space-4);align-items:stretch}
+  .m11-alt{text-align:center;font-size:var(--fs-small)}
+</style>
+</head>
+<body>
+
+<section class="sec sec--tinta sec--ancla" data-sec="cierre">
+  <div class="sec__in m11-in">
+    <div>
+      <h2 class="m11-h">Una frase que recoge al que ya est&aacute; convencido</h2>
+      <p class="m11-sub">Sin repetir el titular de arriba. Lo que falta aqu&iacute; no
+         es convencer: es quitar la &uacute;ltima duda.</p>
+      <p class="m11-despues">Al pulsar: qu&eacute; pasa, qui&eacute;n responde y en cu&aacute;nto tiempo.</p>
+    </div>
+    <div class="m11-acc">
+      <a class="btn btn--1" href="#">Acci&oacute;n principal</a>
+      <a class="enlace m11-alt" href="#">o la alternativa para quien no est&aacute; listo</a>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

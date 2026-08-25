@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Una guia sin formulario | Fixture del paso 10</title>
+<style> body { font: 16px/1.5 system-ui; margin: 2rem; } </style>
+</head>
+<body>
+<!-- EL CONTROL NEGATIVO, y es el que decide si el gate se puede encender.
+     La mayoria de las paginas de un sitio NO tienen formulario, y con toda la
+     razon: una guia, un hub, un aviso legal. Si el gate las acusara, daria
+     falsos positivos en el 90 % del parque y acabaria desactivado -- que es
+     peor que no tenerlo.
+     Con `exigeFormulario: true` SI tiene que fallar: eso es la pagina de
+     contacto que se ha quedado sin formulario, y ese caso hay que cazarlo. -->
+<main>
+  <h1>Como preparamos una primera sesion</h1>
+  <p>Esta pagina explica el proceso. No pide datos a nadie.</p>
+  <p>Contacto por <a href="tel:+34600000000">telefono</a>.</p>
+</main>
+</body>
+</html>

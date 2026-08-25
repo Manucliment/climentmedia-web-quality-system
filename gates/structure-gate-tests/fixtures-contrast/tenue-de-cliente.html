@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>NEGATIVO de contraste</title>
+<!--
+  CONTROL NEGATIVO de `measure-contrast.sh`.
+  Simula lo unico que _tokens.css invita a hacer: un cliente cambia un color de
+  marca. Aqui se pone el `--tenue` que la carpeta tenia de fabrica hasta el
+  10-ago-2026 (#6b7280). Sobre --caja da 4,51:1 contra un minimo de 4,5: pasaba
+  por 0,01, y con cualquier gris un pelo mas claro se cae.
+  Si este fichero PASA, el gate ha dejado de medir.
+-->
+<link rel="stylesheet" href="../../moldes/_tokens.css">
+<link rel="stylesheet" href="../../moldes/_base.css">
+<style>:root{--tenue:#7c8494}</style>
+</head><body>
+<section class="sec sec--caja" data-sec="proceso">
+  <div class="sec__in">
+    <h2 class="sec__h">Un titular cualquiera</h2>
+    <p class="sec__sub">Un subtitulo en color secundario, que es donde se mide el suelo.</p>
+    <p class="nota">Y una nota al pie, tambien en secundario, sobre el fondo de caja.</p>
+  </div>
+</section>
+</body></html>

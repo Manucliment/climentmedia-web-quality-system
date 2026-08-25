@@ -1,6 +1,6 @@
-# The trap log — 76 traps, read before debugging
+# The trap log — 80 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§76** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§80** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -10,6 +10,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §20–§40 | [`traps/20-40.md`](traps/20-40.md) |
 | §41–§59 | [`traps/41-59.md`](traps/41-59.md) |
 | §60–§76 | [`traps/60-76.md`](traps/60-76.md) |
+| §77–§80 | [`traps/77-80.md`](traps/77-80.md) |
 
 ---
 
@@ -19,16 +20,23 @@ original order, which is **by how much they cost**, not by when they happened.
 valid and honest answer, and it is the most common one. The documentation gate **fails** if a trap
 does not declare it.
 
-Counted over this file set rather than quoted: **76 traps · 76 declare what catches them · 42 name a
-mechanism · 34 say `nobody`.**
+Not quoted — **derived by a program you can run**:
+
+```bash
+perl gates/doc-gate.pl --lista D4
+```
+
+Today it reports: **80 traps · all 80 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
-writing more prose** — which is the measured finding the whole repository rests on.
+writing more prose** — which is the measured finding the whole repository rests on. The four most
+recent traps moved the total from 76 to 80 and left `nobody` at 31, because each shipped with the
+check that catches it. That is what adding a trap is supposed to look like.
 
-> The count above is of the declaration paragraph under each `Caught by:`. The upstream Spanish
-> source measured 32 rather than 34 on the same traps; the difference is wording, not substance, and
-> it is left visible here rather than reconciled by hand. **A number you cannot re-derive is a
-> number somebody will eventually quote wrongly.**
+> **Use the gate's number, not a hand count.** Counting the whole declaration paragraph by hand gives
+> 34 rather than 31, because a few traps carry the word on a following line. Both are defensible
+> readings; only one is re-derivable. **A number you cannot re-derive is a number somebody will
+> eventually quote wrongly** — and this repository has a trap about exactly that (§52).
 
 ---
 
@@ -38,10 +46,13 @@ If you read nothing else, read these. Nearly every trap below is one of them wea
 clothes.
 
 1. **If the sweep says everything is broken at once, the broken thing is the sweep.** A verification
-   tool with an undeclared assumption does not fail: **it accuses**, and it accuses in bulk.
-   *(§5 · §14 · §23 · §34 · §60 · §75)*
+   tool with an undeclared assumption does not fail: **it accuses**, and it accuses in bulk. Its
+   mirror image is just as reliable: **if a guard suddenly permits everything, it is not running.**
+   *(§5 · §14 · §23 · §34 · §60 · §75 · §80)*
 2. **A gate that measures presence can never contradict another that measures presence.** Green over
-   nothing is the most common way a check lies. *(§18 · §29 · §44 · §67 · §72)*
+   nothing is the most common way a check lies. **A sweep that reports by exception must publish its
+   denominator**, or "no problems found" and "I found nothing to examine" arrive as the same
+   sentence. *(§18 · §29 · §44 · §67 · §72 · §77 · §78)*
 3. **A mutation must assert how many it MADE**, not how many it found — and must check **what it
    leaves**, not the absence of what it removed. *(§22 · §30-bis · §33 · §70 · §72)*
 4. **Two copies of one rule do not diverge "if" somebody gets careless. They diverge.** The only
@@ -106,6 +117,9 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §65 | A check that is not emitted reads as covered |
 | §72 | A replacer function does not expand a capture reference |
 | §74 | An honesty guard wired to ONE value declares "not a result" |
+| §77 | A sweep for unwired batteries went mute when they were renamed |
+| §78 | A discovery step conditional on an ABSENCE, disarmed by adding one file |
+| §80 | Porting a construct by copying the line `grep` showed me |
 
 ### C · Silent loss — it delivered less and reported success
 
@@ -136,6 +150,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §54 | I wrote §43 in the morning and reintroduced it in the afternoon |
 | §56 | Three browser gates depended on a file that existed nowhere in our tree |
 | §60 | A rule written four times: 363 failures on a correct site |
+| §79 | The hook and the door are coupled by a filename, and the rename disarmed it |
 
 ### E · Delivery and cache
 

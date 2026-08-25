@@ -1,0 +1,175 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guia completa de ROAS para operadores de ads</title>
+<style>
+ :root{--tinta:#16181d;--papel:#fff;--acento:#2f6fed;--tenue:#6b7280;--linea:#e4e6eb;--caja:#f6f7f9;
+       --ancho:1120px;--texto:62ch;--r:10px;
+       --t0:.8125rem;--t1:.9375rem;--t2:1.0625rem;--t3:1.375rem;--t4:2rem;--t5:2.75rem;
+       --e1:.5rem;--e2:1rem;--e3:1.5rem;--e4:2.5rem;--e5:4rem;--e6:6rem}
+ *{box-sizing:border-box}
+ body{margin:0;font:var(--t2)/1.65 system-ui,sans-serif;color:var(--tinta);background:var(--papel)}
+ nav,footer{padding:var(--e2) var(--e3);background:var(--caja);font-size:var(--t1)}
+ nav a,footer a{margin-right:var(--e2);color:var(--acento)}
+ .in{max-width:var(--ancho);margin-inline:auto;padding:var(--e5) var(--e3)}
+ h1{font-size:var(--t5);line-height:1.12;margin:0 0 var(--e2);max-width:20ch}
+ h2{font-size:var(--t4);line-height:1.2;margin:0 0 var(--e2)}
+ p{margin:0 0 var(--e2);max-width:var(--texto)}
+ .hero{background:var(--caja);border-bottom:1px solid var(--linea)}
+ .capsula{font-size:var(--t3);color:var(--tenue);max-width:52ch}
+ .btn{display:inline-block;background:var(--acento);color:#fff;text-decoration:none;
+      padding:var(--e1) var(--e3);border-radius:var(--r);font-size:var(--t1)}
+ /* par-alterno: DOS columnas de verdad. Es lo que convierte "h2 + parrafos" en maqueta */
+ .par{display:grid;grid-template-columns:1fr 1fr;gap:var(--e4);align-items:start;
+      padding-block:var(--e4);border-top:1px solid var(--linea)}
+ .par:nth-child(even) .par__ev{order:-1}
+ .par__ev{background:var(--caja);border:1px solid var(--linea);border-radius:var(--r);padding:var(--e3)}
+ .par__ev b{display:block;font-size:var(--t4);line-height:1}
+ .par__ev span{display:block;font-size:var(--t1);color:var(--tenue);margin-top:var(--e1)}
+ table{border-collapse:collapse;width:100%;font-size:var(--t1)}
+ th,td{border:1px solid var(--linea);padding:var(--e1) var(--e2);text-align:left}
+ details{border-top:1px solid var(--linea);padding:var(--e2) 0}
+ details p{font-size:var(--t1);color:var(--tenue);max-width:var(--texto)}
+ .cierre{background:var(--caja);border-top:1px solid var(--linea)}
+ @media (max-width:640px){ .par{grid-template-columns:1fr} .par:nth-child(even) .par__ev{order:0} }
+</style></head><body>
+<nav><a href="/">Inicio</a><a href="/learn/">Learn</a><a href="/agency/">Agencia</a><a href="/contacto/">Contacto</a></nav>
+<main>
+
+<section class="hero"><div class="in">
+  <h1>Guia completa de ROAS para operadores de ads</h1>
+  <p class="capsula">Esta pagina explica que es un buen ROAS, por que la respuesta depende del margen y del ciclo de compra, y como se decide un objetivo que no destruya volumen. Todo lo que viene a continuacion sale de cuentas reales gestionadas durante los ultimos cuatro anos.</p>
+  <p><a class="btn" href="/ad-account-audit/">Verlo en tu propia cuenta</a></p>
+</div></section>
+
+<section><div class="in">
+  <div class="par">
+    <div class="par__tx">
+      <h2>Que significa realmente el ROAS</h2>
+      <p>Parrafo primero de la seccion 1. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 1. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 1. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 1, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 1, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+  <div class="par">
+    <div class="par__tx">
+      <h2>Por que el promedio del sector no sirve</h2>
+      <p>Parrafo primero de la seccion 2. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 2. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 2. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 2, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 2, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+  <div class="par">
+    <div class="par__tx">
+      <h2>El margen manda sobre el multiplicador</h2>
+      <p>Parrafo primero de la seccion 3. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 3. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 3. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 3, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 3, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+  <div class="par">
+    <div class="par__tx">
+      <h2>El ciclo de compra cambia la lectura</h2>
+      <p>Parrafo primero de la seccion 4. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 4. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 4. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 4, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 4, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+  <div class="par">
+    <div class="par__tx">
+      <h2>Atribucion: lo que la plataforma se apunta</h2>
+      <p>Parrafo primero de la seccion 5. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 5. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 5. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 5, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 5, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+  <div class="par">
+    <div class="par__tx">
+      <h2>Como fijar el objetivo sin matar el volumen</h2>
+      <p>Parrafo primero de la seccion 6. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 6. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 6. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 6, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 6, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+  <div class="par">
+    <div class="par__tx">
+      <h2>Los tres errores que vemos cada semana</h2>
+      <p>Parrafo primero de la seccion 7. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 7. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 7. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 7, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 7, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+  <div class="par">
+    <div class="par__tx">
+      <h2>Que revisar cada lunes por la manana</h2>
+      <p>Parrafo primero de la seccion 8. Aqui se desarrolla la idea principal con el detalle suficiente para que alguien que gestiona cuentas todos los dias reconozca el problema y sepa si le afecta o no le afecta en su situacion concreta.</p>
+      <p>Parrafo segundo de la seccion 8. Se anade el matiz que casi siempre falta en los articulos genericos, que es el que separa una recomendacion util de una recomendacion que suena bien y no se puede aplicar en una cuenta con presupuesto limitado.</p>
+      <p>Parrafo tercero de la seccion 8. Un ejemplo numerico contado en prosa, sin tabla y sin nada que mirar al lado, exactamente como estan escritas hoy las catorce paginas de la carpeta learn del sitio.</p>
+      <p>Parrafo cuarto y ultimo de la seccion 8, que cierra la idea y enlaza con la siguiente sin que exista ningun corte visual entre las dos porque el h2 es una etiqueta y no un limite de seccion.</p>
+    </div>
+    <aside class="par__ev">
+      <b>0,0x</b><span>La cifra que sostiene la seccion 8, con su fuente y su fecha.</span>
+    </aside>
+  </div>
+</div></section>
+
+<section><div class="in">
+  <h2>Los umbrales, uno al lado del otro</h2>
+  <table>
+    <tr><th>Modelo de negocio</th><th>Margen tipico</th><th>ROAS de equilibrio</th><th>Veredicto</th></tr>
+    <tr><td>Ecommerce de marca propia</td><td>60-70 %</td><td>1,5x</td><td>Margen para escalar</td></tr>
+    <tr><td>Reventa / distribucion</td><td>20-30 %</td><td>3,5x</td><td>Poco recorrido</td></tr>
+    <tr><td>Suscripcion</td><td>80 %</td><td>1,2x el primer mes</td><td>Se decide por LTV</td></tr>
+    <tr><td>Servicios con venta consultiva</td><td>—</td><td>no aplica</td><td>Medir por lead cualificado</td></tr>
+  </table>
+</div></section>
+
+<section><div class="in">
+  <h2>Lo que nos preguntan cada semana</h2>
+  <details><summary>Mi ROAS ha bajado y el gasto es el mismo</summary><p>Casi siempre es mezcla de campanas, no rendimiento: una campana nueva con menos margen se lleva presupuesto de una madura y el promedio baja sin que nada empeore.</p></details>
+  <details><summary>Me piden un ROAS de 4 y no llego</summary><p>La pregunta correcta no es si se llega, es que margen deja esa cifra y que volumen se pierde por el camino.</p></details>
+  <details><summary>Vale mas el ROAS de la plataforma o el del negocio</summary><p>El del negocio siempre. El de la plataforma sirve para comparar campanas entre si, no para decidir cuanto se invierte.</p></details>
+  <details><summary>Cada cuanto se revisa el objetivo</summary><p>Cuando cambia el margen o el mix de producto. Revisarlo cada semana produce cambios que no dan tiempo a medirse.</p></details>
+</div></section>
+
+<section><div class="in">
+  <h2>Seguir por aqui</h2>
+  <p>Si esto te ha servido, la continuacion natural es <a href="/learn/marketing-attribution/">como leer la atribucion</a>, y despues <a href="/learn/google-ads-change-history/">el historial de cambios</a>. Si prefieres verlo sobre tus propios datos, esta <a href="/ad-account-audit/">la auditoria de cuenta</a>.</p>
+</div></section>
+
+<section class="cierre"><div class="in">
+  <h2>Veamoslo en tu cuenta</h2>
+  <p>El analisis es tuyo trabajemos juntos o no.</p>
+  <p><a class="btn" href="/ad-account-audit/">Pedir la auditoria</a></p>
+</div></section>
+
+</main>
+<footer><a href="/">Inicio</a><a href="/legal/">Aviso legal</a></footer>
+</body></html>

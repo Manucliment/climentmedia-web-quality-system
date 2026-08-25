@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es" data-tipo="guia">
+<head>
+<meta charset="utf-8">
+<title>Prosa estrecha — fixture ROJO 24-ago-2026</title>
+<!--
+  🔴 NEGATIVO del aviso de cpl. TIENE QUE AVISAR de «linea demasiado corta».
+
+  Es la pareja de `cpl-testimonial-grid.html`. Los dos tienen parrafos de
+  200+ caracteres a ~285px de ancho. La diferencia es que estos NO estan en una
+  rejilla: son prosa corrida encerrada en una columna que nadie quiere leer.
+
+  EXISTE PARA QUE EL ARREGLO NO SE PUEDA RELAJAR, y no es una precaucion
+  teorica: la PRIMERA version del arreglo excluia cualquier <p> que viviera
+  dentro de una celda, sin mirar cuantas columnas tenia el contenedor. Un
+  par-alterno -texto a un lado, imagen al otro- es exactamente eso, asi que se
+  llevo por delante la prosa buena tambien: medido en la pagina que motivo el
+  cambio, los parrafos de lectura pasaron de 12 a CERO. El aviso desaparecio,
+  pero no porque la pagina estuviera bien: porque el gate habia dejado de mirar.
+  Con >=3 columnas el par-alterno vuelve a contar y las tarjetas no.
+
+  Es el mismo modo de fallo que ANCHO-MIN esa misma manana, y por eso este par
+  existe: un gate con solo casos positivos se relaja solo y nadie se entera
+  hasta que aprueba una web rota.
+
+  ESPERADO: aviso de cpl con la mediana por debajo de 45. Si deja de salir, el
+  filtro se ha comido la prosa de verdad otra vez.
+-->
+<style>
+  :root{--ancho:1120px}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif; font-size:17px; line-height:1.6;
+       background:#140d1f; color:#e8e2f0; margin:0}
+  .env{max-width:var(--ancho); margin:0 auto; padding-inline:24px}
+  section{padding:56px 0}
+  h1{font-size:2.4rem; margin:0 0 .75rem}
+  h2{font-size:1.5rem; margin:0 0 1rem; color:#e3c37a}
+  .btn{display:inline-block; padding:14px 22px; border-radius:10px;
+       background:#e3c37a; color:#241a10; font-weight:600; text-decoration:none}
+  /* AQUI esta el defecto: prosa corrida a 285px. No hay rejilla ninguna. */
+  .columna-mala{max-width:285px}
+  .columna-mala p{margin:0 0 1rem}
+  figure{margin:0 0 1.5rem}
+  figure img{width:100%; border-radius:14px}
+</style>
+</head>
+<body>
+<main class="env">
+
+  <section data-sec="hero">
+    <h1>Rituales de luna nueva para atraer el amor</h1>
+    <p>Que dice la tradicion, que se puede sostener y que no. Una guia para
+      empezar sin gastarse dinero en nada.</p>
+    <p><a class="btn" href="#contacto">Escribir a Rosa</a></p>
+  </section>
+
+  <section data-sec="contexto">
+    <h2>Por donde se empieza</h2>
+    <figure>
+      <img src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect width='800' height='400' fill='%232b1d45'/%3E%3C/svg%3E"
+           alt="Luna nueva" width="800" height="400">
+    </figure>
+    <div class="columna-mala">
+      <p>La luna nueva marca el principio del ciclo y por eso la tradicion la
+        asocia a lo que se empieza, no a lo que se cierra. Da igual la hora
+        exacta: lo que importa es que sea el mismo dia y que no lo hagas con
+        prisa, porque la prisa es justo lo contrario de lo que se busca.</p>
+      <p>Lo primero es escribir. No una lista de deseos ni un guion de lo que
+        quieres que haga otra persona, sino lo que tu estas dispuesta a cambiar
+        para que eso sea posible. Si al releerlo todo lo que aparece depende de
+        alguien que no eres tu, todavia no has empezado.</p>
+      <p>Despues viene la parte que la gente se salta, que es esperar. Un ciclo
+        entero, veintiocho dias, sin volver a tocar el papel ni contarselo a
+        nadie. Lo que se cuenta se convierte en conversacion y deja de ser
+        trabajo propio, y eso es lo que hace que casi nunca funcione.</p>
+      <p>Al cerrar el ciclo se relee lo escrito y se mira una sola cosa: cuanto
+        de aquello has hecho de verdad. No cuanto ha cambiado el mundo alrededor.
+        Ese es el unico indicador que no se puede falsear, y es tambien el unico
+        que sirve para decidir si repites el mes siguiente.</p>
+      <p>Y lo que no se sostiene: nada de esto obliga a nadie a nada, nada de
+        esto se paga por adelantado a quien te prometa un resultado, y nada de
+        esto sustituye a hablar con la persona con la que tienes el problema.
+        Quien te diga lo contrario no esta hablando de rituales.</p>
+    </div>
+  </section>
+
+  <section data-sec="cta" id="contacto">
+    <h2>Si quieres que lo veamos juntas</h2>
+    <p>Escribeme y te cuento sin compromiso si esto encaja con lo que buscas.</p>
+    <p><a class="btn" href="#contacto">Escribir ahora</a></p>
+  </section>
+
+</main>
+</body>
+</html>

@@ -62,9 +62,9 @@ paths/            Four entry points. Start here, not in blueprint/.
 
 blueprint/        The method. 21 reference documents — consulted, not read end to end.
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
-gates/            The executable half. ~35 programs, plus their test batteries.
-templates/        Spec, page-type and report templates.
-docs/             The trap log: every rule here, with the failure that produced it.
+gates/            The executable half. 34 programs and 22 test batteries.
+                  Start at gates/README.md — the index, the flags, what does not ship.
+docs/             The trap log: 80 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.
 GLOSSARY.md       Receipt, gate, lens, scope, mould, primitive, prose-page.
 ```
@@ -80,7 +80,7 @@ need, when you need it. The references are lookup material.
 git clone https://github.com/Manucliment/web-quality-system.git
 cd web-quality-system
 cp config.example.md /path/to/your-site/_deploy/config.md   # edit this, not the programs
-bash gates/tests/run-all.sh --fast                          # prove the instruments work
+bash gates/run-all.sh --fast                          # prove the instruments work
 ```
 
 Then open `paths/1-new-site.md` (or whichever of the four matches your job).
@@ -161,7 +161,7 @@ Two numbers, both published because both can go down:
 Run them:
 
 ```bash
-bash gates/tests/run-all.sh
+bash gates/run-all.sh
 ```
 
 > **Do not run the battery while a deploy is running.** They share temporary files. A

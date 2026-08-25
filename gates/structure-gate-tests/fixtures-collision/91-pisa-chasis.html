@@ -1,0 +1,11 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>C1</title>
+<link rel="stylesheet" href="../../moldes/_tokens.css">
+<link rel="stylesheet" href="../../moldes/_base.css">
+<style>
+  /* C1: el fallo original. Un molde que "solo necesita" otro ancho y lo escribe
+     redeclarando el chasis. Al componer, esos 760px se los queda TODA la pagina. */
+  .sec__in{max-width:760px;margin-inline:auto}
+  .m91-caja{padding:var(--space-6)}
+</style></head><body>
+<section class="sec" data-sec="oferta"><div class="sec__in"><p class="m91-caja">x</p></div></section>
+</body></html>

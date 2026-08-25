@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vocabulario interno a la vista | Fixture EST-11</title>
+<meta name="description" content="Fixture de la bateria: reproduce las cuatro cosas que el 14-ago-2026 salieron a produccion en webs de cliente siendo HTML perfectamente valido, y que no miraba ningun gate.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- CASO ROJO de EST-11. Los cuatro son REALES, no inventados para la prueba:
+     salieron publicados el 14-ago-2026 remaquetando site-c.example y
+     mirando site-d.example. Los cuatro son HTML valido. -->
+<nav class="migas" aria-label="Miga">
+  <a href="/">Inicio</a> /
+  <a href="/hipnosis-para-eliminar-una-tercera-persona/">hipnosis-para-eliminar-una-tercera-persona</a> /
+  <span>Hipnosis</span>
+</nav>
+<main data-tipo="servicio">
+  <section data-sec="hero">
+    <h1>hero</h1>
+    <p>El titular cayo en el nombre del rol porque el contenido no traia ninguno.</p>
+  </section>
+  <section data-sec="calificacion">
+    <h2>calificacion</h2>
+    <p>Y lo mismo, una seccion mas abajo.</p>
+  </section>
+  <section data-sec="formulario">
+    <h2>Dejame tus datos</h2>
+    <form method="post" action="/contacto.php">
+            <p><label for="n">Tu nombre</label><input id="n" name="nombre" type="text"></p>
+      <button type="submit">Enviar</button>
+    </form>
+  </section>
+  <section data-sec="cierre">
+    <h2>&iquest;Hablamos?</h2>
+    <p>Un cierre normal, para que la pagina no sea solo defectos.</p>
+  </section>
+</main>
+</body>
+</html>

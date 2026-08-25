@@ -1,0 +1,7 @@
+/* Control NEGATIVO del centinela: la misma hoja SIN la regla imposible.
+   Aqui A11Y-03z tiene que estar AUSENTE. Un centinela que salta siempre no
+   distingue nada. */
+:root { --mismo: #333333; }
+body { background: #ffffff; }
+.normal { color: var(--mismo); background: #ffffff; }
+.buena  { color: #000000;      background: #ffffff; }

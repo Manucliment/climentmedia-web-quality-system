@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tipo inventado | Fixture de data-tipo invalido</title>
+<meta name="description" content="Fixture de la bateria: una pagina que declara un data-tipo que no existe en el vocabulario del gate. Tiene que avisar y volver a inferir por la ruta, nunca aceptarlo en silencio.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- «chorizo» no esta en la lista (home gracias contacto legal guia hub servicio).
+     El gate tiene que sacar EST-02d y volver a inferir por la ruta: raiz => home. -->
+<main data-tipo="chorizo">
+  <section data-sec="hero"><h1>Un tipo que no existe</h1><p>Declarar algo que el gate no conoce es creer que declaras y que midan otra cosa.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">Otra</a>.</p></section>
+</main>
+</body>
+</html>

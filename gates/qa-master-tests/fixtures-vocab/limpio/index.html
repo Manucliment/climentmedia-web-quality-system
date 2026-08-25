@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El mismo arreglado | Fixture EST-11</title>
+<meta name="description" content="Fixture de la bateria: el arreglo del caso rojo. Los mismos roles declarados, la misma miga y el mismo formulario, sin que el visitante lea una sola palabra nuestra.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- CASO VERDE, y es el ARREGLO del rojo, no otro fichero. Los roles siguen
+     declarados en `data-sec` -que es donde tienen que estar, para el gate- y
+     ninguno se ve.
+
+     🔴 Y lleva DOS trampas a proposito, porque un gate que acusa de mas se
+     acaba apagando:
+       · la palabra «proceso» dentro de un parrafo, en castellano normal;
+       · un enlace de contenido cuyo texto ES un slug con guiones, que es
+         legitimo dentro de la prosa y no en una miga.
+     Si EST-11 acusa alguna de las dos, esta mirando la prosa y no los
+     titulares, y entonces no se puede encender en ninguna web en español. -->
+<nav class="migas" aria-label="Miga">
+  <a href="/">Inicio</a> /
+  <a href="/terapias-hipnosis/">Hipnosis</a> /
+  <span>Eliminar una tercera persona</span>
+</nav>
+<main data-tipo="servicio">
+  <section data-sec="hero">
+    <h1>Hipnosis para eliminar una tercera persona</h1>
+    <p>El titular sale del contenido, que es de donde tiene que salir.</p>
+  </section>
+  <section data-sec="calificacion">
+    <p>Esta seccion NO trae titular en el contenido, asi que sale sin
+    &lt;h2&gt;. Antes se rellenaba con el nombre del rol.</p>
+  </section>
+  <section data-sec="proceso">
+    <h2>Como trabajo</h2>
+    <p>El proceso empieza con una consulta, y el resto del proceso depende de
+    lo que salga: aqui la palabra «proceso» es castellano, no una etiqueta.</p>
+  </section>
+  <section data-sec="formulario">
+    <h2>Dejame tus datos</h2>
+    <form method="post" action="/contacto.php">
+      <p><label for="n">Tu nombre</label><input id="n" name="nombre" type="text"></p>
+      <button type="submit">Enviar</button>
+    </form>
+  </section>
+  <section data-sec="cierre">
+    <h2>&iquest;Hablamos?</h2>
+    <p>Lo cuenta en <a href="/como-recuperar-a-tu-ex/">como-recuperar-a-tu-ex</a>,
+    que es un enlace de prosa con el slug por texto: feo, pero no es una miga.</p>
+  </section>
+</main>
+</body>
+</html>
