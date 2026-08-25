@@ -77,8 +77,8 @@ need, when you need it. The references are lookup material.
 ## Quick start
 
 ```bash
-git clone https://github.com/Manucliment/web-quality-system.git
-cd web-quality-system
+git clone https://github.com/Manucliment/climentmedia-web-quality-system.git
+cd climentmedia-web-quality-system
 cp config.example.md /path/to/your-site/_deploy/config.md   # edit this, not the programs
 bash gates/run-all.sh --fast                          # prove the instruments work
 ```
