@@ -1,0 +1,96 @@
+# =============================================================================
+#  accepted.conf  ·  copy to <your-repo>/_deploy/accepted.conf and fill it in
+# =============================================================================
+#  Read by the master gate. This is NOT shell: it is parsed, never executed.
+#
+#  WHAT IT IS
+#  ----------
+#  An accepted failure is a BUSINESS DECISION ALREADY TAKEN, not an unfixed
+#  defect. It does not count towards the verdict, but it is still measured and
+#  it still appears in the receipt with its name, its reason, who signed it and
+#  until when.
+#
+#  WHY IT EXISTS
+#  -------------
+#  The gate could not tell OUR defect from the CLIENT's decision: it treated
+#  "the favicon weighs 320 KB" exactly like "the client has not decided how long
+#  leads are retained". Measured on a real site: of its 8 FAILs, ZERO were
+#  defects of the tree. Without this, no site can be green while a decision is
+#  pending — and there are always decisions pending.
+#  **A gate that can never be satisfied is a gate somebody switches off.**
+#
+#  WHAT IT IS **NOT**
+#  ------------------
+#  · NOT the "anyway" flag. That is for things NOT LOOKED AT (NOT VERIFIED) and
+#    it does not touch a red. A red is still a hard stop.
+#  · NOT for covering up OUR defect. If it is fixed by writing code, write code.
+#  · NOT for covering up a FALSE POSITIVE. That hides it on this site and leaves
+#    it alive on every other one. Fix it in the gate.
+#
+#  THE FIVE LOCKS
+#  --------------
+#  1 · It lives in the REPO, in version control. A command-line flag gets copied
+#      and pasted without thinking; a file gets reviewed in a diff.
+#  2 · FIVE MANDATORY FIELDS. If one is missing the entry is void, it is said
+#      out loud, and the failure keeps counting.
+#  3 · You accept a FINDING, not a CHECK. It matches against the `FINGERPRINT`
+#      line the report prints under each FAIL. If the finding changes, IT COUNTS
+#      AGAIN.
+#  4 · IT EXPIRES: 90 days by default, hard ceiling 180 (an `UNTIL` beyond the
+#      ceiling is rejected outright, not trimmed), warning at 14 days out.
+#  5 · Some things can never be accepted; that list lives in the gate, not here.
+#      Today: cookies before consent, a pre-ticked box, no cookie/privacy page
+#      at all, a legal policy live in draft, and an internal path exposed.
+#      The criterion: the harm falls on the VISITOR and is invisible to us.
+#
+#  HOW TO FILL IT IN
+#  -----------------
+#    perl gates/qa-master.pl <URL> --repo DIR --candidate
+#  and copy, VERBATIM, the `FINGERPRINT` line printed under the FAIL.
+#  When a check emits no evidence (it is binary and site-wide) the fingerprint
+#  it prints is `WHOLE-CHECK`, and that is what goes here. It is not a wildcard:
+#  if the finding DOES carry evidence, `WHOLE-CHECK` matches nothing.
+#
+#  THE THREE FINGERPRINT SHAPES, AND WHAT EACH MEANS
+#  -------------------------------------------------
+#    DATA=... WHERE=...      the WHERE is the ENTIRE evidence for the finding.
+#    DATA=... EV=<8 hex>     the finding has MORE evidence than fits on screen
+#                            (25 pages, 40 resources...). The report prints three
+#                            or four; the EV summarises the WHOLE SET. If a
+#                            single one enters or leaves, the EV changes and the
+#                            acceptance stops matching. To read the full list
+#                            BEFORE signing:  --evidence
+#    DATA=... EVS=<8 hex>    the same, but the check measured a SAMPLE, not the
+#                            whole site (performance looks at 3 pages of 25).
+#                            Accepting this is NOT accepting that the rest is
+#                            clean: it is accepting what was looked at. The
+#                            receipt says so in those words, and whoever
+#                            deploys sees it.
+#
+#  WHY A HASH AND NOT THE LIST. Because this line gets read in a diff: with 25
+#  paths inside it would be 3 KB and the file would stop being reviewable, which
+#  is the FIRST lock of the whole mechanism. The `DATA` beside it shows at a
+#  glance WHAT is accepted; the hash ties the acceptance to the exact set.
+#
+#  THE HOLE THIS CLOSED, so it does not reopen: the fingerprint used to be
+#  computed over what was PRINTED. On one site an accessibility check reported
+#  "25 of 25 pages" and listed 4; making one of the other 21 worse did NOT move
+#  the fingerprint, and the failure stayed silenced. It failed towards the
+#  unsafe side.
+# =============================================================================
+
+[ACCEPTED]
+# The check id, exactly as the report prints it.
+CHECK:     MED-09
+# The exact FINGERPRINT. Copied from the report, never written from memory.
+FINDING:   WHOLE-CHECK
+# Why this is not a defect of ours. If nobody knows why it is pending, write
+# that it is pending AND WHO DECIDES. An invented reason is worse than none: it
+# looks like a decision and it is not.
+REASON:    PENDING DECISION: how many months leads are retained is the client's legal call.
+# Who signs. A person, with a name. Not "the team".
+ACCEPTS:   Firstname Lastname
+# When it was accepted (YYYY-MM-DD).
+DATE:      2026-08-11
+# Optional. Defaults to DATE + 90 days; hard ceiling is 180.
+UNTIL:     2026-09-10

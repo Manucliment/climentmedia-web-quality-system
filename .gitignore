@@ -1,0 +1,16 @@
+# Your filled-in configuration is yours, not the blueprint's
+config.md
+*.conf
+!*.conf.example
+
+# Receipts and QA artefacts are per-site, never committed
+.qa-receipt
+_qa/
+*.bak-*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/

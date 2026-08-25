@@ -1,0 +1,55 @@
+# =============================================================================
+#  deploy.conf  ·  copy to <your-repo>/_deploy/deploy.conf and fill it in
+# =============================================================================
+#  deploy.sh sources this file, so it is shell: NO spaces around `=`, and quotes
+#  where quotes are needed.
+#
+#  Until this file exists, the door refuses to open and says what is missing.
+#  That is the only honest posture: better a closed door than one that opens by
+#  itself onto a site nobody has checked.
+#
+#  TREAT THIS FILE AS CODE. The door executes the command you put in UPLOAD.
+#  The system deliberately does not know how to upload anything, which is why it
+#  cannot upload anywhere you did not name.
+# =============================================================================
+
+# The root URL. The served-equals-measured check builds its URLs from this.
+SITE=https://your-domain.tld
+
+# The command that uploads THE WHOLE TREE. Either:
+#   · a path relative to the repo   -> run with bash
+#   · a complete command
+#
+# WARNING: what it cannot be is a command that uploads only part of the tree.
+# If it uploads only the CSS, the served-equals-measured step will compare the N
+# files in the receipt against what is served and report the rest as missing.
+# That is correct behaviour, not a false red — and it is the single most common
+# reason a first deploy comes out red. Either upload everything, or accept that
+# the check is telling you the truth about a partial upload.
+UPLOAD=_deploy/upload.sh
+
+# ── Browser step: the things only a browser can see ──────────────────────────
+# Runs the structure, screen-density and forms gates against what has JUST been
+# served. Does not block; records its verdict in the history file.
+#
+# IMPORTANT: run this from a Linux host with a real Chrome. On Windows, headless
+# Chrome clamps the window width to about 500px, so a measurement "at 390"
+# actually describes a page laid out at 504 and the screenshot is a crop. Ask
+# any probe for its innerWidth and refuse the number if it does not match.
+
+# Which pages get measured for layout and density. Default: the home page only.
+BROWSER_URLS="/ /contact/"
+
+# Which pages have a form. On these, the form step is REQUIRED: a page here that
+# ends up without a working form is a FAIL, not a "does not apply". Without this
+# line the form step IS NOT MEASURED, and that gets recorded — an unmeasured
+# form is not a correct one.
+FORM_URLS="/contact/"
+
+# Skip the browser step entirely, with a reason. It still gets recorded: a
+# declared hole is still a hole. Useful when the site is not reachable from the
+# measuring host.
+# NO_BROWSER=1
+
+# Where to measure from. Needs Chrome, puppeteer, lighthouse and pa11y.
+# BROWSER_HOST=your-measuring-host

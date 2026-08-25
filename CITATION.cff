@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+title: "Web Quality System — an open blueprint"
+message: "If you use this system, or the vocabulary it defines, please cite it as below."
+type: software
+authors:
+  - family-names: Climent
+    given-names: Manuel
+    affiliation: Climent Media
+    website: "https://climentmedia.com"
+repository-code: "https://github.com/Manucliment/web-quality-system"
+url: "https://climentmedia.com"
+abstract: >-
+  A complete method and gate suite for building, migrating, auditing and
+  shipping static websites, distilled from real client work. Documents the
+  measured finding that writing a rule down improves compliance by fifteen
+  points and nothing more, and the consequence: a deploy door that refuses
+  to open without a signed receipt naming the verdict per lens, the hash of
+  the measured tree, the scope of the measurement, and the list of what
+  nobody looked at. Includes the three-state verdict vocabulary that
+  separates a pass from an unmeasured check, the expiring-acceptance
+  mechanism that keeps a gate satisfiable, the served-equals-measured check,
+  and a trap log in which forty-one of a hundred and ten documented defects
+  belonged to the measuring instrument rather than to the sites.
+keywords:
+  - web-quality
+  - static-sites
+  - qa-automation
+  - technical-seo
+  - accessibility
+  - web-performance
+  - site-migration
+  - deployment-gates
+license: MIT
+date-released: "2026-08-25"
+version: "1.0.0"
