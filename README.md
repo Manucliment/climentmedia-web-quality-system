@@ -149,6 +149,15 @@ Two numbers, both published because both can go down:
 | Test cases green | **908 · 0 red** | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect |
 | Checks **with a fixture** | **119 of 134 (88%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
+> **And the second number states its own scope, which is the honest half of it.** That 88% is
+> measured over **4 programs out of 28**. The coverage tool prints the 24 it does not measure,
+> by name, on every run. A coverage figure without its scope is exactly the kind of claim this
+> system exists to stop, so it does not get quoted without this line.
+>
+> "Has a fixture" also only means the check's id appears in its test battery. It does not
+> mean the case is any good, or that anybody has seen it go red. **It is the floor, not the
+> ceiling.**
+
 Run them:
 
 ```bash
