@@ -20,7 +20,7 @@ caso(){ # id · exit esperado · codigo esperado (o -) · ficheros...
 }
 
 echo "===== POSITIVO · el repertorio real tiene que PASAR ====="
-caso "P1-los-19-moldes"   0 -   "$D/../moldes"
+caso "P1-los-19-moldes"   0 -   "$D/../../blueprint/moulds"
 
 echo
 echo "===== NEGATIVOS · cada uno tiene que FALLAR por su motivo ====="
@@ -33,7 +33,7 @@ caso "N6-mismo-sel-igual" 1 C6  "$F/95-dup-uno.html" "$F/95-dup-dos.html"
 
 echo
 echo "===== CONTROL · un negativo suelto NO puede contaminar al positivo ====="
-caso "C1-19-mas-un-roto"  1 C1  "$D/../moldes" "$F/91-pisa-chasis.html"
+caso "C1-19-mas-un-roto"  1 C1  "$D/../../blueprint/moulds" "$F/91-pisa-chasis.html"
 
 echo
 if [ "$fallos" = 0 ]; then echo "TODO OK — 8 casos, el gate distingue"; else echo "$fallos caso(s) a revisar"; fi

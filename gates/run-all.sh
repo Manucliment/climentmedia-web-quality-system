@@ -31,6 +31,7 @@ BANCOS="
 doc-gate|perl doc-gate-tests/tests.pl|0|el gate de documentacion
 crawl-enlaces|perl crawl-links-tests/tests.pl|0|migas, cache compartida, R5 y R10
 qa-maestro|bash qa-master-tests/tests.sh|1|las 5 lentes y sus controles
+recibo-base|bash receipt-tests/tests.sh|0|el recibo: arbol desplegable, sello, alcance
 recibo-puerta|bash receipt-tests/tests-door.sh|1|G11 y la puerta de despliegue
 recibo-cobertura|bash receipt-tests/tests-coverage.sh|0|el alcance del recibo
 recibo-sitemap|bash receipt-tests/tests-sitemap.sh|0|el arbol desplegable
@@ -43,6 +44,7 @@ gate-formularios|bash forms-gate-tests/tests.sh|1|el formulario en el DOM (paso 
 anatomia|perl anatomy-tests/tests.pl|0|una sola tabla de anatomias (09 §2)
 medir-pantallas|bash measure-screens-tests/tests.sh|1|densidad: la UNIDAD y los 19 moldes
 gate-estructura|bash structure-gate-tests/battery.sh|1|maqueta: prosa vs maquetada, 3 REVISAR congelados
+moldes-maqueta|bash structure-gate-tests/battery-layout.sh|1|los moldes: colisiones, contraste AA, anchos
 gate-movil|bash mobile-gate-tests/battery.sh|1|movil: accion sobre el pliegue y CTA tapado (mide en el SERVIDOR)
 conformidad|perl compliance-selftest.pl|1|la matriz y su alcance (sonda home-only)
 historial|perl history-gate.pl|0|el registro nombra al check que acusa
@@ -240,12 +242,20 @@ printf "  %d casos en verde · %d en rojo\n" "$TOT_OK" "$TOT_MAL"
 #     It is the defect this check was written to catch, committed against the
 #     check itself. Hence the census below: a sweep that finds NOTHING TO LOOK AT
 #     must say so, because zero findings and zero subjects print identically.
+#  🔴 AND IT COUNTS ENTRY SCRIPTS, NOT DIRECTORIES. Checking directories was the
+#     second half of the same blind spot: `grep` for the directory name matches as
+#     soon as ANY ONE of its scripts is wired, so a whole battery living inside an
+#     already-wired directory is invisible. Two were, and the day they were finally
+#     run one of them came out **62 pass · 6 fail** — six red cases nobody had ever
+#     seen, on a fixture that had quietly stopped matching the code it tests.
+#     The unit that has to be accounted for is the thing you can run.
 DESCOLGADOS=""; VISTOS=0
-for d in "$REF"/*-tests; do
-  [ -d "$d" ] || continue
+for f in "$REF"/*-tests/tests*.sh "$REF"/*-tests/tests*.pl \
+         "$REF"/*-tests/battery*.sh "$REF"/*-tests/battery*.pl; do
+  [ -f "$f" ] || continue
   VISTOS=$((VISTOS+1))
-  n="$(basename "$d")"
-  printf '%s\n' "$BANCOS" | grep -q "$n" || DESCOLGADOS="$DESCOLGADOS $n"
+  n="$(basename "$(dirname "$f")")/$(basename "$f")"
+  printf '%s\n' "$BANCOS" | grep -qF "$n" || DESCOLGADOS="$DESCOLGADOS $n"
 done
 for a in "$REF"/*selftest*.pl; do
   [ -f "$a" ] || continue

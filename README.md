@@ -64,7 +64,7 @@ blueprint/        The method. 21 reference documents — consulted, not read end
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
 gates/            The executable half. 34 programs and 22 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.
-docs/             The trap log: 80 traps, each with the failure that produced it.
+docs/             The trap log: 81 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.
 GLOSSARY.md       Receipt, gate, lens, scope, mould, primitive, prose-page.
 ```
@@ -146,7 +146,7 @@ Two numbers, both published because both can go down:
 
 | Number | Today | What it means |
 |---|---|---|
-| Test cases green | **908 · 0 red** | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect |
+| Test cases green | **519 · 0 red** on `--fast` | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect |
 | Checks **with a fixture** | **119 of 134 (88%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
 > **And the second number states its own scope, which is the honest half of it.** That 88% is
@@ -157,6 +157,12 @@ Two numbers, both published because both can go down:
 > "Has a fixture" also only means the check's id appears in its test battery. It does not
 > mean the case is any good, or that anybody has seen it go red. **It is the floor, not the
 > ceiling.**
+>
+> **And the first number states its scope too: 519 is the `--fast` run**, which skips the nine
+> banks that need a real Chrome or a measuring host. The full number is higher and is not
+> published here, because it was not measured on the machine this was written on — and a count
+> nobody can re-derive is a count somebody will eventually quote as current. Run it yourself;
+> the runner prints its own total and names every bank it did not measure.
 
 Run them:
 

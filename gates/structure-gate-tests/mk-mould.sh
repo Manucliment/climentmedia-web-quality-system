@@ -15,7 +15,7 @@
 #    un gate.
 set -u
 D="$(cd "$(dirname "$0")" && pwd)"
-M="$D/../moldes"
+M="$D/../../blueprint/moulds"
 OUT="$1"; shift
 ORDEN="$*"
 

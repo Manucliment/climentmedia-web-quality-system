@@ -17,7 +17,7 @@ cp "$SRC" "$W"
 # copiarlo a work/ ese enlace se rompe y la pagina se mide SIN CSS: sale plana y
 # parece rota. Por eso el chasis viaja con la copia.
 WD="$(cd "$(dirname "$0")" && pwd)"
-cp "$WD/../moldes/_tokens.css" "$WD/../moldes/_base.css" "$WD/work/" 2>/dev/null || true
+cp "$WD/../../blueprint/moulds/_tokens.css" "$WD/../../blueprint/moulds/_base.css" "$WD/work/" 2>/dev/null || true
 {
   echo '<script>try{ var __R ='
   cat "$SONDA"
