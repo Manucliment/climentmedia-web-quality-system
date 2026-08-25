@@ -3395,7 +3395,22 @@ sub lente_medicion {
             #    nadie (site-a: data-col y data-sec).
             if ($f =~ /\.html?$/i) {
                 $fuentes++;
-                $emitidos{lc $_} = 1 for $c =~ /\bdata-([a-z][a-z0-9-]{2,})\s*=\s*["']/gi;
+                # 🔴 INSIDE A TAG, not anywhere in the file. The pattern used to run
+                #    over the whole content, so any PROSE naming `data-x="v"` counted
+                #    as markup. Measured case: a page that is escaped documentation
+                #    inside a <pre> — `&lt;div data-event=…` — with not one real
+                #    attribute in it (0 matches of `<tag ... data-event=`). MED-05
+                #    accused it of emitting data-event and data-loc with no reader,
+                #    and held up a deploy.
+                #    Emitted means the browser sees an ATTRIBUTE, so look only inside
+                #    `<...>`, which is the only place an attribute can exist.
+                #    ⚠️ What it costs: `[^>]*` stops at the first `>`, so a `>` inside
+                #       an earlier attribute VALUE would hide the data-* after it.
+                #       Rare in generated HTML, and it fails towards NOT accusing —
+                #       the behaviour it replaces was accusing outright.
+                for my $tag ($c =~ /<[a-zA-Z][^>]*>/g) {
+                    $emitidos{lc $_} = 1 for $tag =~ /\bdata-([a-z][a-z0-9-]{2,})\s*=\s*["']/gi;
+                }
             }
             $leidos{$_}++  for $c =~ /getAttribute\(\s*['"]data-([a-z0-9-]+)['"]/gi;
             $leidos{$_}++  for $c =~ /dataset\.([a-zA-Z0-9_]+)/g;
@@ -3413,7 +3428,13 @@ sub lente_medicion {
             my $b = fetch($p)->{body} // '';
             unless (length $b) { $vistas_mudas++; next }
             $fuentes++;
-            $emitidos{lc $_} = 1 for $b =~ /\bdata-([a-z][a-z0-9-]{2,})\s*=\s*["']/gi;
+            # Same tag-scoping as above, for the same reason: fix only the repo
+            # branch and the gate starts accusing again the moment the page is
+            # SERVED. Half a correction is the one that deceives, because the
+            # symptom disappears until the next deploy.
+            for my $tag ($b =~ /<[a-zA-Z][^>]*>/g) {
+                $emitidos{lc $_} = 1 for $tag =~ /\bdata-([a-z][a-z0-9-]{2,})\s*=\s*["']/gi;
+            }
         }
         # 🔴 EL VOCABULARIO DEL PROPIO GATE NO ES UN HUERFANO (11-ago-2026).
         #    `data-sec` y `data-tipo` no los lee ningun JS del sitio: los leo YO,
