@@ -1,6 +1,6 @@
-# The trap log — 80 traps, read before debugging
+# The trap log — 81 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§80** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§81** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -10,7 +10,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §20–§40 | [`traps/20-40.md`](traps/20-40.md) |
 | §41–§59 | [`traps/41-59.md`](traps/41-59.md) |
 | §60–§76 | [`traps/60-76.md`](traps/60-76.md) |
-| §77–§80 | [`traps/77-80.md`](traps/77-80.md) |
+| §77–§81 | [`traps/77-81.md`](traps/77-81.md) |
 
 ---
 
@@ -26,11 +26,11 @@ Not quoted — **derived by a program you can run**:
 perl gates/doc-gate.pl --lista D4
 ```
 
-Today it reports: **80 traps · all 80 declare what catches them · 31 say `nobody` on purpose.**
+Today it reports: **81 traps · all 81 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
-writing more prose** — which is the measured finding the whole repository rests on. The four most
-recent traps moved the total from 76 to 80 and left `nobody` at 31, because each shipped with the
+writing more prose** — which is the measured finding the whole repository rests on. The five most
+recent traps moved the total from 76 to 81 and left `nobody` at 31, because each shipped with the
 check that catches it. That is what adding a trap is supposed to look like.
 
 > **Use the gate's number, not a hand count.** Counting the whole declaration paragraph by hand gives
@@ -120,6 +120,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §77 | A sweep for unwired batteries went mute when they were renamed |
 | §78 | A discovery step conditional on an ABSENCE, disarmed by adding one file |
 | §80 | Porting a construct by copying the line `grep` showed me |
+| §81 | The census counted directories, so a battery hid inside a wired one |
 
 ### C · Silent loss — it delivered less and reported success
 

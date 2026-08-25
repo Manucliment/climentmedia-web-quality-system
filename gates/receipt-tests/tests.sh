@@ -75,6 +75,7 @@ cat > "$T/qa-verde.json" <<'JSON'
    {"lente":"RENDIMIENTO","id":"REN-01","estado":"PASA","titulo":"t"},
    {"lente":"ACCESIBILIDAD","id":"A11-01","estado":"PASA","titulo":"t"},
    {"lente":"MEDICION","id":"MED-01","estado":"PASA","titulo":"t"},
+   {"lente":"ESTRUCTURA","id":"EST-01","estado":"PASA","titulo":"maqueta"},
    {"lente":"ESTRUCTURA","id":"EST-06","estado":"NV","titulo":"densidad"},
    {"lente":"ESTRUCTURA","id":"EST-08","estado":"NV","titulo":"grafo"},
    {"lente":"ESTRUCTURA","id":"EST-09","estado":"NV","titulo":"repo vs produccion"}]}

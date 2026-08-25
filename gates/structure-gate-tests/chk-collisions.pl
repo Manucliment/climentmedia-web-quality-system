@@ -14,7 +14,7 @@
 #
 #  USO
 #    perl chk-collisions.pl <fichero.html|dir> ...
-#    perl chk-collisions.pl ../moldes            # los 19
+#    perl chk-collisions.pl ../../blueprint/moulds            # los 19
 #  Sale 0 si todo bien, 1 si hay algun hallazgo. Imprime FICHERO:SELECTOR:MOTIVO.
 #
 #  LAS SEIS COMPROBACIONES

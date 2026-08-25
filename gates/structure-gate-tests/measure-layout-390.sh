@@ -16,7 +16,7 @@ ID="$1"; SRC="$2"
 mkdir -p "$D/work" "$D/out"
 IN="$D/work/m390-$ID-inner.html"; HOST="$D/work/m390-$ID.html"
 cp "$SRC" "$IN"
-cp "$D/../moldes/_tokens.css" "$D/../moldes/_base.css" "$D/work/" 2>/dev/null || true
+cp "$D/../../blueprint/moulds/_tokens.css" "$D/../../blueprint/moulds/_base.css" "$D/work/" 2>/dev/null || true
 {
   echo '<script>try{ var __R ='; cat "$D/measure-layout.js"
   echo ';}catch(e){ __R = JSON.stringify({ERROR:String(e && e.stack || e)}); }'

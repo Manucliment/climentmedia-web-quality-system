@@ -23,7 +23,7 @@
 # =============================================================================
 set -u
 D="$(cd "$(dirname "$0")" && pwd)"
-if [ "$#" -gt 0 ]; then FILES=("$@"); else FILES=("$D"/../moldes/[0-9]*.html); fi
+if [ "$#" -gt 0 ]; then FILES=("$@"); else FILES=("$D"/../../blueprint/moulds/[0-9]*.html); fi
 
 JSONS=()
 for f in "${FILES[@]}"; do
