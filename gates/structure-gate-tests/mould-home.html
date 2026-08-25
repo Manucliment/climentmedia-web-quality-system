@@ -38,7 +38,7 @@
  *     esta, o se usa el de al lado, o se cambia la escala entera (aqui, y en §6).
  *  3. 🔴 **Cambiar un color de marca OBLIGA a re-medir el contraste.** No es un
  *     consejo: hay un script y falla.
- *         bash gate-estructura-pruebas/measure-contrast.sh
+ *         bash gate-estructura-pruebas/medir-contraste.sh
  *     Los valores de fabrica de abajo estan MEDIDOS, no elegidos a ojo. La version
  *     anterior daba **4,51:1** contra un minimo de 4,5 en los moldes 05, 10 y 12
  *     (margen: 0,01) y **4,55:1** en el texto blanco del boton primario.
@@ -47,7 +47,7 @@
 :root{
   /* ── MARCA · lo unico que se toca por cliente ────────────────────────────
      Cada uno lleva al lado el ratio MEDIDO que tiene que seguir cumpliendo.
-     Cambiarlos sin correr `measure-contrast.sh` es como cambiarlos a ciegas. */
+     Cambiarlos sin correr `medir-contraste.sh` es como cambiarlos a ciegas. */
   --tinta:#16181d;        /* texto principal      · 16,7:1 sobre --papel      */
   --papel:#ffffff;        /* fondo de pagina                                  */
   --acento:#1d4ed8;       /* UN acento. No tres.  · blanco encima = 6,70:1    */
@@ -150,14 +150,14 @@
  *      `.sec__in--texto` · `.sec__in--flujo` · `.sec__in--spec` · `.sec__in--ancho`.
  *      Un molde que necesita otro ancho anade una clase, no reescribe una.
  *
- *  Lo comprueba `gate-estructura-pruebas/chk-collisions.pl`, y **falla**.
+ *  Lo comprueba `gate-estructura-pruebas/chk-colisiones.pl`, y **falla**.
  *
  *  COMO SE CARGA
  *  -------------
  *      <link rel="stylesheet" href="_tokens.css">
  *      <link rel="stylesheet" href="_base.css">
  *  En ese orden, y siempre los dos. Al componer una pagina van UNA sola vez,
- *  delante de los bloques de los moldes (lo hace `mk-mould.sh`).
+ *  delante de los bloques de los moldes (lo hace `mk-molde.sh`).
  * ========================================================================== */
 
 *{box-sizing:border-box}
@@ -491,22 +491,22 @@ body{
 <section class="sec sec--ancla" data-sec="hero">
   <div class="sec__in m01-in">
 
-    <p class="m01-pastilla"><i></i>Categoria &middot; ciudad</p>
+    <p class="m01-pastilla"><i></i>Category &middot; city</p>
 
-    <h1 class="m01-h1">Una frase que dice qu&eacute; hace y para qui&eacute;n</h1>
+    <h1 class="m01-h1">One sentence saying what it does and who for</h1>
 
     <p class="m01-sub">Una sola l&iacute;nea de apoyo que a&ntilde;ade el c&oacute;mo o el
        porqu&eacute;. Si necesita dos frases, sobra una.</p>
 
     <div class="m01-acciones">
-      <a class="btn btn--1" href="/contacto/">Acci&oacute;n principal</a>
-      <a class="btn btn--2" href="/servicios/">Acci&oacute;n secundaria</a>
+      <a class="btn btn--1" href="/contacto/">Primary action</a>
+      <a class="btn btn--2" href="/servicios/">Secondary action</a>
     </div>
 
     <p class="m01-prueba">
-      <span><b>00</b> dato verificable</span>
-      <span><b>00</b> segundo dato</span>
-      <span><b>00</b> tercer dato</span>
+      <span><b>00</b> verifiable fact</span>
+      <span><b>00</b> second fact</span>
+      <span><b>00</b> third fact</span>
     </p>
 
   </div>
@@ -515,12 +515,12 @@ body{
 
 <section class="sec sec--tinta" data-sec="prueba">
   <div class="sec__in">
-    <h2 class="m06-h">Lo medido, no lo prometido</h2>
+    <h2 class="m06-h">What was measured, not what was promised</h2>
     <ul class="m06-datos">
-      <li class="m06-dato"><b>00</b><span>Qu&eacute; cuenta esta cifra</span><em>fuente, fecha</em></li>
-      <li class="m06-dato"><b>00&nbsp;%</b><span>Segunda cifra</span><em>fuente, fecha</em></li>
-      <li class="m06-dato"><b>00</b><span>Tercera cifra</span><em>fuente, fecha</em></li>
-      <li class="m06-dato"><b>0,0&nbsp;h</b><span>Cuarta cifra</span><em>fuente, fecha</em></li>
+      <li class="m06-dato"><b>00</b><span>What this figure counts</span><em>source, date</em></li>
+      <li class="m06-dato"><b>00&nbsp;%</b><span>Second figure</span><em>source, date</em></li>
+      <li class="m06-dato"><b>00</b><span>Third figure</span><em>source, date</em></li>
+      <li class="m06-dato"><b>0,0&nbsp;h</b><span>Fourth figure</span><em>source, date</em></li>
     </ul>
   </div>
 </section>
@@ -528,7 +528,7 @@ body{
 
 <section class="sec" data-sec="oferta">
   <div class="sec__in">
-    <h2 class="sec__h">Seis capacidades, no seis adjetivos</h2>
+    <h2 class="sec__h">Six capabilities, not six adjectives</h2>
     <p class="sec__sub">Un subtitular de una l&iacute;nea. Si hace falta un p&aacute;rrafo
        para explicar la rejilla, la rejilla est&aacute; mal.</p>
 
@@ -541,9 +541,9 @@ body{
         <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <p class="m03-cel__n">01</p>
-        <h3>Nombre de la capacidad</h3>
-        <p>Qu&eacute; hace, en una o dos frases. No qu&eacute; bien lo hace.</p>
-        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+        <h3>Name of the capability</h3>
+        <p>What it does, in a sentence or two. Not how well it does it.</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
       </article>
 
       <article class="m03-cel">
@@ -552,10 +552,10 @@ body{
         <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <p class="m03-cel__n">02</p>
-        <h3>Segunda capacidad</h3>
+        <h3>Second capability</h3>
         <p>Las celdas se alinean porque el pie va pegado abajo, no porque los
            textos midan lo mismo.</p>
-        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
       </article>
 
       <article class="m03-cel">
@@ -564,9 +564,9 @@ body{
         <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <p class="m03-cel__n">03</p>
-        <h3>Tercera</h3>
-        <p>Texto corto a prop&oacute;sito, para ver que la rejilla no baila.</p>
-        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+        <h3>Third</h3>
+        <p>Deliberately short text, to show the grid does not wobble.</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
       </article>
 
       <article class="m03-cel">
@@ -575,11 +575,11 @@ body{
         <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <p class="m03-cel__n">04</p>
-        <h3>Cuarta capacidad</h3>
+        <h3>Fourth capability</h3>
         <p>Aqu&iacute; un texto deliberadamente m&aacute;s largo, con dos frases enteras, para
            comprobar que la celda crece hacia abajo y el pie se queda pegado al
            fondo sin descolocar a las vecinas.</p>
-        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
       </article>
 
       <article class="m03-cel">
@@ -588,9 +588,9 @@ body{
         <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <p class="m03-cel__n">05</p>
-        <h3>Quinta</h3>
-        <p>Con seis celdas la rejilla cierra a 2 y a 3 columnas. Con cinco, no.</p>
-        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+        <h3>Fifth</h3>
+        <p>With six cells the grid closes at 2 and at 3 columns. With five, it does not.</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
       </article>
 
       <article class="m03-cel">
@@ -599,9 +599,9 @@ body{
         <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
         <p class="m03-cel__n">06</p>
-        <h3>Sexta capacidad</h3>
-        <p>Seis es el m&aacute;ximo. A partir de ah&iacute; nadie las lee todas.</p>
-        <p class="m03-cel__pie">Dato o condici&oacute;n concreta</p>
+        <h3>Sixth capability</h3>
+        <p>Six is the maximum. Past that nobody reads them all.</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
       </article>
 
     </div>
@@ -611,28 +611,28 @@ body{
 
 <section class="sec sec--caja" data-sec="proceso">
   <div class="sec__in">
-    <h2 class="sec__h">C&oacute;mo funciona, en cuatro pasos</h2>
+    <h2 class="sec__h">How it works, in four steps</h2>
 
     <ol class="m05-pasos">
       <li class="m05-paso">
-        <h3>Primer paso</h3>
-        <p>Qu&eacute; pasa, en una frase. En segunda persona: lo hace &eacute;l, no nosotros.</p>
-        <p class="m05-paso__meta">2 minutos</p>
+        <h3>First step</h3>
+        <p>What happens, in one sentence. Second person: they do it, not us.</p>
+        <p class="m05-paso__meta">2 minutes</p>
       </li>
       <li class="m05-paso">
-        <h3>Segundo paso</h3>
-        <p>La etiqueta de tiempo baja la ansiedad m&aacute;s que cualquier adjetivo.</p>
-        <p class="m05-paso__meta">El mismo d&iacute;a</p>
+        <h3>Second step</h3>
+        <p>A time label lowers anxiety more than any adjective does.</p>
+        <p class="m05-paso__meta">Same day</p>
       </li>
       <li class="m05-paso">
-        <h3>Tercer paso</h3>
-        <p>Si un paso necesita dos frases largas, dentro hay dos pasos.</p>
-        <p class="m05-paso__meta">24 horas</p>
+        <h3>Third step</h3>
+        <p>If a step needs two long sentences, there are two steps inside it.</p>
+        <p class="m05-paso__meta">24 hours</p>
       </li>
       <li class="m05-paso">
-        <h3>Cuarto paso</h3>
-        <p>Cuatro es c&oacute;modo: cierra a 2x2 y a 4x1 sin dejar huecos.</p>
-        <p class="m05-paso__meta">Cuando quieras</p>
+        <h3>Fourth step</h3>
+        <p>Four is comfortable: it closes at 2x2 and 4x1 with no gaps.</p>
+        <p class="m05-paso__meta">Whenever you like</p>
       </li>
     </ol>
   </div>
@@ -641,25 +641,25 @@ body{
 
 <section class="sec" data-sec="evidencia">
   <div class="sec__in">
-    <h2 class="sec__h">Un titular que enmarca las tres ideas de abajo</h2>
+    <h2 class="sec__h">A headline that frames the three ideas below</h2>
 
     <!-- ===== FILA (patron repetible) ===== -->
     <div class="m02-par">
       <div class="m02-par__txt">
         <p class="m02-par__n">01</p>
-        <h3>La idea, en una frase</h3>
+        <h3>The idea, in one sentence</h3>
         <!-- RANURA OBLIGATORIA · enlace contextual. Ver la cabecera. -->
         <p>El parrafo que antes iba suelto. Aqui cabe entero, pero acotado a
            ~60 palabras y a la columna de lectura, que es donde se lee sin volver
            a empezar la linea. Y lleva dentro
            <a class="enlace" href="/servicios/">un enlace a la pagina que lo
            desarrolla</a>, que es el unico enlace que cuenta como contextual.</p>
-        <p class="m02-par__dato"><b>00&nbsp;%</b> lo que demuestra la idea</p>
+        <p class="m02-par__dato"><b>00&nbsp;%</b> the figure that proves the idea</p>
       </div>
       <figure class="m02-par__media">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Crect width='800' height='500' fill='%23f6f7f9'/%3E%3C/svg%3E"
              width="800" height="500" alt="Descripcion real de lo que se ve, sin atribuir">
-        <figcaption>Pie que dice qu&eacute; se est&aacute; mirando.</figcaption>
+        <figcaption>A caption saying what is being looked at.</figcaption>
       </figure>
     </div>
 
@@ -667,31 +667,31 @@ body{
     <div class="m02-par m02-par--dcha">
       <div class="m02-par__txt">
         <p class="m02-par__n">02</p>
-        <h3>La segunda idea</h3>
+        <h3>The second idea</h3>
         <p>Misma forma. Lo unico que cambia es la clase del contenedor; el orden
            del HTML sigue siendo texto primero, para que el lector de pantalla y
            el movil lean lo mismo.</p>
-        <p class="m02-par__dato"><b>00</b> unidad</p>
+        <p class="m02-par__dato"><b>00</b> unit</p>
       </div>
       <figure class="m02-par__media">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Crect width='800' height='500' fill='%23eef0f4'/%3E%3C/svg%3E"
              width="800" height="500" alt="Descripcion real de lo que se ve">
-        <figcaption>Otro pie.</figcaption>
+        <figcaption>Another caption.</figcaption>
       </figure>
     </div>
 
     <div class="m02-par">
       <div class="m02-par__txt">
         <p class="m02-par__n">03</p>
-        <h3>La tercera y &uacute;ltima</h3>
+        <h3>The third and last</h3>
         <p>Tres o cuatro filas es el rango bueno. A partir de cinco, se parte en
            dos secciones con su propio titular.</p>
-        <p class="m02-par__dato"><b>00</b> unidad</p>
+        <p class="m02-par__dato"><b>00</b> unit</p>
       </div>
       <figure class="m02-par__media">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Crect width='800' height='500' fill='%23f6f7f9'/%3E%3C/svg%3E"
              width="800" height="500" alt="Descripcion real de lo que se ve">
-        <figcaption>Otro pie m&aacute;s.</figcaption>
+        <figcaption>One more caption.</figcaption>
       </figure>
     </div>
 
@@ -701,8 +701,8 @@ body{
 
 <section class="sec" data-sec="alternativas">
   <div class="sec__in">
-    <h2 class="sec__h">En qu&eacute; se diferencian, campo a campo</h2>
-    <p class="sec__sub">Cuatro criterios, tres opciones. M&aacute;s de eso no se compara: se hojea.</p>
+    <h2 class="sec__h">How they differ, field by field</h2>
+    <p class="sec__sub">Four criteria, three options. More than that is not compared: it is skimmed.</p>
 
     <!-- ⚠️ Los role="..." NO son decorativos ni redundantes: `display:grid/flex`
          sobre <tr>/<td> BORRA la semantica de tabla en Chrome, Firefox y Safari.
@@ -712,41 +712,41 @@ body{
     <table class="m04-tc" role="table">
       <thead role="rowgroup">
         <tr role="row">
-          <th role="columnheader" scope="col">Criterio</th>
-          <th role="columnheader" scope="col">Opci&oacute;n A</th>
-          <th role="columnheader" scope="col">Opci&oacute;n B</th>
-          <th role="columnheader" scope="col" class="m04-propia">Opci&oacute;n C</th>
+          <th role="columnheader" scope="col">Criterion</th>
+          <th role="columnheader" scope="col">Option A</th>
+          <th role="columnheader" scope="col">Option B</th>
+          <th role="columnheader" scope="col" class="m04-propia">Option C</th>
         </tr>
       </thead>
       <tbody role="rowgroup">
         <tr role="row">
-          <th role="rowheader" scope="row">Primer criterio</th>
-          <td role="cell" data-col="Opci&oacute;n A"><span class="m04-no">No</span></td>
-          <td role="cell" data-col="Opci&oacute;n B"><b>Parcial</b></td>
-          <td role="cell" data-col="Opci&oacute;n C"><span class="m04-si">S&iacute;</span></td>
+          <th role="rowheader" scope="row">First criterion</th>
+          <td role="cell" data-col="Option A"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Option B"><b>Partial</b></td>
+          <td role="cell" data-col="Option C"><span class="m04-si">S&iacute;</span></td>
         </tr>
         <tr role="row">
-          <th role="rowheader" scope="row">Segundo criterio</th>
-          <td role="cell" data-col="Opci&oacute;n A"><b>3 d&iacute;as</b></td>
-          <td role="cell" data-col="Opci&oacute;n B"><b>1 d&iacute;a</b></td>
-          <td role="cell" data-col="Opci&oacute;n C"><b>2 horas</b></td>
+          <th role="rowheader" scope="row">Second criterion</th>
+          <td role="cell" data-col="Option A"><b>3 days</b></td>
+          <td role="cell" data-col="Option B"><b>1 day</b></td>
+          <td role="cell" data-col="Option C"><b>2 hours</b></td>
         </tr>
         <tr role="row">
-          <th role="rowheader" scope="row">Tercer criterio, con nombre largo</th>
-          <td role="cell" data-col="Opci&oacute;n A"><span class="m04-no">No</span></td>
-          <td role="cell" data-col="Opci&oacute;n B"><span class="m04-no">No</span></td>
-          <td role="cell" data-col="Opci&oacute;n C"><span class="m04-si">S&iacute;</span></td>
+          <th role="rowheader" scope="row">Third criterion, with a long name</th>
+          <td role="cell" data-col="Option A"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Option B"><span class="m04-no">No</span></td>
+          <td role="cell" data-col="Option C"><span class="m04-si">S&iacute;</span></td>
         </tr>
         <tr role="row">
-          <th role="rowheader" scope="row">Cuarto criterio</th>
-          <td role="cell" data-col="Opci&oacute;n A"><b>Incluido</b></td>
-          <td role="cell" data-col="Opci&oacute;n B"><b>Aparte</b></td>
-          <td role="cell" data-col="Opci&oacute;n C"><b>Incluido</b></td>
+          <th role="rowheader" scope="row">Fourth criterion</th>
+          <td role="cell" data-col="Option A"><b>Included</b></td>
+          <td role="cell" data-col="Option B"><b>Aside</b></td>
+          <td role="cell" data-col="Option C"><b>Included</b></td>
         </tr>
       </tbody>
     </table>
 
-    <p class="nota">Lo que no cabe en seis palabras va aqu&iacute;, no dentro de la celda.</p>
+    <p class="nota">What does not fit in six words goes here, not inside the cell.</p>
   </div>
 </section>
 
@@ -754,14 +754,14 @@ body{
 <section class="sec sec--tinta sec--ancla" data-sec="cierre">
   <div class="sec__in m11-in">
     <div>
-      <h2 class="m11-h">Una frase que recoge al que ya est&aacute; convencido</h2>
+      <h2 class="m11-h">One sentence for the reader already convinced</h2>
       <p class="m11-sub">Sin repetir el titular de arriba. Lo que falta aqu&iacute; no
          es convencer: es quitar la &uacute;ltima duda.</p>
-      <p class="m11-despues">Al pulsar: qu&eacute; pasa, qui&eacute;n responde y en cu&aacute;nto tiempo.</p>
+      <p class="m11-despues">On click: what happens, who answers, and how soon.</p>
     </div>
     <div class="m11-acc">
-      <a class="btn btn--1" href="/casos/">Acci&oacute;n principal</a>
-      <a class="enlace m11-alt" href="/precios/">o la alternativa para quien no est&aacute; listo</a>
+      <a class="btn btn--1" href="/casos/">Primary action</a>
+      <a class="enlace m11-alt" href="/precios/">or the alternative for anyone not ready</a>
     </div>
   </div>
 </section>
