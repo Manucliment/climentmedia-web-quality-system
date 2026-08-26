@@ -341,6 +341,39 @@ my $PT_LARGO = 'Nos espelhos sob medida a espessura do vidro decide o preco fina
   check('PT9 · ...pero "nossa equipa" SI (el arreglo no apago el check)', $rc, $out, 0, qr/DEBILITA.*marca/s);
 }
 
+# --- EL `it` IMPERSONAL Y LAS CONTRACCIONES · 26-ago-2026, tarde -------------
+#  Los seis salen de UN solo hallazgo real en climentmedia (1 de 58), que
+#  resulto ser tres defectos apilados: la normalizacion partia `It&rsquo;s` en
+#  `It s`, el `it` era impersonal, y ademas el parrafo era una cita textual.
+{
+  my ($rc, $out) = run(pageof('en', "<p>It is recommended that you run the experiment for at least six weeks before reading it.</p>"));
+  check('EXP1 · "It is recommended that" es impersonal -> NO salta', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+{
+  my ($rc, $out) = run(pageof('en', "<p>It&rsquo;s worth noting that the change history window closes at exactly thirty days for everyone.</p>"));
+  check('EXP2 · "It\'s worth noting" tampoco (y con la entidad de apostrofo)', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+{
+  # ...y el control de que el arreglo no apago el check: un `it` que SI senala.
+  my ($rc, $out) = run(pageof('en', "<p>It works out what it would change and shows you first, and nothing moves until you approve.</p>"));
+  check('EXP3 · un "it" que SI senala sigue saltando', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  # 🔴 EL CASO QUE OBLIGO A HACER LOS DOS CAMBIOS A LA VEZ. Arreglar solo la
+  #    normalizacion habria dejado de ver este, que es un huerfano de verdad.
+  my ($rc, $out) = run(pageof('en', "<p>That&rsquo;s the part that fails, and the maths has nothing to do with any of it.</p>"));
+  check('CON1 · "That\'s" con entidad SIGUE saltando (contraccion leida)', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('en', "<p>It&rsquo;s the range we see across accounts, and not a prediction about yours in particular.</p>"));
+  check('CON2 · "It\'s" con entidad tambien salta', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  # Una cita no se puede reescribir sin falsearla: se sabe, pero no BLOQUEA.
+  my ($rc, $out) = run(pageof('en', "<p>&ldquo;This is the number nobody publishes,&rdquo; the platform documentation says, and it is right.</p>"));
+  check('CITA1 · un pronombre DENTRO de una cita -> PULIDO, no BLOQUEA', $rc, $out, 0, qr/PULIDO.*cita textual/s);
+}
+
 # --- NO MEDIDO ---------------------------------------------------------------
 {
   my $out = `"$^X" "$GATE" --file "$dir/no-existe.html"`;

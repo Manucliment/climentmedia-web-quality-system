@@ -20,7 +20,7 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the batteries that need a browser or the network. On this machine the fast
-run is **611 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
+run is **617 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
 because a fresh install has never deployed anything.
 
 Two more cases report `NOT MEASURED` out of the box, and both are deliberate. The
@@ -33,7 +33,7 @@ sends it traffic every time a stranger runs the tests.
 Read the last three lines. They are the only ones that matter:
 
 ```
-  611 casos en verde · 0 en rojo
+  617 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 

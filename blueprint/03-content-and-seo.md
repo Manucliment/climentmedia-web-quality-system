@@ -233,3 +233,30 @@ deliberate exclusion and a broken check look exactly the same from the outside.
 > paragraphs by demanding the brand name in every one of them, which is keyword stuffing
 > the GEO study measures at **−10%**. **If a sweep says everything is broken at once, the
 > broken thing is the sweep** — §3 of the agent rules, earned again.
+
+**A normalisation can manufacture a finding, and it can hide one.** The extractor turned
+every `&entity;` into a space. `It&rsquo;s recommended` therefore read as `It s
+recommended`, which matched the orphan-pronoun pattern for a reason that had nothing to do
+with the text -- and `That&rsquo;s the part that fails`, a real orphan, read as `That s`
+and matched nothing at all. **One bug, both directions**, on the same site: one invented
+finding and two hidden ones. Fixing only the fabricated half would have locked in the
+silent half, so the apostrophe mapping and the contraction patterns had to land together.
+
+**English has an impersonal `it`, and it is not a pronoun with a missing antecedent.** In
+`It is recommended that you run the experiment for six weeks`, `it` points at nothing
+because there is nothing to point at -- naming the subject is not possible, only different.
+This is the same trap French `il faut` / `il y a` was deliberately guarded against; English
+had it too, unguarded. Every language you add needs the question asked in both directions:
+which words are pronouns here, and which only look like pronouns once accents are stripped.
+
+**A quotation cannot be rewritten, so demanding it be rewritten is how a gate gets turned
+off.** A quoted paragraph that opens with a pronoun is worth knowing about, but the action
+is different -- give the context *before* the quote, or paraphrase and attribute -- so it
+reports as `POLISH`, not `BLOCKS`.
+
+> ⚠️ **And the second-order bug that fix nearly introduced.** With the entity mapping
+> corrected, a leading quotation mark made the `^`-anchored pattern miss entirely, so
+> quoted paragraphs became exempt **in silence** -- a blind spot worse than the false
+> positive it replaced, because nothing in the output says so. The quote is now stripped
+> *before* judging, and the paragraph is judged and then downgraded. **Exempt on purpose
+> and exempt by accident look identical in a report and are not remotely the same thing.**
