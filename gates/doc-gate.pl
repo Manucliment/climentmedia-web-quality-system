@@ -384,11 +384,24 @@ if (corre('D5')) {
     # apply" and PASSED without looking at anything, because it was searching
     # for a filename that no longer exists. A check that cannot find its subject
     # has to say so, not pass.
+    # 🔴 26-ago-2026 · EL PATRON NUMERICO SOLO VALE DENTRO DE `paths/`.
+    #    Estaba aplicado a los CUATRO directorios, incluido `$DIR`. En el repo
+    #    `$DIR` es `gates/`, que no tiene ningun `.md` numerado, y por eso
+    #    pasaba. En la skill `$DIR` es `references/`, que tiene `10-` a `18-`:
+    #    los recogia como caminos y les exigia el bloque de la puerta.
+    #    Medido ese dia: repo PASA («4 caminos, un solo bloque») y skill FALLA
+    #    («9 de 13»), acusando a nueve documentos de referencia. Mismo codigo,
+    #    veredictos opuestos, y el de la skill era falso.
+    #    Es la trampa §36 en el otro sentido: alli el check no encontraba a su
+    #    sujeto, aqui encuentra de mas. Las dos son el mismo defecto -- el check
+    #    no sabe identificar a su sujeto -- y las dos ensenan a ignorarlo.
     for my $d ($DIR, $MADRE2, "$MADRE2/paths", "$DIR/../paths") {
         next unless -d $d;
+        my $es_paths = ($d =~ m{[\\/]paths[\\/]?$}) ? 1 : 0;
         opendir(my $h, $d) or next;
         push @caminos, map { "$d/$_" }
-                       grep { /^CAMINO-.*\.md$/i || /^[1-9][0-9]?-.*\.md$/ } readdir $h;
+                       grep { /^CAMINO-.*\.md$/i
+                              || ($es_paths && /^[1-9][0-9]?-.*\.md$/) } readdir $h;
         closedir $h;
     }
     # Dedup by BASENAME, not by path string: `x/paths/a.md` and
@@ -455,18 +468,34 @@ if (corre('D6')) {
         open my $h, '<:raw', $f or die;
         while (my $l = <$h>) { $m{$1} = $2 if $l =~ /^(\w+):\s*(.+?)\s*$/ }
         close $h;
-        my $skill = slurp("$MADRE6/SKILL.md");
-        my @dichos = $skill =~ /(\d{2,5})\s*(?:\S+\s*)?0 en rojo/g;
-        push @dichos, $skill =~ /(\d{2,5})\s+casos en verde/g;
         my $real = $m{verde} // '';
-        my @mal = grep { $_ ne $real } @dichos;
+        # 🔴 26-ago-2026 · D6 MIRABA SOLO `SKILL.md`, Y `gates/README.md` PUBLICA
+        #    SU PROPIO RECUENTO SIN QUE NADIE LO VIGILE. Medido ese dia: el
+        #    README decia «451 cases green» y la bateria daba 592 -- 141 casos de
+        #    diferencia, y en verde. Es EXACTAMENTE el defecto que la cabecera de
+        #    arriba describe, cometido en el fichero de al lado: un numero a mano
+        #    que nadie puede ver caducar.
+        #    Y va en ingles ademas de en castellano, porque el README lo esta.
+        my @docs = ( [ 'SKILL.md',        "$MADRE6/SKILL.md" ],
+                     [ 'gates/README.md', "$DIR/README.md"   ] );
+        my (@dichos, @mal);
+        for my $d (@docs) {
+            next unless -f $d->[1];
+            my $t = slurp($d->[1]);
+            my @n = ($t =~ /(\d{2,5})\s*(?:\S+\s*)?0 en rojo/g);
+            push @n, ($t =~ /(\d{2,5})\s+casos en verde/g);
+            push @n, ($t =~ /(\d{2,5})\s+cases green/g);
+            push @dichos, @n;
+            push @mal, map { "$d->[0] dice $_" } grep { $_ ne $real } @n;
+        }
         if (!@dichos) {
-            ok('D6', 'SKILL.md no publica un recuento de la bateria', 'nada que pueda caducar');
+            ok('D6', 'la documentacion no publica un recuento de la bateria', 'nada que pueda caducar');
         } elsif (@mal) {
-            bad('D6', 'SKILL.md publica un recuento que ya no es cierto',
-                'dice '.join('/', @mal)." y la ultima bateria midio $real");
+            bad('D6', 'la documentacion publica un recuento que ya no es cierto',
+                join(' · ', @mal)." y la ultima bateria midio $real");
         } else {
-            ok('D6', 'el recuento de SKILL.md coincide con la ultima bateria', "$real casos");
+            ok('D6', 'el recuento de la documentacion coincide con la ultima bateria',
+               "$real casos, en ".scalar(@docs)." documento(s)");
         }
     }
 }

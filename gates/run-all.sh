@@ -52,6 +52,9 @@ form-handler|bash form-handler-tests/tests.sh|1|la plantilla del formulario: php
 audit|bash audit-tests/tests.sh|1|el auditor de sitio: las 2 convenciones de URL
 indice-gates|node gate-index.js|0|el indice REGLA -> INSTRUMENTO no tiene referencias muertas
 huecos|bash holes-tests/tests.sh|0|lo que falta y no es nuestro, declarado
+bots-ia|perl ai-crawlers-tests/tests.pl|0|los rastreadores de IA: si pueden entrar o no
+canibalizacion|perl cannibalization-tests/tests.pl|0|dos paginas peleando por el mismo termino
+citable|perl citable-tests/tests.pl|0|el parrafo sobrevive a que lo saquen de la pagina
 "
 
 echo "==============================================================================="

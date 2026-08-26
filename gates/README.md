@@ -1,6 +1,6 @@
 # The gates
 
-34 programs and 22 test batteries. This file is the index: what each program is for,
+37 programs and 27 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -20,13 +20,20 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the batteries that need a browser or the network. On this machine the fast
-run is **451 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
+run is **593 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
 because a fresh install has never deployed anything.
+
+Two more cases report `NOT MEASURED` out of the box, and both are deliberate. The
+AI-crawler bank's redirect case needs a site of yours that redirects apex to `www` —
+set `AI_CRAWLERS_REDIRECT_URL` and it runs; leave it unset and it says so rather than
+passing. **This repository names no third-party domain**, for the same reason
+`freeze-fixture.pl` exists: a bank that hardcodes somebody else's site exposes it and
+sends it traffic every time a stranger runs the tests.
 
 Read the last three lines. They are the only ones that matter:
 
 ```
-  451 casos en verde · 0 en rojo
+  593 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
@@ -105,6 +112,9 @@ whose verdict came from measuring a different object.
 | `linking-gate.pl` | Internal linking, judged against what the site actually contains. |
 | `same-text.pl` | Text repeated across pages that should not be. |
 | `qa-diff.pl` | What changed between two runs, by rule. |
+| `ai-crawlers.pl` | Whether AI answer engines are allowed to crawl at all. Parses robots.txt properly: own-agent groups do not inherit `*`, longest path wins, empty `Disallow` allows. |
+| `cannibalization.pl` | Two pages fighting over one term. `--audit` finds existing exact H1/title collisions; `--keyword` gives NEW / UPDATE / CANNIBALIZES before a piece is written. |
+| `citable.pl` | Whether a paragraph survives being lifted out of the page. Six mechanical checks from citation-ready-check. Refuses to score a language it has no patterns for. |
 
 ### Forms
 
