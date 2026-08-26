@@ -140,3 +140,86 @@ worked.
 
 That the answer is **better formulated than the competitor's.** Markup helps a machine
 understand; what gets you quoted is the content.
+
+---
+
+## 8 · The AEO layer, and the three gates added on 2026-08-26
+
+For a long time this document was the whole SEO/GEO/AEO layer, and it only covered the
+**machine** half: canonical, `og:image`, `llms.txt`, schema. A sweep of the 34 gates that
+day found `GPTBot` **0**, `PerplexityBot` **0**, `ClaudeBot` **0**, `AI Overview` **0**.
+We were building for answer engines and measuring none of it.
+
+### 8.1 · Can the engines get in at all — `ai-crawlers.pl`
+
+```bash
+perl gates/ai-crawlers.pl --url https://example.com/
+```
+
+First thing to check, because if the bots cannot crawl, nothing else on this page matters.
+Ten required agents, three advisory.
+
+**It is not a `grep`, and that is the whole point.** A `grep -c GPTBot robots.txt` is wrong
+in the four cases that actually occur, and all four have a case in the bank:
+
+1. **An agent with its own group stops inheriting the `*` group entirely.** `User-agent:
+   GPTBot` followed only by `Crawl-delay` does **not** inherit `Disallow: /` from `*` — so
+   it is allowed. And the reverse: its own group can block it while `*` allows everything.
+2. **The longest path wins**, not the first or the last. `Disallow: /` plus `Allow: /learn/`
+   allows `/learn/x` and still blocks the root.
+3. **An empty `Disallow:` allows everything.** A grep for "Disallow" counts it as a block.
+4. Agent names are **case-insensitive**.
+
+`Google-Extended` and `Applebot-Extended` are **advisory, never a failure**: they do not
+crawl, they only govern use in Gemini and Apple Intelligence, and blocking them does not
+remove you from search. Treating a legitimate decision as a defect is how a gate starts
+getting in the way and ends up switched off.
+
+### 8.2 · Two pages fighting over one term — `cannibalization.pl`
+
+```bash
+perl gates/cannibalization.pl --repo DIR --audit                    # collisions that exist
+perl gates/cannibalization.pl --repo DIR --keyword "<term>"         # before writing
+```
+
+`--audit` is exact: identical H1 or `<title>` between indexable pages. No heuristic.
+`--keyword` returns NEW / UPDATE / CANNIBALIZES / REVIEW **with the evidence** — which
+page, with which H1, how many words overlap. `noindex` pages do not compete and are
+excluded.
+
+The first real run found **six pages of one client site sharing one `<h1>`** — the zones
+hub and five city pages — while their `<title>` tags **were** differentiated per city.
+Someone separated the title and forgot the H1. City pages are where this defect lives; it
+is the same family as the canonical defect in §3.
+
+**What it does not know:** it does not read rankings. Two pages can compete without
+resembling each other, and only Search Console sees that. This catches the **declared**
+collision, which is the one you can avoid before writing.
+
+### 8.3 · Does a paragraph survive being lifted out — `citable.pl`
+
+```bash
+perl gates/citable.pl --repo DIR --brand "Your Brand"
+```
+
+An answer engine does not read the page, it extracts a chunk. So every paragraph has to be
+read **as if it were the only thing on the page**. Six mechanical checks: orphan pronoun in
+the opening, backward reference, subject never named, over-hedging, relative date, and more
+than five sentences in one paragraph. Severity is `BLOCKS` / `WEAKENS` / `POLISH`, and there
+is deliberately **no numerical score**.
+
+**Two block sizes, and this document only had one.** A 40–60 word capsule serves the
+featured-snippet surface. The citation surface is **134–167 words, self-contained**. Those
+are different surfaces, and a page can be excellent at one and absent from the other.
+
+🔴 **It refuses to score a language it has no patterns for.** The patterns are English and
+Spanish. A gate that sweeps a French page it cannot parse and reports "0 findings" looks
+like coverage and is a hole — so it reads `<html lang>` and returns `NOT MEASURED`.
+
+> **The lesson from building these three, and it is the one worth keeping.** The first real
+> run of `citable.pl` reported 76 blocking findings. Half were not: `this page`, `these
+> terms`, `that distinction` are a determiner with its noun — the subject *is* named. Only
+> a following **verb** makes it an orphan pronoun. And a second check accused 19% of all
+> paragraphs by demanding the brand name in every one of them, which is keyword stuffing
+> the GEO study measures at **−10%**. **If a sweep says everything is broken at once, the
+> broken thing is the sweep** — §3 of the agent rules, earned again.

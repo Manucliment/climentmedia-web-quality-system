@@ -194,6 +194,29 @@ caso('...y desde el hijo tambien ACUSA', 'D5',
        'CAMINO-2-y.md' => "# dos\n\nsin puerta\n",
        'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
 
+# 🔴 26-ago-2026 · EL PATRON NUMERICO RECOGIA LOS `references/` NUMERADOS.
+#    `^[1-9][0-9]?-.*\.md$` existe para `paths/1-new-site.md`, y estaba aplicado
+#    a los CUATRO directorios que D5 mira, incluido `$DIR`. En el repo `$DIR` es
+#    `gates/` -sin `.md` numerados- y pasaba; en la skill es `references/`, que
+#    tiene `10-` a `18-`, y los trataba como caminos exigiendoles el bloque de
+#    la puerta. Mismo codigo, veredictos opuestos: repo PASA, skill «9 de 13».
+#    Los nueve acusados eran documentos de referencia. El falso positivo vivio
+#    porque NINGUN caso ponia un `.md` numerado al lado de los caminos.
+#    Estos dos lo fijan: el numerado en `references/` no cuenta, y el de
+#    `paths/` sigue contando -- si solo estuviera el primero, apagar el patron
+#    entero tambien pasaria el banco.
+caso('un references/ NUMERADO no es un camino', 'D5',
+     { 'CAMINO-1-x.md'                  => "# uno\n\n$PUERTA",
+       'CAMINO-2-y.md'                  => "# dos\n\n$PUERTA",
+       'references/10-vocabulario.md'   => "# vocabulario\n\nsin puerta, y no le hace falta\n",
+       'references/18-estandar.md'      => "# estandar\n\nsin puerta, y no le hace falta\n" },
+     'PASA', 'references');
+caso('...pero un paths/<n>-*.md SI lo es, y acusa', 'D5',
+     { 'paths/1-nueva.md'               => "# uno\n\n$PUERTA",
+       'paths/2-mejorar.md'             => "# dos\n\nsin puerta\n",
+       'references/10-vocabulario.md'   => "# vocabulario\n\nsin puerta\n" },
+     'FALLO', 'references');
+
 print "\n== D6 . SKILL.md no puede mentir sobre su propia bateria\n";
 #  D6 se anadio el 19-ago SIN caso, que es justo lo que la regla 5 prohibe. El
 #  caso que importa es el segundo: si nadie puede ponerlo ROJO, no esta probado.
