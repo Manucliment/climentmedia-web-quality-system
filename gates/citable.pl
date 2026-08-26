@@ -73,9 +73,19 @@ my %LANG = (
   #    demostrativo con su sustantivo, o sea que el sujeto SI esta nombrado.
   #    Un instrumento con 50% de falsos positivos no mide, acusa.
   #    Regla: this/these/those/that solo cuentan si les sigue un VERBO.
-  #    it/they son siempre pronombres.
+  #    it/they son casi siempre pronombres -- la excepcion es el `it`
+  #    impersonal, y tiene su propio patron `expletive` justo debajo.
   en => {
-    pronoun  => qr/^\s*(?:(?:this|these|those|that)\s+(?:is|are|was|were|means|meant|makes|made|gives|gave|shows|showed|happens|happened|works|worked|matters|mattered|explains|comes|goes|can|could|will|would|should|must|has|have|had|does|do|did|becomes|leaves|puts|takes|tends|seems|sounds|looks|feels|costs|breaks|fails|helps)\b|(?:it|they)\s+\w)/i,
+    # 🔴 26-ago-2026 · EL `it` IMPERSONAL DEL INGLES, FUERA.
+    #    Es la misma trampa que ya se esquivo a proposito en frances con
+    #    `il faut` / `il y a`, y el ingles la tiene igual sin guardia: en
+    #    «It is recommended that...» el `it` no apunta a nada PORQUE NO HAY
+    #    NADA A QUE APUNTAR. No es un pronombre huerfano, es un sujeto
+    #    gramatical de relleno, y nombrarlo es imposible.
+    #    Salio en climentmedia sobre una cita de la documentacion de Meta.
+    #    Solo ingles: en espanol la construccion no lleva sujeto.
+    expletive => qr/^\s*it(?:'s|\s+(?:is|was))\s+(?:recommended|said|known|thought|believed|assumed|understood|worth|possible|impossible|important|essential|easy|hard|difficult|tempting|common|rare|clear|obvious|fair|true|likely|unlikely|better|best|tempting|useful|normal|natural)\b|^\s*it\s+(?:turns out|follows that|remains to|helps to|depends how|makes sense to)\b/i,
+    pronoun  => qr/^\s*(?:(?:this|these|those|that)\s+(?:is|are|was|were|means|meant|makes|made|gives|gave|shows|showed|happens|happened|works|worked|matters|mattered|explains|comes|goes|can|could|will|would|should|must|has|have|had|does|do|did|becomes|leaves|puts|takes|tends|seems|sounds|looks|feels|costs|breaks|fails|helps)\b|(?:this|that|these|those|it|they)'(?:s|re|ll|ve|d)\s+\w|(?:it|they)\s+\w)/i,
     backref  => qr/\b(as (?:mentioned|noted|discussed|we saw|shown) (?:above|earlier|previously)|see above|the (?:previous|preceding) (?:section|paragraph)|as explained earlier)\b/i,
     hedge    => qr/\b(may|might|could potentially|possibly|perhaps|arguably|somewhat|relatively|fairly|generally speaking|it seems|tends to)\b/i,
     reldate  => qr/\b(recently|currently|nowadays|these days|last year|this year|next year|lately|at the moment|in recent (?:years|months))\b/i,
@@ -201,7 +211,21 @@ for my $f (sort @targets) {
   while ($body =~ m{<p\b[^>]*>(.*?)</p>}gis) {
     my $t = $1;
     $t =~ s/<[^>]*>//g;
-    $t =~ s/&nbsp;/ /gi; $t =~ s/&amp;/&/gi; $t =~ s/&[a-z]+;/ /gi; $t =~ s/&#x?[0-9a-f]+;/ /gi;
+    $t =~ s/&nbsp;/ /gi; $t =~ s/&amp;/&/gi;
+    # 26-ago-2026 - EL APOSTROFO Y LAS COMILLAS, ANTES DEL COMODIN.
+    #   El comodin de mas abajo convertia `&rsquo;` en un ESPACIO, asi que
+    #   `It&rsquo;s recommended` se leia `It s recommended` y casaba con el
+    #   patron de pronombre huerfano por una razon que no tiene nada que ver
+    #   con el texto: un BLOQUEA fabricado por la propia normalizacion.
+    #   Encontrado en climentmedia, 1 de 58.
+    #   Y arreglar SOLO esto habria creado el fallo simetrico: `That&rsquo;s
+    #   the part that fails` es un huerfano de verdad y habria dejado de
+    #   verse. Por eso el patron aprende a leer contracciones en el mismo
+    #   gesto. Los dos cambios van juntos o sobra uno.
+    $t =~ s/&rsquo;|&lsquo;|&apos;|&#8217;|&#39;/'/gi;
+    $t =~ s/&ldquo;|&rdquo;|&quot;|&#8220;|&#8221;/"/gi;
+    $t =~ s/&mdash;|&ndash;|&#8212;|&#8211;/--/gi;
+    $t =~ s/&[a-z]+;/ /gi; $t =~ s/&#x?[0-9a-f]+;/ /gi;
     $t =~ s/\s+/ /g; $t =~ s/^\s+|\s+$//g;
     next if length($t) < 40;      # pies de foto, etiquetas, migas
     push @paras, $t;
@@ -219,9 +243,33 @@ for my $f (sort @targets) {
     my $frag  = length($t) > 90 ? substr($t, 0, 90) . '...' : $t;
 
     # 1 · pronombre huerfano al abrir  -> BLOQUEA
-    if ($flat =~ $P->{pronoun}) {
-      push @findings, [ 'BLOQUEA', $rel, 'abre con un pronombre sin antecedente', $frag,
-        'nombra el sujeto en la primera frase: sacado de la pagina, el pronombre no senala a nada' ];
+    # Dos salidas antes de acusar, las dos de la primera corrida real sobre
+    # climentmedia:
+    #   1) el `it` IMPERSONAL, que no apunta a nada porque no hay a que.
+    #   2) una CITA TEXTUAL. Un pronombre huerfano dentro de una cita no se
+    #      puede arreglar: reescribirlo es falsear a quien citas. Sigue
+    #      valiendo saberlo -- por eso baja a PULIDO en vez de desaparecer --
+    #      pero la accion es otra: dar contexto ANTES de abrir la cita.
+    #      Un gate que exige lo imposible se acaba desactivando entero.
+    #      🔴 Y LA COMILLA HAY QUE QUITARLA ANTES DE MIRAR, no despues. El
+    #      patron esta anclado en `^`, asi que una comilla de apertura lo
+    #      dejaba sin casar y el parrafo salia EXENTO EN SILENCIO -- un
+    #      punto ciego peor que el falso positivo que vino a arreglar,
+    #      porque no se ve. Se quita, se juzga, y si era cita se baja a
+    #      PULIDO. Exento a proposito y exento por accidente se parecen
+    #      mucho en la salida y no se parecen en nada.
+    my $es_cita = ($t =~ /^\s*(?:"|\xe2\x80\x9c|\xc2\xab)/) ? 1 : 0;
+    my $abre = $flat;
+    $abre =~ s/^\s*(?:"|\xe2\x80\x9c|\xc2\xab)\s*//;
+    if ($abre =~ $P->{pronoun}
+        and not ($P->{expletive} and $abre =~ $P->{expletive})) {
+      if ($es_cita) {
+        push @findings, [ 'PULIDO', $rel, 'una cita textual abre con un pronombre', $frag,
+          'una cita no se reescribe: da el contexto ANTES de abrirla, o parafrasea y atribuye' ];
+      } else {
+        push @findings, [ 'BLOQUEA', $rel, 'abre con un pronombre sin antecedente', $frag,
+          'nombra el sujeto en la primera frase: sacado de la pagina, el pronombre no senala a nada' ];
+      }
     }
     # 2 · referencia hacia atras  -> BLOQUEA
     if ($flat =~ $P->{backref}) {
