@@ -8,7 +8,7 @@ you are a person, everything here still applies — it is just phrased at the ma
 
 ## Start here, and do not read everything
 
-There are 21 reference documents. **Do not read them.** Open the path that matches the
+There are 18 reference documents. **Do not read them.** Open the path that matches the
 job, and it will tell you what to open, when.
 
 | The job | The path |
