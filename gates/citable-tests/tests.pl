@@ -229,7 +229,7 @@ my $LARGO_GENERICO = 'Our platform reads the account data every night and produc
 }
 
 # --- FRANCES · anadido el 26-ago-2026 -----------------------------------------
-#  Los seis primeros hallazgos reales -3 en kine, 3 en oliverservices- se
+#  Los seis primeros hallazgos reales -3 en cada uno de los dos sitios en frances- se
 #  revisaron A MANO uno por uno y los seis eran genuinos. Estos casos los
 #  congelan, y los FP de abajo congelan lo que NO puede volver a saltar.
 {
@@ -330,14 +330,14 @@ my $PT_LARGO = 'Nos espelhos sob medida a espessura do vidro decide o preco fina
 {
   # 🔴 EL OTRO CONTROL DE COLISION: `nos` sin acento es tambien la contraccion
   #    «en los», y abre parrafos enteros. Fuera del patron generico por eso.
-  my ($rc, $out) = run(pageof('pt', "<p>$PT_LARGO</p>"), '--brand', 'Mobanho');
+  my ($rc, $out) = run(pageof('pt', "<p>$PT_LARGO</p>"), '--brand', 'Acme');
   check('PT8 · "nos" como contraccion NO se lee como sujeto sin nombrar', $rc, $out, 0, qr/0 bloqueos, 0 debilitan/);
 }
 {
   # ...y el positivo que prueba que el check no esta muerto para portugues.
   my $con_nossa = $PT_LARGO;
   $con_nossa =~ s/A entrega chega/A nossa equipa entrega/ or die "el fixture de PT9 no caso\n";
-  my ($rc, $out) = run(pageof('pt', "<p>$con_nossa</p>"), '--brand', 'Mobanho');
+  my ($rc, $out) = run(pageof('pt', "<p>$con_nossa</p>"), '--brand', 'Acme');
   check('PT9 · ...pero "nossa equipa" SI (el arreglo no apago el check)', $rc, $out, 0, qr/DEBILITA.*marca/s);
 }
 

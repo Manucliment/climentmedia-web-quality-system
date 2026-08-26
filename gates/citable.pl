@@ -168,7 +168,7 @@ else {
     for my $e (readdir $dh) {
       next if $e eq '.' or $e eq '..';
       # 🔴 26-ago-2026 · ESTO ERA UNA LISTA DE NOMBRES ESCRITA A MANO, y por eso
-      #    no conocia `_candidato`: la primera corrida real sobre mobanho midio
+      #    no conocia `_candidato`: la primera corrida real sobre un sitio en portugues midio
       #    82 paginas -13 reales + 69 copias del candidato-, o sea que cualquier
       #    defecto salia CONTADO DOS VECES. Es el mismo agujero que ya costo 78
       #    FALLOS falsos por `_og/` en nora, arreglado alli y no traido aqui.

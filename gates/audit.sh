@@ -118,8 +118,8 @@ page_list() {
 #  19-ago-2026. Nuestras webs sirven las URLs de dos formas distintas, y hasta
 #  hoy el auditor solo conocia una:
 #
-#     dir-barra       /contacto  ->  contacto/index.html   (bcmadrid, cm, nora)
-#     plano-sin-ext   /contacto  ->  contacto.html         (kine, mobanho)
+#     dir-barra       /contacto  ->  contacto/index.html   (3 de las 6 del parque)
+#     plano-sin-ext   /contacto  ->  contacto.html         (las otras 2)
 #
 #  `conformidad.conf` ya nombraba las dos por web (`modo = ...`) y el auditor no
 #  se habia enterado: la primera vez que se le corrio a kine marco 363 FALLOS en
@@ -608,7 +608,7 @@ for f in $DEPLOYED; do
     # frecuentes de nuestras webs de cliente- pasaba en VERDE. Lo encontro el
     # banco de pruebas el dia que se escribio, no una web rota.
     # NO se usa un patron ancho tipo `Ã.`: en portugues `Ã` mayuscula es LEGITIMA
-    # (IRMAOS, ORGAOS) y marcaria a loja.mobanho.com entera. La lista explicita
+    # (IRMAOS, ORGAOS) y marcaria una tienda entera en portugues. La lista explicita
     # cubre es/fr/pt y no tiene falsos positivos; hay un caso verde que lo prueba.
     grep -qE 'Ã¡|Ã©|Ã­|Ã³|Ãº|Ã±|Ã§|Ã£|Ãµ|Ã¢|Ãª|Ã´|Ã |Ã¨|Ã‚|â€|â‚¬|Â»|Â«|ï¿½' "$ROOT/$f" 2>/dev/null && MOJI="$MOJI $f"
 done
