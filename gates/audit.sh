@@ -133,19 +133,54 @@ page_list() {
 #
 #  Recibe y devuelve rutas ABSOLUTAS. La usan url_to_file (sitemap, ficheros
 #  para maquinas) y el grafo de enlaces: un solo sitio, una sola regla.
+#  🔴 26-ago-2026 · DEJA EL RESULTADO EN `RUTA_RESUELTA` ADEMAS DE IMPRIMIRLO.
+#     La funcion es shell puro y no cuesta nada; lo caro era llamarla con
+#     `$(...)`, que forkea una subshell por llamada. En un sitio de 61 paginas
+#     hay ~1700 enlaces internos, o sea ~1700 forks, y en Git Bash un fork
+#     cuesta decenas de milisegundos. El auditor no terminaba, y se cortaba
+#     siempre dentro de S3. Los bucles calientes la llaman ahora SIN `$( )` y
+#     leen la variable; el resto sigue con `$( )` y no hace falta tocarlo. La
+#     regla de resolucion sigue escrita UNA sola vez, que es lo que importa.
 resolver_ruta() {
   local c="$1" ultimo cand1 cand2
   case "$c" in
     */) cand1="${c}index.html"; cand2="${c%/}.html" ;;
     *)  ultimo="${c##*/}"
         case "$ultimo" in
-          *.*) echo "$c"; return ;;
+          *.*) RUTA_RESUELTA="$c"; echo "$c"; return ;;
         esac
         cand1="$c/index.html"; cand2="$c.html" ;;
   esac
-  [ -f "$cand1" ] && { echo "$cand1"; return; }
-  [ -f "$cand2" ] && { echo "$cand2"; return; }
-  echo "$cand1"
+  [ -f "$cand1" ] && { RUTA_RESUELTA="$cand1"; echo "$cand1"; return; }
+  [ -f "$cand2" ] && { RUTA_RESUELTA="$cand2"; echo "$cand2"; return; }
+  RUTA_RESUELTA="$cand1"; echo "$cand1"
+}
+
+#  🔴 26-ago-2026 · SUSTITUYE A `realpath -m --relative-to`, QUE ERA EL CUELLO
+#     DE BOTELLA DE VERDAD. `realpath` es un BINARIO EXTERNO y estaba dentro
+#     del bucle de ~1700 enlaces, dentro de un `$( )`: ~1700 procesos.
+#     Esto es shell puro, no forkea, y de paso quita una dependencia --
+#     `realpath` no existe en todas las instalaciones y el fichero declara ser
+#     portable con solo bash, grep, sed, find y curl.
+#     ⚠️ **Probado equivalente, no supuesto**: comparado contra `realpath`
+#     sobre los 1075 destinos distintos de un sitio real -> 1075 iguales, 0
+#     distintos. La primera version fallaba 45 de 1075, todos por el mismo
+#     caso: cuando el destino ES la raiz, `realpath` dice "." y esta devolvia
+#     cadena vacia. Por eso se prueba antes de cablear.
+rel_a_root() {                 # deja el resultado en RUTA_REL
+  local p="$1" seg out="" old="$IFS"
+  case "$p" in "$ROOT"/*) p="${p#"$ROOT"/}" ;; "$ROOT") p="" ;; esac
+  IFS='/'
+  for seg in $p; do
+    case "$seg" in
+      ''|.) ;;
+      ..)  case "$out" in */*) out="${out%/*}" ;; *) out="" ;; esac ;;
+      *)   if [ -z "$out" ]; then out="$seg"; else out="$out/$seg"; fi ;;
+    esac
+  done
+  IFS="$old"
+  [ -z "$out" ] && out="."
+  RUTA_REL="$out"
 }
 
 # La INVERSA de resolver_ruta: de un fichero en disco a las URLs con las que se
@@ -489,10 +524,12 @@ for p in $PAGES; do
     # paginas que existen (/a-propos -> a-propos.html). Ahora despacha por si la
     # ruta es absoluta o relativa y deja la CONVENCION a resolver_ruta, que es
     # el unico sitio donde esa regla esta escrita.
+    # Sin `$( )`: son ~1700 llamadas. Ver la cabecera de `resolver_ruta`.
     case "$tgt" in
-      /*) cand="$(resolver_ruta "$ROOT$tgt")" ;;
-      *)  cand="$(resolver_ruta "$d/$tgt")" ;;
+      /*) resolver_ruta "$ROOT$tgt" >/dev/null ;;
+      *)  resolver_ruta "$d/$tgt"   >/dev/null ;;
     esac
+    cand="$RUTA_RESUELTA"
     [ -e "$cand" ] || { bad "S3.1 enlace roto en $p -> $h"; BROKEN=1; }
   done < <(strip_pre "$ROOT/$p" | grep -oE 'href="[^"#?][^"]*"' | sed 's/href="//;s/"$//' \
            | grep -vE '^(https?:|mailto:|tel:|data:|javascript:|//|#)' | sort -u)
@@ -529,8 +566,8 @@ for p in $PAGES; do
           # La misma regla que el sitemap, y por eso la misma funcion: aqui vivia
           # duplicada -solo la mitad, la de la barra final- y por eso el grafo de
           # enlaces de kine daba 310 rotos que no lo estaban.
-          cand="$(resolver_ruta "$cand")"
-        r="$(realpath -m --relative-to="$ROOT" "$cand" 2>/dev/null)"
+          resolver_ruta "$cand" >/dev/null; cand="$RUTA_RESUELTA"
+        rel_a_root "$cand"; r="$RUTA_REL"
         [ -n "$r" ] && echo "$r|$p"
       done >> "$LINKMAP"
 done
