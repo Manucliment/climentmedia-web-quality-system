@@ -62,6 +62,11 @@ echo "  TODOS LOS BANCOS DE LA SKILL"
 [ "$RAPIDO" = 1 ] && echo "  (--rapido: me salto los lentos)"
 echo "==============================================================================="
 
+# Bancos cuyo recuento depende de lo que esta maquina haya hecho ya, no del
+# codigo. Se suman al total igual, pero tambien aparte, para que la
+# documentacion pueda prometer un numero que se cumpla en una instalacion nueva.
+DEPENDE_DEL_ESTADO="historial"
+TOT_ESTADO=0
 TOT_OK=0; TOT_MAL=0; ROTOS=""; NO_MEDIDOS=""
 # Cuantos bancos DEBERIAN correr. Se cuenta ANTES para poder comparar despues:
 # un banco que desaparece no falla, y sin este numero su ausencia se lee como
@@ -148,6 +153,17 @@ while IFS='|' read -r nombre orden lento cubre; do
   fi
   n_ok="${n_ok:-0}"; n_mal="${n_mal:-0}"
   TOT_OK=$((TOT_OK + n_ok)); TOT_MAL=$((TOT_MAL + n_mal))
+  # 26-ago-2026 - LOS BANCOS QUE DEPENDEN DEL ESTADO DE ESTA MAQUINA, APARTE.
+  #   `historial` sale NO MEDIDO en una instalacion nueva -no hay despliegues
+  #   que leer- y PASA en cuanto la maquina ha desplegado una vez. El total,
+  #   entonces, no es el mismo numero para todo el mundo.
+  #   Eso rompia D6 de la peor manera: el README promete el recuento de una
+  #   INSTALACION LIMPIA -lo dice en su propia frase- y D6 lo comparaba con
+  #   ESTA corrida. Hoy, tras desplegar dos webs, la bateria paso de 617 a 619
+  #   y doc-gate se puso rojo sin que nadie hubiera roto nada.
+  #   Y subir el numero a 619 habria sido PEOR: dejaria doc-gate en rojo para
+  #   cualquiera que clone el repo y no haya desplegado nunca.
+  case " $DEPENDE_DEL_ESTADO " in *" $nombre "*) TOT_ESTADO=$((TOT_ESTADO + n_ok)) ;; esac
   if [ "$rc" = 0 ] && [ "$n_mal" = 0 ]; then
     printf "  PASA     %-18s %3d casos   %s\n" "$nombre" "$n_ok" "$cubre"
   else
@@ -188,6 +204,8 @@ perl "$REF/coverage.pl" 2>/dev/null | grep -E '^  (qa-maestro|enlazado-gate|audi
   echo "bancos: $CORRIDOS"
   echo "verde: $TOT_OK"
   echo "rojo: $TOT_MAL"
+  echo "verde-instalacion-limpia: $((TOT_OK - TOT_ESTADO))"
+  echo "depende-del-estado: $TOT_ESTADO"
 } > "$REF/.ultima-bateria"
 
 echo

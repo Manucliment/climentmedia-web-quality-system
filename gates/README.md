@@ -20,8 +20,21 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the batteries that need a browser or the network. On this machine the fast
-run is **617 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
+run is **620 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
 because a fresh install has never deployed anything.
+
+**That number is a promise about a clean install, and the gate now knows it.** Once this
+machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
+passing, so the total goes up: on the machine these numbers were taken from it reads
+622, not 620, because two sites went out that day. `run-all.sh`
+therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
+documentation gate accepts either.
+
+> The obvious fix was the wrong one. Raising the published number to 619 would have left
+> the documentation gate **red for everyone who clones this repository and has never
+> deployed** — a gate that demands the docs lie to other people in order to go quiet on
+> your machine. When a check and a document disagree, ask which of them is making a
+> promise about *your* machine and which about *any* machine.
 
 Two more cases report `NOT MEASURED` out of the box, and both are deliberate. The
 AI-crawler bank's redirect case needs a site of yours that redirects apex to `www` —
@@ -33,7 +46,7 @@ sends it traffic every time a stranger runs the tests.
 Read the last three lines. They are the only ones that matter:
 
 ```
-  617 casos en verde · 0 en rojo
+  620 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
