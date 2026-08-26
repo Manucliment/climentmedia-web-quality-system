@@ -212,9 +212,19 @@ is deliberately **no numerical score**.
 featured-snippet surface. The citation surface is **134–167 words, self-contained**. Those
 are different surfaces, and a page can be excellent at one and absent from the other.
 
-🔴 **It refuses to score a language it has no patterns for.** The patterns are English and
-Spanish. A gate that sweeps a French page it cannot parse and reports "0 findings" looks
-like coverage and is a hole — so it reads `<html lang>` and returns `NOT MEASURED`.
+🔴 **It refuses to score a language it has no patterns for.** A gate that sweeps a
+page it cannot parse and reports "0 findings" looks like coverage and is a hole, so it
+reads `<html lang>` and returns `NOT MEASURED`. Covered today: English, Spanish, French,
+Portuguese, which is every site this system currently runs.
+
+**Adding a language is not mostly about the patterns you add. It is about the ones you
+leave out.** Accents are stripped before matching, and a stripped word can collide with an
+everyday word in the same language. French `il` and `elle` are impersonal half the time
+(`il faut`, `il y a`, `il s'agit`), so they stay out; Portuguese acute-e strips to `e`, the
+conjunction "and" that opens one sentence in two, and `nos` with an accent strips to `nos`,
+the contraction "in the" -- both stay out. Every exclusion carries two tests: one proving it
+stays quiet, and one proving the check around it is not dead. Without the second, a
+deliberate exclusion and a broken check look exactly the same from the outside.
 
 > **The lesson from building these three, and it is the one worth keeping.** The first real
 > run of `citable.pl` reported 76 blocking findings. Half were not: `this page`, `these
