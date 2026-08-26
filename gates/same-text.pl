@@ -37,7 +37,28 @@ sub palabras {
     $h =~ s/<[^>]+>/ /g;
     $h =~ s/&nbsp;/ /g; $h =~ s/&amp;/&/g; $h =~ s/&quot;/"/g;
     $h =~ s/&([a-z]+|#\d+);/ /gi;          # el resto de entidades, a espacio
-    my @w = grep { length } split /\s+/, $h;
+    # 🔴 26-ago-2026 · LA PUNTUACION IBA PEGADA AL TOKEN, y eso convertia
+    #    cualquier reescritura en «perdida de texto del cliente».
+    #    Medido ese dia al desplegar nora: el gate acuso a 5 paginas de perder
+    #    palabras y decia «FALTAN 9: ... energias: ... profundo ...». Contadas
+    #    a mano en el fichero: `profundo` 2->2, `representa` 3->3, `energias`
+    #    3->3. No faltaba NINGUNA. Lo unico que habia cambiado era la
+    #    puntuacion adherida: antes `energias:` y despues `energias,`.
+    #
+    #    ⚠️ Y el daño no es el ruido, es lo que el ruido se lleva por delante.
+    #    Este aviso existe para cazar algo caro -entregar menos texto del
+    #    cliente del que habia- y si salta con cada coma deja de leerse. El dia
+    #    que se pierda un parrafo entero, el aviso estara ahi, identico, y
+    #    nadie lo mirara. Un guardia que se equivoca a menudo no estorba: se
+    #    apaga solo, en la cabeza de quien lo lee.
+    #
+    #    Se compara por PALABRA: sin signos en los bordes y sin distinguir
+    #    mayusculas. Perder «Esto» y ganar «esto» tampoco es perder contenido.
+    #    Lo que NO se toca es el recuento: si una palabra desaparece de verdad,
+    #    sigue faltando. Ver el caso «un parrafo entero borrado» del banco.
+    my @w = grep { length }
+            map  { my $x = lc $_; $x =~ s/^[^\w]+//; $x =~ s/[^\w]+$//; $x }
+            grep { length } split /\s+/, $h;
     return \@w;
 }
 

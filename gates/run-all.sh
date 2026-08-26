@@ -29,6 +29,7 @@ case "${1:-}" in --rapido|--fast) RAPIDO=1 ;; esac
 # banco | orden | lento(1/0) | que cubre
 BANCOS="
 doc-gate|perl doc-gate-tests/tests.pl|0|el gate de documentacion
+mismo-texto|perl same-text-tests/tests.pl|0|el texto del cliente no se pierde al rehacer la maqueta
 crawl-enlaces|perl crawl-links-tests/tests.pl|0|migas, cache compartida, R5 y R10
 qa-maestro|bash qa-master-tests/tests.sh|1|las 5 lentes y sus controles
 recibo-base|bash receipt-tests/tests.sh|0|el recibo: arbol desplegable, sello, alcance

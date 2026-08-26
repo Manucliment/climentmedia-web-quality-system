@@ -1,6 +1,6 @@
 # The gates
 
-37 programs and 27 test batteries. This file is the index: what each program is for,
+37 programs and 28 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -20,13 +20,13 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the batteries that need a browser or the network. On this machine the fast
-run is **620 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
+run is **628 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
 because a fresh install has never deployed anything.
 
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from it reads
-622, not 620, because two sites went out that day. `run-all.sh`
+630, not 628, because two sites went out that day. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -46,7 +46,7 @@ sends it traffic every time a stranger runs the tests.
 Read the last three lines. They are the only ones that matter:
 
 ```
-  620 casos en verde · 0 en rojo
+  628 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
