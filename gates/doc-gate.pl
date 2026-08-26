@@ -466,9 +466,25 @@ if (corre('D6')) {
     } else {
         my %m;
         open my $h, '<:raw', $f or die;
-        while (my $l = <$h>) { $m{$1} = $2 if $l =~ /^(\w+):\s*(.+?)\s*$/ }
+        while (my $l = <$h>) { $m{$1} = $2 if $l =~ /^([\w-]+):\s*(.+?)\s*$/ }
         close $h;
-        my $real = $m{verde} // '';
+        my $real  = $m{verde} // '';
+        # 🔴 26-ago-2026 · Y EL RECUENTO NO ES UNO, SON DOS.
+        #    `historial` sale NO MEDIDO en una instalacion nueva y PASA en
+        #    cuanto la maquina ha desplegado una vez, asi que el total no es el
+        #    mismo numero para todo el mundo. El README promete el de una
+        #    INSTALACION LIMPIA -lo dice en su propia frase- y aqui se comparaba
+        #    contra ESTA corrida. Medido ese dia: tras desplegar dos webs la
+        #    bateria paso de 617 a 619 y este check se puso rojo sin que nadie
+        #    hubiera roto nada.
+        #    ⚠️ Y el arreglo obvio era el malo: subir el numero a 619 habria
+        #       dejado este check en ROJO para cualquiera que clone el repo y no
+        #       haya desplegado nunca. Un gate no puede exigir que la
+        #       documentacion mienta a los demas para callarse en tu maquina.
+        #    Se aceptan los DOS y no se pierde poder: si la documentacion se
+        #    queda vieja de verdad, no casa con ninguno.
+        my $limpia = $m{"verde-instalacion-limpia"} // $real;
+        my %valido = map { $_ => 1 } grep { length } ($real, $limpia);
         # 🔴 26-ago-2026 · D6 MIRABA SOLO `SKILL.md`, Y `gates/README.md` PUBLICA
         #    SU PROPIO RECUENTO SIN QUE NADIE LO VIGILE. Medido ese dia: el
         #    README decia «451 cases green» y la bateria daba 592 -- 141 casos de
@@ -486,13 +502,14 @@ if (corre('D6')) {
             push @n, ($t =~ /(\d{2,5})\s+casos en verde/g);
             push @n, ($t =~ /(\d{2,5})\s+cases green/g);
             push @dichos, @n;
-            push @mal, map { "$d->[0] dice $_" } grep { $_ ne $real } @n;
+            push @mal, map { "$d->[0] dice $_" } grep { !$valido{$_} } @n;
         }
         if (!@dichos) {
             ok('D6', 'la documentacion no publica un recuento de la bateria', 'nada que pueda caducar');
         } elsif (@mal) {
             bad('D6', 'la documentacion publica un recuento que ya no es cierto',
-                join(' · ', @mal)." y la ultima bateria midio $real");
+                join(' · ', @mal)." y la ultima bateria midio $real"
+                . ($limpia ne $real ? " ($limpia en una instalacion limpia)" : ""));
         } else {
             ok('D6', 'el recuento de la documentacion coincide con la ultima bateria',
                "$real casos, en ".scalar(@docs)." documento(s)");

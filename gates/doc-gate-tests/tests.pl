@@ -239,6 +239,33 @@ caso('SKILL.md que no publica recuento: nada que caducar', 'D6',
        'references/.ultima-bateria' => $BAT,
        'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
 
+#  🔴 26-ago-2026 · EL RECUENTO NO ES UNO, SON DOS, Y ESO ROMPIA D6.
+#     `historial` sale NO MEDIDO en una instalacion nueva y PASA en cuanto la
+#     maquina ha desplegado una vez. Ese dia, tras desplegar dos webs, la
+#     bateria paso de 617 a 619 y D6 se puso rojo sin que nadie hubiera roto
+#     nada. El arreglo obvio -subir el numero del README a 619- era el MALO:
+#     habria dejado D6 en rojo para cualquiera que clone el repo y no haya
+#     desplegado nunca. Un gate no puede exigir que la documentacion mienta a
+#     los demas para callarse en tu maquina.
+#     Ahora `run-all.sh` escribe tambien `verde-instalacion-limpia` y D6 acepta
+#     los dos. Los tres casos de abajo son las tres situaciones, y el tercero
+#     es el que prueba que aceptar dos numeros NO ha apagado el check.
+my $BAT2 = "medido: 2026-08-26\nbancos: 20\nverde: 828\nrojo: 0\n"
+         . "verde-instalacion-limpia: 826\ndepende-del-estado: 2\n";
+caso('la maquina YA ha desplegado: vale el numero de instalacion limpia', 'D6',
+     { 'SKILL.md' => $BIEN,
+       'references/.ultima-bateria' => $BAT2,
+       'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
+caso('...y tambien vale el total de ESA maquina', 'D6',
+     { 'SKILL.md' => "# skill\n\n| Casos en verde | **828 . 0 en rojo** |\n",
+       'references/.ultima-bateria' => $BAT2,
+       'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
+caso('...pero un numero que no es NINGUNO de los dos sigue en rojo', 'D6',
+     { 'SKILL.md' => $VIEJO,
+       'references/.ultima-bateria' => $BAT2,
+       'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
+
+
 printf "\n-----------------------------------------------------------------\n";
 printf "  OK %-3d  ·  MAL %d\n", $ok, $ko;
 print $ko ? "  🔴 HAY FALLOS: el gate de documentacion no es de fiar.\n"
