@@ -4,11 +4,16 @@
 # =============================================================================
 #  26-ago-2026. Escrito en la misma tanda que el gate.
 #
-#  El caso que sostiene todo el banco es `LANG3`: una pagina en FRANCES tiene
-#  que salir NO MEDIDO, no PASA. Dos de nuestras seis webs son `fr` y `pt`, y
-#  los patrones son de ingles y espanol. Un gate que barre una pagina que no
-#  entiende y dice «0 hallazgos» es la peor version de si mismo: parece
+#  El caso que sostiene todo el banco es `LANG3`: una pagina en un idioma SIN
+#  patrones tiene que salir NO MEDIDO, no PASA. Un gate que barre una pagina que
+#  no entiende y dice 0 hallazgos es la peor version de si mismo: parece
 #  cobertura y es un hueco.
+#
+#  26-ago, tarde: `fr` y `pt` YA se miden, asi que las seis webs del parque
+#  estan cubiertas y LANG3/LANG4 pasaron a ALEMAN y NEERLANDES. La regla que
+#  prueban no ha cambiado; cambio que idioma la ejemplifica. Si algun dia se
+#  anaden esos dos, hay que mover estos casos otra vez: el banco no puede
+#  quedarse sin ningun idioma descubierto o deja de probar la regla.
 #
 #    perl citable-tests/tests.pl
 # =============================================================================
@@ -66,12 +71,12 @@ print "  " . '=' x 62 . "\n\n";
 
 # --- IDIOMA · el caso que justifica el gate entero ---------------------------
 {
-  my ($rc, $out) = run(pageof('fr', "<p>Vous cherchez un kinesitherapeute a domicile dans votre commune et vous ne savez pas par ou commencer aujourd hui.</p>"));
-  check('LANG3 · pagina en FRANCES -> NO MEDIDO, nunca PASA', $rc, $out, 3, qr/NO MEDIDO/);
+  my ($rc, $out) = run(pageof('de', "<p>Der Physiotherapeut kommt zu Ihnen nach Hause und die Sitzung dauert etwa dreissig Minuten pro Termin.</p>"));
+  check('LANG3 · pagina en ALEMAN -> NO MEDIDO, nunca PASA', $rc, $out, 3, qr/NO MEDIDO/);
 }
 {
-  my ($rc, $out) = run(pageof('pt', "<p>O espelho sob medida e fabricado com vidro temperado e entregue em toda a regiao no prazo combinado.</p>"));
-  check('LANG4 · pagina en PORTUGUES -> NO MEDIDO', $rc, $out, 3, qr/NO MEDIDO/);
+  my ($rc, $out) = run(pageof('nl', "<p>De kinesitherapeut komt bij u thuis langs en een sessie duurt ongeveer dertig minuten per afspraak.</p>"));
+  check('LANG4 · pagina en NEERLANDES -> NO MEDIDO', $rc, $out, 3, qr/NO MEDIDO/);
 }
 {
   $n++;
@@ -221,6 +226,119 @@ my $LARGO_GENERICO = 'Our platform reads the account data every night and produc
   # Textos cortos -pies de foto, etiquetas- no son pasajes.
   my ($rc, $out) = run(pageof('en', "<p>This one is short.</p><p>$LIMPIO</p>"));
   check('HIG3 · un texto de menos de 40 caracteres no es un pasaje', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+
+# --- FRANCES · anadido el 26-ago-2026 -----------------------------------------
+#  Los seis primeros hallazgos reales -3 en kine, 3 en oliverservices- se
+#  revisaron A MANO uno por uno y los seis eran genuinos. Estos casos los
+#  congelan, y los FP de abajo congelan lo que NO puede volver a saltar.
+{
+  my ($rc, $out) = run(pageof('fr', "<p>C'est la seule part qui reste a votre charge apres le remboursement de la mutuelle et elle varie selon le statut.</p>"));
+  check("FR1 · abre con \"C'est\" -> BLOQUEA", $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('fr', "<p>Cela depend du type de soins prescrits par le medecin et du nombre de seances prevues dans l ordonnance.</p>"));
+  check('FR2 · abre con "Cela" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('fr', "<p>Ce sont les deux seules situations dans lesquelles la mutuelle refuse le remboursement des seances a domicile.</p>"));
+  check('FR3 · abre con "Ce sont" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('fr', "<p>Comme explique plus haut, la seance dure environ trente minutes et le kinesitherapeute se deplace chez vous.</p>"));
+  check('FR4 · "comme explique plus haut" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*anterior/s);
+}
+{
+  # El hallazgo real de ti-care.html: el formulario NO esta arriba para un motor.
+  my ($rc, $out) = run(pageof('fr', "<p>Pour prendre rendez vous, remplissez le formulaire ci-dessus et vous serez rappele dans les vingt quatre heures.</p>"));
+  check('FR5 · "ci-dessus" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*anterior/s);
+}
+{
+  # 🔴 EL CONTROL QUE JUSTIFICA DEJAR `il`/`elle` FUERA DEL PATRON. En frances
+  #    son impersonales la mitad de las veces -il faut, il y a, il s'agit-, y
+  #    meterlos reproduciria el 50% de falsos positivos que ya costo el ingles.
+  my ($rc, $out) = run(pageof('fr', "<p>Il faut une prescription du medecin traitant pour que la mutuelle rembourse les seances de kinesitherapie.</p>"));
+  check('FR6 · "Il faut" es impersonal y NO salta (por eso il/elle estan fuera)', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+{
+  my ($rc, $out) = run(pageof('fr', "<p>Ce cabinet propose des seances de kinesitherapie a domicile pour les patients qui ne peuvent pas se deplacer.</p>"));
+  check('FR7 · "Ce cabinet propose" es determinante, NO pronombre huerfano', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+{
+  my ($rc, $out) = run(pageof('fr', "<p>Le remboursement est peut-etre partiel et depend probablement du statut du patient ainsi que de la prescription.</p>"));
+  check('FR8 · dos atenuantes franceses -> DEBILITA', $rc, $out, 0, qr/DEBILITA.*atenuantes/s);
+}
+{
+  # 🔑 EL UNICO CASO DEL BANCO QUE PRUEBA %ACC DE VERDAD: el acento esta DENTRO
+  #    de la palabra que dispara. `e` con acento ya lo traia el espanol, asi que
+  #    no discrimina; `e` con acento GRAVE -dernierement- lo anadio esta tanda.
+  #    Los bytes se fabrican aqui, no se teclean: escribirlos a mano en un
+  #    fichero que viaja por varias capas es como se doble-codifica sin error.
+  my $E_GRAVE = chr(0xC3) . chr(0xA8);   # e con acento grave, en bytes UTF-8
+  my ($rc, $out) = run(pageof('fr', "<p>Derni${E_GRAVE}rement, la mutuelle a modifie le montant du ticket moderateur pour les seances a domicile.</p>"));
+  check('FR9 · "dernierement" ACENTUADO -> DEBILITA (prueba el desacentuado)', $rc, $out, 0, qr/DEBILITA.*fecha relativa/s);
+}
+
+# --- PORTUGUES · anadido el 26-ago-2026 ---------------------------------------
+#  Cierra el sexto sitio, que ademas es el UNICO del parque con citas de IA.
+{
+  my ($rc, $out) = run(pageof('pt', "<p>Isto e o erro mais caro que um cliente comete ao escolher a espessura do vidro do espelho sob medida.</p>"));
+  check('PT1 · abre con "Isto" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('pt', "<p>Este e o modelo mais vendido e sai em qualquer medida ate dois metros de altura sem custo extra.</p>"));
+  check('PT2 · abre con "Este e" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('pt', "<p>Como visto acima, o prazo de entrega e de quinze dias uteis a contar da confirmacao da encomenda.</p>"));
+  check('PT3 · "como visto acima" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*anterior/s);
+}
+{
+  my ($rc, $out) = run(pageof('pt', "<p>Este espelho sob medida leva vidro temperado de seis milimetros e chega montado em toda a regiao norte.</p>"));
+  check('PT4 · "Este espelho leva" es determinante, NO pronombre huerfano', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+{
+  # 🔴 EL CONTROL QUE JUSTIFICA DEJAR `e` ACENTUADO FUERA. Sin acentos se vuelve
+  #    la conjuncion «y», que abre una de cada dos frases en portugues. Meterlo
+  #    en el patron acusaria a medio sitio.
+  my $E_AGUDA = chr(0xC3) . chr(0xA9);
+  my ($rc, $out) = run(pageof('pt', "<p>${E_AGUDA} possivel encomendar o espelho com iluminacao integrada e com moldura em qualquer cor do catalogo.</p>"));
+  check('PT5 · abre con "E" acentuado y NO salta (por eso esta fuera)', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+{
+  my ($rc, $out) = run(pageof('pt', "<p>A loja mudou recentemente o prazo de producao dos espelhos sob medida para quinze dias uteis.</p>"));
+  check('PT6 · "recentemente" -> DEBILITA', $rc, $out, 0, qr/DEBILITA.*fecha relativa/s);
+}
+{
+  # Acentos portugueses por todo el parrafo: no pueden FABRICAR hallazgos.
+  # ⚠️ Ningun disparador portugues lleva acento dentro, asi que las altas de
+  #    %ACC para `pt` solo se prueban por este lado -- que no rompan-, no por el
+  #    de que hagan saltar algo. Dicho aqui para que nadie lea mas cobertura de
+  #    la que hay.
+  my $A_TILDE = chr(0xC3) . chr(0xA3);   # a con tilde
+  my $C_CED   = chr(0xC3) . chr(0xA7);   # c con cedilla
+  my $O_TILDE = chr(0xC3) . chr(0xB5);   # o con tilde
+  my $body = "A produ${C_CED}${A_TILDE}o do espelho come${C_CED}a apos a confirma${C_CED}${A_TILDE}o e as dimens${O_TILDE}es sao verificadas antes do corte.";
+  my ($rc, $out) = run(pageof('pt', "<p>$body</p>"));
+  check('PT7 · acentos portugueses NO fabrican hallazgos', $rc, $out, 0, qr/VEREDICTO: PASA/);
+}
+my $PT_LARGO = 'Nos espelhos sob medida a espessura do vidro decide o preco final, e nos '
+  . 'modelos com iluminacao integrada o custo sobe cerca de vinte por cento, porque a fita '
+  . 'de led e a fonte de alimentacao entram no orcamento. A entrega chega a toda a regiao '
+  . 'norte no prazo combinado, com montagem incluida, e o cliente escolhe a moldura do '
+  . 'catalogo sem qualquer custo adicional.';
+{
+  # 🔴 EL OTRO CONTROL DE COLISION: `nos` sin acento es tambien la contraccion
+  #    «en los», y abre parrafos enteros. Fuera del patron generico por eso.
+  my ($rc, $out) = run(pageof('pt', "<p>$PT_LARGO</p>"), '--brand', 'Mobanho');
+  check('PT8 · "nos" como contraccion NO se lee como sujeto sin nombrar', $rc, $out, 0, qr/0 bloqueos, 0 debilitan/);
+}
+{
+  # ...y el positivo que prueba que el check no esta muerto para portugues.
+  my $con_nossa = $PT_LARGO;
+  $con_nossa =~ s/A entrega chega/A nossa equipa entrega/ or die "el fixture de PT9 no caso\n";
+  my ($rc, $out) = run(pageof('pt', "<p>$con_nossa</p>"), '--brand', 'Mobanho');
+  check('PT9 · ...pero "nossa equipa" SI (el arreglo no apago el check)', $rc, $out, 0, qr/DEBILITA.*marca/s);
 }
 
 # --- NO MEDIDO ---------------------------------------------------------------

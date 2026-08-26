@@ -24,11 +24,17 @@
 #  hay `--url`. «Lo que devuelve un fetcher no es lo que la pagina le sirve a un
 #  motor.» Se mide el HTML del repo, que es la fuente.
 #
-#  🔴 Y EL LIMITE QUE MAS IMPORTA: los patrones son de INGLES y ESPANOL. Una
-#  pagina en frances o portugues no se puede medir con ellos, y decir «0
-#  hallazgos» sobre ella seria un cero con cara de aprobado. Por eso se lee
-#  `<html lang>` y, si no esta cubierto, sale NO MEDIDO. Dos de nuestras seis
-#  webs son `fr` y `pt`.
+#  🔴 Y EL LIMITE QUE MAS IMPORTA: los patrones son POR IDIOMA, y un idioma
+#  sin patrones NO SE PUEDE MEDIR. Cero hallazgos sobre una pagina que no se ha
+#  sabido leer es un cero con cara de aprobado, asi que se lee `<html lang>` y,
+#  si el idioma no esta cubierto, sale NO MEDIDO -- nunca 0.
+#
+#  CUBIERTOS HOY: en - es - fr - pt, o sea las SEIS webs del parque.
+#  Al anadir un idioma, el riesgo NO es que falten patrones: es que un patron
+#  valido en un idioma sea una palabra corriente en otro una vez sin acentos.
+#  Ya ha pasado dos veces y las dos estan anotadas al lado de su bloque:
+#    `il`/`elle` en frances -> impersonales (il faut, il y a): fuera
+#    `e` acentuado y `nos` en portugues -> la conjuncion y la contraccion: fuera
 #
 #  SEVERIDAD (la de la skill, sin puntuaciones numericas: ella lo prohibe)
 #    BLOQUEA   el motor no puede usar el pasaje   -> rc 1
@@ -85,12 +91,59 @@ my %LANG = (
     reldate  => qr/\b(recientemente|actualmente|hoy en dia|ultimamente|el ano pasado|este ano|en los ultimos (?:anos|meses)|por ahora)\b/i,
     generic  => qr/\b(nosotros|nuestra|nuestro|nuestras|nuestros|la (?:herramienta|plataforma|empresa|solucion))\b/i,
   },
+  # 🆕 26-ago-2026 · FRANCES. Cubre DOS sitios -uno `fr` y otro `fr-BE`-, asi que
+  #    lleva la cobertura del gate de 3 de 6 a 5 de 6 con un solo idioma. Era el
+  #    punto de mejor relacion valor/coste del plan de webs.
+  #
+  #    🔴 `il` y `elle` NO entran, y es deliberado. En frances profesional el uso
+  #       IMPERSONAL es constante -«il faut», «il y a», «il est possible»,
+  #       «il s'agit de»- y ahi el pronombre no señala a nada porque no tiene a
+  #       quien señalar: sacado de la pagina se entiende igual. Meterlos daria el
+  #       mismo 50% de falsos positivos que dieron `this page` y `these terms` en
+  #       ingles la primera vez. Se prefiere medir de menos y decirlo.
+  #       Consecuencia honesta: en frances este check ve MENOS que en ingles.
+  fr => {
+    pronoun  => qr/^\s*(?:(?:c'est|ce sont|cela|ca|celui-ci|celle-ci|ceux-ci|celles-ci)\s+\w|(?:ce|cet|cette|ces)\s+(?:est|sont|etait|etaient|permet|permettent|signifie|montre|fonctionne|arrive|change|explique|donne|reste|devient|implique|coute|echoue|aide)\b)/i,
+    backref  => qr/\b(comme (?:vu|indique|mentionne|explique|dit) (?:plus haut|ci-dessus|precedemment)|voir plus haut|ci-dessus|dans la section precedente|comme (?:nous l'avons vu|explique plus haut))\b/i,
+    hedge    => qr/\b(peut-etre|pourrait|pourraient|probablement|sans doute|il semble|semblerait|a tendance a|relativement|plutot|en principe|generalement|dans certains cas)\b/i,
+    reldate  => qr/\b(recemment|actuellement|aujourd'hui|de nos jours|dernierement|l'annee derniere|cette annee|ces derniers mois|pour l'instant|en ce moment)\b/i,
+    generic  => qr/\b(nous|notre|nos|l'equipe|la plateforme|l'outil|la societe|le cabinet)\b/i,
+  },
+  # 🆕 26-ago-2026 · PORTUGUES. Cierra el sexto sitio, que ademas es el UNICO del
+  #    parque con citas de IA -23 en 15 paginas- y por tanto el unico del que se
+  #    puede aprender algo sobre por que un motor cita.
+  #
+  #    🔴 DOS PALABRAS QUEDAN FUERA A PROPOSITO, Y LAS DOS POR LA MISMA CAUSA:
+  #       al quitar acentos colisionan con palabras corrientes.
+  #       · `e` con acento -«E uma solucao...»- se vuelve `e`, que es la
+  #         conjuncion «y». Acusaria una de cada dos frases.
+  #       · `nos` con acento -«nosotros»- se vuelve `nos`, que es tambien la
+  #         contraccion «en los». Se dejan solo nossa/nosso/nossas/nossos.
+  #       Es la misma familia que la firma `A-tilde` ya documentada: un patron
+  #       que sirve en un idioma es una palabra corriente en otro.
+  pt => {
+    pronoun  => qr/^\s*(?:(?:isto|isso|aquilo)\s+\w|(?:este|esta|estes|estas|esse|essa|esses|essas)\s+(?:e|sao|era|eram|foi|foram|significa|faz|da|mostra|acontece|funciona|importa|explica|pode|poderia|vai|deixa|tem|implica|custa|falha|ajuda)\b)/i,
+    backref  => qr/\b(como (?:visto|referido|explicado|dito) acima|ver acima|acima referido|na seccao anterior|conforme (?:acima|referido))\b/i,
+    hedge    => qr/\b(talvez|provavelmente|eventualmente|possivelmente|em principio|tende a|parece que|relativamente|bastante|geralmente|poderia|poderiam)\b/i,
+    reldate  => qr/\b(recentemente|atualmente|actualmente|hoje em dia|ultimamente|o ano passado|este ano|nos ultimos (?:anos|meses)|de momento)\b/i,
+    generic  => qr/\b(nossa|nosso|nossas|nossos|a (?:ferramenta|plataforma|empresa|loja|solucao))\b/i,
+  },
 );
 
+# 🔴 26-ago-2026 · AMPLIADA PARA EL FRANCES. Traia solo los acentos del
+#    castellano, y los patrones se comparan contra el texto SIN acentos: sin
+#    `a` grave ni `e` grave, media palabra francesa no casaba con nada.
+#    Los que faltaban se sacaron CONTANDO los del sitio real, no de memoria:
+#    e-agudo 2235 · a-grave 683 · e-grave 104 · i-circunflejo 22 · c-cedilla 13
+#    · e-circunflejo 8 · a-circunflejo 5 · o-circunflejo 4 · u-grave 3.
 my %ACC = (
   "\xc3\xa1"=>'a',"\xc3\xa9"=>'e',"\xc3\xad"=>'i',"\xc3\xb3"=>'o',"\xc3\xba"=>'u',
   "\xc3\x81"=>'A',"\xc3\x89"=>'E',"\xc3\x8d"=>'I',"\xc3\x93"=>'O',"\xc3\x9a"=>'U',
-  "\xc3\xb1"=>'n',"\xc3\x91"=>'N',"\xc3\xbc"=>'u',"\xc3\xa7"=>'c',
+  "\xc3\xb1"=>'n',"\xc3\x91"=>'N',"\xc3\xbc"=>'u',"\xc3\xa7"=>'c',"\xc3\x87"=>'C',
+  "\xc3\xa0"=>'a',"\xc3\x80"=>'A',"\xc3\xa8"=>'e',"\xc3\x88"=>'E',
+  "\xc3\xaa"=>'e',"\xc3\x8a"=>'E',"\xc3\xab"=>'e',"\xc3\xa2"=>'a',
+  "\xc3\xae"=>'i',"\xc3\xaf"=>'i',"\xc3\xb4"=>'o',"\xc3\x94"=>'O',
+  "\xc3\xb9"=>'u',"\xc3\xbb"=>'u',"\xc3\xa3"=>'a',"\xc3\xb5"=>'o',
 );
 sub deacc { my $s = shift; for my $k (keys %ACC) { my $v=$ACC{$k}; $s =~ s/\Q$k\E/$v/g } $s }
 
@@ -104,7 +157,15 @@ else {
     my $d = pop @stack; opendir(my $dh, $d) or next;
     for my $e (readdir $dh) {
       next if $e eq '.' or $e eq '..';
-      next if $e =~ /^(\.git|node_modules|_deploy|_spec|_seo|_qa|_kit|_migrate|_post-images|ds-bundle|\.design-sync|_cowork)$/;
+      # 🔴 26-ago-2026 · ESTO ERA UNA LISTA DE NOMBRES ESCRITA A MANO, y por eso
+      #    no conocia `_candidato`: la primera corrida real sobre mobanho midio
+      #    82 paginas -13 reales + 69 copias del candidato-, o sea que cualquier
+      #    defecto salia CONTADO DOS VECES. Es el mismo agujero que ya costo 78
+      #    FALLOS falsos por `_og/` en nora, arreglado alli y no traido aqui.
+      #    Ahora es una REGLA, no una lista: ningun directorio `_*` se publica
+      #    -comprobado sobre los 13 que hay en las 6 webs-, asi que ninguno se
+      #    mide. Una lista no puede enterarse de un directorio que aun no existe.
+      next if $e =~ /^_/ or $e =~ /^(\.git|\.design-sync|node_modules|ds-bundle)$/;
       my $p = "$d/$e";
       if (-d $p) { push @stack, $p } elsif ($e =~ /\.html?$/i) { push @targets, $p }
     }
@@ -160,7 +221,7 @@ for my $f (sort @targets) {
     # 1 · pronombre huerfano al abrir  -> BLOQUEA
     if ($flat =~ $P->{pronoun}) {
       push @findings, [ 'BLOQUEA', $rel, 'abre con un pronombre sin antecedente', $frag,
-        'nombra el sujeto en la primera frase: sacado de la pagina, "esto/this" no senala a nada' ];
+        'nombra el sujeto en la primera frase: sacado de la pagina, el pronombre no senala a nada' ];
     }
     # 2 · referencia hacia atras  -> BLOQUEA
     if ($flat =~ $P->{backref}) {
