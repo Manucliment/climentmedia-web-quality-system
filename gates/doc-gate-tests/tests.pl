@@ -265,6 +265,23 @@ caso('...pero un numero que no es NINGUNO de los dos sigue en rojo', 'D6',
        'references/.ultima-bateria' => $BAT2,
        'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
 
+#  🔴 26-ago-2026 · EL NUMERO DE BATERIAS ERA OTRO DATO A MANO SIN VIGILAR.
+#     Ese dia el README raiz decia «37 programs and 27 test batteries» cuando
+#     ya eran 28, y estaba asi EN UN COMMIT YA EMPUJADO al repo publico. El
+#     dato para compararlo ya existia -- `run-all.sh` escribe `bancos:` -- y
+#     solo faltaba que alguien lo leyera. Un numero a mano en un documento
+#     publico no caduca despacio: caduca callado.
+my $BIEN_B = "# skill\n\n| Casos en verde | **826 . 0 en rojo** |\n\n20 test batteries.\n";
+my $MAL_B  = "# skill\n\n| Casos en verde | **826 . 0 en rojo** |\n\n99 test batteries.\n";
+caso('el numero de BATERIAS tambien coincide', 'D6',
+     { 'SKILL.md' => $BIEN_B,
+       'references/.ultima-bateria' => $BAT2,
+       'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
+caso('...y un numero de baterias caducado se acusa', 'D6',
+     { 'SKILL.md' => $MAL_B,
+       'references/.ultima-bateria' => $BAT2,
+       'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
+
 
 printf "\n-----------------------------------------------------------------\n";
 printf "  OK %-3d  ·  MAL %d\n", $ok, $ko;

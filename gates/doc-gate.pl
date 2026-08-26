@@ -492,8 +492,15 @@ if (corre('D6')) {
         #    arriba describe, cometido en el fichero de al lado: un numero a mano
         #    que nadie puede ver caducar.
         #    Y va en ingles ademas de en castellano, porque el README lo esta.
+        # 🔴 26-ago-2026 · Y EL README RAIZ TAMBIEN, por el mismo motivo que se
+        #    anadio `gates/README.md` arriba: publica su propio recuento y nadie
+        #    lo miraba. Medido ese dia: decia «37 programs and 27 test
+        #    batteries» cuando ya eran 28, y estaba asi EN UN COMMIT YA
+        #    EMPUJADO. Un numero a mano en un documento publico no caduca
+        #    despacio: caduca callado.
         my @docs = ( [ 'SKILL.md',        "$MADRE6/SKILL.md" ],
-                     [ 'gates/README.md', "$DIR/README.md"   ] );
+                     [ 'gates/README.md', "$DIR/README.md"   ],
+                     [ 'README.md',       "$MADRE6/README.md" ] );
         my (@dichos, @mal);
         for my $d (@docs) {
             next unless -f $d->[1];
@@ -503,6 +510,19 @@ if (corre('D6')) {
             push @n, ($t =~ /(\d{2,5})\s+cases green/g);
             push @dichos, @n;
             push @mal, map { "$d->[0] dice $_" } grep { !$valido{$_} } @n;
+
+            # 🔴 EL NUMERO DE BATERIAS ES OTRO DATO A MANO, y hasta hoy nadie lo
+            #    vigilaba. `run-all.sh` ya lo deja escrito (`bancos:`), asi que
+            #    solo faltaba compararlo. Cuenta los DECLARADOS, no los
+            #    corridos: en `--fast` corren 18 de 28, y el documento habla de
+            #    cuantos hay, no de cuantos cupieron en esta corrida.
+            if (defined $m{bancos} and length $m{bancos}) {
+                my @b = ($t =~ /(\d{1,4})\s+test batteries/g);
+                push @b, ($t =~ /(\d{1,4})\s+bancos de prueba/g);
+                push @dichos, @b;
+                push @mal, map { "$d->[0] dice $_ baterias" }
+                           grep { $_ ne $m{bancos} } @b;
+            }
         }
         if (!@dichos) {
             ok('D6', 'la documentacion no publica un recuento de la bateria', 'nada que pueda caducar');
