@@ -86,9 +86,25 @@ sec()  { echo; echo "-- $1"; }
 # reportaban [ ok ] sin haber comprobado ni un fichero. Es EXACTAMENTE el fallo
 # que este auditor existe para impedir -- una comprobacion que pasa porque no
 # comprobo nada -- y por eso abajo hay un guardia que revienta si salen 0.
+#  🔴 26-ago-2026 · LAS CARPETAS QUE EMPIEZAN POR GUION BAJO NO SE DESPLIEGAN,
+#     Y ESTE LISTADO LAS AUDITABA IGUAL.
+#     `EXCLUDE_DIRS` traia `.git node_modules dist build vendor` y ninguna de
+#     las carpetas de trabajo. Consecuencia medida ese dia sobre una web de
+#     cliente VIVA: **78 FALLOS, los 78 falsos**, todos de sus 7 plantillas de
+#     imagen social en `_og/` -sin <title>, fuera del sitemap, sin canonical-.
+#     Son plantillas, no paginas: `_og` esta en el `--exclude` del deploy y sus
+#     ficheros dan **404 en produccion**, comprobado.
+#     Un auditor que saca 78 rojos sobre un sitio sano se deja de mirar, y
+#     entonces se pierde tambien lo que si cazaba.
+#     Y costaba mas que ruido: al auditar de mas, dos repos **se pasaban de los
+#     5 minutos y se cortaban sin dar veredicto** -uno tiene 220 HTML en
+#     carpetas de trabajo y otro 151-.
+#     Verificado antes de tocar: de las 13 carpetas `_*` con HTML que hay en
+#     los 6 repos, **ninguna se despliega**. La convencion se sostiene.
 page_list() {
   find "$ROOT" -name '*.html' -type f 2>/dev/null | sed "s|^$ROOT/||" | while read -r p; do
     keep=1
+    case "$p" in _*/*) keep=0 ;; esac
     for d in $EXCLUDE_DIRS; do
       case "$p" in "$d"/*) keep=0; break ;; esac
     done
@@ -102,11 +118,11 @@ page_list() {
 #  19-ago-2026. Nuestras webs sirven las URLs de dos formas distintas, y hasta
 #  hoy el auditor solo conocia una:
 #
-#     dir-barra       /contacto  ->  contacto/index.html   (site-d, cm, site-c)
-#     plano-sin-ext   /contacto  ->  contacto.html         (site-a, site-b)
+#     dir-barra       /contacto  ->  contacto/index.html   (bcmadrid, cm, nora)
+#     plano-sin-ext   /contacto  ->  contacto.html         (kine, mobanho)
 #
-#  `compliance.conf.example` ya nombraba las dos por web (`modo = ...`) y el auditor no
-#  se habia enterado: la primera vez que se le corrio a site-a marco 363 FALLOS en
+#  `conformidad.conf` ya nombraba las dos por web (`modo = ...`) y el auditor no
+#  se habia enterado: la primera vez que se le corrio a kine marco 363 FALLOS en
 #  un sitio correcto -310 de ellos "enlace roto"-. Es la tercera vez que este
 #  fichero paga el mismo error: un supuesto de convencion que nadie declaro.
 #  *Si el barrido dice que todo esta roto a la vez, el roto es el barrido.*
@@ -135,7 +151,7 @@ resolver_ruta() {
 # La INVERSA de resolver_ruta: de un fichero en disco a las URLs con las que se
 # puede estar publicando. Existe por el mismo motivo y en la misma pareja: S1.3
 # mapeaba fichero -> URL conociendo UNA sola convencion, y por eso acusaba a
-# site-a de tener 15 paginas «fuera del sitemap» que estan perfectamente dentro
+# kine de tener 15 paginas «fuera del sitemap» que estan perfectamente dentro
 # (contacto.html se publica como /contacto). Las dos funciones son las dos
 # direcciones de la MISMA regla, y por eso viven juntas.
 urls_de_fichero() {
@@ -469,7 +485,7 @@ for p in $PAGES; do
     [ -z "$tgt" ] && continue
     # Tercer sitio donde vivia la regla de resolucion, y el unico que quedaba:
     # probaba "$d/$tgt" y, si fallaba, "$ROOT$tgt", ninguno de los dos con la
-    # convencion de fichero plano. Por eso site-a daba 310 "enlaces rotos" hacia
+    # convencion de fichero plano. Por eso kine daba 310 "enlaces rotos" hacia
     # paginas que existen (/a-propos -> a-propos.html). Ahora despacha por si la
     # ruta es absoluta o relativa y deja la CONVENCION a resolver_ruta, que es
     # el unico sitio donde esa regla esta escrita.
@@ -512,7 +528,7 @@ for p in $PAGES; do
           #    huerfanas en un sitio bien enlazado. Se aceptan LAS DOS.
           # La misma regla que el sitemap, y por eso la misma funcion: aqui vivia
           # duplicada -solo la mitad, la de la barra final- y por eso el grafo de
-          # enlaces de site-a daba 310 rotos que no lo estaban.
+          # enlaces de kine daba 310 rotos que no lo estaban.
           cand="$(resolver_ruta "$cand")"
         r="$(realpath -m --relative-to="$ROOT" "$cand" 2>/dev/null)"
         [ -n "$r" ] && echo "$r|$p"
@@ -555,7 +571,7 @@ for f in $DEPLOYED; do
     # frecuentes de nuestras webs de cliente- pasaba en VERDE. Lo encontro el
     # banco de pruebas el dia que se escribio, no una web rota.
     # NO se usa un patron ancho tipo `Ã.`: en portugues `Ã` mayuscula es LEGITIMA
-    # (IRMAOS, ORGAOS) y marcaria a shop.site-b.example entera. La lista explicita
+    # (IRMAOS, ORGAOS) y marcaria a loja.mobanho.com entera. La lista explicita
     # cubre es/fr/pt y no tiene falsos positivos; hay un caso verde que lo prueba.
     grep -qE 'Ã¡|Ã©|Ã­|Ã³|Ãº|Ã±|Ã§|Ã£|Ãµ|Ã¢|Ãª|Ã´|Ã |Ã¨|Ã‚|â€|â‚¬|Â»|Â«|ï¿½' "$ROOT/$f" 2>/dev/null && MOJI="$MOJI $f"
 done
@@ -566,7 +582,7 @@ done
 #    cumplia: 3 abren, 2 cierran, y la tercera estaba en prosa dentro de un
 #    comentario. Es la trampa §43 en este fichero: cuanto mejor documentas un
 #    check, mas facil es que se acuse a si mismo. Se quitan los comentarios
-#    antes de contar, igual que hacen qa-master.pl y audit-vs-spec.pl.
+#    antes de contar, igual que hacen qa-maestro.pl y audit-vs-spec.pl.
 UNB=0
 for p in $PAGES; do
   sincom=$(perl -0777 -pe 's/<!--.*?-->//gs' "$ROOT/$p")
@@ -614,7 +630,30 @@ for css in $(find "$ROOT" -maxdepth 2 -name '*.css' 2>/dev/null | grep -vE "/($(
   # La propiedad puede ir tras "0% {" en la misma linea, no solo al principio.
   # Anclado a ^ se escapaba `0% { box-shadow: ... }` -- que es justo como se
   # escriben los keyframes cortos, y como estaba el fallo real de components.css.
-  hits=$(awk '/@keyframes/,/^}/' "$css" | grep -nE '(^|[{;[:space:]])(box-shadow|width|height|top|left|right|bottom|margin|padding|background-color|filter)[[:space:]]*:' | head -5)
+  #
+  #  🔴 26-ago-2026 · EL RANGO `/@keyframes/,/^}/` NO CIERRA EN UN KEYFRAMES DE
+  #     UNA SOLA LINEA, Y SE TRAGA EL RESTO DEL FICHERO.
+  #     Medido sobre una web de cliente VIVA cuyo unico @keyframes es correcto
+  #     -solo opacity y transform, en una linea-: como no hay ningun `}` a
+  #     principio de linea, el rango siguio hasta el siguiente que encontro y
+  #     capturo **36 lineas** en vez de 1. Dentro venia una regla de menu movil
+  #     con `margin` y `padding`, y el auditor acuso a la animacion de animar
+  #     margenes. El sitio estaba bien.
+  #     Y el numero que daba despistaba ademas: `grep -n` numera las lineas del
+  #     EXTRACTO, no las del CSS, asi que el fallo señalaba la linea 30 de un
+  #     fichero donde el @keyframes esta en la 403.
+  #     Ahora se cuentan las llaves y el bloque termina cuando la profundidad
+  #     vuelve a cero. Sin escapes: `cnt()` compara caracteres, porque una llave
+  #     dentro de una expresion regular de awk es ambigua.
+  hits=$(awk '
+    function cnt(s, ch,   n, i) { n = 0
+      for (i = 1; i <= length(s); i++) if (substr(s, i, 1) == ch) n++
+      return n }
+    /@keyframes/ { dentro = 1; prof = 0 }
+    dentro { print
+      prof += cnt($0, "{") - cnt($0, "}")
+      if (prof <= 0) dentro = 0 }
+  ' "$css" | grep -nE '(^|[{;[:space:]])(box-shadow|width|height|top|left|right|bottom|margin|padding|background-color|filter)[[:space:]]*:' | head -5)
   [ -n "$hits" ] && { bad "S5.2 @keyframes anima propiedades no compuestas en $(basename $css): $(echo "$hits" | tr '\n' ' ' | cut -c1-120)"; NOCOMP=1; }
 done
 [ "$NOCOMP" -eq 0 ] && ok "S5.2 las animaciones solo tocan transform/opacity"
