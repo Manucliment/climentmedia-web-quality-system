@@ -60,16 +60,16 @@ paths/            Four entry points. Start here, not in blueprint/.
   3-add-page.md         Add a page to a site already published
   4-iterate-seo-design.md   Iterate SEO or design on a live site
 
-blueprint/        The method. 21 reference documents — consulted, not read end to end.
+blueprint/        The method. 18 reference documents — consulted, not read end to end.
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
-gates/            The executable half. 34 programs and 22 test batteries.
+gates/            The executable half. 37 programs and 27 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.
 docs/             The trap log: 81 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.
 GLOSSARY.md       Receipt, gate, lens, scope, mould, primitive, prose-page.
 ```
 
-**Do not read the 21 references.** Open the path for your job; it points at what you
+**Do not read the 18 references.** Open the path for your job; it points at what you
 need, when you need it. The references are lookup material.
 
 ---
@@ -146,7 +146,7 @@ Two numbers, both published because both can go down:
 
 | Number | Today | What it means |
 |---|---|---|
-| Test cases green | **519 · 0 red** on `--fast` | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect |
+| Test cases green | **593 · 0 red** on `--fast` | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect |
 | Checks **with a fixture** | **119 of 134 (88%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
 > **And the second number states its own scope, which is the honest half of it.** That 88% is
@@ -158,7 +158,7 @@ Two numbers, both published because both can go down:
 > mean the case is any good, or that anybody has seen it go red. **It is the floor, not the
 > ceiling.**
 >
-> **And the first number states its scope too: 519 is the `--fast` run**, which skips the nine
+> **And the first number states its scope too: 593 is the `--fast` run**, which skips the nine
 > banks that need a real Chrome or a measuring host. The full number is higher and is not
 > published here, because it was not measured on the machine this was written on — and a count
 > nobody can re-derive is a count somebody will eventually quote as current. Run it yourself;
