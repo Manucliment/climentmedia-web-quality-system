@@ -133,6 +133,25 @@ caso('ID que si se emite', 'D3',
 caso('familia desconocida: no es cosa nuestra', 'D3',
      { 'doc.md' => "El formulario devuelve ABC-12 y GDPR-01.\n", 'g.pl' => $EMITE }, 'PASA');
 
+#  🔴 28-ago-2026 · UNA FAMILIA SIN NI UN EMISOR EN EL ARBOL NO SE PUEDE JUZGAR.
+#     Al conectar por fin los repos de sitio (`config/site-repos.conf`),
+#     un repo de sitio salio con 5 FALLO citando MED-09, MED-01, EST-03,
+#     EST-04 y MED-13. Los cinco EXISTEN en `qa-master.pl` -- pero ese programa
+#     vive en la skill, no en el repo del sitio, asi que ahi no se lee.
+#     Y el guardia de "¿tengo con que juzgar?" era `keys %emitidos`, que en ese
+#     arbol NO estaba vacio: un `R10 l` suelto dentro de un `.js` casaba con el
+#     patron de las reglas de enlazado. UN acierto accidental basto para creerse
+#     en posesion del catalogo entero. Hermano del "un cero de grep no es una
+#     ausencia": **un UNO tampoco es una presencia.**
+#     El tercer caso es el que prueba que esto NO apaga el check.
+my $SOLO_R = "#!/usr/bin/perl\n# la regla R10 limita el menu\n";
+caso('familia sin emisor en el arbol: se avisa, no se acusa', 'D3',
+     { 'doc.md' => "Mira MED-09 y EST-03 en el recibo.\n", 'g.pl' => $SOLO_R }, 'AVISO');
+caso('...y la familia que SI se emite se sigue juzgando', 'D3',
+     { 'doc.md' => "Arregla SEO-01 y mira MED-09.\n", 'g.pl' => $EMITE }, 'AVISO');
+caso('...pero un ID inexistente de una familia QUE SI SE EMITE sigue en rojo', 'D3',
+     { 'doc.md' => "Arregla SEO-99 y mira MED-09.\n", 'g.pl' => $EMITE }, 'FALLO');
+
 print "\n== D4 · CADA TRAMPA DECLARA QUE LA CAZA\n";
 caso('una trampa sin declararlo', 'D4',
      { '07-trampas.md' => "# T\n\n## 1 · algo\n\ntexto\n" }, 'FALLO');
