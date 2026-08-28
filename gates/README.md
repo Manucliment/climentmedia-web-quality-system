@@ -24,7 +24,7 @@ machine the fast run is **630 cases green, 0 red**, with the deploy-history bank
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **731 cases green, 0 red** — **729** on a clean install — with **six** banks
+reads **734 cases green, 0 red** — **732** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -75,7 +75,7 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  731 casos en verde · 0 en rojo
+  734 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
@@ -152,7 +152,7 @@ whose verdict came from measuring a different object.
 |---|---|
 | `crawl-links.pl` | Crawls the tree: orphans, breadcrumbs, dead ends. |
 | `linking-gate.pl` | Internal linking, judged against what the site actually contains. |
-| `same-text.pl` | Text repeated across pages that should not be. |
+| `same-text.pl` | Whether re-laying-out a page lost any of the client's words. Compares the *visible text* of two trees, page by page, by words rather than lines — the layout is meant to change, the content is not. Takes two directories: `same-text.pl <tree-before> <tree-after>`. |
 | `qa-diff.pl` | What changed between two runs, by rule. |
 | `ai-crawlers.pl` | Whether AI answer engines are allowed to crawl at all. Parses robots.txt properly: own-agent groups do not inherit `*`, longest path wins, empty `Disallow` allows. |
 | `cannibalization.pl` | Two pages fighting over one term. `--audit` finds existing exact H1/title collisions; `--keyword` gives NEW / UPDATE / CANNIBALIZES before a piece is written. |

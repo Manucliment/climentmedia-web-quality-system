@@ -274,8 +274,28 @@ if (corre('D3')) {
         $emitidos{$1} = 1 while $src =~ /\b(R[0-9]{1,2})\b\s+[a-z]/g;   # reglas del gate de enlazado
     }
     my %familias = map { $_ => 1 } qw(SEO REN A11Y MED EST);
+    # 🔴 28-ago-2026 · SOLO SE JUZGA UNA FAMILIA QUE SE HAYA VISTO EMITIR.
+    #    Al conectar por fin los repos de sitio (`config/site-repos.conf`),
+    #    `un repo de sitio` salio con 5 FALLO citando MED-09, MED-01, EST-03,
+    #    EST-04 y MED-13. Los cinco EXISTEN en `qa-master.pl` -- lo que pasa es
+    #    que ese programa no vive en el repo del sitio, asi que aqui no se lee.
+    #    Y el guardia de "¿tengo con que juzgar?" era `keys %emitidos`, que en
+    #    ese arbol NO estaba vacio: un `R10 l` suelto dentro de un `.js` casaba
+    #    con el patron de las reglas de enlazado. UN acierto accidental basto
+    #    para que se creyera en posesion del catalogo entero.
+    #    Es el hermano del "un cero de grep no es una ausencia": **un UNO
+    #    tampoco es una presencia.** Sin un solo `MED-*` emitido en el arbol,
+    #    este check no sabe nada de la familia MED y no puede acusarla.
+    #    ⚠️ NO se apaga: si el arbol SI emite MED-01..MED-08 y el documento cita
+    #    MED-99, sigue saliendo FALLO. Lo unico que se calla es la familia de la
+    #    que no hay ni un emisor, y se dice en voz alta cuantas se callaron.
+    # ⚠️ La familia se saca de CADA clave por separado, no de un `join` dentro
+    #    del `while`: `join(...)` fabrica una cadena NUEVA en cada vuelta, asi
+    #    que `pos()` se reinicia y el bucle no termina JAMAS. Costo un timeout.
+    my %fam_emitida;
+    for my $k (keys %emitidos) { $fam_emitida{$1} = 1 if $k =~ /^([A-Z][A-Z0-9]*)-[0-9]/ }
     if (keys %emitidos) {
-        my %vistas;
+        my %vistas; my %sin_emisor;
         for my $doc (@DOCS) {
             my $c = slurp("$DIR/$doc");
             my $n = 0;
@@ -284,12 +304,18 @@ if (corre('D3')) {
                 while ($linea =~ /\b([A-Z][A-Z0-9]*)-([0-9]+[a-z]?)\b/g) {
                     my ($fam, $num) = ($1, $2);
                     next unless $familias{$fam};
+                    if (!$fam_emitida{$fam}) { $sin_emisor{$fam}++; next; }
                     my $id = "$fam-$num";
                     next if $emitidos{$id};
                     next if $vistas{$id}++;
                     bad('D3', "ID de comprobacion que nadie emite", "$doc:$n -> $id");
                 }
             }
+        }
+        if (keys %sin_emisor) {
+            avis('D3', 'familias de ID que este arbol no emite: no se juzgan',
+                 join(' · ', map { "$_ (".$sin_emisor{$_}." cita(s))" } sort keys %sin_emisor)
+                 . ' -- su programa vive en la skill, no aqui');
         }
         ok('D3', 'los IDs citados existen', scalar(keys %emitidos).' emitidos') unless grep { $_->[1] eq 'D3' && $_->[0] eq 'FALLO' } @LINEAS;
     } else {
