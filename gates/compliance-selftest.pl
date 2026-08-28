@@ -65,7 +65,15 @@ sub tit  { print "\n", "-" x 92, "\n  $_[0]\n", "-" x 92, "\n" }
 
 print "=" x 92, "\n  AUTOPRUEBA DE LA MATRIZ DE CONFORMIDAD  ·  ", strftime('%Y-%m-%d %H:%M', localtime), "\n";
 print "  origen (solo lectura): $ORIG\n  banco:                 $WORK\n", "=" x 92, "\n";
-die "no existe el repo de origen: $ORIG\n" unless -d $ORIG;
+# exit 3 = NO MEDIDO, la convencion de run-all.sh. Sin repo de origen no se ha
+# probado nada, y eso NO es un fallo de la matriz: es un hueco declarado. Con
+# exit 2 la bateria lo contaba como banco en rojo y mandaba a buscar un defecto
+# que no existe -- en una instalacion limpia este repo NO esta, por diseno.
+unless (-d $ORIG) {
+  print "\n  NO MEDIDO: no existe el repo de origen ($ORIG).\n";
+  print "  Esto NO es un aprobado: sin origen la matriz no se ha probado.\n";
+  exit 3;
+}
 
 # ── copia recursiva en Perl puro ─────────────────────────────────────────────
 #  Nada de `cp -r` ni de one-liners de bash: bash NO esta en el PATH de

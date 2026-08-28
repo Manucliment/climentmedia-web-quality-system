@@ -2,8 +2,8 @@
 # =============================================================================
 #  battery-layout.sh — todo lo que hay que volver a correr al tocar un molde
 # =============================================================================
-#  1. chk-colisiones  · ningun molde pisa a otro ni al chasis  (+ sus 6 negativos)
-#  2. medir-contraste · los 19 moldes contra el minimo AA      (+ su negativo)
+#  1. chk-collisions  · ningun molde pisa a otro ni al chasis  (+ sus 6 negativos)
+#  2. measure-contrast · los 19 moldes contra el minimo AA      (+ su negativo)
 #  3. anchos          · las 7 composiciones a 1280 y a 390 REALES
 #  4. run-gate        · la home compuesta, control positivo de structure-gate.js
 #

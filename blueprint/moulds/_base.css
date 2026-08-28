@@ -22,7 +22,7 @@
  *      `.sec__in--texto` · `.sec__in--flujo` · `.sec__in--spec` · `.sec__in--ancho`.
  *      Un molde que necesita otro ancho anade una clase, no reescribe una.
  *
- *  Lo comprueba `gate-estructura-pruebas/chk-colisiones.pl`, y **falla**.
+ *  Lo comprueba `structure-gate-tests/chk-collisions.pl`, y **falla**.
  *
  *  COMO SE CARGA
  *  -------------

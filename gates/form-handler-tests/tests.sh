@@ -33,7 +33,10 @@ if ! ssh -o ConnectTimeout=10 -o BatchMode=yes "$HOST" 'command -v php >/dev/nul
   echo "  NO VERIFICADO · no se llega a $HOST o no tiene php"
   echo "  Esto NO es un aprobado: sin interprete la plantilla no la valida nadie,"
   echo "  que es exactamente el estado del que viene este banco."
-  echo; echo "  OK 0 · MAL 1"; exit 1
+  # exit 3 = NO MEDIDO, la convencion de run-all.sh. NO es 1: un fallo medido y
+  # un hueco declarado no pueden contarse igual, o la bateria acaba diciendo
+  # «no se toca ninguna web» por un host que no existe en una instalacion limpia.
+  echo; echo "  NO MEDIDO (sin host con php)"; exit 3
 fi
 
 REM="$(ssh "$HOST" 'echo $HOME' </dev/null 2>/dev/null)/.fh-pruebas"

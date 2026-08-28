@@ -37,9 +37,9 @@ perl "$D/layout-summary.pl" contraste "${JSONS[@]}"
 MAL=$(perl "$D/layout-summary.pl" contraste "${JSONS[@]}" | grep -c '<-- FALLA' || true)
 echo
 if [ "$MAL" -gt 0 ]; then
-  echo "FALLA  medir-contraste: $MAL fichero(s) con algun elemento por debajo de su minimo AA."
+  echo "FALLA  measure-contrast: $MAL fichero(s) con algun elemento por debajo de su minimo AA."
   echo "       Si acabas de cambiar un color de marca en _tokens.css, es esto."
   exit 1
 fi
-echo "PASA   medir-contraste: ${#JSONS[@]} fichero(s), 0 elementos por debajo del minimo AA"
+echo "PASA   measure-contrast: ${#JSONS[@]} fichero(s), 0 elementos por debajo del minimo AA"
 exit 0

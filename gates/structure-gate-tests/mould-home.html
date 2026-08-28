@@ -38,7 +38,7 @@
  *     esta, o se usa el de al lado, o se cambia la escala entera (aqui, y en §6).
  *  3. 🔴 **Cambiar un color de marca OBLIGA a re-medir el contraste.** No es un
  *     consejo: hay un script y falla.
- *         bash gate-estructura-pruebas/medir-contraste.sh
+ *         bash structure-gate-tests/measure-contrast.sh
  *     Los valores de fabrica de abajo estan MEDIDOS, no elegidos a ojo. La version
  *     anterior daba **4,51:1** contra un minimo de 4,5 en los moldes 05, 10 y 12
  *     (margen: 0,01) y **4,55:1** en el texto blanco del boton primario.
@@ -47,7 +47,7 @@
 :root{
   /* ── MARCA · lo unico que se toca por cliente ────────────────────────────
      Cada uno lleva al lado el ratio MEDIDO que tiene que seguir cumpliendo.
-     Cambiarlos sin correr `medir-contraste.sh` es como cambiarlos a ciegas. */
+     Cambiarlos sin correr `measure-contrast.sh` es como cambiarlos a ciegas. */
   --tinta:#16181d;        /* texto principal      · 16,7:1 sobre --papel      */
   --papel:#ffffff;        /* fondo de pagina                                  */
   --acento:#1d4ed8;       /* UN acento. No tres.  · blanco encima = 6,70:1    */
@@ -150,7 +150,7 @@
  *      `.sec__in--texto` · `.sec__in--flujo` · `.sec__in--spec` · `.sec__in--ancho`.
  *      Un molde que necesita otro ancho anade una clase, no reescribe una.
  *
- *  Lo comprueba `gate-estructura-pruebas/chk-colisiones.pl`, y **falla**.
+ *  Lo comprueba `structure-gate-tests/chk-collisions.pl`, y **falla**.
  *
  *  COMO SE CARGA
  *  -------------

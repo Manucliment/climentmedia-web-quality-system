@@ -19,9 +19,30 @@ bash gates/run-all.sh
 bash gates/run-all.sh --fast
 ```
 
-`--fast` skips the batteries that need a browser or the network. On this machine the fast
-run is **630 cases green, 0 red**, with the deploy-history bank reported as `NOT MEASURED`
-because a fresh install has never deployed anything.
+`--fast` skips the ten batteries that need a browser, a host, or the network. On this
+machine the fast run is **630 cases green, 0 red**, with the deploy-history bank reported
+as `NOT MEASURED` because a fresh install has never deployed anything.
+
+**The full run is a different number, and the file now says which run it came from.** It
+reads **731 cases green, 0 red** — **729** on a clean install — with **six** banks
+reported as `NOT MEASURED`: the four that need a host or a client repository this public
+repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
+plus `qa-master` and `structure-gate`.
+
+> Until 28-aug-2026 those four exited `1` or `2` instead of `3`, so a run that had simply
+> **failed to measure anything** was counted as four red banks — and the summary signed
+> off with *"do not touch a website with the instrument in this state"*. Nothing was
+> broken. A gate that forbids work over four declared holes is a gate somebody eventually
+> switches off. They now exit `3`, on that path only: their real-failure `exit 1` is
+> untouched, and the proof the fix is not a mute is that **the green count did not move** —
+> 728 before and after, with red going 4 → 0 and `NOT MEASURED` 2 → 6. (728, not the 731
+> above: the three D6 cases that prove this very fix were added afterwards.)
+>
+> The same day showed why the mode has to be recorded: `--fast` and a full run wrote very
+> different totals into the *same* slot with no label, so the documentation gate compared
+> the published fast-run figure against whichever run happened last — green after a fast
+> run, red after a full one, with nobody having changed a line. `.ultima-bateria` now
+> carries `modo: rapido|completo`.
 
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
@@ -43,11 +64,19 @@ passing. **This repository names no third-party domain**, for the same reason
 `freeze-fixture.pl` exists: a bank that hardcodes somebody else's site exposes it and
 sends it traffic every time a stranger runs the tests.
 
-Read the last three lines. They are the only ones that matter:
+Read the last three lines. They are the only ones that matter — and note which run they
+came from, because the two runs do not print the same total:
 
 ```
+$ bash gates/run-all.sh --fast
   630 casos en verde · 0 en rojo
   NO MEDIDOS: historial
+```
+
+```
+$ bash gates/run-all.sh
+  731 casos en verde · 0 en rojo
+  NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
 **`NOT MEASURED` is not a pass**, and the runner lists those banks by name in the summary
