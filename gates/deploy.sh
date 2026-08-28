@@ -516,6 +516,99 @@ else
   fi
 fi
 
+# ── 2-quinquies · ¿SOBREVIVE UN PARRAFO SACADO DE LA PAGINA? ─────────────────
+#
+#  28-ago-2026 · el cuarto gate que se cablea a la puerta, y llega tarde por una
+#  razon que conviene no repetir: `citable.pl` existia, medido y con su banco de
+#  54 casos, DOCUMENTADO en tres sitios... y no lo corria nadie salvo cuando
+#  alguien se acordaba. Es la definicion de un gate fuera de la cadena.
+#
+#  LO QUE COSTO, medido el mismo dia: la rutina semanal de una web desplego con
+#  TODOS los gates en verde y publico dos pasajes que abrian con un pronombre sin
+#  antecedente -- uno de ellos el texto que se habia corregido en otra pagina del
+#  mismo sitio unas horas antes, copiado en su version vieja. No fallo ningun
+#  gate. El que sabia verlo no estaba aqui. Se cazó a mano DESPUES de servirse.
+#
+#  QUE MIRA QUE NINGUN OTRO MIRA. Un motor de respuesta no lee la pagina: extrae
+#  un trozo. Este es el unico que lee cada parrafo COMO SI FUERA LO UNICO QUE HAY
+#  en la pagina. `qa-master` mide lo servido, `audit.sh` el arbol y `same-text`
+#  que no se pierdan palabras: ninguno pregunta si el parrafo se sostiene solo.
+#
+#  🔴 NO BLOQUEA TODAVIA, y es la norma de la casa escrita en 2-quater: *un gate
+#  que se ha tocado esta manana se cablea PARA QUE SE VEA, se mira unas corridas,
+#  y entonces se sube el liston*. Hoy mismo se le han anadido dos idiomas.
+#  CUANDO PASA A BLOQUEAR: cuando las 6 webs hayan pasado por aqui sin un falso
+#  positivo nuevo. Hoy las 5 medidas dan 0 BLOQUEA, asi que subir el liston no
+#  frenaria nada -- que es exactamente la ventana buena para hacerlo, con datos.
+#
+#  ⚠️ SOLO se mira `BLOQUEA`. `DEBILITA` y `PULIDO` son consejo de redaccion: si
+#  contaran, hoy no subiria ninguna web (una tiene 29 de pulido) y la puerta se
+#  volveria ruido el primer dia.
+if [ ! -f "$REF/citable.pl" ]; then
+  echo
+  echo "  2-quinquies · citabilidad: no encuentro citable.pl. NO MEDIDO."
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "CITABLE no medido: falta el programa" --repo "$REPO" >/dev/null 2>&1
+else
+  linea; echo "  2-quinquies · ¿sobrevive un parrafo sacado de la pagina?"; linea
+  CIT_SALIDA="$(perl "$REF/citable.pl" --repo "$REPO" 2>&1)"
+  CIT_RC=$?
+  printf '%s\n' "$CIT_SALIDA" | grep -E '^\s*\[BLOQUEA\]|^VEREDICTO|paginas medidas' | head -14 | sed 's/^/  /'
+  CIT_RES="$(printf '%s\n' "$CIT_SALIDA" | grep -m1 '^VEREDICTO')"
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "CITABLE ${CIT_RES:-sin veredicto} (exit $CIT_RC)" --repo "$REPO" >/dev/null 2>&1
+  # exit 3 = el idioma no tiene patrones. NO es un aprobado y se dice.
+  if [ "$CIT_RC" = 3 ]; then
+    echo
+    echo "  🔴 NO MEDIDO: este arbol esta en un idioma sin patrones. Eso NO es un"
+    echo "     aprobado -- es un hueco. Anadir el idioma, o decir que no se mide."
+  elif [ "$CIT_RC" != 0 ]; then
+    echo
+    echo "  🔴 Hay parrafos que NO se sostienen fuera de la pagina. Queda anotado y"
+    echo "     NO bloquea todavia (ver el motivo con fecha arriba). Se arregla en la"
+    echo "     FUENTE -- el _spec/ del que nace la pagina --, nunca en el HTML."
+    echo "     Si alguno es falso positivo, se arregla EL GATE con su caso rojo."
+  fi
+fi
+
+# ── 2-sexies · ¿DEJAMOS ENTRAR A LOS MOTORES DE RESPUESTA? ───────────────────
+#
+#  La pregunta anterior es «¿el texto sirve para que me citen?». Esta es la de
+#  antes: **¿pueden siquiera leerlo?** Un `robots.txt` que bloquea a GPTBot o a
+#  ClaudeBot convierte en decoracion todo el trabajo de citabilidad, y no lo dice
+#  ningun otro gate -- `audit.sh` comprueba que el fichero EXISTA y cuadre con el
+#  sitemap, no a quien deja pasar.
+#
+#  Se mide sobre el ARBOL (--repo), no sobre produccion, porque aqui todavia se
+#  puede arreglar. Lo servido lo vuelve a mirar G11 despues.
+#
+#  🔴 NO BLOQUEA TODAVIA, misma norma. Y ademas hay una decision de negocio
+#  legitima detras: un cliente puede querer NO dejar entrar a un motor. Cuando
+#  eso pase, va a `aceptado.conf` firmado, no callado aqui.
+if [ ! -f "$REF/ai-crawlers.pl" ]; then
+  echo
+  echo "  2-sexies · rastreadores de IA: no encuentro ai-crawlers.pl. NO MEDIDO."
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "CRAWLERS-IA no medido: falta el programa" --repo "$REPO" >/dev/null 2>&1
+elif [ ! -f "$REPO/robots.txt" ]; then
+  echo
+  echo "  2-sexies · rastreadores de IA: el arbol no trae robots.txt. NO MEDIDO."
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "CRAWLERS-IA no medido: sin robots.txt" --repo "$REPO" >/dev/null 2>&1
+else
+  linea; echo "  2-sexies · ¿dejamos entrar a los motores de respuesta?"; linea
+  IA_SALIDA="$(perl "$REF/ai-crawlers.pl" --repo "$REPO" 2>&1)"
+  IA_RC=$?
+  printf '%s\n' "$IA_SALIDA" | grep -E '^\s*(FALLA|BLOQUEA|PASA|VEREDICTO)|bloquead' | head -12 | sed 's/^/  /'
+  IA_RES="$(printf '%s\n' "$IA_SALIDA" | grep -m1 -E '^VEREDICTO|^\s*(PASA|FALLA)')"
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "CRAWLERS-IA ${IA_RES:-sin veredicto} (exit $IA_RC)" --repo "$REPO" >/dev/null 2>&1
+  if [ "$IA_RC" = 3 ]; then
+    echo
+    echo "  🔴 NO MEDIDO. No es un aprobado: nadie ha comprobado quien puede entrar."
+  elif [ "$IA_RC" != 0 ]; then
+    echo
+    echo "  🔴 Hay motores de respuesta que NO pueden rastrear este sitio. Queda"
+    echo "     anotado y NO bloquea todavia. Si es deliberado, va FIRMADO en"
+    echo "     _deploy/aceptado.conf -- una decision callada aqui no es una decision."
+  fi
+fi
+
 # ── 3 · subir ────────────────────────────────────────────────────────────────
 linea; echo "  3 · subida"; linea
 if [ -z "$SUBIDA" ]; then

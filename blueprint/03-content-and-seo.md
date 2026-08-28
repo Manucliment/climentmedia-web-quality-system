@@ -150,6 +150,37 @@ For a long time this document was the whole SEO/GEO/AEO layer, and it only cover
 day found `GPTBot` **0**, `PerplexityBot` **0**, `ClaudeBot` **0**, `AI Overview` **0**.
 We were building for answer engines and measuring none of it.
 
+### 8.0 · WHERE each of these runs — and why two of them were running nowhere
+
+> 🔴 **Written 28-aug-2026, after the omission cost a live defect.** For two days these
+> gates existed, were tested, and were documented right here — and **nothing ran them**.
+> A site's weekly routine deployed with every gate green and published two paragraphs
+> opening on an orphan pronoun, one of them the very text corrected on another page of
+> the same site hours earlier, copied in its old version. No gate failed. The one that
+> could see it was not in the chain. It was caught by hand, after it was already served.
+>
+> **What was missing was not a check. It was this table** — nobody had written down at
+> which moment of the cycle each gate belongs, so two of them belonged nowhere.
+
+| Gate | When it runs | Where it is wired |
+|---|---|---|
+| `cannibalization.pl` | **Before writing.** Asks whether a page already fights for that term — useless once the page exists | the weekly routine, step 3.1 |
+| `citable.pl` | **Before uploading**, on the candidate tree | the door, step `2-quinquies` |
+| `ai-crawlers.pl` | **Before uploading**, on the tree's own `robots.txt` — here it can still be fixed | the door, step `2-sexies` |
+| `coverage.pl` | **Never on a site.** It measures the *instrument*: how many checks have a test case | the battery, `run-all.sh` |
+
+**Neither of the two in the door blocks yet**, following the rule the door itself carries:
+*a gate touched this morning is wired so it is SEEN, watched for a few runs, and only then
+is the bar raised.* They start blocking once six sites have passed without a new false
+positive. And only `BLOCKS` counts — `WEAKENS` and `POLISH` are writing advice; if they
+counted, no site would ship today and the door would be noise by tomorrow.
+
+⚠️ **`coverage.pl` and `cannibalization.pl` were nearly wired into the door too**, on the
+strength of a note that said "the four AEO gates are outside the chain". That note came
+from grepping `deploy.sh` — which answers *"is it referenced here?"*, not *"is it wired
+anywhere?"*. **A narrow question answered as if it were the broad one**: the fix would have
+put an instrument-measuring tool and a before-writing gate into the upload path.
+
 ### 8.1 · Can the engines get in at all — `ai-crawlers.pl`
 
 ```bash
