@@ -188,7 +188,7 @@
     else { racha = 0; pxRacha = 0; }
   }
 
-  //    EL LIMITE DE ALTURA CUENTA PALABRAS (19-ago-2026)                      
+  // -- EL LIMITE DE ALTURA CUENTA PALABRAS (19-ago-2026) ---------------------
   //  Era un 6 fijo, y ese 6 estaba anclado a la portada de site-d, que
   //  tiene 206 PALABRAS. Medido el 19-ago a 390px sobre paginas vivas:
   //
