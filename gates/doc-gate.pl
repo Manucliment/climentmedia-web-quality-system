@@ -155,6 +155,21 @@ if (corre('D1')) {
     $MADRE = $DIR unless defined $MADRE && $MADRE ne '';
     my %vistas;
     for my $doc (@DOCS) {
+        # 🔴 28-ago-2026 · UN REGISTRO DE CORRIDAS NO AFIRMA QUE UNA RUTA EXISTA
+        #    HOY: dice que existia el dia que se corrio. Un `RUN_LOG.md` es un
+        #    apunte que se AÑADE, no documentacion que instruya, y reescribirlo
+        #    para callar a este check falsifica el registro -- que es justo lo
+        #    que un registro no puede permitirse.
+        #    El caso real: el RUN_LOG de un sitio citaba dos veces una ruta bajo
+        #    `references/`, carpeta que se renombro a `gates/` el 25-ago. Las dos
+        #    lineas estan en PASADO ("se corrio X -> EXIT 0", "el generador leia
+        #    X") y eran ciertas en su fecha. D1 solo puede probar que la ruta no
+        #    existe AHORA, y eso no contradice ninguna de las dos.
+        #    Es la misma familia que la exclusion de «una CITA de lo que decia
+        #    otro documento no es una afirmacion», que ya estaba mas abajo.
+        #    ⚠️ La exclusion es por FICHERO y lo mas estrecha posible: cualquier
+        #    OTRO documento que cite esa misma ruta muerta sigue cayendo.
+        next if $doc =~ m{(^|[\\/])RUN_LOG\.md$}i;
         my $c = slurp("$DIR/$doc");
         my $n = 0;
         for my $linea (split /\n/, $c) {

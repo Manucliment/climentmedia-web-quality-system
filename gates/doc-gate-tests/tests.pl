@@ -100,6 +100,18 @@ caso('una tarea HECHA si afirma que existe', 'D1',
 caso('una linea con comillas pero sin ruta dentro de ellas', 'D1',
      { 'doc.md' => "Dice \"esto es asi\" y el programa es `references/no-esta.pl`.\n", 'real.pl' => $PROG }, 'FALLO');
 
+# 🔴 28-ago-2026 · UN REGISTRO DE CORRIDAS HABLA DEL PASADO.
+#    Un RUN_LOG apunta lo que se corrio y cuando. Que la ruta ya no exista NO
+#    contradice el apunte: existia ese dia. Reescribirlo para callar al gate
+#    falsifica el registro, que es lo unico que un registro no puede permitirse.
+#    Caso real: el RUN_LOG de un sitio citaba dos veces una ruta bajo
+#    `references/`, renombrada a `gates/` el 25-ago, en dos frases en PASADO.
+#    El segundo caso es el que prueba que la exclusion NO se come lo bueno.
+caso('un RUN_LOG cita una ruta muerta: es historia, no una afirmacion', 'D1',
+     { 'RUN_LOG.md' => "- `bash references/audit.sh --root .` -> **EXIT 0**\n", 'real.pl' => $PROG }, 'PASA');
+caso('...y CUALQUIER OTRO documento que cite esa misma ruta sigue cayendo', 'D1',
+     { 'doc.md' => "Se corre con `references/audit.sh`.\n", 'real.pl' => $PROG }, 'FALLO');
+
 print "\n== D2 · BANDERAS\n";
 caso('bandera que el programa NO acepta', 'D2',
      { 'doc.md' => "Correr `real.pl --inventada`.\n", 'real.pl' => $PROG }, 'FALLO');
