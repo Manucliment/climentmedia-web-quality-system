@@ -199,7 +199,7 @@
   //      site-c /tarot       11217       1157         9,7
   //
   //  O sea: la pagina de site-c que FALLABA es la MAS DENSA de las cuatro. El 6
-  //  fijo no medía maqueta, medía cuanto texto trae la pagina -y eso es una
+  //  fijo no medÃ­a maqueta, medÃ­a cuanto texto trae la pagina -y eso es una
   //  decision editorial del cliente, no un defecto nuestro-. Y no habia forma de
   //  arreglarlo: ninguna reordenacion quita texto.
   //
