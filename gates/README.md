@@ -24,7 +24,7 @@ machine the fast run is **630 cases green, 0 red**, with the deploy-history bank
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **734 cases green, 0 red** — **732** on a clean install — with **six** banks
+reads **736 cases green, 0 red** — **734** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -75,7 +75,7 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  734 casos en verde · 0 en rojo
+  736 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
