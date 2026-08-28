@@ -200,13 +200,55 @@ perl "$REF/coverage.pl" 2>/dev/null | grep -E '^  (qa-maestro|enlazado-gate|audi
 #    Los tres valores ya son definitivos aqui: el bucle de bancos ha terminado.
 #    ⚠️ Y no cambia lo que se escribe: `rojo` cuenta CASOS de banco, no `ROTOS`,
 #    asi que doc-gate no se cuenta a si mismo ni antes ni ahora.
+# 🔴 28-ago-2026 · SE CONSERVAN LAS CIFRAS DEL OTRO MODO, o el documento no
+#    puede publicar las dos. `--fast` da 630 y la completa 728: las dos son
+#    ciertas, de corridas distintas, y las dos estan escritas en el README. Si
+#    el fichero solo guardara la ultima, D6 tendria que llamar caducada a la
+#    otra -- que es exactamente el falso rojo que esto viene a cerrar.
+#    Mismo principio que `verde` / `verde-instalacion-limpia`: se guardan las
+#    dos y se aceptan las dos; una cifra de verdad equivocada no casa con
+#    ninguna, asi que el gate NO pierde el poder de ponerse rojo.
+MODO="$([ "$RAPIDO" = 1 ] && echo rapido || echo completo)"
+OTRO_MODO=""; OTRO_MEDIDO=""; OTRO_VERDE=""; OTRO_LIMPIA=""
+if [ -f "$REF/.ultima-bateria" ]; then
+  prev_modo="$(grep -m1 '^modo:' "$REF/.ultima-bateria" 2>/dev/null | sed 's/^modo:[[:space:]]*//')"
+  if [ -n "$prev_modo" ] && [ "$prev_modo" != "$MODO" ]; then
+    # La corrida anterior era del OTRO modo: sus cifras pasan a la seccion otro-modo.
+    OTRO_MODO="$prev_modo"
+    OTRO_MEDIDO="$(grep -m1 '^medido:' "$REF/.ultima-bateria" | sed 's/^medido:[[:space:]]*//')"
+    OTRO_VERDE="$(grep -m1 '^verde:' "$REF/.ultima-bateria" | sed 's/^verde:[[:space:]]*//')"
+    OTRO_LIMPIA="$(grep -m1 '^verde-instalacion-limpia:' "$REF/.ultima-bateria" | sed 's/^verde-instalacion-limpia:[[:space:]]*//')"
+  else
+    # Mismo modo: se arrastra lo que ya hubiera del otro, para no perderlo.
+    OTRO_MODO="$(grep -m1 '^otro-modo:' "$REF/.ultima-bateria" | sed 's/^otro-modo:[[:space:]]*//')"
+    OTRO_MEDIDO="$(grep -m1 '^otro-modo-medido:' "$REF/.ultima-bateria" | sed 's/^otro-modo-medido:[[:space:]]*//')"
+    OTRO_VERDE="$(grep -m1 '^otro-modo-verde:' "$REF/.ultima-bateria" | sed 's/^otro-modo-verde:[[:space:]]*//')"
+    OTRO_LIMPIA="$(grep -m1 '^otro-modo-verde-instalacion-limpia:' "$REF/.ultima-bateria" | sed 's/^otro-modo-verde-instalacion-limpia:[[:space:]]*//')"
+  fi
+fi
+
 {
   echo "medido: $(date +%Y-%m-%d)"
+  # 🔴 28-ago-2026 · EL MODO, y faltaba. `--fast` se salta los 10 bancos lentos,
+  #    asi que una corrida rapida y una completa escriben numeros MUY distintos
+  #    -630 y 728- EN LA MISMA CASILLA, y nada decia cual era cual. Efecto: D6
+  #    comparaba el numero que el README publica -que es el de `--fast`, y lo
+  #    dice en su propia frase- contra la ultima corrida FUERA CUAL FUERA. Con
+  #    la rapida salia verde y con la completa rojo, sin que nadie tocara nada.
+  #    Es la misma enfermedad que este fichero persigue: dos cosas distintas en
+  #    un solo hueco y ninguna etiqueta que las separe.
+  echo "modo: $MODO"
   echo "bancos: $CORRIDOS"
   echo "verde: $TOT_OK"
   echo "rojo: $TOT_MAL"
   echo "verde-instalacion-limpia: $((TOT_OK - TOT_ESTADO))"
   echo "depende-del-estado: $TOT_ESTADO"
+  if [ -n "$OTRO_MODO" ] && [ -n "$OTRO_VERDE" ]; then
+    echo "otro-modo: $OTRO_MODO"
+    echo "otro-modo-medido: $OTRO_MEDIDO"
+    echo "otro-modo-verde: $OTRO_VERDE"
+    echo "otro-modo-verde-instalacion-limpia: ${OTRO_LIMPIA:-$OTRO_VERDE}"
+  fi
 } > "$REF/.ultima-bateria"
 
 echo

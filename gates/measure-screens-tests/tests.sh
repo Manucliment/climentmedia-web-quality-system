@@ -36,8 +36,10 @@ if [ -z "$HOME_R" ] || [ ! -f "$REF/run-gate.js" ]; then
   echo "  NO VERIFICADO · no se llega a $HOST, o falta $REF/run-gate.js"
   echo "  Esto NO es un aprobado: sin navegador no se ha medido nada."
   echo
-  echo "  OK 0 · MAL 1"
-  exit 1
+  # exit 3 = NO MEDIDO, la convencion de run-all.sh. NO es 1: un hueco declarado
+  # y un defecto medido son cosas distintas, y contarlos igual gasta la senal.
+  echo "  NO MEDIDO (sin navegador)"
+  exit 3
 fi
 
 ssh "$HOST" "mkdir -p $HOME_R/$SUB" </dev/null >/dev/null 2>&1

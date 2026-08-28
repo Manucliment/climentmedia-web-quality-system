@@ -265,6 +265,35 @@ caso('...pero un numero que no es NINGUNO de los dos sigue en rojo', 'D6',
        'references/.ultima-bateria' => $BAT2,
        'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
 
+#  🔴 28-ago-2026 · Y NO SON DOS, SON CUATRO: HAY DOS MODOS DE CORRIDA.
+#     `--fast` se salta los 10 bancos lentos y da un total MUY distinto al de
+#     la corrida completa (630 contra 728 el dia que se vio). Los dos numeros
+#     son ciertos y los dos estan publicados en el README -que ademas dice de
+#     cual habla-. Hasta ese dia `.ultima-bateria` guardaba solo la ultima
+#     corrida SIN DECIR DE QUE MODO ERA, asi que D6 comparaba el numero del
+#     README contra la corrida que hubiera pasado por ultima vez: VERDE tras
+#     una rapida y ROJO tras una completa, sin que nadie tocara una linea.
+#     Es la misma enfermedad que este gate persigue -dos cosas distintas en un
+#     solo hueco, sin etiqueta- cometida dentro del propio instrumento.
+#     Ahora el fichero lleva `modo:` y conserva las cifras del otro modo.
+#     El tercer caso es el que prueba que aceptar cuatro numeros NO lo apaga.
+my $BAT3 = "medido: 2026-08-28\nmodo: completo\nbancos: 28\nverde: 828\nrojo: 0\n"
+         . "verde-instalacion-limpia: 826\ndepende-del-estado: 2\n"
+         . "otro-modo: rapido\notro-modo-medido: 2026-08-28\n"
+         . "otro-modo-verde: 730\notro-modo-verde-instalacion-limpia: 728\n";
+caso('vale el numero del OTRO modo (el README publica los dos)', 'D6',
+     { 'SKILL.md' => "# skill\n\n| Casos en verde | **730 . 0 en rojo** |\n",
+       'references/.ultima-bateria' => $BAT3,
+       'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
+caso('...y el del modo de ESTA corrida sigue valiendo', 'D6',
+     { 'SKILL.md' => "# skill\n\n| Casos en verde | **828 . 0 en rojo** |\n",
+       'references/.ultima-bateria' => $BAT3,
+       'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
+caso('...pero un numero que no es NINGUNO de los CUATRO sigue en rojo', 'D6',
+     { 'SKILL.md' => $VIEJO,
+       'references/.ultima-bateria' => $BAT3,
+       'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
+
 #  🔴 26-ago-2026 · EL NUMERO DE BATERIAS ERA OTRO DATO A MANO SIN VIGILAR.
 #     Ese dia el README raiz decia «37 programs and 27 test batteries» cuando
 #     ya eran 28, y estaba asi EN UN COMMIT YA EMPUJADO al repo publico. El

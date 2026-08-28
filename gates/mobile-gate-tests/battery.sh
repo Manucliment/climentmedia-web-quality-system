@@ -33,7 +33,9 @@ OK=0; MAL=0
 
 # --- empujar fixtures y gate ------------------------------------------------
 ssh "$HOST" "rm -rf $REMOTO && mkdir -p $REMOTO" >/dev/null 2>&1 || {
-  echo "  NO SE PUEDE MEDIR: sin acceso a $HOST. Esto NO es un aprobado."; exit 2; }
+  # exit 3 = NO MEDIDO, la convencion de run-all.sh. Solo ESTE camino: un fallo
+  # al copiar (abajo) sigue siendo 2, porque ahi el host SI responde.
+  echo "  NO SE PUEDE MEDIR: sin acceso a $HOST. Esto NO es un aprobado."; exit 3; }
 scp -q "$D/fixtures/"* "$HOST:$REMOTO/" || { echo "  fallo al copiar fixtures"; exit 2; }
 scp -q "$REF/mobile-gate.js" "$HOST:webtools/mobile-gate.js" || { echo "  fallo al copiar el gate"; exit 2; }
 

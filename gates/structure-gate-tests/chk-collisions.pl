@@ -145,13 +145,13 @@ for my $key (sort keys %porselector) {
 
 # ── salida ─────────────────────────────────────────────────────────────────
 if (@bad) {
-  print "FALLA  chk-colisiones: ", scalar(@bad), " hallazgo(s)\n\n";
+  print "FALLA  chk-collisions: ", scalar(@bad), " hallazgo(s)\n\n";
   for my $b (sort { $a->[2] cmp $b->[2] or $a->[0] cmp $b->[0] } @bad) {
     printf "  [%s] %-32s %s\n         -> %s\n", @$b[2,0,1], $b->[3];
   }
   print "\n";
   exit 1;
 }
-printf "PASA   chk-colisiones: %d fichero(s), 0 colisiones, 0 selectores de chasis redeclarados\n",
+printf "PASA   chk-collisions: %d fichero(s), 0 colisiones, 0 selectores de chasis redeclarados\n",
        scalar(grep { !m{[\\/]_} } @files);
 exit 0;

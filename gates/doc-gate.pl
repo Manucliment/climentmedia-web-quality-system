@@ -484,7 +484,21 @@ if (corre('D6')) {
         #    Se aceptan los DOS y no se pierde poder: si la documentacion se
         #    queda vieja de verdad, no casa con ninguno.
         my $limpia = $m{"verde-instalacion-limpia"} // $real;
-        my %valido = map { $_ => 1 } grep { length } ($real, $limpia);
+        # 🔴 28-ago-2026 · Y NO SON DOS CIFRAS, SON CUATRO: hay DOS MODOS.
+        #    `--fast` se salta los 10 bancos lentos y da 630; la corrida
+        #    completa da 728. Las dos son ciertas y las dos estan publicadas.
+        #    Hasta hoy `.ultima-bateria` guardaba solo la ultima corrida sin
+        #    decir de que modo era, asi que este check comparaba el numero del
+        #    README -que es el de `--fast`, y lo dice en su propia frase-
+        #    contra la corrida que hubiera pasado por ultima vez: verde tras
+        #    una rapida, ROJO tras una completa, sin que nadie tocara nada.
+        #    Ahora el fichero lleva `modo:` y conserva las cifras del otro.
+        #    ⚠️ NO se pierde poder: una cifra caducada de verdad no casa con
+        #       ninguna de las cuatro. Lo que se deja de castigar es publicar
+        #       las dos medidas que el propio programa sabe producir.
+        my $otro   = $m{"otro-modo-verde"} // '';
+        my $otro_l = $m{"otro-modo-verde-instalacion-limpia"} // $otro;
+        my %valido = map { $_ => 1 } grep { length } ($real, $limpia, $otro, $otro_l);
         # 🔴 26-ago-2026 · D6 MIRABA SOLO `SKILL.md`, Y `gates/README.md` PUBLICA
         #    SU PROPIO RECUENTO SIN QUE NADIE LO VIGILE. Medido ese dia: el
         #    README decia «451 cases green» y la bateria daba 592 -- 141 casos de
