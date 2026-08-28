@@ -9,6 +9,29 @@ use Digest::MD5 qw(md5_hex);
 my ($START, $CACHE, $OUT, $MAX, $SEEDFILE) = @ARGV;
 $MAX ||= 400;
 die "uso: crawl.pl start cachedir out.json [max] [seedfile]\n" unless $START && $CACHE && $OUT;
+
+# 28-ago-2026 · LOS ARGUMENTOS SON POSICIONALES, Y ANTES SE CREABA UN
+# DIRECTORIO CON LO QUE LLEGARA. Si un llamante pasa un FLAG donde va el
+# cachedir -por ejemplo `--salida`, que SI existe como opcion en compliance.pl
+# y como alias de `--out` en receipt.pl-, este script hacia `mkdir "--salida"`
+# en el directorio de trabajo. Sin error y sin aviso.
+#
+# Lo que costo el 28-ago-2026, en una web de cliente: el directorio nacio en la
+# raiz del repo, el recibo lo sello como parte del arbol, el despliegue lo subio
+# a produccion -34 ficheros basura sirviendo 200- y la verificacion de md5
+# reviento porque `md5sum` lee un nombre que empieza por `-` como una opcion.
+# O sea que el fallo llego hasta produccion Y ADEMAS rompio el gate que tenia
+# que cazarlo.
+#
+# Un nombre que empieza por `-` no es un directorio que nadie quiera: es
+# siempre un argumento mal pasado. Se rechaza, y se dice cual.
+for my $par ([$CACHE, "cachedir"], [$OUT, "out.json"]) {
+  my ($v, $q) = @$par;
+  die "crawl.pl: el argumento <$q> vale '$v', que empieza por '-'.\n"
+     . "  Son argumentos POSICIONALES: alguien ha pasado un flag donde va $q.\n"
+     . "  Uso: perl crawl.pl <start-url> <cachedir> <out.json> [max] [seeds]\n"
+    if $v =~ /^-/;
+}
 mkdir $CACHE unless -d $CACHE;
 
 my $UA = 'Mozilla/5.0 (compatible; ClimentLinkAudit/1.0; +https://climentmedia.com/)';
