@@ -32,7 +32,7 @@ machine the fast run is **630 cases green, 0 red**, with the deploy-history bank
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **775 cases green, 0 red** — **773** on a clean install — with **six** banks
+reads **777 cases green, 0 red** — **775** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -85,13 +85,15 @@ $ bash gates/run-all.sh --fast
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  775 casos en verde · 0 en rojo
+  777 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
-> **Why the total moved from 736 to 775 on 2026-09-01 without 39 new tests being written.**
-> Fifteen of them are new (the metadata checks below). The other ten were being **thrown
-> away**: the runner did `continue` the moment a bank returned 3, without reading its count,
+> **Why the total moved from 736 to 777 on 2026-09-01, and where the 41 came from.**
+> **31 are genuinely new** — 15 for the metadata checks below, 16 for the `roles` bank that
+> guards the role vocabulary and the per-type reference sheets. The other **ten already
+> existed and were being thrown away**: the runner did `continue` the moment a bank returned
+> 3, without reading its count,
 > so a partially-measurable bank contributed **zero** greens. The same bank *failing* returns
 > 1, falls through to the counting block, and its greens **were** counted — measured that day
 > on `qa-master`: all green → 0 counted (total 736); one case red → 14 counted (total 750).

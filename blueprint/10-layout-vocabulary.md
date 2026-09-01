@@ -1,4 +1,4 @@
-# Layout vocabulary — 19 primitives with a renderable mould
+# Layout vocabulary — 20 primitives with a renderable mould
 
 > **This is not a document about good design. It is a drawer of parts.**
 > If you are reading it to "understand how to lay things out", you are using it wrong.
@@ -49,7 +49,7 @@ page, the share of prose-sections ran 53.8 · 37.5 · 28.6 · 27.3 · **0 · 0 �
 
 And the underlying diagnosis: prose (26.3%) + card grid (17.5%) = **44% of all sections.** The
 effective variety was **2 primitives across 5 of 7 pages.** It is not that the layout is bad: **the
-repertoire was two pieces.** This folder is nineteen.
+repertoire was two pieces.** This folder is twenty.
 
 > **"Variety" on its own is NOT a usable metric.** The worst page in the batch had 6 distinct
 > primitives. It has to be crossed with the share of prose.
@@ -141,8 +141,9 @@ class in the HTML; nobody rewrites the wrapper:
 | 17 | **timeline** | facts over time **with their status** |
 | 18 | **before-after-compare** | compared visual evidence, keyboard-operable |
 | 19 | **two-list-nav** | "where I am going" separated from "what I do" |
+| 20 | **choice-cards** | two options as image cards, side by side, above the fold. The first question of a capture landing |
 
-**Eleven of the nineteen come from an existing component library**; eight were written from scratch.
+**Eleven of the twenty come from an existing component library**; eight were written from scratch, and one (20) was extracted from a commercial funnel template with its markup rebuilt — see 09 §2.12.
 
 Each mould carries **in its own header** its `WHEN`, its `WHEN NOT`, its `WHAT BREAKS IT` and its
 behaviour at 390 px. **That is not duplicated here**: pointers both ways, content in one place.
@@ -230,7 +231,7 @@ density gate requires, and what avoids 32 of 39 blocks with no CTA.
 
 ### Known debt: three REQUIRED roles that still have no mould
 
-Not a silent hole: it is counted. Of the **14 roles**, **11 have a mould here and 3 do not**, and all
+Not a silent hole: it is counted. Of the **15 roles**, **12 have a mould here and 3 do not**, and all
 three are required in some anatomy.
 
 | role with no mould | where it is required | what is used meanwhile |

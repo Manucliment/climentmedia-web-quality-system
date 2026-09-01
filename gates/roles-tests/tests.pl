@@ -120,8 +120,8 @@ caso('D · 09 §1 no tiene fila para ese rol',
 #     deriva, y el gate se pone rojo si alguno se queda atras.
 caso('E · el documento publica un recuento de moldes falso',
      'have a mould',
-     sub { cambiar("$BP/09-page-types.md", 'Eleven of the fourteen have a mould',
-                                           'Twelve of the fourteen have a mould') });
+     sub { cambiar("$BP/09-page-types.md", 'Twelve of the fifteen have a mould',
+                                           'Thirteen of the fifteen have a mould') });
 
 # G · 10 §4 promete que todo molde lleva su CUANDO y su CUANDO NO en la cabecera.
 #     Hasta el 1-sep-2026 esa promesa no la comprobaba nadie, y la hoja de
@@ -154,8 +154,29 @@ caso('F · alguien edita una plantilla a mano',
                                               '<h1>EDITADO A MANO Plantilla de referencia') });
 
 caso('F · falta la plantilla de un tipo',
-     'falta la plantilla de `quiz`',
-     sub { unlink "$MO/types/quiz.html" });
+     'falta la plantilla de `landing`',
+     sub { unlink "$MO/types/landing.html" });
+
+# H · Y AL REVES QUE F: una plantilla que ya no corresponde a ningun tipo.
+#     Lo encontro un rename real (`quiz` -> `landing`): quedaron 14 plantillas
+#     para 13 tipos y el gate paso, porque F solo mira que a cada tipo NO le
+#     falte la suya. Una huerfana ensena una anatomia retirada con la
+#     credibilidad de un fichero generado.
+caso('H · una plantilla de un tipo que ya no existe',
+     'sobra la plantilla',
+     sub {
+         my $t = leer("$MO/types/home.html") or return 0;
+         escribir("$MO/types/tipo-retirado.html", $t);
+         return 1;
+     });
+
+caso('H · y regenerar la BORRA', 'verde',
+     sub {
+         my $t = leer("$MO/types/home.html") or return 0;
+         escribir("$MO/types/tipo-retirado.html", $t);
+         generar_callando() or return 0;
+         return -e "$MO/types/tipo-retirado.html" ? 0 : 1;
+     });
 
 # 🔑 EL CONTROL DE IDA Y VUELTA: si tras romperla se regenera, tiene que volver
 #    al verde. Sin este caso, «F se pone rojo» podria significar que el gate

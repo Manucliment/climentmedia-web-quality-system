@@ -74,7 +74,20 @@ sub bloque_js {
     # necesita distinguir «tipo valido que no lleva roles» de «tipo inventado».
     $s .= "/* Sin anatomia, a proposito: 09 §2.11 */\n"
         . "const ANATOMIA_SIN = [" . join(', ', map { "'$_'" } @sin) . "];\n" if @sin;
-    $s .= "const ANATOMIA_ALIAS = { producto: 'ficha' };\n" . $CIER;
+    # 🔴 1-sep-2026 · EL ALIAS ESTABA ESCRITO A MANO AQUI Y OTRA VEZ EN LA NOTA
+    #    DEL TSV. Dos sitios para el mismo dato: `ficha` decia «alias aceptado:
+    #    producto» en su nota y este generador emitia `producto: 'ficha'` sin
+    #    leerla. Mientras hubo uno solo no se noto; al llegar el segundo
+    #    (`quiz` -> `landing`) el que se edito a mano fue el fichero GENERADO, y
+    #    el gate lo caza al instante — que es lo unico que impidio que
+    #    divergieran de verdad.
+    #    Ahora sale de la nota: «Alias aceptado: X» (o «alias aceptado: X»).
+    my @alias;
+    for my $tipo (@$ORDEN) {
+        my $nota = $T->{$tipo}{nota} // '';
+        push @alias, "$1: '$tipo'" if $nota =~ /alias\s+aceptado:\s*([a-z0-9_-]+)/i;
+    }
+    $s .= "const ANATOMIA_ALIAS = { " . join(', ', @alias) . " };\n" . $CIER;
     return $s;
 }
 

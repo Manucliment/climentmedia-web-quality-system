@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLANTILLA — landing</title>
+<!--
+  GENERADO POR gates/roles.pl --plantillas. NO SE EDITA A MANO.
+  Lo que se edita es la FUENTE: el orden de los roles esta en
+  gates/anatomy.tsv y el molde de cada rol en gates/roles.tsv.
+  `roles.pl --gate` se pone rojo si este fichero deja de ser el que
+  saldria hoy, asi que editarlo a mano no dura una bateria.
+
+  NO LLEVA EL MARKUP DE LOS MOLDES DENTRO, a proposito: seria una
+  segunda copia de cada uno, y el dia que se arregle un molde esta
+  hoja seguiria ensenando el defecto. Apunta, no copia.
+-->
+<link rel="stylesheet" href="../_tokens.css">
+<link rel="stylesheet" href="../_base.css">
+<style>
+  :root{--pl-bg:#fff;--pl-fg:#16181d;--pl-dim:#5a6472;--pl-line:#c9d0d8;--pl-link:#0b5fff}
+  @media (prefers-color-scheme:dark){:root{--pl-bg:#14161a;--pl-fg:#e8ebef;--pl-dim:#a4adba;--pl-line:#3a424e;--pl-link:#7fb0ff}}
+  html{background:var(--pl-bg)}
+  body{background:var(--pl-bg);color:var(--pl-fg);
+       font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+       max-width:70ch;margin:0 auto;padding:2rem 1rem}
+  a{color:var(--pl-link)}
+  .slot{border:1px solid var(--pl-line);border-radius:.4rem;padding:.9rem 1rem;margin:.9rem 0}
+  .slot--cond{border-style:dashed}
+  .slot--mano{border-style:dotted}
+  .n{font-variant-numeric:tabular-nums;color:var(--pl-dim)}
+  .rol{font-weight:700}
+  .job{margin:.2rem 0 .5rem}
+  .meta{font-size:.9em;color:var(--pl-dim);margin:.15rem 0}
+  ol{list-style:none;padding:0}
+  code{font-size:.95em}
+</style>
+</head>
+<body>
+<h1>Plantilla de referencia — <code>landing</code></h1>
+<p>Anatomia <strong>09 §2.12</strong>. 2 rol(es) obligatorio(s).</p>
+<p class="meta">H1 alineado al mensaje + el porque + el recurso, y nada mas. Sustituye al tipo quiz del 1-sep por la manana, que exigia 7 roles leidos de nuestra propia landing: eso mide nuestra costumbre, no el tipo. Alias aceptado: quiz</p>
+<ol>
+<li class="slot">
+  <div><span class="n">01</span> <span class="rol">hero</span> <span class="meta">(hero · obligatorio)</span></div>
+  <p class="job">Situa, promete y ofrece la primera accion</p>
+  <p class="meta">Molde: <a href="../01-hero.html"><code>01-hero.html</code></a></p>
+  <p class="meta">CUANDO: home o landing comercial.</p>
+  <p class="meta">CUANDO NO: paginas interiores. Verificado en Site A a Domicile: la pastilla era SOLO de la home; ponerla en las 17 invento un elemento que el cliente no habia aprobado.</p>
+</li>
+<li class="slot">
+  <div><span class="n">02</span> <span class="rol">recurso</span> <span class="meta">(resource · obligatorio)</span></div>
+  <p class="job">El recurso que la landing entrega: quiz, video, formulario o descarga. NO es una seccion de la pagina: ES la pagina</p>
+  <p class="meta">Molde: <a href="../20-choice-cards.html"><code>20-choice-cards.html</code></a></p>
+  <p class="meta">CUANDO: la primera pregunta de una landing de captacion, cuando las respuestas son 2 o 3 y se distinguen mejor viendolas que leyendolas.</p>
+  <p class="meta">CUANDO NO: - Con mas de 3 opciones: a 375 px la tercera tarjeta ya baja del pliegue, y el motivo entero de esta primitiva es que la eleccion se vea sin scroll. Con 4 o mas -&gt; `lista-comprobacion` o un formulario normal. - Si las opciones NO se dist...</p>
+</li>
+</ol>
+<h2>Las constantes, y la regla de variedad</h2>
+<p><strong>Este tipo NO lleva cierre, y no es un olvido.</strong> La regla general de 10 §6 —toda pagina empieza por <code>01-hero.html</code> y termina por <code>11-closing-cta.html</code>— existe para garantizar dos llamadas a la accion en una pagina que se RECORRE. Esta no se recorre: el recurso ES la llamada, y un segundo CTA debajo compite con el unico que importa. Tampoco se le exigen 4 primitivas: se le exigen las que tiene.</p>
+<p class="meta">Los roles que no salen aqui no se anaden porque quepan: se anaden cambiando la anatomia en 09 §2 y gates/anatomy.tsv, que es donde vive esa decision.</p>
+</body>
+</html>

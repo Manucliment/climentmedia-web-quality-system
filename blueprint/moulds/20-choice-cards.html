@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOULD 20 — choice cards</title>
+<!--
+  PRIMITIVA: tarjetas-eleccion      FAMILIA: cuerpo
+  ORIGEN: ref-funnel-quiz-001 — la landing de quiz de una plantilla comercial
+          de embudos, medida en el navegador el 1-sep-2026. Se toma la MECANICA
+          -dos opciones con imagen, etiqueta debajo, todo sobre el pliegue- y se
+          tira el markup entero, por lo que dice el bloque de abajo. Ni copy ni
+          marca ni imagenes.
+          El dominio NO se escribe aqui: `gates/README.md` afirma que este
+          repositorio no nombra dominios de terceros, y una cita en un
+          comentario bastaria para volver falsa esa frase. Las medidas estan en
+          09-page-types.md §2.12, que es donde se pueden contrastar.
+
+  QUE TRABAJO HACE: convierte la primera pregunta de calificacion en UNA
+  eleccion visual de dos opciones, en lugar de un formulario. El visitante no
+  rellena: elige. Es lo que permite que una landing de captacion pida algo
+  ANTES de haber pedido un dato personal.
+
+  POR QUE ESTA EN LA CARPETA: era el unico hueco medido del cajon para el rol
+  `recurso`. Y lo que la referencia demuestra, medido y no supuesto: a 375 px
+  las dos tarjetas ocupan 156x174 cada una y la eleccion ENTERA cae sobre el
+  pliegue (arriba 486, abajo 660, pliegue 812). Un formulario en ese sitio no
+  cabe.
+
+  🔴 LO QUE NO SE COPIA DEL ORIGEN, y son defectos reales de su markup:
+   - CERO <h1> en toda la pagina: los titulares son <strong> a 56 px. Medido:
+     `h1count 0`, `role=heading` 0. Para un lector de pantalla y para un
+     buscador esa pagina no tiene titulares. Aqui el titular es un <h2> de
+     verdad y el <h1> lo pone la pagina.
+   - La opcion es un <div role="button" tabindex="0">. Funciona, pero hay que
+     reimplementar Enter y Espacio a mano y no entra en un formulario. Aqui es
+     un <button type="button"> nativo.
+   - Cinco niveles de envoltorio (div>div>p>span>strong) para una palabra.
+
+  CUANDO: la primera pregunta de una landing de captacion, cuando las
+          respuestas son 2 o 3 y se distinguen mejor viendolas que leyendolas.
+  CUANDO NO:
+   - Con mas de 3 opciones: a 375 px la tercera tarjeta ya baja del pliegue, y
+     el motivo entero de esta primitiva es que la eleccion se vea sin scroll.
+     Con 4 o mas -> `lista-comprobacion` o un formulario normal.
+   - Si las opciones NO se distinguen visualmente. Dos fotos de archivo
+     intercambiables son ruido: la imagen tiene que aportar el significado que
+     la etiqueta no da. Si no la hay, van dos botones grandes sin imagen.
+   - Si la respuesta no cambia NADA de lo que pasa despues. Una eleccion que
+     lleva a la misma pantalla es un peaje, y se nota.
+
+  QUE LA ROMPE:
+   - Poner la imagen como fondo CSS: se queda sin `alt` y la eleccion deja de
+     ser comprensible sin ver. Va como <img> con alt que describe la OPCION,
+     no la foto.
+   - `aria-pressed` sin gestionarlo en JS: anuncia un estado que nunca cambia.
+     Aqui va en el markup porque el guion de la pagina lo actualiza; si no hay
+     guion, se quita.
+   - Etiquetas de mas de 3 palabras: dejan de leerse de un vistazo y a 375 px
+     parten en dos lineas, que es lo que empuja la eleccion bajo el pliegue.
+
+  MOVIL (390px): las dos tarjetas siguen LADO A LADO, no se apilan. Apilarlas
+  las sacaria del pliegue y perderia lo unico que esta primitiva aporta. Por
+  eso la rejilla es `1fr 1fr` desde el principio y lo que se reduce es la
+  imagen, no el numero de columnas.
+  ROL (09-page-types.md seccion 1): data-sec="recurso". Tambien vale para
+          `calificacion` cuando la eleccion filtra en vez de arrancar el embudo.
+  CHASIS: carga _tokens.css + _base.css. Este molde solo declara .m20-*.
+          No redeclara .sec/.sec__in/.sec__h/.sec__sub/.btn/.nota.
+-->
+<link rel="stylesheet" href="_tokens.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* Dos columnas SIEMPRE, tambien en movil: ver el bloque MOVIL de arriba. */
+  .m20-opts{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);
+            margin:var(--space-8) auto 0;max-width:var(--measure)}
+
+  .m20-opt{display:flex;flex-direction:column;padding:0;overflow:hidden;
+           background:var(--caja);border:1px solid var(--linea);
+           border-radius:var(--r);cursor:pointer;text-align:center;
+           font:inherit;color:inherit}
+  .m20-opt:hover{border-color:var(--acento)}
+  /* El foco se ve: es la unica forma de usar esto con teclado. */
+  .m20-opt:focus-visible{outline:3px solid var(--acento);outline-offset:2px}
+  .m20-opt[aria-pressed="true"]{border-color:var(--acento)}
+
+  .m20-opt img{display:block;width:100%;height:auto;aspect-ratio:4/3;
+               object-fit:cover}
+
+  .m20-opt__lbl{display:block;padding:var(--space-4) var(--space-3);
+                background:var(--acento);color:var(--tenue-inv);
+                font-size:var(--fs-lead);font-weight:var(--fw-bold);
+                line-height:1.2}
+
+  @media(min-width:40rem){
+    .m20-opts{gap:var(--space-6)}
+    .m20-opt__lbl{font-size:var(--fs-section)}
+  }
+
+  /* Sin imagen: la variante honesta para cuando no hay una foto que signifique
+     algo. Sigue siendo la misma primitiva, no otra. */
+  .m20-opt--plana .m20-opt__lbl{padding:var(--space-8) var(--space-4)}
+</style>
+</head>
+<body>
+
+<section class="sec" data-sec="recurso">
+  <div class="sec__in">
+    <h2 class="sec__h">Are you already running ads for this business?</h2>
+    <p class="sec__sub">One question. It changes what we show you next &mdash; nothing else.</p>
+
+    <div class="m20-opts">
+
+      <button type="button" class="m20-opt" aria-pressed="false">
+        <img src="" alt="Running ads already: a dashboard with live campaigns">
+        <span class="m20-opt__lbl">Yes, already</span>
+      </button>
+
+      <button type="button" class="m20-opt" aria-pressed="false">
+        <img src="" alt="Not running ads yet: an empty account, nothing live">
+        <span class="m20-opt__lbl">Not yet</span>
+      </button>
+
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
