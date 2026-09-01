@@ -1496,6 +1496,26 @@ sub lente_seo {
     }
     my (@titles, %ogimg, @sin_ogalt, @sin_twimg, @sin_can, @sin_desc, @sin_h1, @multi_h1,
         @img_sin_alt, @sin_jsonld, @sin_bread, @solo_js, @desc_corta, @title_largo);
+    my @meta3;   # [url, title, h1, description] -> SEO-02b y SEO-05/05b
+
+    # 🔴 EL TEXTO QUE SALE DE LA PAGINA LLEGA EN BYTES, Y STDOUT YA CODIFICA.
+    #    Con `use utf8` (226) los literales de este fichero son CARACTERES y la
+    #    capa `:encoding(UTF-8)` de la linea 235 los codifica una vez: correcto.
+    #    Una cadena leida del HTML son BYTES, y esa misma capa trata cada byte
+    #    como un codigo: "qué" salio como C3 83 C2 A9 en la primera version de
+    #    SEO-02b/05/05b. Doble-codificado es UTF-8 VALIDO, asi que no da error,
+    #    no lo caza `iconv` y solo se ve mirando los bytes.
+    #    Se decodifica AQUI, en la frontera, y se recorta DESPUES: recortar
+    #    bytes primero parte una secuencia por la mitad y el arreglo se cae.
+    #    ⚠️ SEO-02 tenia el mismo defecto LATENTE desde siempre —imprime el
+    #    title crudo— y no se habia visto porque hace falta un title duplicado
+    #    Y con acento a la vez. Pasa por aqui tambien.
+    my $rec = sub {
+        my ($s, $n) = @_;
+        my $c = $s;
+        $c = $s unless utf8::decode($c);   # HTML que no sea UTF-8: bytes crudos
+        return substr($c, 0, $n);
+    };
     alcance('SEO', [@PAGES], undef, 'SEO-01..14 sobre todas las de la lista · SEO-15/16/17 son del sitio');
 
     for my $u (@PAGES) {
@@ -1548,6 +1568,15 @@ sub lente_seo {
         my @h1 = $h =~ /<h1\b[^>]*>/gi;
         push @sin_h1,   $u if @h1 == 0;
         push @multi_h1, $u." (".scalar(@h1).")" if @h1 > 1;
+
+        # El TEXTO del h1, para SEO-05. Se saca aparte del recuento de arriba
+        # porque el h1 lleva <span>, <br> o <em> dentro mas veces de las que
+        # parece, y contar etiquetas no necesita el texto.
+        my ($h1txt) = $h =~ m{<h1\b[^>]*>(.*?)</h1>}si;
+        $h1txt = '' unless defined $h1txt;
+        $h1txt =~ s/<[^>]*>/ /g;
+        $h1txt =~ s/\s+/ /g; $h1txt =~ s/^\s+|\s+$//g;
+        push @meta3, [$u, $t, $h1txt, (defined $d ? $d : '')];
 
         # X3 · el check de `alt` de 03 §2 esta ROTO: cuenta alt="" como ausencia.
         # alt="" es una imagen DECORATIVA correctamente marcada. Falla solo si
@@ -1612,13 +1641,186 @@ sub lente_seo {
     for my $p (@titles) { push @dups, $p->[1] if $seen_t{lc $p->[1]}++ && $p->[1] ne '' }
     @dups = do { my %u; grep { !$u{$_}++ } @dups };
     @dups ? fallo(lente=>'SEO', id=>'SEO-02', titulo=>'titles duplicados',
-                  donde=>join(' · ', map { "\"$_\"" } @dups[0..($#dups>2?2:$#dups)]),
-                  ev=>[map { "\"$_\"" } @dups],
+                  donde=>join(' · ', map { '"'.$rec->($_, 60).'"' } @dups[0..($#dups>2?2:$#dups)]),
+                  ev=>[map { '"'.$rec->($_, 60).'"' } @dups],
                   dato=>scalar(@dups)." title repetidos en ".scalar(@titles)." documentos distintos",
                   umbral=>'0 duplicados · se cuentan DOCUMENTOS (md5 del HTML servido), no cadenas de URL',
                   proc=>'qa-final.sh §2 · 03-contenido-y-seo §2 · arreglo P2: un fichero servido en 8 URLs no son 8 paginas con el mismo title (ver SEO-14)',
                   hacer=>'cada pagina responde a una pregunta distinta: si dos comparten title, o se fusionan o una lleva noindex (09 §5, canibalizacion)')
           : pasa(lente=>'SEO', id=>'SEO-02', titulo=>'titles unicos', dato=>scalar(@titles).' documentos distintos');
+
+    # ══ SEO-02b · descriptions duplicadas ══════════════════════════════════
+    # El gemelo que faltaba. Habia check de titles duplicados desde el
+    # principio y ninguno de descriptions: asimetria pura, y el defecto es el
+    # mismo. Una description repetida en N paginas no la reusa el buscador —
+    # la reescribe el, y entonces la frase que decide el clic la elige otro.
+    # Se cuentan DOCUMENTOS distintos, igual que SEO-02: un fichero servido en
+    # ocho URLs no son ocho descriptions repetidas (ver el arreglo P2 de
+    # SEO-14). @meta3 sale de @PAGES, que ya viene deduplicada por md5.
+    my (%vistas_d, %rep_d);
+    for my $p (@meta3) {
+        next if $p->[3] eq '';
+        my $k = lc $p->[3];
+        $rep_d{$k}++ if $vistas_d{$k}++;
+    }
+    my $con_desc = scalar grep { $_->[3] ne '' } @meta3;
+    if (%rep_d) {
+        my @muestra = map { '"'.$rec->($_, 60).'"' } sort keys %rep_d;
+        my $afectadas = 0; $afectadas += $rep_d{$_} + 1 for keys %rep_d;
+        fallo(lente=>'SEO', id=>'SEO-02b', titulo=>'descriptions duplicadas',
+              donde=>join(' · ', @muestra[0..($#muestra>2?2:$#muestra)]),
+              ev=>[@muestra],
+              dato=>scalar(keys %rep_d)." description repetida(s) en $afectadas de $con_desc documentos",
+              umbral=>'0 duplicadas · se cuentan DOCUMENTOS (md5 del HTML servido), no cadenas de URL',
+              proc=>'03-content-and-seo §2 · gemelo de SEO-02',
+              hacer=>'cada pagina promete algo distinto: si dos comparten description, o la plantilla la esta generando sola o las dos paginas sobran (09 §5, canibalizacion)');
+    } else {
+        pasa(lente=>'SEO', id=>'SEO-02b', titulo=>'descriptions unicas',
+             dato=>"$con_desc documentos con description");
+    }
+
+    # ══ SEO-05 / SEO-05b · title, h1 y description hablan de lo MISMO ══════
+    # Lo que NADIE comprobaba, y es el hueco que deja pasar la pagina peor
+    # escrita: title de 58 caracteres, description de 140, h1 presente y
+    # unico — las cinco comprobaciones de metadatos en verde — hablando cada
+    # uno de una cosa distinta. El caso real esta documentado en este mismo
+    # fichero: un sitio publico <h1>hero</h1>, que es HTML valido, longitud
+    # correcta y no lo miraba nada.
+    #
+    # 🔑 El listón es INTERSECCION VACIA, no un porcentaje de parecido. Cero
+    #    palabras en comun es una señal fuerte; "poco parecido" es ruido, y un
+    #    gate que se equivoca enseña a saltarse la puerta.
+    #
+    # ⚠️ Lo que este check NO sabe, y se dice para que nadie lo lea de mas:
+    #    no compara con lo que la pagina DICE en el cuerpo, solo las tres
+    #    superficies entre si. Y compara bytes: "auditoria" y "auditoría" son
+    #    palabras distintas para el. Normalizar acentos exigiria capas de
+    #    codificacion sobre texto leido en crudo, que es como se dobla un
+    #    fichero entero sin que nada de un error.
+    my %PARADA = map { $_ => 1 } qw(
+        los las del una uno por que con sin para como este esta esto pero mas
+        muy todo toda todos todas cada desde hasta entre sobre tambien porque
+        cuando donde otro otra ante bajo tras segun son ser sus nos
+        les des sur par est aux ses son pour avec dans votre notre vous nous
+        mais plus tout tous toute toutes cette ces une sont chez sous apres
+        avant aussi meme tres bien leur leurs elle
+        com sem seu sua nosso nossa voce pelo pela das dos numa ate apos antes
+        muito quando onde
+        the and for are you our its has was with your from that this these
+        those they them their have been will what when where which who how
+        more most than then into over under about after before also very just
+        only some such each both other
+        van het een dat deze die ook meer maar naar door wordt worden zijn hun
+        onze wat waar hoe dan als
+    );
+
+    my $sig = sub {
+        my ($s) = @_;
+        my %w;
+        for my $pal ($s =~ /([0-9A-Za-z\x80-\xFF]+)/g) {
+            my $l = lc $pal;
+            next if length($l) < 3;
+            next if $PARADA{$l};
+            $w{$l} = 1;
+        }
+        return \%w;
+    };
+
+    # 🔑 Las palabras de CROMO se MIDEN, no se escriben. Las que aparecen en el
+    #    title de >=60% de las paginas son la marca y el sufijo de plantilla de
+    #    ESTE sitio: derivarlas del sitio evita una lista por cliente, que
+    #    envejeceria sola en cuanto alguien cambie el sufijo. Por debajo de 5
+    #    paginas la frecuencia no mide nada y no se aplica ningun filtro.
+    # 🔴 SIN ESTO EL CHECK ACUSA A UNA PAGINA BIEN ESCRITA. Medido el 1-sep
+    #    sobre un sitio real: title "...what ships and what is only claimed" /
+    #    h1 "What is actually shipping" salia DESALINEADO, porque "ships" y
+    #    "shipping" son dos cadenas distintas. Dos palabras cuentan como la
+    #    misma si son iguales o si miden >=5 y comparten los 4 primeros bytes.
+    #    Es un stemmer tosco a proposito y su direccion de error es la barata:
+    #    solo puede AÑADIR coincidencias, o sea convertir un rojo en un verde,
+    #    nunca al reves. Compara bytes, asi que un prefijo puede partir una
+    #    secuencia UTF-8 por la mitad: da igual, los dos lados se cortan igual
+    #    y no se escribe en ningun sitio.
+    my $comparte = sub {
+        my ($a, $b) = @_;
+        for my $w (keys %$a) {
+            return 1 if $b->{$w};
+            next if length($w) < 5;
+            my $pre = substr($w, 0, 4);
+            for my $x (keys %$b) {
+                return 1 if length($x) >= 5 && substr($x, 0, 4) eq $pre;
+            }
+        }
+        return 0;
+    };
+
+    my %cromo;
+    if (@meta3 >= 5) {
+        my %fr;
+        for my $p (@meta3) { $fr{$_}++ for keys %{ $sig->($p->[1]) } }
+        my $umbral = 0.6 * scalar(@meta3);
+        for (keys %fr) { $cromo{$_} = 1 if $fr{$_} >= $umbral }
+    }
+
+    my (@desalin, @desc_ajena);
+    my $sin_sustancia = 0;
+    for my $p (@meta3) {
+        my ($u, $t, $h1, $d) = @$p;
+        next if $t eq '' || $h1 eq '';        # SEO-01 y SEO-09 ya los cazan
+        my $st = $sig->($t);
+        my $sh = $sig->($h1);
+        delete $st->{$_} for keys %cromo;
+        delete $sh->{$_} for keys %cromo;
+        # Si al quitar el cromo no queda nada, la pagina tiene otro problema
+        # (un title que es solo la marca) y llamarlo "desalineado" seria un
+        # rojo por el motivo equivocado. Se cuenta aparte y se dice.
+        if (!keys %$st || !keys %$sh) { $sin_sustancia++; next }
+
+        push @desalin, sprintf('%s · title "%s" / h1 "%s"',
+                               $u, $rec->($t, 45), $rec->($h1, 45))
+            unless $comparte->($st, $sh);
+
+        next if $d eq '';                     # SEO-03 ya lo caza
+        my $sd = $sig->($d);
+        delete $sd->{$_} for keys %cromo;
+        next unless keys %$sd;
+        push @desc_ajena, sprintf('%s · description "%s"', $u, $rec->($d, 60))
+            unless $comparte->($sd, $st) || $comparte->($sd, $sh);
+    }
+
+    my $juzgadas = scalar(@meta3) - $sin_sustancia;
+    my $nota_cromo = %cromo ? ' · cromo medido: '.scalar(keys %cromo).' palabra(s) en >=60% de los titles'
+                            : ' · sin filtro de cromo (menos de 5 paginas)';
+
+    # 🟡 AVISO a proposito en su primera version, y esto NO es tibieza: es la
+    #    norma de la casa. Un gate nuevo se cablea para que SE VEA, se mira
+    #    unas cuantas corridas sobre sitios reales, y ENTONCES se sube el
+    #    liston. Uno que bloquea con su primer falso positivo enseña a la gente
+    #    a saltarse la puerta, y eso cuesta mas que el defecto que caza.
+    #    Sube a FALLO cuando haya pasado un ciclo sin falsos positivos.
+    @desalin ? aviso(lente=>'SEO', id=>'SEO-05', titulo=>'title y h1 no comparten ni una palabra',
+                     donde=>join(' · ', @desalin[0..($#desalin>2?2:$#desalin)]),
+                     ev=>[@desalin],
+                     dato=>scalar(@desalin)." de $juzgadas paginas juzgadas".$nota_cromo,
+                     umbral=>'>=1 palabra significativa en comun, quitando marca y palabras vacias',
+                     proc=>'03-content-and-seo §2 · 09-page-types §1-bis',
+                     hacer=>'el title es la promesa en el buscador y el h1 la promesa al llegar: si no coinciden, el visitante que hizo clic aterriza en otra pagina de la que creia')
+             : pasa(lente=>'SEO', id=>'SEO-05', titulo=>'title y h1 alineados',
+                    dato=>"$juzgadas paginas juzgadas".($sin_sustancia ? ", $sin_sustancia sin sustancia tras quitar el cromo" : '').$nota_cromo);
+
+    # Lleva rama PASA a proposito, y se aparta de la costumbre de este fichero
+    # —SEO-03b y otros avisos no la tienen—: un check que solo habla cuando
+    # acusa es indistinguible de un check apagado, y esa es la enfermedad que
+    # persigue medio repositorio. Si SEO-05b no imprime linea, no ha corrido.
+    @desc_ajena ? aviso(lente=>'SEO', id=>'SEO-05b', titulo=>'description que no comparte nada con title ni h1',
+                        donde=>join(' · ', @desc_ajena[0..($#desc_ajena>2?2:$#desc_ajena)]),
+                        ev=>[@desc_ajena],
+                        dato=>scalar(@desc_ajena)." de $juzgadas",
+                        umbral=>'>=1 palabra significativa compartida con el title o con el h1',
+                        proc=>'03-content-and-seo §2',
+                        hacer=>'la description amplia la promesa del title; si habla de otra cosa, el buscador la descarta y escribe la suya')
+                : pasa(lente=>'SEO', id=>'SEO-05b', titulo=>'description alineada con title o h1',
+                       dato=>"$juzgadas paginas juzgadas");
 
     @title_largo ? aviso(lente=>'SEO', id=>'SEO-01', titulo=>'longitud del title fuera de 15-65',
                          donde=>join(' · ', @title_largo[0..($#title_largo>2?2:$#title_largo)]),

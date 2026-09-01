@@ -75,7 +75,79 @@ prose-page — **a page with headings and ZERO roles is prose by definition.**
 
 ---
 
-## 2 · The eleven anatomies
+## 1-bis · What each type is FOR — site objective × page intent
+
+> 🔴 **Added 28-aug-2026, and the gap it closes was real.** Everything below §2 says *which
+> sections a type carries*. Nothing said **what the site is for**, so nothing could catch the
+> commonest brief failure there is: *"the site exists to sell and you wrote me an informational
+> page."* Measured that day: **not one of five live sites declares an objective anywhere** — not in
+> its spec, not in its deploy config, not in its audit config.
+>
+> The document already *reasoned* about intent — «objections are answered on the service page,
+> where intent is already formed» — but as prose for whoever reads it, **not as a property anything
+> can check.** And what cannot be checked drifts.
+
+**Two declarations, and the page is the product of both.**
+
+**1 · The SITE declares its objective.** One per site, and it does not change with the page:
+
+| Objective | The site exists to… | The page that serves it |
+|---|---|---|
+| `sell` | close a transaction on the site itself | product, pricing, category hub |
+| `capture` | obtain a qualified contact | service, city, lead magnet, contact |
+| `inform` | be the reference on a subject (media, docs, institution) | guide, comparison, hub |
+
+**2 · The TYPE declares its intent.** This is fixed and universal — it does not depend on the site:
+
+| Intent | Types | What the visitor is doing |
+|---|---|---|
+| **transactional** | `product` · `pricing` · `service` · `city` | deciding, or about to |
+| **capture** | `quiz` · `contact` | handing over their details, or not |
+| **navigational** | `home` · `hub` | choosing where to go |
+| **informational** | `guide` · `comparison` | learning, and not buying yet |
+| **utility** | `thanks` · `legal` · `404` | neither of the above |
+
+### The rule that comes out of crossing them
+
+> **A page whose intent does not match the site's objective is legitimate only if it ROUTES to
+> the layer that does.** It is not banned — it is *conditional*.
+
+On a `sell` site, a guide that ends without a way through to the product is not a bad page: it is
+**someone else's page, published on your domain**. It earns traffic that leaves.
+
+🔑 **And the system already half-enforces this without saying so.** `guide` and `comparison` both
+carry `siblings` as REQUIRED — a link to the pages of the same cluster. That requirement *is* the
+routing rule, written as an anatomy and never explained. Naming it turns a section that gets filled
+in out of obedience into one that gets filled in on purpose.
+
+### Voice follows from intent, not from the brand
+
+The brand sets the register — how formal, how dry, how much humour. **The intent sets what the
+sentence is doing**, and mixing them is how a shop ends up sounding like a wiki:
+
+| Intent | The sentence… | Ships badly as |
+|---|---|---|
+| transactional | speaks in the second person, about the outcome and the cost of not acting | a specification sheet |
+| capture | says what you get, when, and what happens to your data | a sales pitch — here the objection is trust, not price |
+| informational | explains, cites, and is willing to say "it depends" | a disguised advert, which is what burns the citation |
+| navigational | orients in the fewest possible words | prose |
+
+⚠️ **None of this is enforced by a gate today, and saying so is the point.** It lives here as a
+contract because the shape was decided (site × type) but not the rollout: no site declares its
+objective yet. **Wiring it means an `objective` field per site and an `intent` column in
+`anatomy.tsv`** — and that column is not free: `anatomy.pl` parses the table with `split /\|/, $_, 6`,
+so a seventh field lands silently inside `note`, and five programs consume it. It is a schema change
+with five consumers, not a line.
+
+🟢 **One corner of it IS enforced since 2026-09-01, and only one:** `SEO-05` / `SEO-05b`
+(`03-content-and-seo §2.1`) check that a page's `<title>`, `<h1>` and description share at least one
+significant word — that the three surfaces are talking about the same thing. That is **coherence**,
+not intent: the gate cannot tell a transactional page from an informational one, and it never will
+without the `objective` field. What it does catch is the failure that comes free with a template — a
+title written for the search result and an `<h1>` written for the visitor, drifting apart until they
+promise two different pages. Do not read it as the voice contract being live. It is not.
+
+## 2 · The twelve anatomies (13 types: legal and 404 share §2.11)
 
 > **THE SINGLE SOURCE of "which sections each page type carries."** There is no other. Another
 > document once gave a second table, by primitive instead of by role, and **it disagreed with this
@@ -94,7 +166,7 @@ How to read each table: **the row order is the order on the page.** `REQ` = requ
 optional, with the condition that justifies it.
 
 > **THE VOCABULARY HAS HOLES, AND THEY ARE MEASURED.** Going to declare the type of 13 pages on
-> one site, **three did not fit any of the eleven**: an about page, a partner page, and a careers
+> one site, **three did not fit any of the eleven that existed then**: an about page, a partner page, and a careers
 > page. Those are not exotic — every service business has them.
 >
 > The house rule is *"if something does not fit a type, you EXTEND the type."* **But extending this
@@ -264,6 +336,40 @@ measurement stops without anything failing.**
   verification.
 - **404:** a single block — what happened, a search box if one exists, and **3–5 links to the most
   requested destinations**, not to the home page. `noindex`.
+
+### 2.12 · Lead magnet / quiz landing
+
+**Its job is a trade: a specific thing in exchange for contact details.** That is what makes it a
+type of its own and not a `service` page — and until 28-aug-2026 it did not exist here, so the one
+we run ourselves was declaring `data-tipo="service"`. Under that type the gate never asks for the
+form or the qualification, which are the two sections this page lives or dies by.
+
+**This anatomy is derived, not invented:** it is the section order our own lead-magnet landing
+already ships, read off the page.
+
+| # | Role | | If it is missing |
+|---|---|---|---|
+| 1 | `hero` = the promise **and** the action | REQ | A landing that has to be scrolled to find out what it gives you has already lost the half that arrived from an ad |
+| 2 | `form` = the capture, above the fold | REQ | **The form is not a section of this page, it is the page.** Same rule as the table on a comparison page |
+| 3 | `offer` = exactly what lands on their screen | REQ | Asking for an email for something vague is how a list fills with people who never open it |
+| 4 | `qualification` = who it is for **and who it is not** | REQ | The section that stops junk leads. On a lead magnet it is worth more than any persuasion: a lead that does not fit costs time on both sides |
+| 5 | `process` = what happens after submitting, and when | REQ | "Do I get it now or on Monday?" unanswered is the most expensive doubt on the page, because it is felt *after* giving the address |
+| 6 | `objections` = what you do with their data | REQ | **The** objection of a lead magnet. Not answering it does not produce doubt, it produces a fake address |
+| 7 | `proof` | OPT | — |
+| 8 | `context` | OPT — if the offer is signed by a person | — |
+| 9 | `siblings` | OPT | — |
+| 10 | `closing` = repeat the action | REQ | On mobile the form is several screens up |
+
+**FORBIDDEN:** more fields than the magnet is worth · a hero that does not say what you get ·
+`data-tipo="service"`, which is what hides the two required sections · **and promising a delivery
+the receiver does not actually make** — that last one is not a style rule, it is measurable, and the
+measurement lens already asks it.
+
+> ⚠️ **The trap this type exists to close.** A lead-magnet landing built as a `service` page passes
+> every gate: it has hero, offer, process, objections, siblings, closing. Nothing asks *"where is
+> the form?"* or *"who is this not for?"*, because on a service page neither is required. **The
+> page is well-formed and cannot do its job** — the same failure as a comparison page with no
+> table, which is why that one got its rule first.
 
 ---
 

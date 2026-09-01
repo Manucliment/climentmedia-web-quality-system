@@ -95,21 +95,22 @@ rm -rf "$KCACHE"; mkdir -p "$KCACHE"
 #     `run-all.sh` prints it as NOT MEASURED and names it in the summary. A 1
 #     would send somebody hunting a defect that does not exist, and a 0 would let
 #     a hole read as a pass — which is the failure this whole repository is about.
+#     🔴 1-sep-2026 · Y HASTA HOY ESTE ABANDONO SE LLEVABA POR DELANTE PRUEBAS
+#     QUE NO NECESITAN LA FIXTURE. Salia aqui mismo con «OK 0 · MAL 0», asi que
+#     en un checkout sin el sitio congelado —o sea, en CUALQUIERA menos el
+#     nuestro— este banco no medía absolutamente nada, incluidas las que solo
+#     usan sus propias carpetas de `fixtures-*`. «Existe un control» es la
+#     version debil de «el control corre».
+#     Ahora se ANOTA que falta y se sale mas abajo, despues de correr todo lo
+#     que si se puede medir sin ella.
+SIN_FIXTURE=0
 if [ ! -d "$KFIX" ]; then
-  echo
-  echo "  NOT MEASURED · the frozen fixture $KFIX/ is not here."
-  echo "  It is not missing by accident: it was a capture of a real client site"
-  echo "  and it is deliberately not published. Everything in this battery that"
-  echo "  depends on a frozen site is therefore unmeasured — not passing."
-  echo "  To measure it, freeze a site you own:"
-  echo "      perl freeze-fixture.pl <URL> $KFIX"
-  echo
-  echo "  OK 0 · MAL 0"
-  exit 3
+  SIN_FIXTURE=1
+else
+  cp "$KFIX"/* "$KCACHE"/ 2>/dev/null || { echo "🔴 $KFIX is present but empty: cannot run"; exit 2; }
+  ls "$KCACHE" | sort > "$CACHE/kfix-antes.lst"
+  KFIX_N0="$(wc -l < "$CACHE/kfix-antes.lst")"
 fi
-cp "$KFIX"/* "$KCACHE"/ 2>/dev/null || { echo "🔴 $KFIX is present but empty: cannot run"; exit 2; }
-ls "$KCACHE" | sort > "$CACHE/kfix-antes.lst"
-KFIX_N0="$(wc -l < "$CACHE/kfix-antes.lst")"
 
 # espera <etiqueta> <ESTADO> <ID> <comando...>
 espera() {
@@ -141,6 +142,98 @@ texto() {
     printf '  MAL   %-46s esperaba %s "%s" y salio %s\n' "$eti" "$quiero" "$lit" "$hay"; ko=$((ko+1))
   fi
 }
+
+echo
+echo "== METADATOS QUE SE CONTRADICEN ENTRE SI · SEO-02b / 05 / 05b · 1-sep-2026"
+# 🔴 EL HUECO MEDIDO: habia CINCO comprobaciones de metadatos —largo del title,
+#    titles duplicados, description ausente, largo de la description y
+#    canonical— y ninguna miraba si las tres superficies HABLAN DE LO MISMO.
+#    Una pagina podia llevar title perfecto de 58 caracteres, description
+#    perfecta de 140 y un h1 unico, y decir cada uno una cosa distinta: pasaba
+#    las cinco. El caso real esta en este repo: un sitio publico <h1>hero</h1>.
+#    Y de duplicados solo se miraba el title; la description no la miraba nadie,
+#    asimetria pura — medido el 1-sep, un sitio real tenia DOS descriptions
+#    repetidas en CUATRO documentos, una de ellas la de otra pagina.
+#
+# Las cinco carpetas son la MISMA base con un fichero cambiado (`diff -rq` lo
+# comprueba abajo). Sin eso, un rojo no dice si viene del defecto inyectado o
+# de algo que se colo en la copia.
+FSEO05="fixtures-seo05"
+FU="https://fixture.test/"
+QA5="--candidato --solo seo --sin-recibo"
+
+espera "SEO-05 · base alineada: title y h1 pasan"      PASA  SEO-05 \
+       perl $QA $FU --repo "$FSEO05/alineado" $QA5
+espera "SEO-05 · base alineada: descriptions unicas"   PASA  SEO-02b \
+       perl $QA $FU --repo "$FSEO05/alineado" $QA5
+espera "SEO-05 · base alineada: description alineada"  PASA  SEO-05b \
+       perl $QA $FU --repo "$FSEO05/alineado" $QA5
+
+# --- el defecto documentado: el titular cayo en el nombre del rol ---
+espera "SEO-05 · <h1>hero</h1> contra su title: AVISA"  AVISO SEO-05 \
+       perl $QA $FU --repo "$FSEO05/h1-hero" $QA5
+
+# 🔴 EL CASO QUE PRUEBA EL FILTRO DE CROMO, y sin el no esta probado: el h1
+#    «Fixture Nora te escucha» comparte con su title las DOS palabras de marca
+#    y ninguna mas. Si el gate no descontara el cromo —medido del propio sitio,
+#    no escrito en una lista— esto saldria PASA y el check no serviria en
+#    ninguna web con sufijo de marca en el title, o sea en casi ninguna.
+espera "SEO-05 · comparte SOLO la marca: AVISA"        AVISO SEO-05 \
+       perl $QA $FU --repo "$FSEO05/solo-marca" $QA5
+
+# --- la description que habla de otra cosa ---
+espera "SEO-05b · description ajena al title y al h1"  AVISO SEO-05b \
+       perl $QA $FU --repo "$FSEO05/desc-ajena" $QA5
+espera "SEO-05b · y eso NO ensucia el veredicto de 05" PASA  SEO-05 \
+       perl $QA $FU --repo "$FSEO05/desc-ajena" $QA5
+
+# --- el gemelo que faltaba de SEO-02 ---
+espera "SEO-02b · description repetida en 2 docs"      FALLO SEO-02b \
+       perl $QA $FU --repo "$FSEO05/desc-duplicada" $QA5
+espera "SEO-02b · y el duplicado no dispara 05"        PASA  SEO-05 \
+       perl $QA $FU --repo "$FSEO05/desc-duplicada" $QA5
+
+# 🔴 EL TEXTO DE LA PAGINA SALE EN BYTES Y STDOUT YA CODIFICA. La primera
+#    version imprimia «qué» como C3 83 C2 A9 —doble-codificado, que es UTF-8
+#    VALIDO y por tanto no lo caza `iconv` ni da error—. La description que se
+#    duplica lleva «sesión» a proposito para fijar el arreglo aqui.
+texto  "SEO-02b · el acento sale SIN doblar"           SI "sesión inicial" \
+       perl $QA $FU --repo "$FSEO05/desc-duplicada" $QA5
+texto  "SEO-02b · y no aparece la forma doblada"       NO "sesiÃ³n" \
+       perl $QA $FU --repo "$FSEO05/desc-duplicada" $QA5
+
+# 🔑 El control que sostiene a los cinco de arriba: cada variante es la base
+#    con UN fichero distinto. Si alguna vez difiere en dos, el rojo de esa
+#    variante deja de significar lo que dice la etiqueta.
+for _v in h1-hero solo-marca desc-ajena desc-duplicada; do
+  _n="$(diff -rq "$FSEO05/alineado" "$FSEO05/$_v" 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$_n" = "1" ]; then
+    printf '  OK    %-46s %-8s -> 1 fichero\n' "SEO-05 · $_v difiere de la base en 1" "fixture"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s %-8s esperaba 1 fichero y son %s\n' "SEO-05 · $_v difiere de la base en 1" "fixture" "$_n"; ko=$((ko+1))
+  fi
+done
+
+# ── AQUI SE ACABA LO QUE SE PUEDE MEDIR SIN EL SITIO CONGELADO ──────────────
+#    Todo lo de abajo consume `$KCACHE`, que sale de `fixtures-frozen-site/`.
+#    Si no esta, se sale AHORA — pero diciendo la verdad de lo que si corrio,
+#    no «OK 0 · MAL 0».
+#    🔑 Y el codigo de salida distingue las dos cosas, que es de lo que va todo
+#    este repositorio: 3 = no lo he medido · 1 = lo he medido y esta MAL. Salir
+#    3 con un rojo dentro convertiria un fallo real en un hueco declarado.
+if [ "$SIN_FIXTURE" = 1 ]; then
+  echo
+  echo "  NOT MEASURED · the frozen fixture $KFIX/ is not here."
+  echo "  It is not missing by accident: it was a capture of a real client site"
+  echo "  and it is deliberately not published. Everything in this battery that"
+  echo "  depends on a frozen site is therefore unmeasured — not passing."
+  echo "  To measure it, freeze a site you own:"
+  echo "      perl freeze-fixture.pl <URL> $KFIX"
+  echo
+  echo "  OK $ok · MAL $ko   (self-contained fixtures only)"
+  [ "$ko" -gt 0 ] && exit 1
+  exit 3
+fi
 
 echo "== CONTROLES POSITIVOS · defectos CONOCIDOS de la sintesis del 10-ago-2026"
 espera "site-a · paleta bajo AA (--primary L=0,58)"        FALLO A11Y-03 perl $QA https://site-a.example/ --solo a11y --cache "$KCACHE"

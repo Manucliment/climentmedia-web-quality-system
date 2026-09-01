@@ -165,6 +165,14 @@ that sits at position 1 with zero clicks is class C and you do it anyway: waitin
 with a page that is already telling you it does not work costs more than breaking that
 series.
 
+> **And before rewriting that title by instinct, ask the gate whether it already knows why.**
+> `SEO-05` / `SEO-05b` list the pages whose `<title>`, `<h1>` and description do not share a
+> single significant word. A page at position 1 with no clicks **and** on that list does not
+> need a wittier title: it needs a title that promises what the page delivers. This is the
+> only CTR signal in the whole system that can be read **without Search Console**, which
+> matters because the console is exactly what goes missing when a property is new, blacked
+> out, or not ours yet.
+
 **The event log is NOT a new file.** Every class A or C touch is recorded in the
 corresponding row of the deploy queue, which already exists, is already the approval gate,
 and already carries a date.
@@ -188,6 +196,7 @@ ever overflows. There the structure gate rules, with its prose-page answer. **Bo
 | Change | Layout? | What you run |
 |---|---|---|
 | title · description · canonical · OG | no | `qa-master.pl --only seo` |
+| title ↔ h1 ↔ description saying the same thing | no | `qa-master.pl --only seo` · `SEO-05`/`SEO-05b`, **AVISO: they do not block, so they have to be read** |
 | Adding `og:image` + `og:image:alt` | no | `--only seo,performance` (the image is new weight) |
 | JSON-LD / schema | no | `--only seo` |
 | Rewriting a paragraph, changing a heading's text | no | `--only seo` |
