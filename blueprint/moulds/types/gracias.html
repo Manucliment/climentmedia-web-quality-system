@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLANTILLA — gracias</title>
+<!--
+  GENERADO POR gates/roles.pl --plantillas. NO SE EDITA A MANO.
+  Lo que se edita es la FUENTE: el orden de los roles esta en
+  gates/anatomy.tsv y el molde de cada rol en gates/roles.tsv.
+  `roles.pl --gate` se pone rojo si este fichero deja de ser el que
+  saldria hoy, asi que editarlo a mano no dura una bateria.
+
+  NO LLEVA EL MARKUP DE LOS MOLDES DENTRO, a proposito: seria una
+  segunda copia de cada uno, y el dia que se arregle un molde esta
+  hoja seguiria ensenando el defecto. Apunta, no copia.
+-->
+<link rel="stylesheet" href="../_tokens.css">
+<link rel="stylesheet" href="../_base.css">
+<style>
+  :root{--pl-bg:#fff;--pl-fg:#16181d;--pl-dim:#5a6472;--pl-line:#c9d0d8;--pl-link:#0b5fff}
+  @media (prefers-color-scheme:dark){:root{--pl-bg:#14161a;--pl-fg:#e8ebef;--pl-dim:#a4adba;--pl-line:#3a424e;--pl-link:#7fb0ff}}
+  html{background:var(--pl-bg)}
+  body{background:var(--pl-bg);color:var(--pl-fg);
+       font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+       max-width:70ch;margin:0 auto;padding:2rem 1rem}
+  a{color:var(--pl-link)}
+  .slot{border:1px solid var(--pl-line);border-radius:.4rem;padding:.9rem 1rem;margin:.9rem 0}
+  .slot--cond{border-style:dashed}
+  .slot--mano{border-style:dotted}
+  .n{font-variant-numeric:tabular-nums;color:var(--pl-dim)}
+  .rol{font-weight:700}
+  .job{margin:.2rem 0 .5rem}
+  .meta{font-size:.9em;color:var(--pl-dim);margin:.15rem 0}
+  ol{list-style:none;padding:0}
+  code{font-size:.95em}
+</style>
+</head>
+<body>
+<h1>Plantilla de referencia — <code>gracias</code></h1>
+<p>Anatomia <strong>09 §2.10</strong>. 3 rol(es) obligatorio(s).</p>
+<p class="meta">cierre = el siguiente paso, no el mismo</p>
+<ol>
+<li class="slot">
+  <div><span class="n">01</span> <span class="rol">hero</span> <span class="meta">(hero · obligatorio)</span></div>
+  <p class="job">Situa, promete y ofrece la primera accion</p>
+  <p class="meta">Molde: <a href="../01-hero.html"><code>01-hero.html</code></a></p>
+  <p class="meta">CUANDO: home o landing comercial.</p>
+  <p class="meta">CUANDO NO: paginas interiores. Verificado en Site A a Domicile: la pastilla era SOLO de la home; ponerla en las 17 invento un elemento que el cliente no habia aprobado.</p>
+</li>
+<li class="slot">
+  <div><span class="n">02</span> <span class="rol">proceso</span> <span class="meta">(process · obligatorio)</span></div>
+  <p class="job">Que pasa despues de hacer clic</p>
+  <p class="meta">Molde: <a href="../05-numbered-steps.html"><code>05-numbered-steps.html</code></a></p>
+  <p class="meta">CUANDO: proceso, "como funciona", onboarding, que pasa despues de contactar.</p>
+  <p class="meta">CUANDO NO: si los elementos NO tienen orden. Numerar cosas que no van en orden es mentir sobre la estructura -&gt; `rejilla-caracteristicas`.</p>
+</li>
+<li class="slot">
+  <div><span class="n">03</span> <span class="rol">cierre</span> <span class="meta">(closing · obligatorio)</span></div>
+  <p class="job">La ultima llamada. Nunca es opcional</p>
+  <p class="meta">Molde: <a href="../11-closing-cta.html"><code>11-closing-cta.html</code></a></p>
+  <p class="meta">CUANDO: al final de TODA pagina que quiera algo del lector.</p>
+  <p class="meta">CUANDO NO: en paginas legales o de utilidad pura (privacidad, 404 con buscador). Meter un CTA comercial ahi es ruido.</p>
+</li>
+</ol>
+<h2>Las dos constantes, y la regla de variedad</h2>
+<p>Toda pagina empieza por <code>01-hero.html</code> y termina por <code>11-closing-cta.html</code>: eso es lo que garantiza las dos llamadas a la accion que exige el gate de densidad. Y <strong>minimo 4 primitivas distintas por pagina, maximo una rejilla de tarjetas</strong> (10 §2, regla 3).</p>
+<p class="meta">Los roles que no salen aqui no se anaden porque quepan: se anaden cambiando la anatomia en 09 §2 y gates/anatomy.tsv, que es donde vive esa decision.</p>
+</body>
+</html>

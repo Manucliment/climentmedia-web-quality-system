@@ -43,6 +43,7 @@ audit-vs-spec|perl audit-vs-spec-tests/tests.pl|0|la spec contra el arbol
 audit-vs-origen|bash audit-vs-source-tests/tests.sh|0|el gate de migracion (medios)
 gate-formularios|bash forms-gate-tests/tests.sh|1|el formulario en el DOM (paso 10)
 anatomia|perl anatomy-tests/tests.pl|0|una sola tabla de anatomias (09 §2)
+roles|perl roles-tests/tests.pl|0|el vocabulario de roles y las plantillas por tipo
 medir-pantallas|bash measure-screens-tests/tests.sh|1|densidad: la UNIDAD y los 19 moldes
 gate-estructura|bash structure-gate-tests/battery.sh|1|maqueta: prosa vs maquetada, 3 REVISAR congelados
 moldes-maqueta|bash structure-gate-tests/battery-layout.sh|1|los moldes: colisiones, contraste AA, anchos

@@ -27,3 +27,7 @@ Thumbs.db
 # duplicate of blueprint/09-page-types.md ever since: a second copy of a truth,
 # which is the one thing this repo says never to keep.
 gates/anatomy-tests/.tmp-anatomy/
+
+# Scratch tree rebuilt by roles-tests/tests.pl on every run (same reason as
+# .tmp-anatomy above: it is a copy, and a committed copy is a second truth).
+gates/roles-tests/.tmp-roles/

@@ -61,6 +61,21 @@ prose-page — **a page with headings and ZERO roles is prose by definition.**
 **Eleven of the fourteen have a mould**, with its "when NOT to use this" and its behaviour at
 390 px. **They get opened before anything is written** — it is a step, not a suggestion.
 
+> **This table is also `gates/roles.tsv`**, the same way §2 is also `gates/anatomy.tsv`. Not a second
+> source: `roles.pl --gate` compares them row by row, by name and by default primitive, and the
+> "eleven of the fourteen" above is **derived** from the data — it used to be written by hand here
+> and again in 10 §6, so it could go stale in two places at once.
+>
+> Crossed with §2 it produces **one reference sheet per page type**, generated:
+> `blueprint/moulds/types/<type>.html`. Open the one for the type you are building — it lists the
+> roles in order, the mould for each, and that mould's own "when / when not". See
+> [`10-layout-vocabulary.md §6.1`](10-layout-vocabulary.md) for why a *generated* sheet is allowed
+> where a hand-written composition table was deleted.
+>
+> ⚠️ `evidence` and `context` are in this vocabulary and **in no anatomy**: nothing requires them
+> today. Marked `SOLO-VOCABULARIO` in `roles.tsv` rather than quietly dropped — adding a role to an
+> anatomy changes what every site must carry, and that decision belongs in §2.
+
 > **Three roles have no mould yet, and all three are mandatory in some anatomy** — `siblings`
 > (required in 5 of the 11), `map` (city and contact) and `form` (contact). They exist in
 > production already, unextracted. They are registered here **before** being extracted, for the
