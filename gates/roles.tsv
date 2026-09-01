@@ -1,0 +1,44 @@
+# =============================================================================
+#  roles.tsv — EL VOCABULARIO DE ROLES. UNO, y este.
+# =============================================================================
+#  Fuente humana: 09-page-types.md §1 «The role vocabulary». Este fichero es esa
+#  misma tabla en forma legible por un programa, igual que `anatomy.tsv` lo es
+#  de §2. No es una segunda fuente: `roles.pl --gate` la compara fila a fila.
+#
+#  🔴 POR QUE EXISTE (1-sep-2026)
+#  Habia DOS vocabularios de roles sin nada que los atara:
+#    · las CLAVES de `anatomy.tsv`, en castellano (`prueba`, `oferta`, `cierre`)
+#    · los NOMBRES de 09 §1, en ingles (`proof`, `offer`, `closing`)
+#  `anatomy.pl --gate` los reconcilia CONTANDO marcas REQ, no comparando
+#  nombres, asi que renombrar un rol en cualquiera de los dos lados no lo
+#  detectaba nadie: el recuento seguia cuadrando. Contar es mas debil que
+#  comparar, y aqui se veia.
+#
+#  Y faltaba lo que hacia falta para poder generar una plantilla por tipo: el
+#  mapa ROL -> MOLDE en forma de datos. Cruzado con `anatomy.tsv` (tipo ->
+#  roles) determina la composicion entera de cada tipo, asi que la plantilla se
+#  DERIVA y no puede divergir. Es lo que permite dar plantillas de referencia
+#  sin volver a la segunda tabla escrita a mano que 10 §6 borro por divergir.
+#
+#  ⚠️ TRES ROLES NO TIENEN MOLDE, y estan aqui con la columna vacia A PROPOSITO.
+#  Un hueco declarado se cuenta; uno callado se olvida. La cifra «11 de 14» que
+#  publican 09 §1 y 10 §6 se DERIVA de este fichero, ya no se escribe a mano.
+#  Un rol sin molde se maqueta a mano: no se salta.
+#
+#  FORMATO  clave | nombre en 09 §1 | primitiva por defecto | molde(s) | el trabajo que hace
+#  Varios moldes van separados por espacio: el rol acepta cualquiera de ellos.
+# =============================================================================
+hero|hero|hero|01-hero.html|Situa, promete y ofrece la primera accion
+prueba|proof|data band|06-data-band.html|Da un motivo para seguir leyendo: cifras, logos, anos, volumen
+oferta|offer|feature grid o alternating pair|03-feature-grid.html 02-alternating-pair.html|Que es esto exactamente y que incluye
+calificacion|qualification|checklist|07-checklist.html|Para quien es y para quien NO. Filtra, y eso es una funcion
+proceso|process|numbered steps|05-numbered-steps.html|Que pasa despues de hacer clic
+catalogo|catalogue|feature grid|03-feature-grid.html|Los hijos de este hub, con su etiqueta y su estado
+evidencia|evidence|alternating pair|02-alternating-pair.html|Casos, testimonios, capturas, antes/despues|SOLO-VOCABULARIO: ninguna anatomia de 09 §2 lo pide hoy. Meterlo en una cambia lo que TODOS los sitios estan obligados a llevar: decision de 09 §2, no de un gate.
+alternativas|alternatives|comparison table|04-comparison-table.html|Que mas existe y por que esto
+objeciones|objections|FAQ accordion|08-faq-accordion.html|Lo que frena la decision, contestado
+hermanos|siblings|SIN MOLDE||Enlaces laterales dentro del mismo cluster
+contexto|context|alternating pair|02-alternating-pair.html|Quien hay detras. Autoridad, no biografia|SOLO-VOCABULARIO: idem evidencia. Ojo, no es lo mismo que `prueba`: prueba son cifras, evidencia son casos, contexto es quien hay detras.
+mapa|map|SIN MOLDE||Donde, que zonas cubre, como llegar
+formulario|form|SIN MOLDE||El formulario y solo el formulario
+cierre|closing|closing CTA|11-closing-cta.html|La ultima llamada. Nunca es opcional

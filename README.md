@@ -62,7 +62,7 @@ paths/            Four entry points. Start here, not in blueprint/.
 
 blueprint/        The method. 18 reference documents — consulted, not read end to end.
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
-gates/            The executable half. 37 programs and 28 test batteries.
+gates/            The executable half. 35 programs and 29 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.
 docs/             The trap log: 81 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.

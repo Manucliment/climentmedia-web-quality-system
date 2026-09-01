@@ -1,8 +1,16 @@
 # The gates
 
-37 programs and 28 test batteries. This file is the index: what each program is for,
+35 programs and 29 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
+
+> Both figures are **derivable, and the recipe is here** so the next person can re-derive
+> them instead of trusting the sentence above. Programs:
+> `find gates -name '*-tests' -prune -o \( -name '*.pl' -o -name '*.js' -o -name '*.sh' \) -type f -print | wc -l`.
+> Batteries: the rows of `BANCOS` in `run-all.sh`.
+> It said **37 and 28** until 2026-09-01, and 37 matched no definition anybody could
+> reconstruct — 35 counting `run-all.sh` itself, 34 without it. A count written by hand
+> next to the thing it counts does not stay true; it just stops being checked.
 
 Nothing here is a linter. Every one of these was written after something went wrong on a
 real site, and each carries the case that produced it in its own header comment.
@@ -24,7 +32,7 @@ machine the fast run is **630 cases green, 0 red**, with the deploy-history bank
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **761 cases green, 0 red** — **759** on a clean install — with **six** banks
+reads **775 cases green, 0 red** — **773** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -77,11 +85,11 @@ $ bash gates/run-all.sh --fast
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  761 casos en verde · 0 en rojo
+  775 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
-> **Why the total moved from 736 to 761 on 2026-09-01 without 25 new tests being written.**
+> **Why the total moved from 736 to 775 on 2026-09-01 without 39 new tests being written.**
 > Fifteen of them are new (the metadata checks below). The other ten were being **thrown
 > away**: the runner did `continue` the moment a bank returned 3, without reading its count,
 > so a partially-measurable bank contributed **zero** greens. The same bank *failing* returns
@@ -155,6 +163,7 @@ whose verdict came from measuring a different object.
 | `mobile-gate.js` | Action above the fold, and calls to action nothing covers. |
 | `measure-screens.js` | Density: how much page per screen, measured against the moulds. |
 | `anatomy.pl` | One table of page anatomies, three consumers, and they must agree. |
+| `roles.pl` | The role vocabulary (`roles.tsv` = 09 §1), and it generates one reference sheet per page type into `blueprint/moulds/types/`. `--gate` re-derives all thirteen and fails on any difference, so a sheet edited by hand does not survive a battery. |
 | `fold-page-standard.js` | Folds the page standard into the rules the gates read. |
 | `blocks.pl` | The layout primitives a page is actually built from. |
 | `measure-contrast-on-photo.py` | Contrast of text sitting on an image, which no DOM query can answer. |

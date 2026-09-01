@@ -105,7 +105,13 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   cat <your-design-doc>            # what is ugly here, and why
   cat <your-component-index>       # every primitive and mould you already own
   ls  blueprint/moulds/            # the ones shipped with this system
+  ls  blueprint/moulds/types/      # one reference sheet per page type -> START HERE
   ```
+- **Open `blueprint/moulds/types/<type>.html` for the type you are about to build**, before the
+  folder listing above. It is generated from the anatomy and the role vocabulary, so it already
+  answers "which blocks does *this* page need, in what order, with which mould, and when is that
+  mould the wrong choice". The bare `ls` above answers none of those — it hands you nineteen files
+  and hopes. That is exactly the failure described in the next bullet, and this is the fix for it.
 - **The design document goes FIRST, and it is where "what is ugly here" is written.**
   Measured: it appeared twice in the entire system, both times inside another document and
   only to note that its header was out of date. The word for the house's main aesthetic
