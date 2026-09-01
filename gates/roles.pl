@@ -165,8 +165,15 @@ sub gate {
         next unless defined $txt;
         while ($txt =~ /(\w+|\d+)\s+of\s+the\s+(\w+|\d+)\s+have a mould/gi) {
             my ($d, $t) = (num($1), num($2));
-            mal("E · $donde dice «$1 of the $2 have a mould» y los datos dan $con de $tot")
-                unless defined $d && defined $t && $d == $con && $t == $tot;
+            if (!defined $d || !defined $t) {
+                # NO MEDIDO, no «esta mal»: decirlo distinto es lo que mando a
+                # alguien a arreglar un documento que era correcto.
+                mal("E · $donde escribe «$1 of the $2 have a mould» y NO SE LEER esos numeros: "
+                    . "amplia la tabla de num() en vez de tocar el documento");
+            } else {
+                mal("E · $donde dice «$1 of the $2 have a mould» y los datos dan $con de $tot")
+                    unless $d == $con && $t == $tot;
+            }
         }
         while ($txt =~ /Of the \*\*(\w+|\d+) roles\*\*, \*\*(\w+|\d+) have a mould/gi) {
             my ($t, $d) = (num($1), num($2));
@@ -200,6 +207,25 @@ sub gate {
         }
     } else { mal("G · no puedo abrir $MOLDES") }
 
+    # H · Y AL REVES: ninguna plantilla sin tipo.
+    #     🔴 Lo encontro el rename de `quiz` a `landing`, el 1-sep-2026: quedaron
+    #     14 plantillas para 13 tipos y este gate paso, porque F solo pregunta
+    #     «¿tiene plantilla cada tipo?» y nunca «¿sobra alguna?».
+    #     Una plantilla huerfana no es basura inofensiva: es una hoja de
+    #     referencia que ensena una anatomia RETIRADA, y quien la abra construira
+    #     la pagina de ayer con la bendicion de un fichero generado.
+    #     Es la misma comprobacion de un solo sentido que el resto del dia.
+    if (opendir(my $dh, $DEST)) {
+        my %valido = map { $_->[0] => 1 } @TIPOS;
+        for my $f (sort grep { /\.html$/ } readdir $dh) {
+            (my $tipo = $f) =~ s/\.html$//;
+            mal("H · sobra la plantilla `$f`: no hay ningun tipo `$tipo` en anatomy.tsv. "
+                . "Corre --plantillas, que ahora las borra")
+                unless $valido{$tipo};
+        }
+        closedir $dh;
+    }
+
     # F · las plantillas del disco tienen que ser las que saldrian hoy.
     for my $t (@TIPOS) {
         my $tipo = $t->[0];
@@ -219,11 +245,20 @@ sub gate {
            $tot, $con, $tot - $con, scalar(@TIPOS);
     return 0;
 }
+# 🔴 ESTA LISTA LLEGABA HASTA `fourteen` Y SE ROMPIO EL MISMO DIA. Al pasar el
+#    vocabulario de 14 a 15 roles, el documento decia «Twelve of the fifteen»
+#    -que era CORRECTO- y el gate lo reportaba como discrepancia, porque no sabia
+#    leer `fifteen` y `undef` caia en la rama de «no coinciden».
+#    El defecto no es que faltara una palabra: es que **no saber leer un numero
+#    se estaba reportando como haberlo medido y estar mal**. Son las dos cosas
+#    que este repositorio separa en todas partes menos aqui.
 sub num {
     my ($x) = @_;
     return $x if $x =~ /^\d+$/;
     my %n = (one=>1,two=>2,three=>3,four=>4,five=>5,six=>6,seven=>7,eight=>8,
-             nine=>9,ten=>10,eleven=>11,twelve=>12,thirteen=>13,fourteen=>14);
+             nine=>9,ten=>10,eleven=>11,twelve=>12,thirteen=>13,fourteen=>14,
+             fifteen=>15,sixteen=>16,seventeen=>17,eighteen=>18,nineteen=>19,
+             twenty=>20);
     return $n{lc $x};
 }
 
@@ -321,11 +356,33 @@ sub plantilla {
         }
     }
     $h .= "</ol>\n";
-    $h .= "<h2>Las dos constantes, y la regla de variedad</h2>\n";
-    $h .= "<p>Toda pagina empieza por <code>01-hero.html</code> y termina por "
-        . "<code>11-closing-cta.html</code>: eso es lo que garantiza las dos llamadas a la "
-        . "accion que exige el gate de densidad. Y <strong>minimo 4 primitivas distintas por "
-        . "pagina, maximo una rejilla de tarjetas</strong> (10 §2, regla 3).</p>\n";
+    # 🔴 ESTE PIE ERA FIJO PARA TODOS LOS TIPOS Y CONTRADECIA A LA MITAD DE
+    #    ELLOS. Prometia «toda pagina termina por closing-cta» y «minimo 4
+    #    primitivas» al pie de la hoja de `landing`, que existe precisamente
+    #    para no llevar ninguna de las dos cosas. Una hoja generada que se
+    #    contradice a si misma es peor que no tenerla: la parte de arriba la
+    #    calcula el programa y la de abajo la escribio alguien hace meses, y las
+    #    dos parecen igual de autorizadas. Ahora sale de los roles del tipo.
+    my $tiene_cierre = grep { $_ eq 'cierre' } @obl, @cond;
+    $h .= "<h2>Las constantes, y la regla de variedad</h2>\n";
+    if ($tiene_cierre) {
+        $h .= "<p>Esta pagina empieza por <code>01-hero.html</code> y termina por "
+            . "<code>11-closing-cta.html</code>: eso es lo que garantiza las dos llamadas a la "
+            . "accion que exige el gate de densidad. Y <strong>minimo 4 primitivas distintas por "
+            . "pagina, maximo una rejilla de tarjetas</strong> (10 §2, regla 3).</p>\n";
+    } else {
+        $h .= "<p><strong>Este tipo NO lleva cierre, y no es un olvido.</strong> La regla general "
+            . "de 10 §6 —toda pagina empieza por <code>01-hero.html</code> y termina por "
+            . "<code>11-closing-cta.html</code>— existe para garantizar dos llamadas a la accion "
+            . "en una pagina que se RECORRE. Esta no se recorre: "
+            # Los parentesis del grep NO son estilo: sin ellos el ternario se ata
+            # a `@cond` en vez de al resultado, y en la hoja salio un «1» suelto
+            # a mitad de frase. Perl no se queja: es una lista valida.
+            . ((grep { $_ eq 'recurso' } (@obl, @cond))
+               ? "el recurso ES la llamada, y un segundo CTA debajo compite con el unico que importa."
+               : "no tiene llamadas a la accion a proposito.")
+            . " Tampoco se le exigen 4 primitivas: se le exigen las que tiene.</p>\n";
+    }
     $h .= "<p class=\"meta\">Los roles que no salen aqui no se anaden porque quepan: "
         . "se anaden cambiando la anatomia en 09 §2 y gates/anatomy.tsv, que es donde vive "
         . "esa decision.</p>\n";
@@ -336,12 +393,27 @@ sub plantilla {
 sub generar {
     make_path($DEST) unless -d $DEST;
     my $n = 0;
+    my %valido;
     for my $t (@TIPOS) {
         my $tipo = $t->[0];
+        $valido{$tipo} = 1;
         open my $o, '>:raw', "$DEST/$tipo.html" or die "no puedo escribir $tipo: $!\n";
         print $o plantilla($t); close $o; $n++;
     }
-    print "escritas $n plantillas en blueprint/moulds/types/\n";
+    # Regenerar tiene que BORRAR lo que ya no toca, no solo reescribir lo que si.
+    # Al renombrar `quiz` a `landing` quedo `quiz.html` en disco: una hoja de
+    # referencia de una anatomia retirada, con toda la pinta de estar viva.
+    my $b = 0;
+    if (opendir(my $dh, $DEST)) {
+        for my $f (grep { /\.html$/ } readdir $dh) {
+            (my $tipo = $f) =~ s/\.html$//;
+            next if $valido{$tipo};
+            unlink "$DEST/$f" and $b++;
+        }
+        closedir $dh;
+    }
+    print "escritas $n plantillas en blueprint/moulds/types/"
+        . ($b ? " · borradas $b huerfanas" : "") . "\n";
     return 0;
 }
 

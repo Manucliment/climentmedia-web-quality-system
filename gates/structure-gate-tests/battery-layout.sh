@@ -3,7 +3,12 @@
 #  battery-layout.sh — todo lo que hay que volver a correr al tocar un molde
 # =============================================================================
 #  1. chk-collisions  · ningun molde pisa a otro ni al chasis  (+ sus 6 negativos)
-#  2. measure-contrast · los 19 moldes contra el minimo AA      (+ su negativo)
+#  2. measure-contrast · TODOS los moldes contra el minimo AA   (+ su negativo)
+#     No lleva numero a proposito: `measure-contrast.sh` los enumera con un glob
+#     sobre `blueprint/moulds/[0-9]*.html`, asi que un molde nuevo entra solo.
+#     Aqui ponia «los 19» y el dia que entro el 20 se quedo desfasado sin que
+#     nada fallara — un recuento escrito al lado de un glob no puede estar bien
+#     mas que por casualidad.
 #  3. anchos          · las 7 composiciones a 1280 y a 390 REALES
 #  4. run-gate        · la home compuesta, control positivo de structure-gate.js
 #

@@ -118,7 +118,22 @@ const PERFIL = {
   //    `minEnlaces:3`, o sea TRES enlaces de cuerpo que sacan de la unica pagina
   //    cuyo trabajo es que no te vayas. `minEnlaces:0` es lo mismo que ya hace
   //    `contacto`, y por la misma razon.
-  quiz:        { estructura:true,  minPrim:3, minEnlaces:0, cierre:true,  hero:true,  lectura:false },
+  //    🔴 1-sep-2026 · `quiz` pasa a llamarse `landing`, y baja de 3 primitivas
+  //    a 2 y de `cierre:true` a `cierre:false`. El tipo entero son tres cosas:
+  //    H1, el porque, y el recurso (quiz, video, formulario o descarga).
+  //    · `minPrim:2` porque eso es EXACTAMENTE lo que hay. Pedir 3 obliga a
+  //      inventar una seccion, que es el defecto que este tipo existe para
+  //      evitar.
+  //    · `cierre:false` porque en una landing EL RECURSO ES LA LLAMADA. Un
+  //      segundo CTA debajo compite con el unico que importa. Medido en las
+  //      tres referencias del 1-sep: la accion esta sobre el pliegue y no se
+  //      repite hasta miles de pixeles mas abajo, donde solo llega quien no ha
+  //      decidido.
+  //    ⚠️ Esto choca con la regla de 10 §6 «toda pagina empieza por hero y
+  //    termina por closing-cta», y el choque es a proposito y esta declarado
+  //    alli: esa regla garantiza >=2 CTAs en una pagina que se recorre. Una
+  //    landing no se recorre.
+  landing:     { estructura:true,  minPrim:2, minEnlaces:0, cierre:false, hero:true,  lectura:false },
   gracias:     { estructura:false, minPrim:2, minEnlaces:0, cierre:true,  hero:false, lectura:false },
   legal:       { estructura:false, minPrim:0, minEnlaces:0, cierre:false, hero:false, lectura:true  },
   '404':       { estructura:false, minPrim:0, minEnlaces:3, cierre:false, hero:false, lectura:false },
@@ -722,11 +737,11 @@ const ANATOMIA = {
   precios:      ['hero', 'oferta', 'prueba', 'proceso', 'objeciones', 'cierre'],
   contacto:     ['hero', 'prueba'],
   gracias:      ['hero', 'proceso', 'cierre'],
-  quiz:         ['hero', 'formulario', 'oferta', 'calificacion', 'proceso', 'objeciones', 'cierre'],
+  landing:      ['hero', 'recurso'],
 };
 /* Sin anatomia, a proposito: 09 §2.11 */
 const ANATOMIA_SIN = ['legal', '404'];
-const ANATOMIA_ALIAS = { producto: 'ficha' };
+const ANATOMIA_ALIAS = { producto: 'ficha', quiz: 'landing' };
 /* >>> FIN-ANATOMIA-GENERADA <<< */
 const rolesDeclarados = bloques.map(b => b.rol).filter(Boolean);
 const TIPO_ANAT = ANATOMIA_ALIAS[TIPO] || TIPO;

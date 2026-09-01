@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PLANTILLA — contacto</title>
+<title>PLANTILLA — landing</title>
 <!--
   GENERADO POR gates/roles.pl --plantillas. NO SE EDITA A MANO.
   Lo que se edita es la FUENTE: el orden de los roles esta en
@@ -37,9 +37,9 @@
 </style>
 </head>
 <body>
-<h1>Plantilla de referencia — <code>contacto</code></h1>
-<p>Anatomia <strong>09 §2.9</strong>. 2 rol(es) obligatorio(s), 2 condicional(es).</p>
-<p class="meta">formulario OBL SI hay formulario · mapa OBL SI hay local: por eso 4 marcas y 2 roles exigidos</p>
+<h1>Plantilla de referencia — <code>landing</code></h1>
+<p>Anatomia <strong>09 §2.12</strong>. 2 rol(es) obligatorio(s).</p>
+<p class="meta">H1 alineado al mensaje + el porque + el recurso, y nada mas. Sustituye al tipo quiz del 1-sep por la manana, que exigia 7 roles leidos de nuestra propia landing: eso mide nuestra costumbre, no el tipo. Alias aceptado: quiz</p>
 <ol>
 <li class="slot">
   <div><span class="n">01</span> <span class="rol">hero</span> <span class="meta">(hero · obligatorio)</span></div>
@@ -49,25 +49,15 @@
   <p class="meta">CUANDO NO: paginas interiores. Verificado en Site A a Domicile: la pastilla era SOLO de la home; ponerla en las 17 invento un elemento que el cliente no habia aprobado.</p>
 </li>
 <li class="slot">
-  <div><span class="n">02</span> <span class="rol">prueba</span> <span class="meta">(proof · obligatorio)</span></div>
-  <p class="job">Da un motivo para seguir leyendo: cifras, logos, anos, volumen</p>
-  <p class="meta">Molde: <a href="../06-data-band.html"><code>06-data-band.html</code></a></p>
-  <p class="meta">CUANDO: entre dos secciones densas. Despues del hero. Antes del cierre.</p>
-  <p class="meta">CUANDO NO: - Si las cifras no son verificables. Una banda de datos inventados es la forma mas rapida de perder credibilidad, porque son lo unico que se lee. - Si solo hay dos cifras: eso va en el hero como `.prueba`. - Dos bandas en la misma pagina...</p>
-</li>
-<li class="slot slot--cond slot--mano">
-  <div><span class="n">03</span> <span class="rol">formulario</span> <span class="meta">(form · condicional)</span></div>
-  <p class="job">El formulario y solo el formulario</p>
-  <p class="meta"><strong>SIN MOLDE.</strong> Se maqueta a mano; no se salta. Deuda declarada en 10 §6.</p>
-</li>
-<li class="slot slot--cond slot--mano">
-  <div><span class="n">04</span> <span class="rol">mapa</span> <span class="meta">(map · condicional)</span></div>
-  <p class="job">Donde, que zonas cubre, como llegar</p>
-  <p class="meta"><strong>SIN MOLDE.</strong> Se maqueta a mano; no se salta. Deuda declarada en 10 §6.</p>
+  <div><span class="n">02</span> <span class="rol">recurso</span> <span class="meta">(resource · obligatorio)</span></div>
+  <p class="job">El recurso que la landing entrega: quiz, video, formulario o descarga. NO es una seccion de la pagina: ES la pagina</p>
+  <p class="meta">Molde: <a href="../20-choice-cards.html"><code>20-choice-cards.html</code></a></p>
+  <p class="meta">CUANDO: la primera pregunta de una landing de captacion, cuando las respuestas son 2 o 3 y se distinguen mejor viendolas que leyendolas.</p>
+  <p class="meta">CUANDO NO: - Con mas de 3 opciones: a 375 px la tercera tarjeta ya baja del pliegue, y el motivo entero de esta primitiva es que la eleccion se vea sin scroll. Con 4 o mas -&gt; `lista-comprobacion` o un formulario normal. - Si las opciones NO se dist...</p>
 </li>
 </ol>
 <h2>Las constantes, y la regla de variedad</h2>
-<p><strong>Este tipo NO lleva cierre, y no es un olvido.</strong> La regla general de 10 §6 —toda pagina empieza por <code>01-hero.html</code> y termina por <code>11-closing-cta.html</code>— existe para garantizar dos llamadas a la accion en una pagina que se RECORRE. Esta no se recorre: no tiene llamadas a la accion a proposito. Tampoco se le exigen 4 primitivas: se le exigen las que tiene.</p>
+<p><strong>Este tipo NO lleva cierre, y no es un olvido.</strong> La regla general de 10 §6 —toda pagina empieza por <code>01-hero.html</code> y termina por <code>11-closing-cta.html</code>— existe para garantizar dos llamadas a la accion en una pagina que se RECORRE. Esta no se recorre: el recurso ES la llamada, y un segundo CTA debajo compite con el unico que importa. Tampoco se le exigen 4 primitivas: se le exigen las que tiene.</p>
 <p class="meta">Los roles que no salen aqui no se anaden porque quepan: se anaden cambiando la anatomia en 09 §2 y gates/anatomy.tsv, que es donde vive esa decision.</p>
 </body>
 </html>

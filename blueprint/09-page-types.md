@@ -56,9 +56,10 @@ prose-page — **a page with headings and ZERO roles is prose by definition.**
 | `context` | Who is behind it. Authority, not biography | alternating pair |
 | `map` | Where, areas covered, how to get there | **no mould yet** |
 | `form` | The form and only the form | **no mould yet** |
+| `resource` | The quiz, video, form or download a landing hands over. **It is not a section of the page: it is the page** | choice cards |
 | `closing` | The last call. It is never optional | closing CTA |
 
-**Eleven of the fourteen have a mould**, with its "when NOT to use this" and its behaviour at
+**Twelve of the fifteen have a mould**, with its "when NOT to use this" and its behaviour at
 390 px. **They get opened before anything is written** — it is a step, not a suggestion.
 
 > **This table is also `gates/roles.tsv`**, the same way §2 is also `gates/anatomy.tsv`. Not a second
@@ -352,41 +353,74 @@ measurement stops without anything failing.**
 - **404:** a single block — what happened, a search box if one exists, and **3–5 links to the most
   requested destinations**, not to the home page. `noindex`.
 
-### 2.12 · Lead magnet / quiz landing
+### 2.12 · Landing — the whole type is three things
 
-**Its job is a trade: a specific thing in exchange for contact details.** That is what makes it a
-type of its own and not a `service` page — and until 28-aug-2026 it did not exist here, so the one
-we run ourselves was declaring `data-tipo="service"`. Under that type the gate never asks for the
-form or the qualification, which are the two sections this page lives or dies by.
-
-**This anatomy is derived, not invented:** it is the section order our own lead-magnet landing
-already ships, read off the page.
+**A landing is not a short page: it is a page with one job and no second one.** The type carries an
+H1 that says the message, one line saying why, and **the resource** — the quiz, the video, the form,
+the download. Everything else that normally goes on a landing is what the visitor scrolls past on
+their way to deciding, and it is where the page starts arguing with itself.
 
 | # | Role | | If it is missing |
 |---|---|---|---|
-| 1 | `hero` = the promise **and** the action | REQ | A landing that has to be scrolled to find out what it gives you has already lost the half that arrived from an ad |
-| 2 | `form` = the capture, above the fold | REQ | **The form is not a section of this page, it is the page.** Same rule as the table on a comparison page |
-| 3 | `offer` = exactly what lands on their screen | REQ | Asking for an email for something vague is how a list fills with people who never open it |
-| 4 | `qualification` = who it is for **and who it is not** | REQ | The section that stops junk leads. On a lead magnet it is worth more than any persuasion: a lead that does not fit costs time on both sides |
-| 5 | `process` = what happens after submitting, and when | REQ | "Do I get it now or on Monday?" unanswered is the most expensive doubt on the page, because it is felt *after* giving the address |
-| 6 | `objections` = what you do with their data | REQ | **The** objection of a lead magnet. Not answering it does not produce doubt, it produces a fake address |
-| 7 | `proof` | OPT | — |
-| 8 | `context` | OPT — if the offer is signed by a person | — |
-| 9 | `siblings` | OPT | — |
-| 10 | `closing` = repeat the action | REQ | On mobile the form is several screens up |
+| 1 | `hero` = the H1 **and** the one line of why | REQ | A landing you have to scroll to find out what it gives you has already lost the half that arrived from an ad |
+| 2 | `resource` = the quiz, the video, the form, the download | REQ | **The resource is not a section of this page, it is the page.** Same rule as the table on a comparison page |
+| 3 | `proof` | OPT — a logo band or one quote, no more | — |
+| 4 | `context` | OPT — if the offer is signed by a person | — |
 
-**FORBIDDEN:** more fields than the magnet is worth · a hero that does not say what you get ·
-`data-tipo="service"`, which is what hides the two required sections · **and promising a delivery
-the receiver does not actually make** — that last one is not a style rule, it is measurable, and the
+**FORBIDDEN:** a second call to action competing with the resource · a hero that does not say what
+you get · sections added because a landing "usually has them" · **and promising a delivery the
+receiver does not actually make** — that one is not a style rule, it is measurable, and the
 measurement lens already asks it.
 
-> ⚠️ **The trap this type exists to close.** A lead-magnet landing built as a `service` page passes
-> every gate: it has hero, offer, process, objections, siblings, closing. Nothing asks *"where is
-> the form?"* or *"who is this not for?"*, because on a service page neither is required. **The
-> page is well-formed and cannot do its job** — the same failure as a comparison page with no
-> table, which is why that one got its rule first.
+⚠️ **When the resource is a form that takes personal data, the consent line is part of the form, not
+an extra section.** Dropping `objections` from this anatomy drops a persuasion section; it does not
+drop a legal duty. The reference measured below puts it inside the form, as a labelled checkbox, and
+that is the right place for it.
 
----
+> 🔴 **THIS SECTION SAID SOMETHING ELSE ON THE MORNING OF 2026-09-01, and the correction is worth
+> more than the rule.** It required **seven** roles: hero, form, offer, qualification, process,
+> objections and closing. That anatomy was derived honestly — read off the lead-magnet landing we
+> already run — and that is exactly what was wrong with it. **Reading a type off one example we
+> built ourselves does not measure the type; it measures our own habit.** A maximal page produced a
+> maximal anatomy, and the anatomy would then have required every future landing to be as long as
+> the one page it was copied from.
+
+#### What three commercial funnel templates actually do — measured, 2026-09-01
+
+Three references, measured in the browser at 1280×720 and at 375×812, not read off a screenshot:
+
+| | quiz landing | VSL landing | lead-magnet landing |
+|---|---|---|---|
+| Above the fold | eyebrow 16px → headline 56px → why 20px → **two image choice cards** | headline 56px → why 20px → **video 896×504** | avatar + name 14px → **headline that is a customer quote** 48px → why 20px → form (2 fields) |
+| Page height | 8671px | 4632px | 4498px |
+| DOM nodes | 1581 | 800 | 808 |
+
+**All three put the same three things above the fold and nothing else**, and on a 375px screen the
+quiz's two cards still land entirely above it (156×174 each, top 486, bottom 660, fold 812). That is
+the whole rule, and it is the same rule on both widths. What follows the fold is 4000–8000px that
+only somebody who has *not* decided will ever see — and the page was built to make them decide in
+the first screen.
+
+**Three things worth taking:**
+
+1. **The type scale**, measured off the elements: eyebrow 14–16 · headline 40 (mobile) → 56 (desktop)
+   · why 20 · choice label 24 · body 16/24. The headline is the only thing that moves with width.
+2. **The choice as two image cards, not a radio list.** Extracted as
+   [`moulds/20-choice-cards.html`](moulds/20-choice-cards.html), with its markup rebuilt — see below.
+3. **The lead-magnet headline is a customer quote**, with the attributed face above it. The proof
+   *is* the headline instead of sitting in a band underneath.
+
+**And the reason none of the markup was copied.** All three ship **zero `<h1>`** — measured,
+`h1count: 0` and `role="heading"` 0 on each. Every headline is a `<strong>` at 56px, so to a screen
+reader and to an indexer those pages have no headings at all. The quiz's choice is a
+`<div role="button" tabindex="0">`, which works but has to reimplement Enter and Space by hand; the
+lead-magnet's two inputs have **no `<label>` and no `autocomplete`** — the same defect `A11Y-09`
+catches on our own sites. They are conversion machines with no document underneath.
+
+> 🔑 **The lesson that generalises: take the composition, never the markup.** A reference is
+> evidence about what to put where and in what order. It is not evidence that the HTML underneath it
+> is sound, and these three are the clearest case of that split this system has measured — excellent
+> at the first question, indefensible on the second.
 
 ## 3 · The hard rule for the home: a hero that converts, not one that links
 
