@@ -132,8 +132,24 @@ while IFS='|' read -r nombre orden lento cubre; do
   # y existe por el mismo motivo: mandar a alguien a buscar un defecto que no
   # existe cuesta una tarde. NO se cuenta como fallo, pero SE LISTA al final:
   # un hueco declarado sigue siendo un hueco, y callarlo seria un aprobado.
+  # 🔴 1-sep-2026 · AQUI HABIA UNA INVERSION: un banco que sale 3 se contaba como
+  #    CERO verdes, pero el mismo banco fallando sale 1, cae al bloque de abajo y
+  #    SI se cuentan. Medido el mismo dia sobre `qa-maestro`, que desde hoy mide
+  #    15 casos sin necesitar el sitio congelado:
+  #        todo en verde  -> NO MEDIDO -> aporta  0   (total 736)
+  #        un caso en rojo -> FALLA    -> aporta 14   (total 750)
+  #    O sea que **arreglar el fallo hacia BAJAR el total en 15**. Un recuento
+  #    que premia el rojo no es un recuento: es un incentivo al reves.
+  #    Un banco parcial aporta lo que MIDIO y ademas se sigue listando como no
+  #    medido, que son dos hechos distintos y los dos ciertos.
   if [ "$rc" = 3 ]; then
-    printf "  NO MEDIDO %-17s %s\n" "$nombre" "$cubre"
+    n3_ok="$(printf '%s\n' "$salida"  | grep -oE 'OK +[0-9]+|[0-9]+ +OK|[0-9]+ +PASA' | grep -oE '[0-9]+' | tail -1)"
+    TOT_OK=$((TOT_OK + ${n3_ok:-0}))
+    if [ -n "${n3_ok:-}" ] && [ "${n3_ok:-0}" != 0 ]; then
+      printf "  NO MEDIDO %-17s %s   (%s casos suyos SI medidos)\n" "$nombre" "$cubre" "$n3_ok"
+    else
+      printf "  NO MEDIDO %-17s %s\n" "$nombre" "$cubre"
+    fi
     NO_MEDIDOS="$NO_MEDIDOS $nombre"
     continue
   fi

@@ -21,3 +21,9 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+
+# Scratch tree rebuilt from scratch by anatomy-tests/tests.pl on every run.
+# One file of it slipped into git once (870b401) and has been shipping a stale
+# duplicate of blueprint/09-page-types.md ever since: a second copy of a truth,
+# which is the one thing this repo says never to keep.
+gates/anatomy-tests/.tmp-anatomy/

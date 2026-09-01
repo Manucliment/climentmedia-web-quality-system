@@ -55,8 +55,9 @@ sort allmiss.txt | uniq -c | sort -rn | head -20
 
 | | How it is checked |
 |---|---|
-| A unique `<title>` | `grep -h '<title>' *.html \| sort \| uniq -d` → empty |
-| A unique, self-contained `<meta description>` | same |
+| A unique `<title>`, 15–65 characters | `SEO-01` length, `SEO-02` duplicates |
+| A unique, self-contained `<meta description>`, 50–165 | `SEO-03` present, `SEO-03b` length, `SEO-02b` duplicates |
+| **`<title>`, `<h1>` and description talking about the SAME thing** | `SEO-05`, `SEO-05b` — see below |
 | `<link rel="canonical">` **to itself** | §3 |
 | **Absolute `og:image` + `og:image:alt` + `twitter:image`** | §4 |
 | A real `<html lang>` | `fr`, `es`, `nl-BE`… |
@@ -67,6 +68,55 @@ sort allmiss.txt | uniq -c | sort -rn | head -20
 
 And at site level: `robots.txt`, `sitemap.xml` and `llms.txt`, **all three from the same loop**
 as the pages, with a gate that fails if they diverge.
+
+### 2.1 · Five checks can all pass on a page that contradicts itself
+
+Until 2026-09-01 the metadata checks were five, and every one of them measured a page **on
+its own terms**: is the title the right length, is it unique, is there a description, is it
+the right length, is there a canonical. A page could carry a perfect 58-character title, a
+perfect 140-character description and a single unique `<h1>` — **and have all three talking
+about different things.** It passed all five.
+
+That is not hypothetical. This system's own history records a site that shipped
+`<h1>hero</h1>`: valid HTML, correct length, unique, and nothing looked at it.
+
+Two checks close it, and one of them was an outright asymmetry: **duplicate titles had been
+checked since the beginning and duplicate descriptions never were**, even though the table
+above had been promising unique descriptions the whole time. The first run of `SEO-02b`
+across six real sites found one site with **two descriptions repeated over four documents**
+— and one of the two was another page's promise, copied across.
+
+| | What it asks | Level |
+|---|---|---|
+| `SEO-02b` | do two documents ship the same description? | **FAIL** |
+| `SEO-05` | do the title and the `<h1>` share **at least one** significant word? | AVISO |
+| `SEO-05b` | does the description share one with the title or the `<h1>`? | AVISO |
+
+**The bar is an empty intersection, not a similarity score.** Zero words in common is a
+strong signal; "not very similar" is noise, and a gate that guesses teaches people to walk
+around the door.
+
+**The brand words are measured, not listed.** A word appearing in the title of ≥60% of the
+site's pages is that site's chrome — the brand and the template suffix — and it is discounted
+before comparing. Deriving it from the site avoids a per-client list that would rot the day
+somebody changes the suffix. Below five pages the frequency measures nothing and no filter is
+applied. Without this, a page whose `<h1>` shares only the brand with its title would pass,
+and the check would be useless on any site with a branded title — that is, on almost all of
+them. The test bank pins exactly that case.
+
+**What these two do NOT know**, said plainly so nobody reads more into them: they do not
+compare against what the page says in its **body**, only the three surfaces against each
+other. They compare bytes, so `auditoria` and `auditoría` are different words to them.
+And they treat two words as the same if they share their first four characters, which is a
+deliberately crude stemmer whose error direction is the cheap one — it can only turn a red
+into a green, never the other way. It exists because `ships` and `shipping` were being
+reported as a contradiction on a page that was perfectly written.
+
+🟡 **Both start as AVISO, and that is the house norm, not timidity.** A gate that blocks on
+its first false positive teaches everyone to bypass the door, which costs more than the
+defect it catches. They are wired so they are **seen**, watched over a cycle on real sites,
+and only then does the bar go up. `SEO-02b` is a FAIL from day one because duplication is a
+fact, not a judgement.
 
 ---
 

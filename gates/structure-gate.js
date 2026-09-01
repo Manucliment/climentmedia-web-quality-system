@@ -109,6 +109,16 @@ const PERFIL = {
   comparativa: { estructura:true,  minPrim:4, minEnlaces:3, cierre:true,  hero:false },
   precios:     { estructura:true,  minPrim:4, minEnlaces:2, cierre:true,  hero:true  },
   contacto:    { estructura:true,  minPrim:2, minEnlaces:0, cierre:false, hero:false, lectura:false },
+  // 🔴 28-ago-2026 · `quiz` (lead magnet). Y esta linea existe por lo que pasa SIN
+  //    ella: esta tabla NO se genera desde anatomy.tsv -- solo el bloque ANATOMIA
+  //    de mas abajo-, y termina en un `|| {...}` que da el perfil de una pagina de
+  //    SERVICIO a cualquier tipo que no este escrito aqui. Anadir un tipo al TSV
+  //    lo deja, en silencio, midiendose contra un perfil que no es el suyo.
+  //    Para una landing de captacion ese default es activamente malo: le exigiria
+  //    `minEnlaces:3`, o sea TRES enlaces de cuerpo que sacan de la unica pagina
+  //    cuyo trabajo es que no te vayas. `minEnlaces:0` es lo mismo que ya hace
+  //    `contacto`, y por la misma razon.
+  quiz:        { estructura:true,  minPrim:3, minEnlaces:0, cierre:true,  hero:true,  lectura:false },
   gracias:     { estructura:false, minPrim:2, minEnlaces:0, cierre:true,  hero:false, lectura:false },
   legal:       { estructura:false, minPrim:0, minEnlaces:0, cierre:false, hero:false, lectura:true  },
   '404':       { estructura:false, minPrim:0, minEnlaces:3, cierre:false, hero:false, lectura:false },
@@ -712,6 +722,7 @@ const ANATOMIA = {
   precios:      ['hero', 'oferta', 'prueba', 'proceso', 'objeciones', 'cierre'],
   contacto:     ['hero', 'prueba'],
   gracias:      ['hero', 'proceso', 'cierre'],
+  quiz:         ['hero', 'formulario', 'oferta', 'calificacion', 'proceso', 'objeciones', 'cierre'],
 };
 /* Sin anatomia, a proposito: 09 §2.11 */
 const ANATOMIA_SIN = ['legal', '404'];

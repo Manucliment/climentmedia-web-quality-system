@@ -24,7 +24,7 @@ machine the fast run is **630 cases green, 0 red**, with the deploy-history bank
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **736 cases green, 0 red** — **734** on a clean install — with **six** banks
+reads **761 cases green, 0 red** — **759** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -75,9 +75,22 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  736 casos en verde · 0 en rojo
+  NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
+  NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
+  761 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **Why the total moved from 736 to 761 on 2026-09-01 without 25 new tests being written.**
+> Fifteen of them are new (the metadata checks below). The other ten were being **thrown
+> away**: the runner did `continue` the moment a bank returned 3, without reading its count,
+> so a partially-measurable bank contributed **zero** greens. The same bank *failing* returns
+> 1, falls through to the counting block, and its greens **were** counted — measured that day
+> on `qa-master`: all green → 0 counted (total 736); one case red → 14 counted (total 750).
+> **Fixing a failure made the green total drop.** A count that rewards red is not a count.
+> A partial bank now contributes what it measured **and** is still listed as not measured:
+> two different facts, both true. Only `qa-master` (15) and `structure-gate` (10) had
+> anything to contribute; the other four measure nothing at all without their host.
 
 **`NOT MEASURED` is not a pass**, and the runner lists those banks by name in the summary
 precisely so a hole cannot be silent. The exit codes are three-valued throughout:
@@ -325,7 +338,12 @@ excluded.
 The batteries that depend on them do not pretend otherwise:
 
 - `qa-master-tests/tests.sh` exits **3 — NOT MEASURED** when the frozen fixture is absent,
-  naming what it could not cover.
+  naming what it could not cover. It first runs everything that needs **only** its own
+  synthetic fixtures — 15 assertions today — and reports those counts honestly before it
+  bails. Until 2026-09-01 it did not: it bailed on line 98 with `OK 0 · MAL 0`, so on any
+  checkout but ours this bank measured **nothing at all**, including the cases that had no
+  use for a frozen site. If one of those self-contained assertions fails it exits **1**, not
+  3 — a real defect must not come out dressed as a declared gap.
 - `structure-gate-tests/battery.sh` marks the eight affected cases `NOT MEASURED`
   individually, counts them separately, and exits **3** if any were skipped and nothing
   else failed.
@@ -337,7 +355,8 @@ perl gates/qa-master-tests/freeze-fixture.pl <URL> <name>
 ```
 
 Everything else in both batteries is synthetic and ships intact — 92 files in one, 35 in the
-other.
+other. "Ships intact" is about the files; whether they **run** is the paragraph above, and
+for one of the two banks the answer used to be no.
 
 ---
 
