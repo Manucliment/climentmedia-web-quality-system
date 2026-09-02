@@ -57,6 +57,32 @@ for (const r of reglas) {
     if (!TODOS_IDS.has(id)) muertas.push({ id: r.id, ref: id, gate: g });
 }
 
+// --- 3-bis · EL SENTIDO CONTRARIO, que hasta hoy no medía nadie ------------
+//  2-sep-2026. Este indice contestaba «¿la regla nombra un check que existe?» y
+//  nunca «¿este check que se EJECUTA lo reclama alguna regla?». Las dos son la
+//  misma pregunta desde lados opuestos, y solo una tenia respuesta.
+//
+//  Lo que costó verlo: `audit.sh` llevaba meses comprobando `AGENTS.md` en cada
+//  auditoria y el estandar no describia ese fichero en ninguna parte. Un gate
+//  vigilando algo que ninguna regla declara no es rigor: es una opinion con
+//  permiso de bloquear. Y el defecto es INVISIBLE desde el lado que si se
+//  medía, porque la cobertura del 62% cuenta REGLAS con instrumento, no
+//  instrumentos con regla.
+//
+//  ⚠️ Un huerfano NO es automaticamente un error. Muchos son sub-checks de una
+//  regla que si esta (`EST-12b..f` bajo `EST-12`), y a esos les basta con que la
+//  regla nombre al padre. Por eso esto INFORMA y no bloquea: el numero se mira,
+//  se decide caso a caso, y solo entonces se sube el liston.
+const reclamados = new Set();
+for (const r of reglas)
+  for (const id of String(r.gate || '').match(/\b(?:[A-Z][A-Z0-9]{1,5}-[0-9]+[a-z]?|S[0-9]+\.[0-9]+|R[0-9]+)\b/g) || [])
+    reclamados.add(id);
+//  Los `-00` son el marcador de «lente entera NO MEDIDA», no comprobaciones:
+//  contarlos como huerfanos seria inflar el numero con algo que no es un check.
+const huerfanos = [...TODOS_IDS]
+  .filter(id => !/-0(0|x)$/.test(id) && !reclamados.has(id))
+  .sort();
+
 // --- 4 · informe -----------------------------------------------------------
 const pad = (s, n) => String(s).padEnd(n);
 console.log('='.repeat(78));
@@ -98,6 +124,27 @@ console.log('    TECHO ALCANZABLE ........ ' + String(techo).padStart(4) + '   (
 console.log('    Decir 100% seria mentir: el propio estandar marca ' + cuenta(reglas, 'no') + ' reglas como');
 console.log('    no comprobables por maquina. Esas van al bloque B de 08-qa-final.md.');
 console.log();
+
+// La otra mitad de la cobertura. Va SIEMPRE, sin bandera: una cifra que solo se
+// ve pidiendola es una cifra que no ve nadie.
+const totalChecks = [...TODOS_IDS].filter(id => !/-0(0|x)$/.test(id)).length;
+console.log('  Y AL REVES: CHECKS QUE SE EJECUTAN Y NINGUNA REGLA RECLAMA');
+console.log('    checks emitidos ......... ' + String(totalChecks).padStart(4));
+console.log('    sin regla que los pida .. ' + String(huerfanos.length).padStart(4) +
+            '   (' + Math.round(huerfanos.length / totalChecks * 100) + '%)   <- `--huecos` los lista');
+console.log('    El 62% de arriba mide REGLAS con instrumento. Esto mide lo contrario, y');
+console.log('    hasta el 2-sep-2026 no lo medía nadie: por ahi se colo un gate que llevaba');
+console.log('    meses comprobando un fichero que el estandar no describia en ningun sitio.');
+console.log();
+
+if (HUECOS && huerfanos.length) {
+  console.log('  CHECKS SIN REGLA QUE LOS RECLAME (' + huerfanos.length + ')');
+  console.log('    Muchos seran sub-checks de una regla que si existe. Los que no,');
+  console.log('    o se registran en standard-rules.json o sobran.');
+  for (let i = 0; i < huerfanos.length; i += 10)
+    console.log('      ' + huerfanos.slice(i, i + 10).join(' '));
+  console.log();
+}
 
 if (HUECOS) {
   console.log('  LO QUE NO MIDE NADIE Y SI SE PODRIA MEDIR (' + cuenta(sinInstrumento, 'si') + ')');
