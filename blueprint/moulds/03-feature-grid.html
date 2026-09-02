@@ -34,6 +34,37 @@
      un icono con significado, se usa el numero o nada.
    - Poner un enlace por celda cuando no hay pagina detras.
 
+  VARIANTE `--detalle` (revelado al hover) — 2-sep-2026.
+  ORIGEN: una libreria de componentes animados (React + Tailwind + shadcn) de la
+          que ESTO es lo unico que sobrevive al filtro. Ver 19-motion.md seccion 1.
+          El resto de su catalogo son componentes de APP, no de web.
+
+  QUE TRABAJO HACE: manda un detalle de segundo orden -un dato, una condicion,
+  una excepcion- a un plano que solo aparece cuando alguien se interesa por esa
+  celda. Deja la rejilla legible de un barrido y no obliga a elegir entre
+  "cabe" y "se dice".
+
+  CUANDO:
+   - El detalle es SECUNDARIO de verdad: la celda se entiende entera sin el.
+   - Las 3-6 celdas lo tienen. Una sola celda con revelado es un tell.
+
+  CUANDO NO:
+   - 🔴 Si el detalle es el precio, una condicion legal, un plazo o cualquier
+     cosa que decida una compra. Eso no se esconde detras de un gesto.
+   - Si el texto no cabe: el revelado NO es sitio extra, es un segundo plano.
+     Si hay que meter un parrafo, la primitiva es `par-alterno`.
+   - Si la pagina ya tiene otra cosa moviendose en la misma pantalla: el techo
+     es UNA por pantalla (19-motion.md seccion 3).
+
+  QUE LA ROMPE, y las dos primeras son la razon de que su markup se rehiciera:
+   - Meter el detalle SOLO al hover: en tactil no hay hover y ese texto no
+     existe jamas. Aqui va al reves — por defecto es contenido normal, y solo
+     se repliega en `@media (hover:hover) and (pointer:fine)`.
+   - Colgarlo del hover y no del foco: `:focus-within` lo abre con teclado.
+   - Animar `height` o `max-height`: reflow en cada fotograma. Solo `opacity` y
+     `transform`, y el plano va absolute para que la rejilla NO se mueva.
+   - Olvidar la salida de `prefers-reduced-motion`. La comprueba roles.pl check I.
+
   MOVIL (390px): 1 columna. Se quita la altura minima (a una columna no hay nada
   con que alinearse y solo genera huecos), y las cruces de esquina se conservan
   porque no cuestan nada.
@@ -78,6 +109,45 @@
     .m03-cel{border-right:1px solid var(--linea)}
     .m03-cel:nth-child(2n){border-right:1px solid var(--linea)}
     .m03-cel:nth-child(3n){border-right:0}
+  }
+
+  /* ===== VARIANTE --detalle : REVELADO AL HOVER =====================
+     Regla que decide todo el diseno de abajo: EL DETALLE ES CONTENIDO
+     NORMAL, y solo se repliega donde hay un puntero fino. Al reves -
+     esconderlo por defecto y ensenarlo al hover - en tactil no existiria
+     nunca, que es exactamente el defecto que 19-motion.md seccion 3 pone
+     como condicion para poder usar esta idea. */
+  /* NO declara `color`: `.m03-cel p` (0,1,1) le gana a `.m03-det` (0,1,0),
+     asi que ponerlo aqui seria una linea muerta con aspecto de decision.
+     Lo destapo el control negativo del gate de contraste, no leerlo. */
+  .m03-det{margin-top:var(--space-4);padding-top:var(--space-4);
+       border-top:1px dashed var(--linea);
+       font-size:var(--fs-small);line-height:1.5}
+
+  @media (hover:hover) and (pointer:fine){
+    /* Se RESERVA la banda. No se superpone a nada: si tapara el pie, esto
+       pasaria a ser "contenido al hover" y WCAG 1.4.13 exigiria ademas
+       poder descartarlo. Reservando, no tapa, no salta y no hay que
+       inventar un gesto para cerrarlo. */
+    .m03-cel--det{padding-bottom:calc(var(--space-6) + 3.25rem)}
+    .m03-det{position:absolute;left:var(--space-6);right:var(--space-6);
+         bottom:var(--space-6);margin:0;padding-top:var(--space-4);
+         opacity:0;transform:translateY(6px);
+         transition:opacity .15s ease,transform .15s ease}
+    /* :focus-within es lo que lo hace alcanzable con teclado, y por eso
+       la celda de la variante lleva tabindex="0" en el marcado. */
+    .m03-cel--det:hover .m03-det,
+    /* El tercer selector es el estado que FUERZA la sonda de contraste:
+       sin el, este texto se mide replegado y sale 1:1. */
+    .m03-cel--det:focus-within .m03-det,
+    .m03-cel--det.m03-abierto .m03-det{opacity:1;transform:none}
+    .m03-cel--det:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+  }
+
+  /* SALIDA OBLIGATORIA. La comprueba roles.pl check I: todo molde que
+     declare transition/animation/@keyframes tiene que traer la suya. */
+  @media (prefers-reduced-motion:reduce){
+    .m03-det{transition:none;transform:none}
   }
 </style>
 </head>
@@ -159,6 +229,66 @@
         <h3>Sixth capability</h3>
         <p>Six is the maximum. Past that nobody reads them all.</p>
         <p class="m03-cel__pie">A concrete fact or condition</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== VARIANTE --detalle ============================================
+     Las tres celdas la llevan. Una sola celda con revelado es un tell.
+     El detalle esta SIEMPRE en el DOM: lo indexa el buscador y lo lee un
+     lector de pantalla, este replegado o no. -->
+<section class="sec" data-sec="oferta">
+  <div class="sec__in">
+    <h2 class="sec__h">The same grid, with a second plane</h2>
+    <p class="sec__sub">En un movil o una tableta el detalle se lee siempre, debajo del
+       pie. Con rat&oacute;n se repliega y vuelve al pasar por encima o al tabular.</p>
+
+    <div class="m03-rej">
+
+      <!-- ===== CELDA CON DETALLE (patron repetible) =====
+           tabindex="0" NO es decorativo: sin el, :focus-within no dispara
+           nunca y con teclado ese texto seria inalcanzable en un portatil. -->
+      <article class="m03-cel m03-cel--det" tabindex="0" data-medir-estado="m03-abierto">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">01</p>
+        <h3>Name of the capability</h3>
+        <p>What it does, in a sentence or two. The cell reads whole without the plane below.</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
+        <p class="m03-det">The second-order detail: an exception, a limit, a figure that
+           qualifies the line above. Never the price.</p>
+      </article>
+
+      <article class="m03-cel m03-cel--det" tabindex="0" data-medir-estado="m03-abierto">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">02</p>
+        <h3>Second capability</h3>
+        <p>La banda de abajo est&aacute; RESERVADA, as&iacute; que la rejilla no se mueve al
+           revelar y el plano no tapa el pie.</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
+        <p class="m03-det">If this text does not fit in two lines, it is not a detail:
+           the primitive is alternating-pair.</p>
+      </article>
+
+      <article class="m03-cel m03-cel--det" tabindex="0" data-medir-estado="m03-abierto">
+        <svg class="m03-cruz m03-cruz--tl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--tr" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--bl" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <svg class="m03-cruz m03-cruz--br" viewBox="0 0 9 9" aria-hidden="true"><path fill="currentColor" d="M0 4h9v1H0z"/><path fill="currentColor" d="M4 0h1v9H4z"/></svg>
+        <p class="m03-cel__n">03</p>
+        <h3>Third</h3>
+        <p>Three cells, three planes. The reveal is a property of the grid, not of one cell.</p>
+        <p class="m03-cel__pie">A concrete fact or condition</p>
+        <p class="m03-det">With prefers-reduced-motion the plane still appears: what goes
+           away is the movement, not the information.</p>
       </article>
 
     </div>
