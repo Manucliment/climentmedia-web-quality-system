@@ -1,0 +1,26 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>fixture — estado revelado, contraste BUENO</title>
+<!--
+  CONTROL POSITIVO del mecanismo `data-medir-estado` (2-sep-2026).
+  Texto que solo se ve al hover, con contraste CORRECTO (#59616f/#fff = 6,2:1).
+  TIENE QUE PASAR. Si sale FALLA, la sonda no esta forzando el estado y lo
+  esta midiendo replegado: opacity 0 compone blanco sobre blanco y da 1:1.
+  Es el control que distingue "medido y bien" de "no medido".
+-->
+<style>
+  body{background:#fff;font:16px/1.5 system-ui,sans-serif;margin:0;padding:24px}
+  .caja{position:relative;padding:16px 16px 60px;border:1px solid #d7dae0}
+  .det{color:#59616f}
+  @media (hover:hover) and (pointer:fine){
+    .det{position:absolute;left:16px;right:16px;bottom:16px;
+         opacity:0;transform:translateY(6px);
+         transition:opacity .15s ease,transform .15s ease}
+    .caja:hover .det,.caja.esta-abierto .det{opacity:1;transform:none}
+  }
+  @media (prefers-reduced-motion:reduce){.det{transition:none;transform:none}}
+</style></head><body>
+<div class="caja" data-medir-estado="esta-abierto">
+  <p>Texto normal, siempre visible.</p>
+  <p class="det">Detalle que solo aparece al pasar por encima. Su contraste es correcto.</p>
+</div>
+</body></html>

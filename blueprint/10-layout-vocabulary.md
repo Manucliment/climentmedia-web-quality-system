@@ -124,7 +124,7 @@ class in the HTML; nobody rewrites the wrapper:
 |---|---|---|
 | 01 | **hero** | locates the site and puts the first action above the fold |
 | 02 | **alternating-pair** | **the prose-to-layout translator.** One idea = one row with its evidence beside it |
-| 03 | **feature-grid** | N comparable capabilities at a glance |
+| 03 | **feature-grid** | N comparable capabilities at a glance. Variant `--detalle`: a second-order detail folded away behind hover/focus, normal flow content wherever there is no fine pointer |
 | 04 | **comparison-table** | N options × M criteria |
 | 05 | **numbered-steps** | a sequence: what a PERSON does over time |
 | 06 | **data-band** | breaks a long run with 4 figures that are also proof |

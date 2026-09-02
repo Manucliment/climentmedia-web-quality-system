@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **630 cases green, 0 red**, with the deploy-history bank reported
-as `NOT MEASURED` because a fresh install has never deployed anything.
+machine the fast run is **658 cases green, 0 red** — **656** on a clean install, where the
+deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **779 cases green, 0 red** — **777** on a clean install — with **six** banks
+reads **785 cases green, 0 red** — **783** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -77,19 +77,18 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  630 casos en verde · 0 en rojo
-  NO MEDIDOS: historial
+  658 casos en verde · 0 en rojo
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  779 casos en verde · 0 en rojo
+  785 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
-> **Why the total moved from 736 to 779 across 2026-09-01 and 02, and where the 43 came from.**
+> **Why the total moved from 736 to 785 across 2026-09-01 and 02, and where the 49 came from.**
 > **31 are genuinely new** — 15 for the metadata checks below, 18 for the `roles` bank that
 > guards the role vocabulary and the per-type reference sheets. The other **ten already
 > existed and were being thrown away**: the runner did `continue` the moment a bank returned
@@ -101,6 +100,17 @@ $ bash gates/run-all.sh
 > A partial bank now contributes what it measured **and** is still listed as not measured:
 > two different facts, both true. Only `qa-master` (15) and `structure-gate` (10) had
 > anything to contribute; the other four measure nothing at all without their host.
+>
+> **And the last six are a battery that was running all along and counting for nothing.**
+> `battery-layout` — collisions, AA contrast on every mould, the seven compositions at 1440 and
+> at 390 — reported `0 casos`. Not because it was empty: the runner reads the **last** `n OK` in
+> a bank's output, and the last one here belonged to **a column of widths** in the composition
+> table (`0  OK` = 0 px of overflow). A layout measurement was being read as a case count, so an
+> entire battery was invisible to the total and could only ever be noticed by going red. It now
+> prints its own `OK n · MAL n`. **The separator is not decoration:** written with a space, the
+> reader matches `[0-9]+ +MAL` against `6 MAL` and reports six passes as six failures — which is
+> exactly what it did on the first attempt.
+
 
 **`NOT MEASURED` is not a pass**, and the runner lists those banks by name in the summary
 precisely so a hole cannot be silent. The exit codes are three-valued throughout:

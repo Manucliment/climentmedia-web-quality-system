@@ -64,7 +64,7 @@ blueprint/        The method. 19 reference documents — consulted, not read end
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
 gates/            The executable half. 35 programs and 29 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.
-docs/             The trap log: 81 traps, each with the failure that produced it.
+docs/             The trap log: 82 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.
 GLOSSARY.md       Receipt, gate, lens, scope, mould, primitive, prose-page.
 ```

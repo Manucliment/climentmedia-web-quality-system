@@ -169,10 +169,20 @@ caso('I · un molde que anima y pierde su reduced-motion',
 #    mundo y nadie lo notaria mientras todos la lleven.
 caso('I · un molde que NO anima no necesita la salida', 'verde',
      sub {
-         my $f = "$MO/03-feature-grid.html";
-         my $t = leer($f) or return 0;
-         return 0 if $t =~ /(?:transition|animation)\s*:|\@keyframes/;  # ojo: si algun dia anima, este caso deja de valer
-         escribir($f, $t . "\n<!-- sin movimiento y sin salida: legitimo -->\n");
+         # 🔴 2-sep-2026: aqui estaba escrito `03-feature-grid` a mano, y el caso
+         #    se apago solo el dia que ese molde estreno una variante con
+         #    `transition`. EL BANCO LO DIJO -«la mutacion NO cambio nada»- en vez
+         #    de pasar en verde, que es la unica razon por la que se ha visto.
+         #    Ahora el sujeto se DERIVA: el primer molde que hoy no mueve nada.
+         #    Un fixture nombrado a mano caduca sin avisar; uno derivado no puede.
+         opendir(my $dh, $MO) or return 0;
+         my @todos = sort grep { /^[0-9].*\.html$/ } readdir($dh);
+         closedir $dh;
+         my ($f) = grep { my $x = leer("$MO/$_") || '';
+                          $x !~ /(?:transition|animation)\s*:|\@keyframes/ } @todos;
+         return 0 unless $f;   # si TODOS animan, el caso no vale y lo dice
+         my $t = leer("$MO/$f") or return 0;
+         escribir("$MO/$f", $t . "\n<!-- sin movimiento y sin salida: legitimo -->\n");
          return 1;
      });
 
