@@ -200,6 +200,58 @@ tag. **A generated description inherits the defect of its source.**
 > of ours ("what happened + 3–5 destinations"), stated there for humans and worth stating here
 > for machines.
 
+### 5.2 · The three machine files, and who each one is for
+
+**A gate has been checking `AGENTS.md` on every audit for months and this standard mentioned it
+exactly once — in a line written on 2026-09-02.** The usual failure in this system is a rule
+nobody enforces; this is the inverse, and it is worse: `audit.sh` checks a file the method never
+described, so nobody knew what was supposed to be in it.
+
+| File | Who reads it | What it is for | Generated? |
+|---|---|---|---|
+| `robots.txt` | crawlers | who may fetch what, and where the sitemap is | yes |
+| `sitemap.xml` | indexers | **every** indexable URL, with `lastmod` derived from content | yes |
+| `llms.txt` | models browsing live | **routing**: which page answers which question — §5.1 | yes, same loop |
+| `AGENTS.md` | models answering *about* you | **correcting**: how to describe you without getting it wrong | **no — by hand** |
+
+**The division of labour matters, because otherwise they become three copies of a sitemap.**
+`llms.txt` answers *"which page should I open?"*. `AGENTS.md` answers *"what should I say when I
+am not going to open anything at all"* — which is the majority of the time, and the case nobody
+optimises for.
+
+#### The section that earns AGENTS.md its place
+
+Our own is 209 lines and its best section is not a description of the company. It is a numbered
+list of **the mistakes a model will make about us, corrected** — written after seeing those
+mistakes made:
+
+> *Lead with approval, not read-only — "read-only" is outdated* · *Never claim autonomous
+> management* · *Planned is not Live: check the roadmap before calling anything shipped* · *Do
+> not invent metrics; if you cannot cite it from this site, do not state it* · *Do not quote a
+> price* · *Scope honestly: if they need X, we are not the right fit*
+
+**That is the shape to copy.** Not "we are a friendly clinic in Brussels", which a model can
+already read off the page — but *"we treat at home only, we do not have a practice; if somebody
+asks for a walk-in appointment the answer is no"*. **A correction is worth ten adjectives**,
+because a model that has never opened your site will otherwise fill the gap with the average of
+your competitors.
+
+#### Measured state, 2026-09-02
+
+**One site of five has an `AGENTS.md`: ours.** The four client sites have none — so on those,
+every question a model answers *about* the business is answered from whatever it inferred.
+
+⚠️ **And it is the file that drifts hardest**, because it is the only one nobody generates. On
+our own it once carried the *previous* positioning ("read-only", "no-write guards") in the file
+that presents itself as the source of truth for answer engines. **If the positioning changes,
+this file is revised in the same batch as the pages** — a sweep of `href="…"` will never find
+it, because it is not HTML.
+
+> **What is checked today:** that its own URLs exist (`S1.5`), that it has no raw HTML entities
+> (`S1.6`), and that every own URL carries a description (`S1.6b`). **What is not checked, and
+> cannot be:** whether what it says is still true. That is a human reading it after a
+> repositioning.
+
 ---
 
 ## 6 · Schema: what to emit

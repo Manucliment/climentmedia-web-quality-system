@@ -205,3 +205,90 @@ written by hand · **save the prompt**, because in six months you will need anot
 matches.
 
 **And you tell the client** the illustration images are generated.
+
+---
+
+## 6 · Reading somebody else's design system, and what it is worth
+
+Measured 2026-09-02 on two component libraries held up as good design — one dark, one light.
+The point is not to copy them. It is that **a reference is a measurement opportunity**, and
+these two answer questions our own tokens cannot answer alone.
+
+### 6.1 · Computed style no longer returns `rgb()`, and the canvas trick alone is not enough
+
+Their colours come back as **`lab(2.75381 0 0)`** and **`oklab(0.999994 … / 0.4)`**. Two things
+follow, and both cost a measurement to learn:
+
+- **Parsing the digits out of that string as if they were RGB produces a confidently wrong
+  number.** This system already has that scar — a hand-written meter read `oklch(0.99 0.005 210)`
+  as `rgb(0.99, 0.005, 210)` and reported **1.00:1 on a button that was fine**.
+- **Setting `fillStyle` and reading it back is no longer a conversion.** Chrome now returns
+  `lab(…)` unchanged, so the old trick yields the same unparseable string and any ratio comes
+  out `NaN`. **You have to actually rasterise**: paint one pixel and read it with
+  `getImageData`.
+
+✅ **Our own meter already does this** — `measure-layout.js:32`, *"color() / oklab() / lab(): let
+the engine resolve it by painting one pixel"*. Written before it was needed, and it is why
+`measure-contrast.sh` would survive auditing a client site built this year.
+
+### 6.2 · The failure mode of every dark theme, with numbers
+
+Their dim text is expressed as **white at an alpha**, which is the normal way to do it and the
+way it silently fails. Composited against their `#0a0a0a` background:
+
+| alpha | composited | ratio | |
+|---|---|---|---|
+| 0.9 | `#e6e7e7` | 15.98 | ✅ |
+| 0.8 | `#cecece` | 12.58 | ✅ |
+| 0.6 | `#9d9d9d` | 7.30 | ✅ |
+| 0.5 | `#848585` | 5.35 | ✅ |
+| **0.4** | `#6c6c6c` | **3.77** | 🔴 below AA |
+| **0.3** | `#535454` | **2.61** | 🔴 below AA |
+
+**And 0.4 is the one they use most: 39 text elements, plus 3 at 0.2.** Forty-two elements below
+AA on a site whose headline is *"Beautiful Components Built for designers"*.
+
+> 🔑 **This is not a new lesson here — it is external confirmation of the one this system was
+> built on.** `measure-contrast.sh` opens with *"contrast cannot be seen by looking: `opacity:.4`
+> over `--tinta` = 3.82:1"*. Their number is **3.77**. The same alpha, the same failure, on a
+> design system with a far bigger audience than ours. **The rule is not our idiosyncrasy.**
+
+**So: dim text is a declared colour token, never an alpha.** An alpha is chosen by eye against a
+large dark surface, and the composite is never computed. A token can be measured once.
+
+### 6.3 · The two-register type scale
+
+Both sites, counted by element:
+
+| | dark one | light one |
+|---|---|---|
+| dense UI band | 10px ×42 · 12px ×46 · 14px ×49 | 10px ×119 · 14px ×77 · 16px ×49 |
+| display | 41.9 · 48 · **80** | **96** |
+| in between | almost nothing | almost nothing |
+
+**There is no mid-range.** Not a scale of eight steps used evenly — two registers with a gap.
+It reads as confidence, and it is cheap to imitate badly: the 10px band works because it is
+labels and metadata, never prose. Our own reading floor (`11-measurements.md §6`, and the CPL
+gate) is what stops that becoming 10px body text, and **that constraint stays**: this section
+does not introduce a second scale, and the one that rules is still §6 of `11-measurements.md`.
+
+### 6.4 · One typeface carries the personality, and it is not the body font
+
+The dark one runs **161 of ~183 text elements in a monospace**; the light one uses a pixel-square
+display face on 110 elements next to its sans. Neither is decorating: the typeface *is* the
+positioning — "for builders" — said without a word of copy.
+
+⚠️ **Transferable selectively.** It fits a developer tool and our own site. It is wrong for a
+physiotherapist: a clinic that sets its prices in monospace looks like a terminal, not like care.
+**Ask what the typeface claims before borrowing it.**
+
+### 6.5 · And the defect that keeps repeating in modern references
+
+**Of five modern reference sites measured across two days, ONE has its visible headline as the
+`<h1>`.** The dark library's `<h1>` is **16px** while the headline you actually read is 80px; the
+three funnel templates of `09 §2.12` ship **zero `<h1>`** between them. Only the light library
+gets it right — its `<h1>` is the 96px headline.
+
+That is 1 of 5, on sites built by people who are good at this. **It is why `SEO-09` and `SEO-05`
+exist**, and it is the clearest possible argument that "everyone does it" is not evidence of
+anything. Take the composition; check the document underneath yourself.
