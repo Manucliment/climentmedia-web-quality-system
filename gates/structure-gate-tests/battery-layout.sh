@@ -20,19 +20,35 @@ set -u
 D="$(cd "$(dirname "$0")" && pwd)"
 cd "$D"
 fallos=0
+casos=0   # cada aserto de esta bateria suma uno. Ver la nota del final.
 
 echo "############ 1 · COLISIONES ############"
-bash test-collisions.sh || fallos=$((fallos+1))
+casos=$((casos+1)); bash test-collisions.sh || fallos=$((fallos+1))
 
 echo
 echo "############ 2 · CONTRASTE ############"
-bash measure-contrast.sh >/dev/null 2>&1 || fallos=$((fallos+1))
+casos=$((casos+1)); bash measure-contrast.sh >/dev/null 2>&1 || fallos=$((fallos+1))
 bash measure-contrast.sh 2>&1 | tail -3
 echo "-- control negativo (un color de marca malo tiene que FALLAR) --"
 if bash measure-contrast.sh fixtures-contrast/tenue-de-cliente.html >/dev/null 2>&1; then
-  echo "REVISAR: el negativo de contraste ha PASADO. El gate no mide."; fallos=$((fallos+1))
+  echo "REVISAR: el negativo de contraste ha PASADO. El gate no mide."; casos=$((casos+1)); fallos=$((fallos+1))
 else
-  echo "OK: el negativo de contraste falla, como debe."
+  casos=$((casos+1)); echo "OK: el negativo de contraste falla, como debe."
+fi
+
+echo "-- control del ESTADO REVELADO (data-medir-estado, 2-sep-2026) --"
+# Los dos juntos separan tres respuestas que se ven igual de verdes por
+# separado: medido y bien, medido y mal, y NO MEDIDO. El -ok es el que se
+# cae si alguien quita el forzado de estado de la sonda.
+if bash measure-contrast.sh fixtures-contrast/estado-revelado-ok.html >/dev/null 2>&1; then
+  casos=$((casos+1)); echo "OK: el texto revelado al hover se mide en su estado visible."
+else
+  echo "REVISAR: el revelado-ok ha FALLADO. La sonda lo mide replegado (1:1)."; casos=$((casos+1)); fallos=$((fallos+1))
+fi
+if bash measure-contrast.sh fixtures-contrast/estado-revelado-malo.html >/dev/null 2>&1; then
+  echo "REVISAR: el revelado-malo ha PASADO. El gate no juzga ese texto."; casos=$((casos+1)); fallos=$((fallos+1))
+else
+  casos=$((casos+1)); echo "OK: el revelado con mal contraste falla, como debe."
 fi
 
 echo
@@ -70,8 +86,16 @@ echo "############ 4 · LA HOME COMPUESTA CONTRA structure-gate.js ############"
 V=$(bash run-gate.sh P1-molde mould-home.html - '{"tipo":"home","ruta":"/"}' 2>/dev/null \
     | grep '"VEREDICTO"' | grep -o 'PASA\|FALLA')
 echo "P1-molde (control POSITIVO, debe PASAR): ${V:-ERROR}"
-[ "${V:-x}" = "PASA" ] || fallos=$((fallos+1))
+casos=$((casos+1)); [ "${V:-x}" = "PASA" ] || fallos=$((fallos+1))
 
 echo
+# 2-sep-2026 · ESTA LINEA EXISTE PORQUE run-all.sh CONTABA 0 CASOS AQUI.
+#    Su lector busca «n OK» y se quedaba con el ULTIMO, que era una COLUMNA
+#    DE ANCHOS de la tabla de composiciones («0  OK» = 0 px de desborde).
+#    O sea que esta bateria entera -colisiones, contraste, las 7 composiciones-
+#    aportaba CERO al total, y un ancho se leia como un recuento de casos.
+#    Un banco que solo se ve cuando se pone rojo esta fuera de la cadena
+#    aunque corra dentro de ella.
+echo "OK $((casos - fallos)) · MAL $fallos"
 [ "$fallos" = 0 ] && echo "BATERIA OK" || echo "BATERIA: $fallos bloque(s) a revisar"
 exit $fallos

@@ -215,6 +215,17 @@ $ bash gates/run-all.sh
 > A partial bank now contributes what it measured **and** is still listed as not measured:
 > two different facts, both true. Only `qa-master` (15) and `structure-gate` (10) had
 > anything to contribute; the other four measure nothing at all without their host.
+>
+> **And the last six are a battery that was running all along and counting for nothing.**
+> `battery-layout` — collisions, AA contrast on every mould, the seven compositions at 1440 and
+> at 390 — reported `0 casos`. Not because it was empty: the runner reads the **last** `n OK` in
+> a bank's output, and the last one here belonged to **a column of widths** in the composition
+> table (`0  OK` = 0 px of overflow). A layout measurement was being read as a case count, so an
+> entire battery was invisible to the total and could only ever be noticed by going red. It now
+> prints its own `OK n · MAL n`. **The separator is not decoration:** written with a space, the
+> reader matches `[0-9]+ +MAL` against `6 MAL` and reports six passes as six failures — which is
+> exactly what it did on the first attempt.
+
 
 **`NOT MEASURED` is not a pass**, and the runner lists those banks by name in the summary
 precisely so a hole cannot be silent. The exit codes are three-valued throughout:
