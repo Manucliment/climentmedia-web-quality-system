@@ -166,6 +166,40 @@ Minimum contents: the name, one line on what they do and where, phone and hours,
 with their descriptions, and the services. **The same URLs as the sitemap**, verified by the
 gate.
 
+### 5.1 · It is a ROUTER, not an index
+
+A list of URLs tells a model **what exists**. It does not tell it **which one to open**, and
+that is the difference between being crawled and being cited.
+
+Measured 2026-09-02 on a component library that does this well, and on our own sites:
+
+| | |
+|---|---|
+| A `>` line under the title | what the product *is*, in one sentence |
+| **A `When to use` block** | *"prefer the block pages when the user asks for realistic page compositions rather than isolated components"*. Explicit routing between surfaces |
+| A description **after every URL** | what that page is FOR, not its title again |
+| Grouped by purpose | *Primary pages · Trust and contact · Developer entry points* |
+| A closing **`Agent notes`** | which surface is the source of truth, and what to prefer for a given question |
+| An explicit "no authentication required" | removes the commonest reason an agent gives up. Only relevant if you expose an API |
+
+🔴 **We already required the descriptions and were not doing it.** §5 has said "the pages with
+their descriptions" since it was written, and nothing checked. Measured across four live sites:
+**30 of 30 · 32 of 40 · 12 of 16 · and 12 of 46 on our own.** Thirty-four bare URLs on the
+site that sells this service.
+
+✅ Now checked: **`S1.6b`** in `audit.sh` — every own URL in `llms.txt` and `AGENTS.md` carries
+a description, or the audit fails and says how many of how many.
+
+⚠️ **And a description being present does not make it right.** On the site that scores 30 of 30,
+one of those descriptions is another page's, copied — the same duplicate that `SEO-02b` catches
+in the HTML, propagated into the machine-readable file because it is generated from the meta
+tag. **A generated description inherits the defect of its source.**
+
+> The same idea applies to the **404**: the library's 404 offers Sitemap, `llms.txt`, Developers
+> and OpenAPI. A 404 that routes instead of apologising — which is what `09 §2.11` already asks
+> of ours ("what happened + 3–5 destinations"), stated there for humans and worth stating here
+> for machines.
+
 ---
 
 ## 6 · Schema: what to emit

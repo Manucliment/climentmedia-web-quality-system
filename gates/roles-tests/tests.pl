@@ -157,6 +157,25 @@ caso('F · falta la plantilla de un tipo',
      'falta la plantilla de `landing`',
      sub { unlink "$MO/types/landing.html" });
 
+# I · lo que se mueve declara su salida de reduced-motion (14 §A16).
+#     Se cablea con los 20 moldes en verde: es cuando sale gratis. El dia que
+#     alguien meta un @keyframes sin salida, esto es lo unico que lo distingue.
+caso('I · un molde que anima y pierde su reduced-motion',
+     'NO declara `prefers-reduced-motion`',
+     sub { cambiar("$MO/08-faq-accordion.html", 'prefers-reduced-motion', 'prefers-NADA') });
+
+# 🔑 LA FRONTERA: quitar la salida de un molde que NO mueve nada no puede
+#    acusar. Sin este caso, el check podria estar exigiendo la linea a todo el
+#    mundo y nadie lo notaria mientras todos la lleven.
+caso('I · un molde que NO anima no necesita la salida', 'verde',
+     sub {
+         my $f = "$MO/03-feature-grid.html";
+         my $t = leer($f) or return 0;
+         return 0 if $t =~ /(?:transition|animation)\s*:|\@keyframes/;  # ojo: si algun dia anima, este caso deja de valer
+         escribir($f, $t . "\n<!-- sin movimiento y sin salida: legitimo -->\n");
+         return 1;
+     });
+
 # H · Y AL REVES QUE F: una plantilla que ya no corresponde a ningun tipo.
 #     Lo encontro un rename real (`quiz` -> `landing`): quedaron 14 plantillas
 #     para 13 tipos y el gate paso, porque F solo mira que a cada tipo NO le

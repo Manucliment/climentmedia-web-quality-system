@@ -207,6 +207,29 @@ sub gate {
         }
     } else { mal("G · no puedo abrir $MOLDES") }
 
+    # I · TODO LO QUE SE MUEVE DECLARA SU SALIDA DE `prefers-reduced-motion`.
+    #     14-accessibility A16 lo exige desde siempre y hasta hoy no lo miraba
+    #     nadie en el cajon de moldes. Medido el 2-sep-2026: de 20 moldes solo
+    #     CUATRO ficheros animan algo, y los cuatro traen su salida — o sea que
+    #     la disciplina era perfecta y el gate no existia. Se cablea AHORA,
+    #     mientras esta en verde, que es cuando sale gratis: el dia que alguien
+    #     anada un `@keyframes` sin salida no habra nada que lo distinga.
+    #     ⚠️ A16 pide cancelar la duracion Y EL RETARDO. Dos sitios reales
+    #     cancelaban solo la duracion, asi que aqui se exige el bloque, no la
+    #     palabra: quien lo escriba se lleva la regla entera de 14 §A16.
+    if (opendir(my $dh, $MOLDES)) {
+        my @f = sort grep { /\.(html|css)$/ } readdir $dh;
+        closedir $dh;
+        for my $m (@f) {
+            my $t = slurp("$MOLDES/$m") // '';
+            next unless $t =~ /(?:^|[^-\w])(?:transition|animation)\s*:/m
+                     || $t =~ /\@keyframes/;
+            mal("I · el molde `$m` mueve algo y NO declara `prefers-reduced-motion`: "
+                . "14-accessibility A16")
+                unless $t =~ /prefers-reduced-motion/;
+        }
+    }
+
     # H · Y AL REVES: ninguna plantilla sin tipo.
     #     🔴 Lo encontro el rename de `quiz` a `landing`, el 1-sep-2026: quedaron
     #     14 plantillas para 13 tipos y este gate paso, porque F solo pregunta

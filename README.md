@@ -60,7 +60,7 @@ paths/            Four entry points. Start here, not in blueprint/.
   3-add-page.md         Add a page to a site already published
   4-iterate-seo-design.md   Iterate SEO or design on a live site
 
-blueprint/        The method. 18 reference documents — consulted, not read end to end.
+blueprint/        The method. 19 reference documents — consulted, not read end to end.
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
 gates/            The executable half. 35 programs and 29 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.

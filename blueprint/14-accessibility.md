@@ -245,6 +245,7 @@ worse than not having it. All five are measured:
 | How a colour is really measured (canvas, not computed style) | `02-design.md §3` and §3.1 above |
 | Text over a photo | `gates/measure-contrast-on-photo.py` |
 | `prefers-reduced-motion` without cancelling the delay | `../docs/traps.md` |
+| What is allowed to move at all, and what it costs | `19-motion.md` — A16 is the accessibility half; that document is the rest |
 | Line width (WCAG 1.4.8) and the CPL gate | `11-measurements.md §1` and `§7` |
 | `autocomplete`, an accessible honeypot, a live error region | `05-forms.md` |
 | Weight, images and fonts | `13-performance.md` |

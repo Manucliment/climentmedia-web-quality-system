@@ -79,7 +79,11 @@
            background:var(--caja);border:1px solid var(--linea);
            border-radius:var(--r);cursor:pointer;text-align:center;
            font:inherit;color:inherit}
-  .m20-opt:hover{border-color:var(--acento)}
+  /* Solo `border-color` y `transform`: las dos las compone el navegador sin
+     repintar. Nada de animar `box-shadow`, `width` ni `height` — ver 19 §2. */
+  .m20-opt{transition:border-color .15s ease, transform .15s ease}
+  .m20-opt:hover{border-color:var(--acento);transform:translateY(-2px)}
+  .m20-opt:active{transform:translateY(0)}
   /* El foco se ve: es la unica forma de usar esto con teclado. */
   .m20-opt:focus-visible{outline:3px solid var(--acento);outline-offset:2px}
   .m20-opt[aria-pressed="true"]{border-color:var(--acento)}
@@ -100,6 +104,14 @@
   /* Sin imagen: la variante honesta para cuando no hay una foto que signifique
      algo. Sigue siendo la misma primitiva, no otra. */
   .m20-opt--plana .m20-opt__lbl{padding:var(--space-8) var(--space-4)}
+
+  /* 14-accessibility A16: se cancela la DURACION Y EL RETARDO. Dos sitios
+     reales cancelaban solo la duracion, y una animacion con delay seguia
+     corriendo entera. El foco y el color se quedan: no son movimiento. */
+  @media (prefers-reduced-motion: reduce){
+    .m20-opt{transition-duration:.01ms;transition-delay:0s}
+    .m20-opt:hover{transform:none}
+  }
 </style>
 </head>
 <body>
