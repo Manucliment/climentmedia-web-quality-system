@@ -215,6 +215,56 @@ tag. **A generated description inherits the defect of its source.**
 > of ours ("what happened + 3–5 destinations"), stated there for humans and worth stating here
 > for machines.
 
+
+### 5.1-bis · The skeleton, and when each block goes in
+
+§5.1 says what the shape is. This is the shape itself, so nobody has to re-derive it from a
+table. **Fill it, do not extend it** — every block below is either required or has a stated
+condition, and a block added "because the reference had one" is how this file turns back into a
+sitemap with prose.
+
+```
+# <Site name>
+
+> <One sentence: what this is and who it is for. Not a slogan — a definition.>
+
+## When to use
+- Ask about <topic A> → open <URL>
+- Ask about <topic B> → open <URL>
+- Comparing options → open <URL>, which is the only page that compares them
+
+## <Group by purpose, not by nav order>
+- [Page title](https://example.com/page/): what this page answers, in one line.
+- [Page title](https://example.com/other/): what this page answers, in one line.
+
+## Trust and contact
+- [Who we are](https://example.com/about/): who is behind this, with names.
+- [Contact](https://example.com/contact/): how to reach a human, and how fast.
+
+## Agent notes
+- The source of truth for <the thing you sell> is <URL>. Prices elsewhere may be stale.
+- <If you expose an API:> the public endpoints need no authentication.
+```
+
+| Block | Goes in | Does NOT go in |
+|---|---|---|
+| The `>` line | always | — |
+| `When to use` | when two pages could plausibly answer the same question — which is almost always | a site with one page |
+| A description per URL | **always.** This is the whole point, and it is what `S1.6b` checks | — |
+| Grouping | from ~8 URLs up | below that it is ceremony |
+| `Agent notes` | when something is genuinely stale-prone or lives in two places | as a place to repeat the `>` line |
+| "no authentication" | only if you actually expose an API | a brochure site. It answers a question nobody asked |
+
+⚠️ **Two failure modes, both measured on live sites this week.** A description that is another
+page's, copied — because the file is generated from the meta tag and **a generated description
+inherits the defect of its source**, so `SEO-02b` and `S1.6b` have to be green *together*. And a
+`When to use` written from the nav rather than from questions, which routes to the page you would
+have clicked anyway and therefore routes nothing.
+
+> And the ceiling on all of it, restated because a skeleton invites effort: **there is no public
+> evidence that AI crawlers consume `llms.txt`.** This is cheap insurance written well because we
+> generate it anyway. It is not an AEO achievement and it does not go in a report as one.
+
 ### 5.2 · The three machine files, and who each one is for
 
 **A gate has been checking `AGENTS.md` on every audit for months and this standard mentioned it

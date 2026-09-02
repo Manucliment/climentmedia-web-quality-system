@@ -83,7 +83,7 @@ Ordered by how often it earns its place. Everything here is CSS-only and lands i
 | # | Motion | Where | Why it earns it |
 |---|---|---|---|
 | 1 | **Hover lift** — `translateY(-2px)` + border colour | any clickable card | Tells you it is clickable before you click. Mould 20 uses exactly this |
-| 2 | **Hover reveal** — hidden detail slides in under a card | catalogue, feature grid | The one idea worth taking from cult-ui. **Content must be reachable without hover**: on touch there is no hover |
+| 2 | **Hover reveal** — hidden detail slides in under a card | catalogue, feature grid | The one idea worth taking from cult-ui. Built as the `--detalle` variant of [mould 03](moulds/03-feature-grid.html), which carries its own WHEN and WHEN NOT. **Content must be reachable without hover**: on touch there is no hover, so it is normal flow content by default and only folds away under `(hover:hover) and (pointer:fine)` |
 | 3 | **Entrance on scroll** — 8–16px rise + fade, once | below the fold only | Marks the section boundary. Once. Never re-triggering |
 | 4 | **Accordion open/close** | FAQ | The only one already in the drawer |
 | 5 | **Focus ring transition** | every control | Not decoration: it is what makes keyboard use legible |
@@ -153,9 +153,25 @@ happened + 3–5 destinations".
 | | |
 |---|---|
 | ✅ **Enforced** | Any mould that declares `transition:`, `animation:` or `@keyframes` **must** declare `prefers-reduced-motion` — `roles.pl --gate`, check **I**. Wired 2026-09-02 with all twenty moulds green, which is when it costs nothing |
-| ✅ Enforced | Contrast of every mould, including hover states — `measure-contrast.sh`, 20 files |
+| ✅ Enforced | Contrast of every mould **including states that only exist on hover or focus** — `measure-contrast.sh`, 20 files. A mould declares the state with `data-medir-estado="<class>"` and the probe applies it before measuring |
 | ❌ Not enforced | *Which* properties are animated. Nothing stops somebody animating `box-shadow`; §2 is a rule a human keeps |
 | ❌ Not enforced | The one-moving-thing-per-screen ceiling, and the `llms.txt` shape in §5 |
+
+
+> 🔴 **And that row said the same thing yesterday while being false.** It claimed contrast was
+> measured "including hover states" and nothing forced any state: what saved it was that until
+> today everything hidden behind a hover happened to contain **no text**. The first mould with
+> revealed *text* measured **1:1 — white on white**, because a probe that adds a class and reads
+> `getComputedStyle` in the same tick reads the value at t=0 of a 150 ms transition. The fix is
+> two lines (force the state, kill transitions) and **two fixtures**, because "measured and fine",
+> "measured and wrong" and "not measured at all" otherwise look identical from outside:
+> `estado-revelado-ok.html` must PASS — it is the one that falls if the forcing ever goes away —
+> and `estado-revelado-malo.html` must FAIL.
+
+> **And the state class has to carry the mould's prefix** (`m03-abierto`, not `esta-abierto`).
+> Not style: `chk-collisions` fails on it, because an unprefixed class declared by one mould is a
+> class every other mould can collide with. The convention costs nothing — the probe reads the
+> class name out of the attribute — and the check caught it on the first mould that used it.
 
 **Check I was wired while it was already green**, deliberately. A rule that everyone happens to
 be following is exactly when a gate is free to add — the day somebody adds a `@keyframes`

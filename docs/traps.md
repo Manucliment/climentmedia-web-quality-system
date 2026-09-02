@@ -1,6 +1,6 @@
-# The trap log — 81 traps, read before debugging
+# The trap log — 82 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§81** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§82** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -10,7 +10,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §20–§40 | [`traps/20-40.md`](traps/20-40.md) |
 | §41–§59 | [`traps/41-59.md`](traps/41-59.md) |
 | §60–§76 | [`traps/60-76.md`](traps/60-76.md) |
-| §77–§81 | [`traps/77-81.md`](traps/77-81.md) |
+| §77–§82 | [`traps/77-82.md`](traps/77-82.md) |
 
 ---
 
@@ -26,7 +26,7 @@ Not quoted — **derived by a program you can run**:
 perl gates/doc-gate.pl --lista D4
 ```
 
-Today it reports: **81 traps · all 81 declare what catches them · 31 say `nobody` on purpose.**
+Today it reports: **82 traps · all 82 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
 writing more prose** — which is the measured finding the whole repository rests on. The five most

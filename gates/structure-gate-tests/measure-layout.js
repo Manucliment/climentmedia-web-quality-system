@@ -16,6 +16,34 @@
   var R = { innerWidth: window.innerWidth, clientWidth: document.documentElement.clientWidth,
             dpr: window.devicePixelRatio };
 
+
+  /* ── 0 · estados que solo existen al hover o al foco ────────────────────
+     Un texto que se revela al hover HAY QUE MEDIRLO REVELADO. Replegado da
+     1:1 -blanco sobre blanco- y eso no es un veredicto de contraste: es el
+     instrumento midiendo otra cosa y llamandolo fallo.
+     El molde declara su estado con data-medir-estado="<clase>" y aqui se
+     aplica ANTES de medir nada.
+     🔴 2-sep-2026: sin esto, `19-motion.md` afirmaba medir "el contraste de
+     cada molde, INCLUIDOS los estados de hover" y era falso — solo se
+     libraba porque hasta hoy lo que se escondia no llevaba texto. */
+  R.estadosForzados = 0;
+  [].forEach.call(document.querySelectorAll("[data-medir-estado]"), function (el) {
+    el.classList.add(el.getAttribute("data-medir-estado"));
+    R.estadosForzados++;
+  });
+  if (R.estadosForzados) {
+    /* 🔴 Y HAY QUE MATAR LA TRANSICION, o la medida sale de en medio de ella.
+       La sonda anade la clase y lee `getComputedStyle` en el MISMO tick: con
+       `transition:opacity .15s` lo que devuelve es la opacidad en t=0, que es
+       la de ANTES. Sintomas: la regla casa, el selector es correcto, el
+       navegador dice op=1 en la hoja de estilo... y el elemento mide 1:1.
+       Costo media hora el 2-sep-2026 buscandolo en la especificidad. */
+    var _s = document.createElement("style");
+    _s.textContent = "*{transition:none !important;animation:none !important}";
+    document.head.appendChild(_s);
+    void document.body.offsetHeight;   // fuerza el recalculo antes de medir
+  }
+
   /* ── color ─────────────────────────────────────────────────────────────── */
   var probe = document.createElement("canvas");
   probe.width = probe.height = 1;
