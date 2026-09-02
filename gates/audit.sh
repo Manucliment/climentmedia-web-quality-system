@@ -333,6 +333,25 @@ for MF in llms.txt AGENTS.md; do
   else
     ok "S1.6 $MF sin entidades HTML crudas"
   fi
+
+  # S1.6b · CADA URL PROPIA LLEVA DESCRIPCION (2-sep-2026)
+  # 03-contenido-y-seo seccion 5 pide "las paginas CON SUS DESCRIPCIONES" desde
+  # siempre, y no lo comprobaba nadie. Medido ese dia: 14 de 48 en nuestra
+  # propia web, o sea 34 URLs desnudas. Una URL sin descripcion le dice al
+  # modelo que la pagina EXISTE; no le dice cual abrir, que es justo para lo
+  # que sirve este fichero.
+  # Solo grep y comparacion numerica a proposito: este script tiene documentado
+  # que un check con construcciones raras aqui dentro da VERDE por no llegar a
+  # ejecutarse.
+  CON_URL=$(grep -cE "^- \[[^]]*\]\($BASE_URL[^)]*\)" "$ROOT/$MF")
+  DESNUDAS=$(grep -cE "^- \[[^]]*\]\($BASE_URL[^)]*\)[[:space:]]*$" "$ROOT/$MF")
+  if [ "$CON_URL" -eq 0 ]; then
+    skip "S1.6b $MF no lista URLs propias con el formato - [Titulo](url): no se puede medir"
+  elif [ "$DESNUDAS" -eq 0 ]; then
+    ok "S1.6b las $CON_URL URLs propias de $MF llevan descripcion"
+  else
+    bad "S1.6b $MF: $DESNUDAS de $CON_URL URLs propias SIN descripcion (una URL desnuda dice que la pagina existe, no cual abrir)"
+  fi
 done
 
 if [ -f "$ROOT/robots.txt" ]; then

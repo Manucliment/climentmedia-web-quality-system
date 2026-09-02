@@ -32,7 +32,7 @@ machine the fast run is **630 cases green, 0 red**, with the deploy-history bank
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **777 cases green, 0 red** — **775** on a clean install — with **six** banks
+reads **779 cases green, 0 red** — **777** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -85,12 +85,12 @@ $ bash gates/run-all.sh --fast
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  777 casos en verde · 0 en rojo
+  779 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
-> **Why the total moved from 736 to 777 on 2026-09-01, and where the 41 came from.**
-> **31 are genuinely new** — 15 for the metadata checks below, 16 for the `roles` bank that
+> **Why the total moved from 736 to 779 across 2026-09-01 and 02, and where the 43 came from.**
+> **31 are genuinely new** — 15 for the metadata checks below, 18 for the `roles` bank that
 > guards the role vocabulary and the per-type reference sheets. The other **ten already
 > existed and were being thrown away**: the runner did `continue` the moment a bank returned
 > 3, without reading its count,

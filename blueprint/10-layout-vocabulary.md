@@ -145,6 +145,11 @@ class in the HTML; nobody rewrites the wrapper:
 
 **Eleven of the twenty come from an existing component library**; eight were written from scratch, and one (20) was extracted from a commercial funnel template with its markup rebuilt — see 09 §2.12.
 
+> **Motion lives in [`19-motion.md`](19-motion.md), not here.** A mould says how a block is
+> BUILT; that document says what it is allowed to MOVE, what the movement costs, and when a
+> library is permitted. Measured when it was written: of these twenty moulds, four animate
+> anything at all — the vocabulary was empty and nobody had noticed.
+
 Each mould carries **in its own header** its `WHEN`, its `WHEN NOT`, its `WHAT BREAKS IT` and its
 behaviour at 390 px. **That is not duplicated here**: pointers both ways, content in one place.
 

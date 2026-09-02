@@ -15,6 +15,10 @@
 
 ## 0 · Why it exists: the hole, verified
 
+> **Animation has its own document: [`19-motion.md`](19-motion.md).** The short version, because
+> it is a performance rule before it is a design one: **animate `transform` and `opacity`, nothing
+> else.** Everything else repaints on the main thread every frame.
+
 It is not that performance was badly documented. **It was not documented at all.** A sweep
 over the entire system:
 
