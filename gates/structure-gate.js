@@ -882,7 +882,7 @@ if (malContraste.length)
 if (rolesFaltan.length)
   fallos.push(`ANATOMIA · faltan roles obligatorios de «${TIPO}»: ${rolesFaltan.join(', ')}`);
 if (TIPO_RARO)
-  fallos.push(`ANATOMIA · data-tipo="${TIPO_RARO}" no esta en la tabla (references/anatomy.tsv): ` +
+  fallos.push(`ANATOMIA · data-tipo="${TIPO_RARO}" no esta en la tabla (gates/anatomy.tsv): ` +
               `no se ha comprobado NINGUNA anatomia`);
 if (PERFIL.cierre && ultimo && ultimo.ctas === 0)
   fallos.push(`ANATOMIA · el ultimo bloque («${ultimo.que}») no tiene ninguna accion: ` +

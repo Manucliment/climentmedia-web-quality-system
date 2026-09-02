@@ -1,5 +1,5 @@
 // =============================================================================
-//  fold-page-standard.js · genera 18-estandar-de-pagina.md DESDE el catalogo de reglas
+//  fold-page-standard.js · CONGELADO. Generaba el estandar de pagina desde el catalogo
 // =============================================================================
 //  19-ago-2026. Las 30 reglas WPS colgaban de `web-page-standard/SKILL.md`, una
 //  skill que YA NO EXISTE: 30 reglas del estandar apuntando a un documento
@@ -12,10 +12,61 @@
 //
 //  Y en la misma pasada se reescribe `doc` y `linea` en el catalogo, para que
 //  la referencia apunte a donde la regla vive DE VERDAD.
+// =============================================================================
+//  🔴 CONGELADO EL 2-sep-2026 · ABORTA A PROPOSITO, Y NO ES UN OLVIDO
+// =============================================================================
+//  Escribia en `gates/18-estandar-de-pagina.md`: el nombre de antes de la
+//  unificacion al ingles del 25-ago. Ese fichero NO EXISTE en el repo, asi que
+//  cada ejecucion lo CREABA como un duplicado sin rastrear, mientras el
+//  documento vivo -- `blueprint/18-page-standard.md` -- llevaba desde el 25-ago
+//  sin regenerarse. Y ese documento sigue diciendo en su cabecera que lo genera
+//  este script. O sea: se presentaba como generado por un programa que escribia
+//  en otro sitio.
+//
+//  🔑 POR QUE NO BASTA CON REPUNTAR `OUT`, que es lo obvio: MEDIDO ese dia, el
+//     catalogo esta ENTERO EN CASTELLANO (192 reglas claramente en castellano, 0
+//     en ingles) y el documento vivo esta EN INGLES, traducido a mano. Apuntar
+//     `OUT` al documento vivo no lo regenera: lo DESTRUYE, y lo sustituye por la
+//     version castellana que sale de este catalogo. El arreglo comodo habria
+//     borrado la traduccion sin que nada se pusiera rojo.
+//
+//  Se congela con un `exit` y no con un comentario porque un generador que ya
+//  no es la fuente es PEOR que un fichero a mano: parece autoridad. Es
+//  literalmente el caso `_ds_page_gen.ps1` que este mismo sistema documenta, y
+//  alli la leccion fue la misma -- «el aviso no se deja en un comentario, se
+//  deja en un exit».
+//
+//  QUE HACE FALTA PARA DESCONGELARLO, y es una decision de idioma de todo el
+//  repo, no de este fichero:
+//    1. Decidir en que idioma vive el CATALOGO. Hoy es castellano; el resto del
+//       repo es ingles desde el 25-ago.
+//    2. Si se pasa el catalogo a ingles: traducir los `texto` de las 256 reglas
+//       -- no solo las 30 WPS, o el catalogo queda mestizo -- y traducir tambien
+//       los literales de este generador (los GRUPOS y el cuerpo del documento).
+//    3. Apuntar OUT a `../blueprint/18-page-standard.md`, regenerar, y DIFERENCIAR
+//       contra el documento vivo antes de aceptar el resultado: lo que salga
+//       distinto es deriva escrita a mano que hay que devolver al catalogo
+//       primero. Un generador que pisa correcciones a mano las borra en silencio.
+//    4. Quitar este bloque y devolver a `blueprint/18-page-standard.md` su
+//       cabecera de «esto se genera».
+//  Mientras tanto, `blueprint/18-page-standard.md` SE MANTIENE A MANO y su
+//  cabecera lo dice.
+console.error([
+  '  CONGELADO: este generador no es la fuente de blueprint/18-page-standard.md.',
+  '  Escribia en una ruta muerta (gates/18-estandar-de-pagina.md) y el documento',
+  '  vivo esta en ingles mientras el catalogo esta en castellano: regenerar lo',
+  '  destruiria. Los cuatro pasos para descongelarlo estan en la cabecera.',
+  '  Que el catalogo apunte a documentos que existen lo vigila doc-gate D7.',
+].join('\n'));
+process.exit(2);
+
+/* eslint-disable no-unreachable */
 const fs = require('fs'), path = require('path');
 const DIR = __dirname;
 const CAT = path.join(DIR, 'standard-rules.json');
-const OUT = path.join(DIR, '18-estandar-de-pagina.md');
+// Cuando se descongele, esta es la ruta buena. Se deja escrita para que el que
+// venga no tenga que volver a averiguarla.
+const OUT = path.join(DIR, '..', 'blueprint', '18-page-standard.md');
 
 const j = JSON.parse(fs.readFileSync(CAT, 'utf8'));
 const wps = j.reglas.filter(r => /^WPS-/.test(String(r.id || '')));
@@ -38,7 +89,7 @@ const L = [];
 L.push('# 18 · El estandar de PAGINA (las 30 reglas WPS)');
 L.push('');
 L.push('> 🔴 **ESTE FICHERO SE GENERA. No se edita a mano.**');
-L.push('> `node references/fold-page-standard.js` lo reescribe desde `standard-rules.json`,');
+L.push('> `node gates/fold-page-standard.js` lo reescribe desde `standard-rules.json`,');
 L.push('> que es donde viven las reglas. Editar aqui crea un segundo sitio donde vive');
 L.push('> la misma verdad, y eso siempre acaba divergiendo.');
 L.push('');
@@ -76,9 +127,9 @@ L.push('');
 fs.writeFileSync(OUT, L.join('\n'), 'utf8');
 
 for (const r of j.reglas) if (/^WPS-/.test(String(r.id || ''))) {
-  r.doc = 'web-quality-system/gates/18-estandar-de-pagina.md';
+  r.doc = 'blueprint/18-page-standard.md';
   r.linea = linea[r.id];
 }
 fs.writeFileSync(CAT, JSON.stringify(j, null, 2), 'utf8');
-console.log('  generado 18-estandar-de-pagina.md (' + L.length + ' lineas)');
+console.log('  generado blueprint/18-page-standard.md (' + L.length + ' lineas)');
 console.log('  catalogo: 30 reglas repuntadas a su doc y su linea reales');
