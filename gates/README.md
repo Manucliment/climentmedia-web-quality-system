@@ -114,6 +114,38 @@ precisely so a hole cannot be silent. The exit codes are three-valued throughout
 A `1` where a `3` belongs sends somebody hunting a defect that does not exist. A `0` where
 a `3` belongs is worse: it lets a gap read as coverage.
 
+
+### Coverage is two questions, and only one of them was being asked
+
+`gate-index.js` has always answered *"does this rule name a check that exists?"* — 226 rules,
+**158 with an instrument (62%)**, the other 98 listed with `--huecos` and split into
+machine-measurable, partial, and human judgement. That half is well kept: the gaps are counted,
+not hidden, and the report refuses to claim a ceiling of 100% because the standard itself marks
+rules no machine will ever measure.
+
+**It never asked the reverse: does this check that RUNS have a rule behind it?**
+
+```
+  checks emitted .......... 156
+  with no rule claiming it .. 89   (57%)
+```
+
+**That is not a tidiness complaint.** A gate nobody's rule asked for is an opinion with
+permission to block, and the defect is invisible from the side that *was* being measured — the
+62% counts rules-with-gates, so a check with no rule cannot lower it. It is how `audit.sh` spent
+months checking `AGENTS.md` while the standard described that file nowhere (`03-content-and-seo
+§5.2`), and it is how three checks added this week arrived without anyone deciding they were
+rules.
+
+Most of the 89 are two whole instruments the catalogue never represented: the **~35 site-auditor
+checks** (`S1.x`–`S6.x`) and the **linking rules** (`R0`–`R9`).
+
+⚠️ **An orphan is not automatically wrong.** `EST-12b…f` are sub-checks of `EST-12`, and naming
+the parent is enough. That is exactly why this **reports and does not block**: the number gets
+looked at, decided case by case, and only then does the bar go up. What it cannot do any more is
+stay invisible — it prints without a flag, because a figure you have to ask for is a figure
+nobody reads.
+
 ### The runner checks itself first
 
 Before running anything it verifies that **every bank names a file that exists**. Two of
@@ -205,7 +237,7 @@ whose verdict came from measuring a different object.
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist. |
 | `coverage.pl` | How many checks have a test case. Today: **119 of 134 (88%)**. |
-| `gate-index.js` | The RULE → INSTRUMENT index has no dead references. **158 cases.** |
+| `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **158 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
 | `history-gate.pl` | Every recorded failure must name the check that accused. |
