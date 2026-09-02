@@ -152,7 +152,16 @@ lost: that was a regression, not an omission.
 
 ---
 
-## 5 · `llms.txt` is PLAIN TEXT
+## 5 · The machine-readable surface
+
+> 🔴 **Read this before adding anything to this section.** Whether these files are worth
+> investing in at all is **already decided and marked "verified, do not re-litigate"** in the
+> page-standard skill: `llms.txt` is cheap insurance and does **not** count as an AEO
+> achievement; `AGENTS.md` on a website is ROI ~0 (§5.2-bis); content negotiation is dead.
+> **This section is about doing well what we already generate — not about whether to.**
+> It drifted from that on 2026-09-02 and had to be corrected the same day.
+
+### 5.0 · It is PLAIN TEXT
 
 Titles and descriptions come out of their HTML with entities inside. In HTML they are
 necessary; in a `.txt` they stay literal and a model reads
@@ -168,8 +177,14 @@ gate.
 
 ### 5.1 · It is a ROUTER, not an index
 
-A list of URLs tells a model **what exists**. It does not tell it **which one to open**, and
-that is the difference between being crawled and being cited.
+A list of URLs tells a model **what exists**. It does not tell it **which one to open**.
+
+⚠️ **And that is as far as the claim goes.** An earlier draft of this line said it was *"the
+difference between being crawled and being cited"* — which is an AEO claim, and our own
+verified research says the opposite: there is **no public evidence that AI crawlers consume
+`llms.txt` at all**, and it is kept as cheap insurance, not counted as an achievement. The
+honest case for the shape below is smaller and still sufficient: **we already generate this
+file, so it costs nothing to generate it well.** Do not sell it as a citation lever.
 
 Measured 2026-09-02 on a component library that does this well, and on our own sites:
 
@@ -212,14 +227,47 @@ described, so nobody knew what was supposed to be in it.
 | `robots.txt` | crawlers | who may fetch what, and where the sitemap is | yes |
 | `sitemap.xml` | indexers | **every** indexable URL, with `lastmod` derived from content | yes |
 | `llms.txt` | models browsing live | **routing**: which page answers which question — §5.1 | yes, same loop |
-| `AGENTS.md` | models answering *about* you | **correcting**: how to describe you without getting it wrong | **no — by hand** |
+| `AGENTS.md` | **contested — read §5.2-bis before shipping one** | *intended* as: how to describe you without getting it wrong | **no — by hand** |
 
-**The division of labour matters, because otherwise they become three copies of a sitemap.**
-`llms.txt` answers *"which page should I open?"*. `AGENTS.md` answers *"what should I say when I
-am not going to open anything at all"* — which is the majority of the time, and the case nobody
-optimises for.
+### 5.2-bis · What `AGENTS.md` is worth is NOT settled, and this document got it wrong first
 
-#### The section that earns AGENTS.md its place
+🔴 **The line above originally said `AGENTS.md` is read by "models answering about you", stated
+as fact. That was asserted, not measured**, and it contradicts an assessment already written
+down elsewhere with a date and a source:
+
+> *`AGENTS.md` on a WEBSITE — ROI ~0. It is a convention for **code agents inside a cloned
+> repository**, not something an answer engine reads off a domain. **Its home is the repo**, not
+> the site.*
+
+**That assessment is the stronger claim**, and it is probably right: `AGENTS.md` is the
+repo-level convention coding agents look for after a checkout. Nothing establishes that an
+answer engine fetches it from a domain root.
+
+**And the honest state is that nobody here can settle it, because nobody logs it.** The
+marketing site is served without an access log, so *"does anything actually request
+`/AGENTS.md` or `/llms.txt`?"* is **NOT MEASURED** — not "no". The one adjacent measurement we
+do run asks the models whether they cite us; it does not tell us what was fetched.
+
+> **The cheap fix that turns this from an opinion into a number:** an access log on the site
+> block, and a monthly count of requests for `/llms.txt`, `/AGENTS.md` and `/sitemap.xml` split
+> by user agent. Until that exists, **treat every claim in this section about who reads these
+> files as unverified — including the ones that sound confident.**
+
+**What is NOT contested**, and is the part worth keeping: **if you ship one, it has to be true.**
+Ours once carried the *previous* positioning — "read-only", "no-write guards" — in the file that
+presents itself as the source of truth for answer engines. A stale `AGENTS.md` is worse than no
+`AGENTS.md`, because a wrong correction is louder than an absent one.
+
+**The division of labour is the part that survives the argument**, because without it they
+become three copies of a sitemap. `llms.txt` answers *"which page should I open?"* — and that
+one IS fetched by a browsing model, because browsing is the whole mechanism. `AGENTS.md` was
+intended for *"what do I say when I am not going to open anything at all"*; whether anything
+reads it there is the open question of §5.2-bis.
+
+#### The shape worth copying — wherever the file ends up living
+
+**This part is independent of the argument above.** Whether it belongs on the domain or only in
+the repo, the *content* is the same, and it is the only bit of all this that is clearly good:
 
 Our own is 209 lines and its best section is not a description of the company. It is a numbered
 list of **the mistakes a model will make about us, corrected** — written after seeing those
@@ -238,8 +286,12 @@ your competitors.
 
 #### Measured state, 2026-09-02
 
-**One site of five has an `AGENTS.md`: ours.** The four client sites have none — so on those,
-every question a model answers *about* the business is answered from whatever it inferred.
+**One site of five has an `AGENTS.md`: ours.** The four client sites have none.
+
+⚠️ **That is a difference, not automatically a defect** — see §5.2-bis. Writing one for four
+client sites is only worth doing if somebody first establishes that anything reads it, and that
+is a measurement nobody has taken. **Do not turn this count into work on the strength of the
+count alone.**
 
 ⚠️ **And it is the file that drifts hardest**, because it is the only one nobody generates. On
 our own it once carried the *previous* positioning ("read-only", "no-write guards") in the file

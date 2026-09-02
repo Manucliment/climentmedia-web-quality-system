@@ -94,7 +94,7 @@
   "reglas": [
     {
       "id": "WPS-01",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 20,
       "ref": "web-page-standard/SKILL.md:42",
       "texto": "A que carril pertenece? Si no encaja en ninguno, no se crea",
@@ -130,7 +130,7 @@
     },
     {
       "id": "WPS-02",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 22,
       "ref": "web-page-standard/SKILL.md:45",
       "texto": "Si compite en busqueda: volumen MEDIDO, con ruta y cifra. Sin dato, no hay pagina",
@@ -166,7 +166,7 @@
     },
     {
       "id": "WPS-03",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 24,
       "ref": "web-page-standard/SKILL.md:56",
       "texto": "Quien la va a enlazar desde el CUERPO? Minimo dos. El nav no cuenta",
@@ -201,7 +201,7 @@
     },
     {
       "id": "WPS-04",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 29,
       "ref": "web-page-standard/SKILL.md:76",
       "texto": "<title> unico",
@@ -236,7 +236,7 @@
     },
     {
       "id": "WPS-05",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 31,
       "ref": "web-page-standard/SKILL.md:77",
       "texto": "<meta description> unica y autocontenida",
@@ -271,7 +271,7 @@
     },
     {
       "id": "WPS-06",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 33,
       "ref": "web-page-standard/SKILL.md:78",
       "texto": "<link rel=\"canonical\"> absoluto y a si misma",
@@ -306,7 +306,7 @@
     },
     {
       "id": "WPS-07",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 35,
       "ref": "web-page-standard/SKILL.md:79",
       "texto": "OG + twitter:card estaticos",
@@ -341,7 +341,7 @@
     },
     {
       "id": "WPS-08",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 37,
       "ref": "web-page-standard/SKILL.md:80",
       "texto": "og:image ABSOLUTA, con og:image:alt y twitter:image",
@@ -376,7 +376,7 @@
     },
     {
       "id": "WPS-09",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 39,
       "ref": "web-page-standard/SKILL.md:85",
       "texto": "<html lang> real",
@@ -411,7 +411,7 @@
     },
     {
       "id": "WPS-10",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 44,
       "ref": "web-page-standard/SKILL.md:87",
       "texto": "BreadcrumbList JSON-LD en TODAS",
@@ -446,7 +446,7 @@
     },
     {
       "id": "WPS-11",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 46,
       "ref": "web-page-standard/SKILL.md:88",
       "texto": "Enlaces <a href> reales, nunca navegacion solo-JS",
@@ -481,7 +481,7 @@
     },
     {
       "id": "WPS-12",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 48,
       "ref": "web-page-standard/SKILL.md:89",
       "texto": "alt descriptivo en toda imagen de contenido",
@@ -516,7 +516,7 @@
     },
     {
       "id": "WPS-13",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 55,
       "ref": "web-page-standard/SKILL.md:96",
       "texto": "Capsula de respuesta de 40-60 palabras justo bajo el H1",
@@ -552,7 +552,7 @@
     },
     {
       "id": "WPS-14",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 57,
       "ref": "web-page-standard/SKILL.md:99",
       "texto": ">= 1 tabla comparativa con linea de veredicto por fila",
@@ -588,7 +588,7 @@
     },
     {
       "id": "WPS-15",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 59,
       "ref": "web-page-standard/SKILL.md:101",
       "texto": ">= 1 dato con fuente, con <blockquote cite> y atribucion visible",
@@ -624,7 +624,7 @@
     },
     {
       "id": "WPS-16",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 61,
       "ref": "web-page-standard/SKILL.md:102",
       "texto": "Bloque FAQ al final (5-8 Q&A) + FAQPage JSON-LD",
@@ -660,7 +660,7 @@
     },
     {
       "id": "WPS-17",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 74,
       "ref": "web-page-standard/SKILL.md:103",
       "texto": "Article/TechArticle con datePublished + dateModified (obligatorios) y author completo",
@@ -695,7 +695,7 @@
     },
     {
       "id": "WPS-18",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 63,
       "ref": "web-page-standard/SKILL.md:106",
       "texto": "Datestamp visible con <time datetime>",
@@ -731,7 +731,7 @@
     },
     {
       "id": "WPS-19",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 50,
       "ref": "web-page-standard/SKILL.md:107",
       "texto": "Interlinking: 2-4 hermanos del mismo cluster con anchor descriptivo",
@@ -766,7 +766,7 @@
     },
     {
       "id": "WPS-20",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 76,
       "ref": "web-page-standard/SKILL.md:114",
       "texto": "Hub: CollectionPage + ItemList listando los hijos con position y url",
@@ -802,7 +802,7 @@
     },
     {
       "id": "WPS-21",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 65,
       "ref": "web-page-standard/SKILL.md:126",
       "texto": "Estado honesto (Live/Beta/In construction/Planned). Nunca sobrevender",
@@ -838,7 +838,7 @@
     },
     {
       "id": "WPS-22",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 87,
       "ref": "web-page-standard/SKILL.md:143",
       "texto": "og:image PROPIA por pagina. Nunca dejar el og-default en una pagina de contenido",
@@ -873,7 +873,7 @@
     },
     {
       "id": "WPS-23",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 67,
       "ref": "web-page-standard/SKILL.md:144",
       "texto": ">= 1 visual propio por pilar/comparativa que EXPLIQUE algo",
@@ -909,7 +909,7 @@
     },
     {
       "id": "WPS-24",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 69,
       "ref": "web-page-standard/SKILL.md:147",
       "texto": "CERO stock",
@@ -945,7 +945,7 @@
     },
     {
       "id": "WPS-25",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 78,
       "ref": "web-page-standard/SKILL.md:163",
       "texto": "Article o TechArticle, NUNCA los dos",
@@ -980,7 +980,7 @@
     },
     {
       "id": "WPS-26",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 80,
       "ref": "web-page-standard/SKILL.md:193",
       "texto": "author: bloque canonico completo (name, jobTitle, worksFor, sameAs)",
@@ -1016,7 +1016,7 @@
     },
     {
       "id": "WPS-27",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 82,
       "ref": "web-page-standard/SKILL.md:204",
       "texto": "NO usar SearchAction, Review/AggregateRating, LocalBusiness, Product, speakable, HowTo",
@@ -1051,7 +1051,7 @@
     },
     {
       "id": "WPS-28",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 89,
       "ref": "web-page-standard/SKILL.md:71",
       "texto": "Cero recursos de terceros (regla de NUESTRA web, no de la del cliente)",
@@ -1086,7 +1086,7 @@
     },
     {
       "id": "WPS-29",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 91,
       "ref": "web-page-standard/SKILL.md:256",
       "texto": "_check.sh y _audit.sh EXIT 0. En rojo no se despliega",
@@ -1121,7 +1121,7 @@
     },
     {
       "id": "WPS-30",
-      "doc": "web-quality-system/gates/18-estandar-de-pagina.md",
+      "doc": "blueprint/18-page-standard.md",
       "linea": 96,
       "ref": "web-page-standard/SKILL.md:258",
       "texto": "Y despues de que pase: ABRIR LA PAGINA Y LEERLA",
@@ -1618,7 +1618,7 @@
     },
     {
       "id": "IN-01",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 3,
       "ref": "00-intake.md:3",
       "texto": "Bloqueante en los dos casos. Sin el bloque A no se genera nada",
@@ -1633,7 +1633,7 @@
     },
     {
       "id": "IN-02",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 21,
       "ref": "00-intake.md:21",
       "texto": "Donde llegan los leads: se pregunta AUNQUE haya web, y cual de los correos leen de verdad",
@@ -1669,7 +1669,7 @@
     },
     {
       "id": "IN-03",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 22,
       "ref": "00-intake.md:22",
       "texto": "Quien aprueba, con nombre. \"el cliente\" no aprueba nada",
@@ -1684,7 +1684,7 @@
     },
     {
       "id": "IN-04",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 49,
       "ref": "00-intake.md:49",
       "texto": "Buzon real en el dominio para el formulario, y que NO sea el que lee el cliente",
@@ -1720,7 +1720,7 @@
     },
     {
       "id": "IN-05",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 50,
       "ref": "00-intake.md:50",
       "texto": "Certificado SSL valido en el destino: se comprueba el PRIMER DIA, no el del cambio",
@@ -1734,7 +1734,7 @@
     },
     {
       "id": "IN-06",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 51,
       "ref": "00-intake.md:51",
       "texto": "Google Business Profile: el NAP tiene que coincidir caracter a caracter",
@@ -1749,7 +1749,7 @@
     },
     {
       "id": "IN-07",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 33,
       "ref": "00-intake.md:33",
       "texto": "Si no tiene fotos de equipo y local, esas secciones NO EXISTEN todavia: no se generan",
@@ -1764,7 +1764,7 @@
     },
     {
       "id": "IN-08",
-      "doc": "00-intake.md",
+      "doc": "blueprint/00-intake.md",
       "linea": 39,
       "ref": "00-intake.md:39",
       "texto": "Idioma(s): si son dos se decide al principio; meterlo despues duplica las URLs",
@@ -1778,7 +1778,7 @@
     },
     {
       "id": "OR-01",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 43,
       "ref": "01-origen.md:43",
       "texto": "El bloque de control no es opcional: el script imprime los recuentos CONTRA LA FUENTE",
@@ -1792,7 +1792,7 @@
     },
     {
       "id": "OR-02",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 61,
       "ref": "01-origen.md:61",
       "texto": "Si el control dice que faltan datos, comprobar el CONTROL antes de tocar el extractor",
@@ -1807,7 +1807,7 @@
     },
     {
       "id": "OR-03",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 65,
       "ref": "01-origen.md:65",
       "texto": "El extractor no arregla, copia. La correccion va en overrides con su why",
@@ -1822,7 +1822,7 @@
     },
     {
       "id": "OR-04",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 87,
       "ref": "01-origen.md:87",
       "texto": "PAGINAR SIEMPRE el wp-json: per_page=100 sin paginar entrego 100 de 129 medios sin dar error",
@@ -1858,7 +1858,7 @@
     },
     {
       "id": "OR-05",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 99,
       "ref": "01-origen.md:99",
       "texto": "title y description se sacan del HTML SERVIDO: Yoast no siempre expone yoast_head_json",
@@ -1873,7 +1873,7 @@
     },
     {
       "id": "OR-06",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 101,
       "ref": "01-origen.md:101",
       "texto": "El h1 puede NO estar en el contenido (lo pone el tema): si no viene, emitirlo desde el titulo",
@@ -1908,7 +1908,7 @@
     },
     {
       "id": "OR-07",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 128,
       "ref": "01-origen.md:128",
       "texto": "Censar los CTA huerfanos que emite el maquetador como texto. No se borran: se convierten en botones",
@@ -1923,7 +1923,7 @@
     },
     {
       "id": "OR-08",
-      "doc": "01-origen.md",
+      "doc": "blueprint/01-source.md",
       "linea": 104,
       "ref": "01-origen.md:104",
       "texto": "Para HTML y JSON: parser, no regex",
@@ -1938,7 +1938,7 @@
     },
     {
       "id": "DI-01",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 16,
       "ref": "02-diseno.md:16",
       "texto": "Por defecto se parte de site-a-web: la unica con el ciclo entero verificado en produccion",
@@ -1953,7 +1953,7 @@
     },
     {
       "id": "DI-02",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 25,
       "ref": "02-diseno.md:25",
       "texto": "Cada numero tiene que poder senalarse en su origen. Si no se puede decir de donde sale, esta inventado",
@@ -1968,7 +1968,7 @@
     },
     {
       "id": "DI-03",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 42,
       "ref": "02-diseno.md:42",
       "texto": "Volcar el hero de la home Y el de una interior, y comparar",
@@ -2004,7 +2004,7 @@
     },
     {
       "id": "DI-04",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 48,
       "ref": "02-diseno.md:48",
       "texto": "Cinco palancas (paleta, tipografia, hero, tarjeta, orden). Con tres movidas de verdad, dos webs no se reconocen como hermanas",
@@ -2019,7 +2019,7 @@
     },
     {
       "id": "DI-05",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 53,
       "ref": "02-diseno.md:53",
       "texto": "El contraste se mide leyendo el pixel del canvas; getComputedStyle().color devuelve oklab y da falsos",
@@ -2054,7 +2054,7 @@
     },
     {
       "id": "DI-06",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 69,
       "ref": "02-diseno.md:69",
       "texto": "Antes de escribir un componente, mirar si ya esta, EN ESTE ORDEN: moldes -> INDEX -> canon",
@@ -2069,7 +2069,7 @@
     },
     {
       "id": "DI-07",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 96,
       "ref": "02-diseno.md:96",
       "texto": "Si no sale, se construye Y SE REGISTRA EN EL INDEX al terminar, con su codigo y su \"cuando NO\"",
@@ -2084,7 +2084,7 @@
     },
     {
       "id": "DI-08",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 114,
       "ref": "02-diseno.md:114",
       "texto": "Tipografia: autoalojar, nunca enlazar. Google Fonts manda la IP del visitante a Google",
@@ -2119,7 +2119,7 @@
     },
     {
       "id": "DI-09",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 126,
       "ref": "02-diseno.md:126",
       "texto": "@font-face con su unicode-range + font-display:swap + preload del latin",
@@ -2154,7 +2154,7 @@
     },
     {
       "id": "DI-10",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 134,
       "ref": "02-diseno.md:134",
       "texto": "Una imagen generada NUNCA se presenta como una persona, un equipo, un local o un resultado reales",
@@ -2169,7 +2169,7 @@
     },
     {
       "id": "DI-11",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 149,
       "ref": "02-diseno.md:149",
       "texto": "El alt describe lo que se ve, sin atribuir",
@@ -2184,7 +2184,7 @@
     },
     {
       "id": "DI-12",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 156,
       "ref": "02-diseno.md:156",
       "texto": "Con web: sus imagenes son suyas y hay que traerlas TODAS. El emparejamiento sale de su codigo",
@@ -2219,7 +2219,7 @@
     },
     {
       "id": "DI-13",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 168,
       "ref": "02-diseno.md:168",
       "texto": "Se listan y se aprueban los huecos de imagen ANTES de gastar creditos",
@@ -2234,7 +2234,7 @@
     },
     {
       "id": "DI-14",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 189,
       "ref": "02-diseno.md:189",
       "texto": "Redimensionar a lo que se sirve, WebP si pesa, width/height en el <img>, loading=lazy fuera del pliegue",
@@ -2269,7 +2269,7 @@
     },
     {
       "id": "DI-15",
-      "doc": "02-diseno.md",
+      "doc": "blueprint/02-design.md",
       "linea": 192,
       "ref": "02-diseno.md:192",
       "texto": "Guardar el prompt de cada imagen generada en assets/_prompts.md",
@@ -2284,7 +2284,7 @@
     },
     {
       "id": "SE-01",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 4,
       "ref": "03-contenido-y-seo.md:4",
       "texto": "Fidelidad de texto: umbral >= 90%, y cada cadena que falte, explicada",
@@ -2299,7 +2299,7 @@
     },
     {
       "id": "SE-02",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 60,
       "ref": "03-contenido-y-seo.md:60",
       "texto": "canonical a SI MISMA. Va JUNTO con dar contenido propio: o las dos cosas, o ninguna",
@@ -2334,7 +2334,7 @@
     },
     {
       "id": "SE-03",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 66,
       "ref": "03-contenido-y-seo.md:66",
       "texto": "Favicon del cliente, no un glifo generico",
@@ -2348,7 +2348,7 @@
     },
     {
       "id": "SE-04",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 68,
       "ref": "03-contenido-y-seo.md:68",
       "texto": "robots.txt, sitemap.xml y llms.txt salen DEL MISMO BUCLE que las paginas, con un gate que falle si divergen",
@@ -2383,7 +2383,7 @@
     },
     {
       "id": "SE-05",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 112,
       "ref": "03-contenido-y-seo.md:112",
       "texto": "llms.txt es TEXTO PLANO: cero entidades HTML dentro",
@@ -2397,7 +2397,7 @@
     },
     {
       "id": "SE-06",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 117,
       "ref": "03-contenido-y-seo.md:117",
       "texto": "llms.txt lleva LAS MISMAS URLs que el sitemap, verificado por el gate",
@@ -2412,7 +2412,7 @@
     },
     {
       "id": "SE-07",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 127,
       "ref": "03-contenido-y-seo.md:127",
       "texto": "FAQPage solo si la FAQ es VISIBLE. Se pinta el acordeon Y se emite el schema",
@@ -2427,7 +2427,7 @@
     },
     {
       "id": "SE-08",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 131,
       "ref": "03-contenido-y-seo.md:131",
       "texto": "Si el cliente ya emitia schema correcto, SE CONSERVA: migrar no es rehacer lo que funcionaba",
@@ -2462,7 +2462,7 @@
     },
     {
       "id": "SE-09",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 101,
       "ref": "03-contenido-y-seo.md:101",
       "texto": "Si el cliente ya tenia og:image, SE CONSERVA (fue una regresion, no una omision)",
@@ -2476,7 +2476,7 @@
     },
     {
       "id": "SE-10",
-      "doc": "03-contenido-y-seo.md",
+      "doc": "blueprint/03-content-and-seo.md",
       "linea": 45,
       "ref": "03-contenido-y-seo.md:45",
       "texto": "Agrupar los no-match por numero de paginas afectadas: lo que falta en 8 de 8 vale 8 veces mas",
@@ -2491,7 +2491,7 @@
     },
     {
       "id": "ME-01",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 37,
       "ref": "04-medicion.md:37",
       "texto": "El contenedor es PUBLICO: se descarga y se mira que lleva dentro. El AW- casi nunca esta en su codigo",
@@ -2526,7 +2526,7 @@
     },
     {
       "id": "ME-02",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 52,
       "ref": "04-medicion.md:52",
       "texto": "PRIMERO el consent default (todo denegado), DESPUES el contenedor",
@@ -2561,7 +2561,7 @@
     },
     {
       "id": "ME-03",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 65,
       "ref": "04-medicion.md:65",
       "texto": "wait_for_update: 500",
@@ -2596,7 +2596,7 @@
     },
     {
       "id": "ME-04",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 72,
       "ref": "04-medicion.md:72",
       "texto": "Se replica SU banner: textos, categorias y SU CLAVE DE ALMACENAMIENTO",
@@ -2611,7 +2611,7 @@
     },
     {
       "id": "ME-05",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 78,
       "ref": "04-medicion.md:78",
       "texto": "El banner se pinta OCULTO y lo abre el JS solo si no hay decision guardada",
@@ -2647,7 +2647,7 @@
     },
     {
       "id": "ME-06",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 81,
       "ref": "04-medicion.md:81",
       "texto": "En cada carga se RE-APLICA la decision guardada: GTM arranca en denied siempre",
@@ -2683,7 +2683,7 @@
     },
     {
       "id": "ME-07",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 87,
       "ref": "04-medicion.md:87",
       "texto": "Enlace en el pie que REABRE el banner: en la UE, poder cambiar de opinion es obligatorio",
@@ -2719,7 +2719,7 @@
     },
     {
       "id": "ME-08",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 94,
       "ref": "04-medicion.md:94",
       "texto": "La conversion se dispara por MARCA en el <body> (data-thanks), NO por URL",
@@ -2754,7 +2754,7 @@
     },
     {
       "id": "ME-09",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 96,
       "ref": "04-medicion.md:96",
       "texto": "Se replica EXACTAMENTE EL MISMO NOMBRE de sus eventos: el disparador escucha ese, no otro",
@@ -2789,7 +2789,7 @@
     },
     {
       "id": "ME-10",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 116,
       "ref": "04-medicion.md:116",
       "texto": "Con un tag manager cargado, publicar sin politica de cookies es peor que cualquier alternativa",
@@ -2824,7 +2824,7 @@
     },
     {
       "id": "ME-11",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 128,
       "ref": "04-medicion.md:128",
       "texto": "Verificar en NAVEGADOR, no en el HTML: que el marcado este no prueba que funcione",
@@ -2859,7 +2859,7 @@
     },
     {
       "id": "ME-12",
-      "doc": "04-medicion.md",
+      "doc": "blueprint/04-measurement.md",
       "linea": 120,
       "ref": "04-medicion.md:120",
       "texto": "Publicar SU aviso legal (ya aprobado) no es redactarlo. Se copia tal cual, ni se mejora ni se completa",
@@ -2895,7 +2895,7 @@
     },
     {
       "id": "FO-01",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 22,
       "ref": "05-formularios.md:22",
       "texto": "Buscar el CRM muerto tambien en los chunks de JS: en un sitio SSR el iframe no esta en el HTML inicial",
@@ -2910,7 +2910,7 @@
     },
     {
       "id": "FO-02",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 46,
       "ref": "05-formularios.md:46",
       "texto": "Receptor: PHP en el mismo dominio por defecto (0 terceros), si el hosting tiene PHP",
@@ -2946,7 +2946,7 @@
     },
     {
       "id": "FO-03",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 56,
       "ref": "05-formularios.md:56",
       "texto": "Guarda en disco ANTES de enviar: si el correo falla, el lead no se pierde",
@@ -2982,7 +2982,7 @@
     },
     {
       "id": "FO-04",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 60,
       "ref": "05-formularios.md:60",
       "texto": "Anti-spam sin CAPTCHA: campo trampa + tiempo minimo",
@@ -3017,7 +3017,7 @@
     },
     {
       "id": "FO-05",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 63,
       "ref": "05-formularios.md:63",
       "texto": "El log de leads va FUERA del directorio publico",
@@ -3052,7 +3052,7 @@
     },
     {
       "id": "FO-06",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 58,
       "ref": "05-formularios.md:58",
       "texto": "Reply-To = quien escribe",
@@ -3067,7 +3067,7 @@
     },
     {
       "id": "FO-07",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 72,
       "ref": "05-formularios.md:72",
       "texto": "No reinventar el formulario: ya existe su componente. Se le da destino real, no se rediseña",
@@ -3082,7 +3082,7 @@
     },
     {
       "id": "FO-08",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 77,
       "ref": "05-formularios.md:77",
       "texto": "Si el repo tiene la lista de zonas, el campo municipio se convierte en desplegable",
@@ -3097,7 +3097,7 @@
     },
     {
       "id": "FO-09",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 91,
       "ref": "05-formularios.md:91",
       "texto": "Datos de salud: casilla de consentimiento EXPLICITA, no un \"acepto\" generico",
@@ -3132,7 +3132,7 @@
     },
     {
       "id": "FO-10",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 93,
       "ref": "05-formularios.md:93",
       "texto": "Si se guarda copia en servidor, declararlo Y PONERLE CADUCIDAD",
@@ -3167,7 +3167,7 @@
     },
     {
       "id": "FO-11",
-      "doc": "05-formularios.md",
+      "doc": "blueprint/05-forms.md",
       "linea": 61,
       "ref": "05-formularios.md:61",
       "texto": "Guarda de doble envio",
@@ -3202,7 +3202,7 @@
     },
     {
       "id": "PU-01",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 10,
       "ref": "06-publicar.md:10",
       "texto": "EL CERTIFICADO, ANTES DEL DNS. Se comprueba el PRIMER DIA del proyecto",
@@ -3216,7 +3216,7 @@
     },
     {
       "id": "PU-02",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 29,
       "ref": "06-publicar.md:29",
       "texto": "Gate SSL: existe, cubre el dominio Y www, notAfter en el futuro",
@@ -3230,7 +3230,7 @@
     },
     {
       "id": "PU-03",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 50,
       "ref": "06-publicar.md:50",
       "texto": "Gate por IP: todas las URLs del sitemap en 200, cero 301 en URLs indexadas, _leads y _secrets en 404",
@@ -3244,7 +3244,7 @@
     },
     {
       "id": "PU-04",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 74,
       "ref": "06-publicar.md:74",
       "texto": "Guardar la zona DNS original en _deploy/dns-backup/ antes de tocarla",
@@ -3259,7 +3259,7 @@
     },
     {
       "id": "PU-05",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 75,
       "ref": "06-publicar.md:75",
       "texto": "TTL 300 en los registros que se tocan; no tocar MX, TXT ni nameservers",
@@ -3274,7 +3274,7 @@
     },
     {
       "id": "PU-06",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 84,
       "ref": "06-publicar.md:84",
       "texto": "Despues del cambio, curl SIN -k: ssl_verify_result=0 es lo unico que prueba que el certificado vale",
@@ -3288,7 +3288,7 @@
     },
     {
       "id": "PU-07",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 90,
       "ref": "06-publicar.md:90",
       "texto": "Gate final: sitemap 200 con certificado validado, apex y www, formularios de punta a punta, diagnosticos en 404",
@@ -3302,7 +3302,7 @@
     },
     {
       "id": "PU-08",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 97,
       "ref": "06-publicar.md:97",
       "texto": "Lo que solo puede hacer el cliente va a Notion en formato movil, con QUE VERIFICO YO y la vuelta atras",
@@ -3317,7 +3317,7 @@
     },
     {
       "id": "PU-09",
-      "doc": "06-publicar.md",
+      "doc": "blueprint/06-publishing.md",
       "linea": 101,
       "ref": "06-publicar.md:101",
       "texto": "Al pedir una accion sobre algo que sostiene un sistema, se dice QUE SOSTIENE",
@@ -3332,7 +3332,7 @@
     },
     {
       "id": "TR-01",
-      "doc": "07-trampas.md",
+      "doc": "docs/traps.md",
       "linea": 88,
       "ref": "07-trampas.md:88",
       "texto": "La limpieza de U+200B va en el GENERADOR y queda DECLARADA",
@@ -3347,7 +3347,7 @@
     },
     {
       "id": "TR-02",
-      "doc": "07-trampas.md",
+      "doc": "docs/traps.md",
       "linea": 113,
       "ref": "07-trampas.md:113",
       "texto": "prefers-reduced-motion tiene que anular la DURACION Y EL RETARDO (animation-delay y transition-delay)",
@@ -3382,7 +3382,7 @@
     },
     {
       "id": "TR-03",
-      "doc": "07-trampas.md",
+      "doc": "docs/traps.md",
       "linea": 149,
       "ref": "07-trampas.md:149",
       "texto": "Antes de aplicar una regla del estandar a un cliente, LEER SU MOTIVO. Si el motivo habla de nosotros, no transfiere",
@@ -3397,7 +3397,7 @@
     },
     {
       "id": "TR-04",
-      "doc": "07-trampas.md",
+      "doc": "docs/traps.md",
       "linea": 288,
       "ref": "07-trampas.md:288",
       "texto": "Al cambiar una convencion del sitio, revisar los GATES antes de creerse su veredicto",
@@ -3412,7 +3412,7 @@
     },
     {
       "id": "TR-05",
-      "doc": "07-trampas.md",
+      "doc": "docs/traps.md",
       "linea": 314,
       "ref": "07-trampas.md:314",
       "texto": "Antes de subir un .js a un sitio con sellado, usar EL MISMO sello del fichero vivo, tambien en cada import interno",
@@ -3447,7 +3447,7 @@
     },
     {
       "id": "TR-06",
-      "doc": "07-trampas.md",
+      "doc": "docs/traps.md",
       "linea": 331,
       "ref": "07-trampas.md:331",
       "texto": "Si un proyecto tiene sellado y no lo automatiza, el paso va en su CLAUDE.md o no existe",
@@ -3462,7 +3462,7 @@
     },
     {
       "id": "TR-07",
-      "doc": "07-trampas.md",
+      "doc": "docs/traps.md",
       "linea": 134,
       "ref": "07-trampas.md:134",
       "texto": "Si el barrido dice que todo esta roto a la vez, el roto es el barrido",
@@ -3477,7 +3477,7 @@
     },
     {
       "id": "QA-01",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 34,
       "ref": "08-qa-final.md:34",
       "texto": "Bloque A: qa-final.sh sobre el sitio PUBLICADO. Exit != 0 = no se cierra",
@@ -3491,7 +3491,7 @@
     },
     {
       "id": "QA-02",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 57,
       "ref": "08-qa-final.md:57",
       "texto": "A-bis: ningun bloque ocupa mas de 1 pantalla",
@@ -3526,7 +3526,7 @@
     },
     {
       "id": "QA-03",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 58,
       "ref": "08-qa-final.md:58",
       "texto": "A-bis: la pagina son <= 6 pantallas de scroll",
@@ -3561,7 +3561,7 @@
     },
     {
       "id": "QA-04",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 59,
       "ref": "08-qa-final.md:59",
       "texto": "A-bis: <= 2,5 pantallas seguidas sin CTA",
@@ -3596,7 +3596,7 @@
     },
     {
       "id": "QA-05",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 60,
       "ref": "08-qa-final.md:60",
       "texto": "A-bis: >= 2 CTA en la pagina",
@@ -3631,7 +3631,7 @@
     },
     {
       "id": "QA-06",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 106,
       "ref": "08-qa-final.md:106",
       "texto": "Los gates de maqueta se corren a 1440 Y a 390, en las paginas de cada tipo distinto",
@@ -3645,7 +3645,7 @@
     },
     {
       "id": "QA-07",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 108,
       "ref": "08-qa-final.md:108",
       "texto": "Lo primero que se mira no es el veredicto: es innerWidth. Si no es el pedido, la medicion se tira entera",
@@ -3659,7 +3659,7 @@
     },
     {
       "id": "QA-08",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 111,
       "ref": "08-qa-final.md:111",
       "texto": "Se reportan LAS DOS cosas: VEREDICTO y esPaginaProsa. Son preguntas distintas",
@@ -3694,7 +3694,7 @@
     },
     {
       "id": "QA-09",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 120,
       "ref": "08-qa-final.md:120",
       "texto": "Si notas dice \"sin data-sec: la anatomia por ROL no se ha comprobado\", eso NO es un aprobado",
@@ -3729,7 +3729,7 @@
     },
     {
       "id": "QA-10",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 160,
       "ref": "08-qa-final.md:160",
       "texto": "No se cambian las clases del componente para que el gate lo vea: eso es maquillar el instrumento",
@@ -3744,7 +3744,7 @@
     },
     {
       "id": "QA-11",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 165,
       "ref": "08-qa-final.md:165",
       "texto": "Bloque B: cinco cosas MIRADAS con los ojos (3 paginas, formulario real, WhatsApp, movil real, panel de red)",
@@ -3759,7 +3759,7 @@
     },
     {
       "id": "QA-12",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 185,
       "ref": "08-qa-final.md:185",
       "texto": "Bloque C: las 7 preguntas respondidas, aunque salga \"nada\"",
@@ -3774,7 +3774,7 @@
     },
     {
       "id": "QA-13",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 226,
       "ref": "08-qa-final.md:226",
       "texto": "\"NO VERIFICADO\" no es opcional",
@@ -3788,7 +3788,7 @@
     },
     {
       "id": "QA-14",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 230,
       "ref": "08-qa-final.md:230",
       "texto": "Las lineas de A-bis y A-ter llevan el innerWidth MEDIDO, no el pedido",
@@ -3802,7 +3802,7 @@
     },
     {
       "id": "QA-15",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 235,
       "ref": "08-qa-final.md:235",
       "texto": "Una linea que falta se lee como un PASA: un gate que no se pudo correr se escribe NO MEDIDO con el motivo",
@@ -3816,7 +3816,7 @@
     },
     {
       "id": "QA-16",
-      "doc": "08-qa-final.md",
+      "doc": "checklists/final-qa.md",
       "linea": 157,
       "ref": "08-qa-final.md:157",
       "texto": "La UNICA excepcion declarada: pagina-configurador que falla solo por el umbral de CTAs",
@@ -3830,7 +3830,7 @@
     },
     {
       "id": "TP-01",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 73,
       "ref": "09-tipos-de-pagina.md:73",
       "texto": "Toda seccion del cuerpo lleva data-sec=\"<rol>\". El fondo NO se mezcla con el rol",
@@ -3865,7 +3865,7 @@
     },
     {
       "id": "TP-02",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 146,
       "ref": "09-tipos-de-pagina.md:146",
       "texto": "Home: hero, prueba, oferta, proceso y cierre son OBLIGATORIOS y en ese orden",
@@ -3900,7 +3900,7 @@
     },
     {
       "id": "TP-03",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 155,
       "ref": "09-tipos-de-pagina.md:155",
       "texto": "PROHIBIDO en la home: mas de un objetivo de conversion, mas de una rejilla-caracteristicas, una FAQ",
@@ -3915,7 +3915,7 @@
     },
     {
       "id": "TP-04",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 164,
       "ref": "09-tipos-de-pagina.md:164",
       "texto": "Servicio: hero, oferta, calificacion, proceso, objeciones, hermanos y cierre son OBL",
@@ -3950,7 +3950,7 @@
     },
     {
       "id": "TP-05",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 190,
       "ref": "09-tipos-de-pagina.md:190",
       "texto": "Ciudad: el toponimo va en el H1. PROHIBIDO el mismo H1 en varias ciudades",
@@ -3985,7 +3985,7 @@
     },
     {
       "id": "TP-06",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 191,
       "ref": "09-tipos-de-pagina.md:191",
       "texto": "Ciudad: mapa OBL (la pregunta que trae al visitante es \"venis a mi pueblo?\")",
@@ -3999,7 +3999,7 @@
     },
     {
       "id": "TP-07",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 195,
       "ref": "09-tipos-de-pagina.md:195",
       "texto": "Ciudad: hermanos = ciudades vecinas + el hub de zonas, OBL",
@@ -4034,7 +4034,7 @@
     },
     {
       "id": "TP-08",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 213,
       "ref": "09-tipos-de-pagina.md:213",
       "texto": "Ficha de producto: hero con precio y accion, oferta, prueba, objeciones, hermanos y cierre OBL",
@@ -4069,7 +4069,7 @@
     },
     {
       "id": "TP-09",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 222,
       "ref": "09-tipos-de-pagina.md:222",
       "texto": "PROHIBIDO renderizar la ficha solo con JS",
@@ -4104,7 +4104,7 @@
     },
     {
       "id": "TP-10",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 236,
       "ref": "09-tipos-de-pagina.md:236",
       "texto": "Hub: catalogo con TODOS los hijos + calificacion (como elegir entre ellos) OBL",
@@ -4139,7 +4139,7 @@
     },
     {
       "id": "TP-11",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 239,
       "ref": "09-tipos-de-pagina.md:239",
       "texto": "PROHIBIDO un hub con menos de 4 hijos, un hijo que no enlaza de vuelta, listar hijos que no existen",
@@ -4153,7 +4153,7 @@
     },
     {
       "id": "TP-12",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 253,
       "ref": "09-tipos-de-pagina.md:253",
       "texto": "Guia: par-alterno, uno por idea, OBL. PROHIBIDO <h2> como unico separador entre tiradas de <p>",
@@ -4188,7 +4188,7 @@
     },
     {
       "id": "TP-13",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 283,
       "ref": "09-tipos-de-pagina.md:283",
       "texto": "Precios: PROHIBIDO un importe escrito a mano cuando existe fuente unica",
@@ -4203,7 +4203,7 @@
     },
     {
       "id": "TP-14",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 293,
       "ref": "09-tipos-de-pagina.md:293",
       "texto": "Contacto: prueba = plazo de respuesta y horario, OBL",
@@ -4238,7 +4238,7 @@
     },
     {
       "id": "TP-15",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 297,
       "ref": "09-tipos-de-pagina.md:297",
       "texto": "Contacto: PROHIBIDO que el telefono no sea tel:",
@@ -4252,7 +4252,7 @@
     },
     {
       "id": "TP-16",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 308,
       "ref": "09-tipos-de-pagina.md:308",
       "texto": "Gracias: noindex OBLIGATORIO y que aqui dispare el evento de conversion",
@@ -4287,7 +4287,7 @@
     },
     {
       "id": "TP-17",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 312,
       "ref": "09-tipos-de-pagina.md:312",
       "texto": "Gracias: PROHIBIDO repetir el mismo CTA que acaba de completarse; el cierre es el SIGUIENTE paso",
@@ -4323,7 +4323,7 @@
     },
     {
       "id": "TP-18",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 322,
       "ref": "09-tipos-de-pagina.md:322",
       "texto": "404: un solo bloque con 3-5 enlaces a los destinos mas pedidos, no al home. noindex",
@@ -4358,7 +4358,7 @@
     },
     {
       "id": "TP-19",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 329,
       "ref": "09-tipos-de-pagina.md:329",
       "texto": "El hero debe contener el OBJETIVO DE CONVERSION, no solo navegacion: una accion primaria y solo una",
@@ -4393,7 +4393,7 @@
     },
     {
       "id": "TP-20",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 374,
       "ref": "09-tipos-de-pagina.md:374",
       "texto": "Tres niveles; el nivel 3 solo si el hijo tiene hijos de verdad",
@@ -4429,7 +4429,7 @@
     },
     {
       "id": "TP-21",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 406,
       "ref": "09-tipos-de-pagina.md:406",
       "texto": "Un hub se abre cuando hay 4 hijos ESCRITOS, no planeados. Un hijo que no existe no tiene pagina",
@@ -4444,7 +4444,7 @@
     },
     {
       "id": "TP-22",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 413,
       "ref": "09-tipos-de-pagina.md:413",
       "texto": "Padre -> todos sus hijos DESDE EL CUERPO; hijo -> padre; hijo -> 2-4 hermanos. El nav no cuenta",
@@ -4479,7 +4479,7 @@
     },
     {
       "id": "TP-23",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 446,
       "ref": "09-tipos-de-pagina.md:446",
       "texto": "El tipo va en el HTML (data-tipo) y se ve como etiqueta en la tarjeta del hub",
@@ -4515,7 +4515,7 @@
     },
     {
       "id": "TP-24",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 483,
       "ref": "09-tipos-de-pagina.md:483",
       "texto": "La canibalizacion se decide ANTES de que la segunda pagina se indexe",
@@ -4551,7 +4551,7 @@
     },
     {
       "id": "TP-25",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 493,
       "ref": "09-tipos-de-pagina.md:493",
       "texto": "Una frase que dice para que busqueda existe cada pagina, escrita en el momento de crearla",
@@ -4566,7 +4566,7 @@
     },
     {
       "id": "TP-26",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 548,
       "ref": "09-tipos-de-pagina.md:548",
       "texto": "Todas las OBL presentes Y EN ORDEN, cada una con su data-sec",
@@ -4601,7 +4601,7 @@
     },
     {
       "id": "TP-27",
-      "doc": "09-tipos-de-pagina.md",
+      "doc": "blueprint/09-page-types.md",
       "linea": 552,
       "ref": "09-tipos-de-pagina.md:552",
       "texto": "Cero <section> con <h2> en el cuerpo = FALLA, sin mas discusion",
@@ -4636,7 +4636,7 @@
     },
     {
       "id": "VO-01",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 61,
       "ref": "10-vocabulario-de-maqueta.md:61",
       "texto": "Una pagina no puede tener menos de 4 primitivas distintas",
@@ -4671,7 +4671,7 @@
     },
     {
       "id": "VO-02",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 62,
       "ref": "10-vocabulario-de-maqueta.md:62",
       "texto": "Como maximo UNA rejilla-caracteristicas por pagina: es la pieza que sustituyo a pensar",
@@ -4686,7 +4686,7 @@
     },
     {
       "id": "VO-03",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 213,
       "ref": "10-vocabulario-de-maqueta.md:213",
       "texto": "Toda pagina empieza por 01 hero-pastilla y acaba por 11 cierre-cta",
@@ -4721,7 +4721,7 @@
     },
     {
       "id": "VO-04",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 113,
       "ref": "10-vocabulario-de-maqueta.md:113",
       "texto": "Todo bloque de texto necesita max-width EXPLICITO",
@@ -4756,7 +4756,7 @@
     },
     {
       "id": "VO-05",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 245,
       "ref": "10-vocabulario-de-maqueta.md:245",
       "texto": "La tabla comparativa a 390px NO se hace scrollable: se convierte en fichas",
@@ -4792,7 +4792,7 @@
     },
     {
       "id": "VO-06",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 255,
       "ref": "10-vocabulario-de-maqueta.md:255",
       "texto": "display:grid sobre tr/td BORRA la semantica de tabla: hacen falta role table/row/cell en TODOS los niveles",
@@ -4807,7 +4807,7 @@
     },
     {
       "id": "VO-07",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 364,
       "ref": "10-vocabulario-de-maqueta.md:364",
       "texto": "Un molde declara solo sus clases .mNN-*: los dos <link> al chasis y NADA de :root",
@@ -4821,7 +4821,7 @@
     },
     {
       "id": "VO-08",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 362,
       "ref": "10-vocabulario-de-maqueta.md:362",
       "texto": "El \"cuando NO\" de un molde no es opcional",
@@ -4836,7 +4836,7 @@
     },
     {
       "id": "VO-09",
-      "doc": "10-vocabulario-de-maqueta.md",
+      "doc": "blueprint/10-layout-vocabulary.md",
       "linea": 370,
       "ref": "10-vocabulario-de-maqueta.md:370",
       "texto": "Un molde se mide antes de darlo por bueno, en las dos anchuras, imprimiendo innerWidth",
@@ -4850,7 +4850,7 @@
     },
     {
       "id": "MD-01",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 105,
       "ref": "11-medidas.md:105",
       "texto": "Objetivo 34 em (~65ch, 65-75 CPL); tope duro 42 em (80 CPL)",
@@ -4885,7 +4885,7 @@
     },
     {
       "id": "MD-02",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 447,
       "ref": "11-medidas.md:447",
       "texto": "El limite va en el PARRAFO, con selector de DESCENDIENTE. .prose > p es el bug de site-a",
@@ -4920,7 +4920,7 @@
     },
     {
       "id": "MD-03",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 455,
       "ref": "11-medidas.md:455",
       "texto": "Titulares, rejillas y medios SI ocupan el ancho completo (max-width:none)",
@@ -4935,7 +4935,7 @@
     },
     {
       "id": "MD-04",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 293,
       "ref": "11-medidas.md:293",
       "texto": "3 breakpoints, en rem, y los mismos en todos los proyectos: 640 / 1024 / 1280",
@@ -4971,7 +4971,7 @@
     },
     {
       "id": "MD-05",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 213,
       "ref": "11-medidas.md:213",
       "texto": "Base de espaciado 4px, 8 escalones",
@@ -5007,7 +5007,7 @@
     },
     {
       "id": "MD-06",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 165,
       "ref": "11-medidas.md:165",
       "texto": "La escala tipografica de 7 escalones ya esta en produccion: NO se reinventa, se propaga",
@@ -5042,7 +5042,7 @@
     },
     {
       "id": "MD-07",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 254,
       "ref": "11-medidas.md:254",
       "texto": "Padding de seccion >= 2x el gap mayor de dentro; en movil, 50-60% del valor de escritorio",
@@ -5077,7 +5077,7 @@
     },
     {
       "id": "MD-08",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 316,
       "ref": "11-medidas.md:316",
       "texto": "Suelo de ~260px por columna de contenido",
@@ -5112,7 +5112,7 @@
     },
     {
       "id": "MD-09",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 291,
       "ref": "11-medidas.md:291",
       "texto": "Un token declarado dos veces en el mismo fichero no da error: gana el ultimo, en silencio",
@@ -5148,7 +5148,7 @@
     },
     {
       "id": "MD-10",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 390,
       "ref": "11-medidas.md:390",
       "texto": "--wrap-wide (1280px) solo para rejillas y medios, NUNCA para texto corrido",
@@ -5162,7 +5162,7 @@
     },
     {
       "id": "MD-11",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 386,
       "ref": "11-medidas.md:386",
       "texto": "El CPL se MIDE, en la fuente real del sitio. El em sirve para escalar, no como certificado",
@@ -5176,7 +5176,7 @@
     },
     {
       "id": "MD-12",
-      "doc": "11-medidas.md",
+      "doc": "blueprint/11-measurements.md",
       "linea": 353,
       "ref": "11-medidas.md:353",
       "texto": "Corolario: el presupuesto de pantallas en escritorio no puede ser 6, tiene que ser ~3,5-4",
@@ -5191,7 +5191,7 @@
     },
     {
       "id": "EN-R0",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 71,
       "ref": "12-enlazado-interno.md:71",
       "texto": "R0: si >1/3 de las paginas no tienen ningun enlace, o nav/footer=0, el instrumento no vale y ABORTA",
@@ -5226,7 +5226,7 @@
     },
     {
       "id": "EN-R1",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 72,
       "ref": "12-enlazado-interno.md:72",
       "texto": "R1: profundidad de clic desde la home <= 3 (<100 paginas)",
@@ -5261,7 +5261,7 @@
     },
     {
       "id": "EN-R2",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 73,
       "ref": "12-enlazado-interno.md:73",
       "texto": "R2: toda URL del sitemap se alcanza navegando. 0 excepciones",
@@ -5296,7 +5296,7 @@
     },
     {
       "id": "EN-R3",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 74,
       "ref": "12-enlazado-interno.md:74",
       "texto": "R3: >= 1 enlace entrante DE CONTENIDO por pagina (fuera de nav/footer)",
@@ -5331,7 +5331,7 @@
     },
     {
       "id": "EN-R4",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 75,
       "ref": "12-enlazado-interno.md:75",
       "texto": "R4: 0 huerfanas duras. Si esta viva y sin enlaces, noindex OBLIGATORIO",
@@ -5366,7 +5366,7 @@
     },
     {
       "id": "EN-R5",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 76,
       "ref": "12-enlazado-interno.md:76",
       "texto": "R5: el hub enlaza a TODOS sus hijos. 0 hijos sin enlace desde su padre",
@@ -5401,7 +5401,7 @@
     },
     {
       "id": "EN-R6",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 77,
       "ref": "12-enlazado-interno.md:77",
       "texto": "R6: breadcrumb VISIBLE donde hay jerarquia. BreadcrumbList sin breadcrumb en pantalla = FALLA",
@@ -5436,7 +5436,7 @@
     },
     {
       "id": "EN-R7",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 78,
       "ref": "12-enlazado-interno.md:78",
       "texto": "R7: los enlaces apuntan a la URL CANONICA. 0 a index.html, 0 a URLs que redirigen",
@@ -5471,7 +5471,7 @@
     },
     {
       "id": "EN-R8",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 79,
       "ref": "12-enlazado-interno.md:79",
       "texto": "R8: anclas descriptivas. 0 genericas, 0 vacias",
@@ -5506,7 +5506,7 @@
     },
     {
       "id": "EN-R9",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 80,
       "ref": "12-enlazado-interno.md:80",
       "texto": "R9: % de enlaces de contenido sobre el total: >=10% o FALLA; <20% AVISO",
@@ -5541,7 +5541,7 @@
     },
     {
       "id": "EN-R10",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 81,
       "ref": "12-enlazado-interno.md:81",
       "texto": "R10: el menu no enlaza medio sitio: <=15 destinos y nunca >=50% de las paginas",
@@ -5576,7 +5576,7 @@
     },
     {
       "id": "EN-11",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 190,
       "ref": "12-enlazado-interno.md:190",
       "texto": "Fijar el menu: solo hubs + conversion. NUNCA radios",
@@ -5590,7 +5590,7 @@
     },
     {
       "id": "EN-12",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 191,
       "ref": "12-enlazado-interno.md:191",
       "texto": "Decidir la forma de URL y no cambiarla; se escribe en el CLAUDE.md y el generador emite siempre esa forma",
@@ -5625,7 +5625,7 @@
     },
     {
       "id": "EN-13",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 195,
       "ref": "12-enlazado-interno.md:195",
       "texto": "Publicar hub y radios en la MISMA TANDA: un radio publicado antes que su hub nace huerfano",
@@ -5640,7 +5640,7 @@
     },
     {
       "id": "EN-14",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 91,
       "ref": "12-enlazado-interno.md:91",
       "texto": "Una huerfana se busca con TRES fuentes: el rastreo, el sitemap y el arbol del repo probado en vivo",
@@ -5654,7 +5654,7 @@
     },
     {
       "id": "EN-15",
-      "doc": "12-enlazado-interno.md",
+      "doc": "blueprint/12-internal-linking.md",
       "linea": 174,
       "ref": "12-enlazado-interno.md:174",
       "texto": "El enlazado se decide ANTES de escribir: temas, radios, cruces, menu y forma de URL",
@@ -5669,7 +5669,7 @@
     },
     {
       "id": "RE-01",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 80,
       "ref": "13-rendimiento.md:80",
       "texto": "Peso de la carga inicial en el cable: FALLO > 1.600 KB, AVISO > 500 KB, objetivo <= 300 KB",
@@ -5704,7 +5704,7 @@
     },
     {
       "id": "RE-02",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 95,
       "ref": "13-rendimiento.md:95",
       "texto": "Peso de imagen por bytes/pixel: FALLO > 0,30 B/px o > 500 KB; AVISO > 0,15; objetivo <= 0,10",
@@ -5739,7 +5739,7 @@
     },
     {
       "id": "RE-03",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 109,
       "ref": "13-rendimiento.md:109",
       "texto": "Fotografia NUNCA en PNG. Un .png que es una foto se REENCODEA, no se copia",
@@ -5774,7 +5774,7 @@
     },
     {
       "id": "RE-04",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 112,
       "ref": "13-rendimiento.md:112",
       "texto": "ancho_natural <= 2 x ancho_declarado (margen para DPR 2)",
@@ -5809,7 +5809,7 @@
     },
     {
       "id": "RE-05",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 119,
       "ref": "13-rendimiento.md:119",
       "texto": "Familias tipograficas: 0 por defecto, maximo 2, FALLO a partir de 3",
@@ -5844,7 +5844,7 @@
     },
     {
       "id": "RE-06",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 120,
       "ref": "13-rendimiento.md:120",
       "texto": "Ficheros de fuente que el navegador baja en la primera pantalla: <= 2 y <= 60 KB",
@@ -5879,7 +5879,7 @@
     },
     {
       "id": "RE-07",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 121,
       "ref": "13-rendimiento.md:121",
       "texto": "font-display: swap obligatorio",
@@ -5914,7 +5914,7 @@
     },
     {
       "id": "RE-08",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 123,
       "ref": "13-rendimiento.md:123",
       "texto": "Cache-Control de fuentes: 1 ano",
@@ -5929,7 +5929,7 @@
     },
     {
       "id": "RE-09",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 138,
       "ref": "13-rendimiento.md:138",
       "texto": "Bytes de terceros: FALLO > 50% del peso o > 300 KB",
@@ -5964,7 +5964,7 @@
     },
     {
       "id": "RE-10",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 139,
       "ref": "13-rendimiento.md:139",
       "texto": "Cero IDs de medicion duplicados: cualquier GA4/Ads/Pixel cargado dos veces es FALLO",
@@ -5999,7 +5999,7 @@
     },
     {
       "id": "RE-11",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 140,
       "ref": "13-rendimiento.md:140",
       "texto": "Favicon: FALLO > 10 KB. Lo ideal es SVG inline como data: URI, 0 peticiones",
@@ -6034,7 +6034,7 @@
     },
     {
       "id": "RE-12",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 141,
       "ref": "13-rendimiento.md:141",
       "texto": "Un asset sellado (?v= o hash) NUNCA se sirve con no-store / no-cache",
@@ -6069,7 +6069,7 @@
     },
     {
       "id": "RE-13",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 142,
       "ref": "13-rendimiento.md:142",
       "texto": "html/css/js servidos comprimidos (gzip/brotli/zstd)",
@@ -6104,7 +6104,7 @@
     },
     {
       "id": "RE-14",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 143,
       "ref": "13-rendimiento.md:143",
       "texto": "Peticiones en la carga inicial: AVISO por encima de 30",
@@ -6139,7 +6139,7 @@
     },
     {
       "id": "RE-15",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 212,
       "ref": "13-rendimiento.md:212",
       "texto": "Se conserva la IMAGEN, no el FICHERO: mismo encuadre, reencodeado a nuestro estandar",
@@ -6175,7 +6175,7 @@
     },
     {
       "id": "RE-16",
-      "doc": "13-rendimiento.md",
+      "doc": "blueprint/13-performance.md",
       "linea": 218,
       "ref": "13-rendimiento.md:218",
       "texto": "No dejar activos colgando del origen: si ese WordPress se apaga, la tienda se queda sin fotos",
@@ -6211,7 +6211,7 @@
     },
     {
       "id": "AC-A1",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 50,
       "ref": "14-accesibilidad.md:50",
       "texto": "A1 Contraste de texto en la pagina entera: >= 4,5:1 (>= 3:1 si >= 24px o >= 18,66px negrita)",
@@ -6246,7 +6246,7 @@
     },
     {
       "id": "AC-A2",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 51,
       "ref": "14-accesibilidad.md:51",
       "texto": "A2 Contraste del limite de controles (borde o relleno): >= 3:1",
@@ -6281,7 +6281,7 @@
     },
     {
       "id": "AC-A3",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 52,
       "ref": "14-accesibilidad.md:52",
       "texto": "A3 alt en toda <img>: 0 sin ATRIBUTO. alt=\"\" solo si es decorativa",
@@ -6316,7 +6316,7 @@
     },
     {
       "id": "AC-A4",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 53,
       "ref": "14-accesibilidad.md:53",
       "texto": "A4 SVG en linea: decorativo con aria-hidden, informativo con nombre. 0 sin marcar dentro de enlace o boton",
@@ -6351,7 +6351,7 @@
     },
     {
       "id": "AC-A5",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 54,
       "ref": "14-accesibilidad.md:54",
       "texto": "A5 Nombre accesible de enlaces y botones: 0 sin nombre",
@@ -6386,7 +6386,7 @@
     },
     {
       "id": "AC-A6",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 55,
       "ref": "14-accesibilidad.md:55",
       "texto": "A6 Etiqueta de todo campo: placeholder NO es etiqueta",
@@ -6422,7 +6422,7 @@
     },
     {
       "id": "AC-A7",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 56,
       "ref": "14-accesibilidad.md:56",
       "texto": "A7 autocomplete en nombre, email y telefono: 0 faltantes",
@@ -6457,7 +6457,7 @@
     },
     {
       "id": "AC-A8",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 57,
       "ref": "14-accesibilidad.md:57",
       "texto": "A8 Region viva para errores de formulario: >= 1 aria-live o role=alert por formulario",
@@ -6492,7 +6492,7 @@
     },
     {
       "id": "AC-A9",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 58,
       "ref": "14-accesibilidad.md:58",
       "texto": "A9 Indicador de foco visible: 0 focalizables sin cambio visible",
@@ -6527,7 +6527,7 @@
     },
     {
       "id": "AC-A10",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 59,
       "ref": "14-accesibilidad.md:59",
       "texto": "A10 Area tactil a 390px: >= 24x24 o excepcion de espaciado (WCAG 2.2 SC 2.5.8)",
@@ -6562,7 +6562,7 @@
     },
     {
       "id": "AC-A11",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 60,
       "ref": "14-accesibilidad.md:60",
       "texto": "A11 Landmarks: 1 <main>, 1 <h1>, nav con nombre si hay mas de uno",
@@ -6597,7 +6597,7 @@
     },
     {
       "id": "AC-A12",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 61,
       "ref": "14-accesibilidad.md:61",
       "texto": "A12 Orden de titulares sin saltos: 0 saltos h1->h3 / h2->h4 dentro de <main>",
@@ -6632,7 +6632,7 @@
     },
     {
       "id": "AC-A13",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 62,
       "ref": "14-accesibilidad.md:62",
       "texto": "A13 Enlace de salto al contenido, presente y con destino existente",
@@ -6667,7 +6667,7 @@
     },
     {
       "id": "AC-A14",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 63,
       "ref": "14-accesibilidad.md:63",
       "texto": "A14 lang declarado y correcto",
@@ -6702,7 +6702,7 @@
     },
     {
       "id": "AC-A15",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 64,
       "ref": "14-accesibilidad.md:64",
       "texto": "A15 Zoom no bloqueado: sin user-scalable=no ni maximum-scale=1",
@@ -6737,7 +6737,7 @@
     },
     {
       "id": "AC-A16",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 65,
       "ref": "14-accesibilidad.md:65",
       "texto": "A16 prefers-reduced-motion anula duracion Y RETARDO",
@@ -6773,7 +6773,7 @@
     },
     {
       "id": "AC-17",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 104,
       "ref": "14-accesibilidad.md:104",
       "texto": "Una paleta no se hereda: se re-mide en el sitio destino, y el numero lo escribe el gate, no una persona",
@@ -6808,7 +6808,7 @@
     },
     {
       "id": "AC-18",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 106,
       "ref": "14-accesibilidad.md:106",
       "texto": "Los tres pares obligatorios: primary/primary-foreground (el boton), primary/blanco, y el eyebrow sobre su fondo tintado",
@@ -6822,7 +6822,7 @@
     },
     {
       "id": "AC-19",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 147,
       "ref": "14-accesibilidad.md:147",
       "texto": "Una sonda NO escribe en la pagina que mide: se mide por canvas, por calculo o por propiedad de solo lectura",
@@ -6837,7 +6837,7 @@
     },
     {
       "id": "AC-20",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 171,
       "ref": "14-accesibilidad.md:171",
       "texto": "Servir por HTTP, no abrir por file://: con rutas absolutas la pagina se compone sin CSS",
@@ -6852,7 +6852,7 @@
     },
     {
       "id": "AC-21",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 176,
       "ref": "14-accesibilidad.md:176",
       "texto": "Movil real por <iframe width=390>: Chrome headless en Windows clampa a ~500px. Imprimir innerWidth SIEMPRE",
@@ -6866,7 +6866,7 @@
     },
     {
       "id": "AC-22",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 193,
       "ref": "14-accesibilidad.md:193",
       "texto": "Todo resultado de a11y se da con TRES numeros: fallan / medidos / saltados",
@@ -6880,7 +6880,7 @@
     },
     {
       "id": "AC-23",
-      "doc": "14-accesibilidad.md",
+      "doc": "blueprint/14-accessibility.md",
       "linea": 227,
       "ref": "14-accesibilidad.md:227",
       "texto": "alt=\"\" NO es un alt que falta: se falla por AUSENCIA DE ATRIBUTO, nunca por valor vacio",
@@ -6915,7 +6915,7 @@
     },
     {
       "id": "ES-01",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 55,
       "ref": "15-estados-y-contenido-real.md:55",
       "texto": "n = 0: mensaje explicito Y una salida. Y la URL que lo provoca tiene que existir",
@@ -6950,7 +6950,7 @@
     },
     {
       "id": "ES-02",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 56,
       "ref": "15-estados-y-contenido-real.md:56",
       "texto": "n = 1: si la primitiva pide >= 2, SE CAMBIA DE PRIMITIVA",
@@ -6985,7 +6985,7 @@
     },
     {
       "id": "ES-03",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 57,
       "ref": "15-estados-y-contenido-real.md:57",
       "texto": "n % columnas != 0: o se ajusta n, o se cambia de primitiva, o la ultima fila se estira. NUNCA se deja el hueco",
@@ -7020,7 +7020,7 @@
     },
     {
       "id": "ES-04",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 58,
       "ref": "15-estados-y-contenido-real.md:58",
       "texto": "n grande: la primitiva CAMBIA (rejilla -> catalogo con filtros; nav plana -> dos listas; cronologia > 8 -> por ano)",
@@ -7034,7 +7034,7 @@
     },
     {
       "id": "ES-05",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 59,
       "ref": "15-estados-y-contenido-real.md:59",
       "texto": "Texto largo: presupuesto de caracteres POR CAMPO, medido, no estimado. Y ninguna ultima linea de UNA palabra",
@@ -7069,7 +7069,7 @@
     },
     {
       "id": "ES-06",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 60,
       "ref": "15-estados-y-contenido-real.md:60",
       "texto": "Media ausente: qué ocupa el hueco, DECLARADO. Nunca un <img> roto, nunca un bloque que colapsa",
@@ -7104,7 +7104,7 @@
     },
     {
       "id": "ES-07",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 71,
       "ref": "15-estados-y-contenido-real.md:71",
       "texto": "Cada primitiva tiene minimo, ideal y MAXIMO DURO de elementos (tabla de las 19)",
@@ -7139,7 +7139,7 @@
     },
     {
       "id": "ES-08",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 217,
       "ref": "15-estados-y-contenido-real.md:217",
       "texto": "El importe y su simbolo NUNCA se separan de linea (&nbsp; o white-space:nowrap)",
@@ -7154,7 +7154,7 @@
     },
     {
       "id": "ES-09",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 220,
       "ref": "15-estados-y-contenido-real.md:220",
       "texto": "Formato es-ES: sin separador de miles hasta 5 cifras (1500 EUR, no 1.500) y espacio duro antes del simbolo",
@@ -7169,7 +7169,7 @@
     },
     {
       "id": "ES-10",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 241,
       "ref": "15-estados-y-contenido-real.md:241",
       "texto": "Todo contenedor de ancho fijo o rejilla estrecha se prueba con EL NOMBRE MAS LARGO DEL CATALOGO REAL del cliente",
@@ -7184,7 +7184,7 @@
     },
     {
       "id": "ES-11",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 127,
       "ref": "15-estados-y-contenido-real.md:127",
       "texto": "Los estados se miden a 1280 Y a 390: un hueco que solo existe en escritorio sigue siendo un hueco",
@@ -7198,7 +7198,7 @@
     },
     {
       "id": "ES-12",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 341,
       "ref": "15-estados-y-contenido-real.md:341",
       "texto": "Un gate se entrega con un fixture que TIENE que salir en ROJO y otro en VERDE",
@@ -7233,7 +7233,7 @@
     },
     {
       "id": "ES-13",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 303,
       "ref": "15-estados-y-contenido-real.md:303",
       "texto": "Un estado vacio que no se puede alcanzar con una URL no esta probado: no existe para el QA",
@@ -7247,7 +7247,7 @@
     },
     {
       "id": "ES-14",
-      "doc": "15-estados-y-contenido-real.md",
+      "doc": "blueprint/15-real-content-states.md",
       "linea": 173,
       "ref": "15-estados-y-contenido-real.md:173",
       "texto": "Vocabulario: \"huerfana\" es pagina sin enlaces entrantes; la ultima linea de una palabra es \"viuda\"",

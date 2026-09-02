@@ -593,6 +593,84 @@ if (corre('D6')) {
 }
 
 # ---------------------------------------------------------------------------
+#  D7 · el catalogo de reglas no puede apuntar a documentos que no existen
+# ---------------------------------------------------------------------------
+#  🔴 2-sep-2026. Medido: 235 de las 256 reglas de standard-rules.json
+#     declaraban un `doc` que NO EXISTE. Eran los nombres de antes de la
+#     unificacion al ingles del 25-ago -- `09-tipos-de-pagina.md`,
+#     `14-accesibilidad.md`, `02-diseno.md`... El renombrado fue de todo el
+#     repo y el catalogo se quedo atras, sin que nada se pusiera rojo.
+#
+#  POR QUE NO ES COSMETICO: `rule-instrument-index.pl` AGRUPA POR `doc` las
+#  reglas que no tiene ningun instrumento. O sea que el indice que dice «esta
+#  regla no la mide nadie, leela aqui» mandaba a 235 ficheros inexistentes. Un
+#  puntero muerto en un indice no da error: manda a la nada, y el que lo sigue
+#  concluye que la regla no esta documentada.
+#
+#  🔑 SE EXIGE ADEMAS QUE EL FICHERO ESTE RASTREADO EN GIT, no solo que exista.
+#     Ese es el matiz que habria cazado el fallo hermano el dia del renombrado:
+#     `fold-page-standard.js` escribia su documento en una ruta muerta, y como
+#     el propio script LO CREABA al correr, «existe» era cierto -- y falso a la
+#     vez, porque nadie lo habia commiteado y no era el documento del repo. Un
+#     fichero que existe solo porque acaba de fabricarlo el programa que lo cita
+#     no es documentacion: es un residuo.
+#
+#  Aplica la regla de la casa: solo se acusa lo que se puede PROBAR. Sin git o
+#  sin catalogo, se dice NO MEDIDO y no se aprueba por defecto.
+if (corre('D7')) {
+    my ($RAIZ7) = $DIR =~ m{^(.*)[\/][^\/]+$};
+    $RAIZ7 //= $DIR;
+    my $cat = "$DIR/standard-rules.json";
+    if (!-f $cat) {
+        avis('D7', 'no hay catalogo de reglas', 'sin standard-rules.json no hay nada que comprobar');
+    } else {
+        my $rastreados = '';
+        {
+            my $old = $ENV{GIT_DIR}; local $ENV{GIT_DIR};
+            $rastreados = `cd "$RAIZ7" && git ls-files 2>/dev/null`;
+        }
+        if ($rastreados !~ /\S/) {
+            avis('D7', 'git no responde en este arbol',
+                 'no se puede distinguir un documento del repo de un residuo recien fabricado');
+        } else {
+            my %en_git = map { $_ => 1 } grep { /\S/ } split /\n/, $rastreados;
+            open my $h, '<:raw', $cat or die "no abro $cat\n";
+            local $/; my $crudo = <$h>; close $h;
+
+            # Sin dependencias: se extraen los `"doc": "..."` con un patron. El
+            # catalogo lo escribe JSON.stringify, asi que el formato es estable.
+            my %cuenta;
+            $cuenta{$1}++ while $crudo =~ /"doc"\s*:\s*"([^"]+)"/g;
+
+            if (!%cuenta) {
+                avis('D7', 'el catalogo no declara ningun `doc`', 'nada que comprobar');
+            } else {
+                my (@muertas, @sin_git);
+                my $reglas = 0;
+                for my $d (sort keys %cuenta) {
+                    $reglas += $cuenta{$d};
+                    if (!-e "$RAIZ7/$d")        { push @muertas, "$d ($cuenta{$d})" }
+                    elsif (!$en_git{$d})        { push @sin_git, "$d ($cuenta{$d})" }
+                }
+                if (@muertas) {
+                    bad('D7', 'el catalogo apunta a documentos que NO EXISTEN',
+                        scalar(@muertas).' de '.scalar(keys %cuenta).' rutas: '
+                        . join(' · ', @muertas[0 .. ($#muertas > 3 ? 3 : $#muertas)])
+                        . ($#muertas > 3 ? ' ...' : ''));
+                } elsif (@sin_git) {
+                    bad('D7', 'el catalogo apunta a ficheros que git NO rastrea',
+                        'existen en disco pero no son del repo -- residuo, no documentacion: '
+                        . join(' · ', @sin_git));
+                } else {
+                    ok('D7', 'todas las reglas apuntan a un documento del repo',
+                       "$reglas reglas en ".scalar(keys %cuenta).' documentos, todos rastreados');
+                }
+            }
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 #  informe
 # ---------------------------------------------------------------------------
 print "===== GATE DE DOCUMENTACION · $DIR =====\n\n";

@@ -1,9 +1,27 @@
 # 18 · The PAGE standard (the 30 rules)
 
-> **THIS FILE IS GENERATED. Do not edit it by hand.**
-> `node gates/fold-page-standard.js` rewrites it from `gates/standard-rules.json`, which is
-> where the rules live. Editing here creates a second place where the same truth lives, and
-> that always ends in divergence.
+> 🔴 **THIS FILE USED TO BE GENERATED. Since 2026-09-02 it is MAINTAINED BY HAND, and
+> that is stated here because the previous header claimed the opposite.**
+>
+> It said `node gates/fold-page-standard.js` rewrote it from `gates/standard-rules.json`.
+> Measured: that script wrote to `gates/18-estandar-de-pagina.md` — the Spanish filename
+> from before the 2026-08-25 rename to English — a file that does not exist in the repo, so
+> every run **created it as an untracked duplicate** while this document went unregenerated
+> since 25-Aug. A generator that silently stopped feeding the file it claims to own is worse
+> than a hand-written file, because it reads as authority.
+>
+> The script is now frozen with an explicit `exit`. It is not repointed at this file because
+> **that would destroy it**: the catalogue is entirely in Spanish (192 rules measurably so, 0
+> in English) while this document was translated into English by hand. Regenerating would
+> replace the translation with Spanish text and nothing would go red.
+>
+> **So the rules now live in two places and they can diverge.** That is a real cost, taken
+> knowingly: the alternative — deciding the catalogue's language and translating 256 rules —
+> is a repo-wide call, not a side effect of a path fix. The four steps to unfreeze it are in
+> the head of `gates/fold-page-standard.js`.
+>
+> What IS guarded meanwhile: `doc-gate D7` fails if any rule in the catalogue points at a
+> document that does not exist, or at one that exists but git does not track.
 
 These 30 rules used to live in a separate document **that no longer existed**: thirty rules
 pointing at a deleted file, which is exactly why nobody looked at them while building a page.
