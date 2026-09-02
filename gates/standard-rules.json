@@ -1064,7 +1064,7 @@
       "conformidad": {
         "cm": [
           "cumple",
-          "0 terceros cargados, verificado; su privacy.html se sostiene"
+          "2-sep-2026: entra medicion y la regla SIGUE cumpliendose, pero ahora hay que decir cuando. Antes del opt-in: 0 hosts externos, medido. Tras aceptar: 2 (gtag + collect). El cargador no PIDE el script hasta que alguien acepta, en vez de cargarlo siempre y modularlo con Consent Mode, que es lo recomendado y habria dejado el primer render hablando con Google. OJO al leer su verde: REN-05 y qa-final miden el PRIMER render, o sea el estado en que el banner aun no ha dejado cargar nada; ese verde es honesto para quien no acepta y no dice nada de quien si"
         ],
         "site-a": [
           "no_aplica",
