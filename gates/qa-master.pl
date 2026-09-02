@@ -3571,7 +3571,18 @@ sub lente_medicion {
                 next if $e =~ /^\.|^node_modules$|^_deploy$|^_migrate$/;
                 my $p = "$d/$e";
                 if (-d $p) { push @stack, $p }
-                elsif ($e =~ /\.(html|js|ps1|sh|php)$/i) { push @files, $p }
+                # 🔴 2-sep-2026 · ENTRA `css`, Y ES UN AGUJERO QUE LLEVABA AQUI DESDE SIEMPRE.
+                #    Abajo hay un patron de lectores que dice, literalmente, «las seis
+                #    formas de CSS» y casa `[data-x]` con y sin valor... sobre ficheros a
+                #    los que este filtro NUNCA le dejaba llegar. O sea: el lector de CSS
+                #    solo se veia si el selector estaba INCRUSTADO en un .html o un .js, y
+                #    un `[data-x]` en la hoja de estilos -- que es donde vive -- no contaba.
+                #    Medido en climentmedia: un `content: attr(data-label)` acotado con
+                #    `td[data-label]::before` en styles.css salia acusado de «data-* SIN
+                #    lector», con el lector escrito y funcionando a dos lineas del atributo.
+                #    Es la familia del falso positivo del 11-ago: el check era correcto y el
+                #    ALCANCE del barrido, no. Un gate que acusa de mas se acaba desactivando.
+                elsif ($e =~ /\.(html|js|css|ps1|sh|php)$/i) { push @files, $p }
             }
             closedir $dh;
         }
