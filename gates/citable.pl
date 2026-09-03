@@ -175,7 +175,7 @@ else {
       #    Ahora es una REGLA, no una lista: ningun directorio `_*` se publica
       #    -comprobado sobre los 13 que hay en las 6 webs-, asi que ninguno se
       #    mide. Una lista no puede enterarse de un directorio que aun no existe.
-      next if $e =~ /^_/ or $e =~ /^(\.git|\.design-sync|node_modules|ds-bundle)$/;
+      next if $e =~ /^_/ or $e =~ /^(\.git|\.claude|\.design-sync|node_modules|ds-bundle)$/;
       my $p = "$d/$e";
       if (-d $p) { push @stack, $p } elsif ($e =~ /\.html?$/i) { push @targets, $p }
     }

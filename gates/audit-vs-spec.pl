@@ -301,7 +301,7 @@ my @HTML;
 {
     my @dirs = ($ROOT);
     my %skip = map { $_ => 1 } qw(_spec _migrate _deploy _seo _dev _design .git
-                                  node_modules assets _cowork _post-images);
+                                  node_modules assets _cowork _post-images .claude);
     while (my $d = shift @dirs) {
         opendir(my $dh, $d) or next;
         for my $n (readdir $dh) {
