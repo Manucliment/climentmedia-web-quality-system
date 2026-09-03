@@ -117,7 +117,7 @@ my @files;
     for my $e (readdir $dh) {
       next if $e eq '.' or $e eq '..';
       # Carpetas que NO se publican: contarlas produce colisiones fantasma.
-      next if $e =~ /^(\.git|node_modules|_deploy|_spec|_seo|_qa|_kit|_migrate|_post-images|ds-bundle|\.design-sync|_cowork)$/;
+      next if $e =~ /^(\.git|\.claude|node_modules|_deploy|_spec|_seo|_qa|_kit|_migrate|_post-images|ds-bundle|\.design-sync|_cowork)$/;
       my $p = "$d/$e";
       if (-d $p) { push @stack, $p }
       elsif ($e =~ /\.html?$/i) { push @files, $p }
