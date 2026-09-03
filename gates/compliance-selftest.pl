@@ -86,7 +86,7 @@ sub copiar_arbol {
         my $p = $File::Find::name;
         my $rel = $p; $rel =~ s{^\Q$src\E/?}{};
         return if $rel eq '';
-        return if $rel =~ m{(^|/)(\.git|node_modules|_migrate|_deploy)(/|$)};
+        return if $rel =~ m{(^|/)(\.git|\.claude|node_modules|_migrate|_deploy)(/|$)};
         if (-d $p) { make_path("$dst/$rel") unless -d "$dst/$rel" }
         else { make_path(dirname("$dst/$rel")) unless -d dirname("$dst/$rel");
                copy($p, "$dst/$rel") and $n++ }
