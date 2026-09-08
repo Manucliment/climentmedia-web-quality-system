@@ -3504,7 +3504,15 @@ sub lente_medicion {
             for my $inp ($b =~ /(<input\b[^>]*type=["']checkbox["'][^>]*>)/gi) {
                 next unless $inp =~ /\bchecked\b/i;
                 my $n = lc((attr($inp,'data-cc') // attr($inp,'name') // attr($inp,'id') // ''));
-                next if $n =~ /necess|tecnic|essential|required/;
+                # 8-sep-2026 - "necess" NO CASA CON EL CASTELLANO. La exencion cubria
+                # "necessary" (EN) y "tecnic", y en espanol es "necesarias", con UNA
+                # sola ese: la casilla obligatoria de un banner en castellano salia
+                # acusada de premarcada. Lo destapo eldestinodenora.es el dia que
+                # encendio su banner, y habria acusado igual a cualquier otra web en
+                # espanol -que son tres de las cinco-.
+                # Se acorta a "neces", que cubre necesaria/necesarias/necessary a la
+                # vez; "tecnic" cubre tecnica/tecnicas/tecnico y el catalan "tecnic".
+                next if $n =~ /neces|tecnic|essential|required/;
                 my $k = ($n || substr($inp,0,50));
                 push @premarcadas, $k unless $v{$k}++;
             }
