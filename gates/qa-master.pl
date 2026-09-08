@@ -3440,11 +3440,24 @@ sub lente_medicion {
             }
 
             # G9 · politica de cookies contra los proveedores REALES del contenedor
+            # 8-sep-2026 - ESTO MIRABA SOLO EL CONTENEDOR, Y ESA PREMISA ES FALSA.
+            # Una web puede cargar un tercero desde su PROPIO JavaScript, y hay un
+            # motivo bueno para hacerlo: el Consent Mode de Google no gobierna un
+            # pixel de Meta, asi que dentro de GTM harian falta dos permisos en dos
+            # sitios que pueden divergir; en el JS del sitio la condicion es una y
+            # es la misma casilla que la persona ve.
+            # Lo destapo eldestinodenora.es al poner su pixel: MED-07 no veia a
+            # Meta y MED-07b avisaba de que "la politica declara un proveedor que
+            # el sitio NO carga" sobre una politica que decia la verdad. Un aviso
+            # falso enseña a ignorar los avisos, que es como muere un gate.
+            # @scan ya trae la pagina y el JS servido: lo monta MED-03 arriba.
+            my $propio = join("\n", grep { defined } @scan);
             my %prov;
-            $prov{'Google Ads'}   = 1 if $cjs =~ /AW-\d+/;
-            $prov{'Google Analytics'} = 1 if $cjs =~ /G-[A-Z0-9]{8,}/;
-            $prov{'Floodlight'}   = 1 if $cjs =~ /DC-\d+/;
-            $prov{'Meta / Facebook'} = 1 if $cjs =~ /fbevents|connect\.facebook/;
+            $prov{'Google Ads'}   = 1 if $cjs =~ /AW-\d+/ || $propio =~ /AW-\d{9,}/;
+            $prov{'Google Analytics'} = 1 if $cjs =~ /G-[A-Z0-9]{8,}/ || $propio =~ /G-[A-Z0-9]{9,}/;
+            $prov{'Floodlight'}   = 1 if $cjs =~ /DC-\d+/ || $propio =~ /DC-\d{6,}/;
+            $prov{'Meta / Facebook'} = 1 if $cjs =~ /fbevents|connect\.facebook/
+                                         || $propio =~ /fbevents|connect\.facebook/;
             my $pol = '';
             my $polurl = '';
             for my $ruta (qw(/politica-cookies /politica-de-cookies /politique-cookies /cookies /cookie-policy /politica-privacidad /politique-confidentialite /privacidad)) {
