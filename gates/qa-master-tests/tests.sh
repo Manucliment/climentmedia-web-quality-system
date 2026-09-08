@@ -282,6 +282,11 @@ espera "404 malo servido en local · sin h1 ni enlaces"             FALLO EST-03
 espera "bc · styles.css del repo NO desplegado (G11)"     FALLO EST-09  perl $QA https://site-d.example/ --repo $REPOS/site-d-web --solo estructura --sin-recibo --cache "$CACHE"
 espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA https://site-d.example/ --solo medicion --cache "$CACHE"
 espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA https://site-d.example/ --solo medicion --cache "$CACHE"
+# 8-sep-2026 - LA CARA CONTRARIA, y hacia falta: el caso de arriba solo prueba que
+# el check CAZA. Este prueba que no acusa a quien esta bien, que es donde estaba el
+# defecto: la exencion decia "necess" y en castellano es "necesarias", con una sola
+# ese, asi que la casilla obligatoria de cualquier banner en espanol salia acusada.
+espera "site-e · «necesarias» en castellano NO es premarcada"  PASA  MED-06  perl $QA https://site-e.example/ --solo medicion --cache "$CACHE"
 espera "cm · og:image:alt al 0% donde vive el estandar"   FALLO SEO-06  perl $QA https://climentmedia.com/ --solo seo --cache "$CACHE"
 espera "site-b · ficha que solo existe con JS (G10)"     FALLO SEO-14  perl $QA "https://shop.site-b.example/produto.html?sku=MOB-001" --solo seo --cache "$CACHE"
 espera "site-c(fixture) · 27,7 pantallas y 1 CTA"           FALLO EST-06  perl $QA https://site-c.example/ --solo estructura --dom dom-site-c-broken.json --cache "$CACHE"
