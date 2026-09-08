@@ -221,6 +221,31 @@ done
 #    🔑 Y el codigo de salida distingue las dos cosas, que es de lo que va todo
 #    este repositorio: 3 = no lo he medido · 1 = lo he medido y esta MAL. Salir
 #    3 con un rojo dentro convertiria un fallo real en un hueco declarado.
+# 🔴 8-sep-2026 · MED-07 MIRABA SOLO EL CONTENEDOR, Y ESA PREMISA ES FALSA.
+#    Una web puede cargar un tercero desde su PROPIO JavaScript, y hay un motivo
+#    bueno: el Consent Mode de Google no gobierna un pixel de Meta, asi que dentro
+#    de GTM harian falta dos permisos en dos sitios que pueden divergir.
+#    Antes del arreglo, sobre el fixture de abajo MED-07 listaba solo Google y
+#    MED-07b acusaba a la politica de declarar un proveedor que el sitio no carga
+#    — siendo la politica CIERTA. Un aviso falso ensena a ignorar los avisos.
+#
+#    🔑 EL CASO QUE VALE ES EL SEGUNDO. El primero (PASA MED-07) sale verde con el
+#    arreglo y SIN el: sin el, MED-07 tambien pasa, solo que sin Meta en la lista.
+#    Lo que discrimina es la AUSENCIA de MED-07b. Medido las dos veces con el mismo
+#    fixture: con el arreglo, MED-07b no aparece y MED-07 lista "Google Ads ·
+#    Google Analytics · Meta / Facebook"; con el arreglo QUITADO de una copia del
+#    gate, MED-07b sale AVISO con DATO "Facebook/Meta".
+espera "MED-07 · tercero cargado por el JS del sitio"    PASA  MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-tercero-en-js-propio --contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-07b · y por tanto NO lo acusa de fantasma"   AUSENTE MED-07b \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-tercero-en-js-propio --contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 Y LA CARA CONTRARIA, para que ensanchar MED-07 no deje CIEGO a MED-07b: una
+#    politica que nombra a Meta cuando no lo carga nadie —ni el contenedor ni el JS
+#    propio— tiene que seguir saliendo en aviso. "Una politica que sobra tambien es
+#    una politica falsa, y se audita igual."
+espera "MED-07b · declarado y no cargado, sigue avisando" AVISO MED-07b \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-tercero-declarado-que-no-existe --contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo
+
 if [ "$SIN_FIXTURE" = 1 ]; then
   echo
   echo "  NOT MEASURED · the frozen fixture $KFIX/ is not here."

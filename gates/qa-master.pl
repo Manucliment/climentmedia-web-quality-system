@@ -125,6 +125,12 @@
 #                       Es el gate de ANTES de subir. NO sustituye a G11.
 #    --css URL|FICHERO  hoja de tokens explicita (por defecto se descubre)
 #    --dom FICHERO      JSON devuelto por el snippet del navegador
+#    --contenedor FICH  gtm.js desde un fichero en vez de descargarlo. MED-03,
+#                       MED-05 y MED-07 viven dentro de "si el contenedor se ha
+#                       podido descargar", asi que sin esto solo se pueden probar
+#                       contra webs vivas -- que caducan y no se pueden congelar
+#                       en un repo publico. Es la hermana de --dom: misma idea,
+#                       otro instrumento.
 #    --snippet          imprime el snippet y sale (no toca la red)
 #    --json FICHERO     vuelca el resultado completo en JSON
 #    --cache DIR        directorio de cache de descargas
@@ -252,6 +258,7 @@ my %opt = (
     repo      => '',
     css       => '',
     dom       => '',
+    contenedor => '',      # gtm.js desde un fichero, para poder probar MED-03/05/07 sin red
     json      => '',
     cache     => '',
     'max-urls'=> 25,
@@ -290,12 +297,13 @@ my @targets;
         '--hours'      => '--horas',     '--candidate' => '--candidato',
         '--no-network' => '--sin-red',   '--no-receipt'=> '--sin-recibo',
         '--single'     => '--una-sola',  '--evidence'  => '--evidencia',
+        '--container'  => '--contenedor',
     );
     @a = map { $ALIAS{$_} // $_ } @a;
 
     while (@a) {
         my $x = shift @a;
-        if ($x =~ /^--(tipo|solo|gracias|contacto|repo|css|dom|json|cache|max-urls|muestra|recibo|horas)$/) {
+        if ($x =~ /^--(tipo|solo|gracias|contacto|repo|css|dom|contenedor|json|cache|max-urls|muestra|recibo|horas)$/) {
             $opt{$1} = shift(@a) // '';
         } elsif ($x =~ /^--(snippet|sin-red|sin-recibo|una-sola|candidato|evidencia)$/) {
             $opt{$1} = 1;
@@ -3379,7 +3387,19 @@ sub lente_medicion {
         }
 
         # ── MED-03 · EL CRUCE (G1) · el gate mas caro que faltaba ────────────
-        my $cont = fetch("https://www.googletagmanager.com/gtm.js?id=$gtm");
+        # 8-sep-2026 - EL CONTENEDOR PUEDE VENIR DE UN FICHERO. Ver --contenedor:
+        # sin esta costura, MED-03/05/07 solo se podian probar contra webs vivas.
+        my $cont;
+        if ($opt{contenedor} ne '') {
+            if (open my $fh, '<:raw', $opt{contenedor}) {
+                local $/; my $b = <$fh>; close $fh;
+                $cont = { code => 200, body => $b };
+            } else {
+                die "no pude abrir el contenedor de fixture: $opt{contenedor}\n";
+            }
+        } else {
+            $cont = fetch("https://www.googletagmanager.com/gtm.js?id=$gtm");
+        }
         if ($cont->{code} != 200 || length($cont->{body}) < 1000) {
             nv(lente=>'MEDICION', id=>'MED-03', titulo=>'cruce eventos <-> disparadores del contenedor',
                dato=>"gtm.js?id=$gtm devolvio HTTP $cont->{code}",
