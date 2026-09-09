@@ -663,6 +663,39 @@ if [ "$SUBIR" != 1 ]; then
   exit 0
 fi
 
+# ── 3-bis · QUE SE HA RETIRADO DEL ARBOL DESDE EL DESPLIEGUE ANTERIOR ────────
+# 🔴 9-sep-2026 · EL AGUJERO QUE ESTO CIERRA, Y QUE LLEVABA ESCRITO SIN MEDIRSE.
+#    Los subidores de este sistema extraen un `tar` ENCIMA del docroot: anaden y
+#    sobrescriben, y NUNCA borran. Un fichero retirado del repo SIGUE SERVIDO.
+#    Y G11 no lo ve POR CONSTRUCCION: comprueba que lo del recibo se sirva, no
+#    que no sobre nada. Son dos preguntas distintas y solo se hacia una.
+#
+#    MEDIDO el 9-sep-2026 en un sitio real: se retiraron 13 imagenes del arbol,
+#    se desplego, G11 dio «113 de 113 identicos» ... y las 13 seguian devolviendo
+#    200. La limpieza se habria reportado como hecha estando viva. El subidor de
+#    ese sitio ya lo AVISABA en un comentario desde hacia semanas: un comentario
+#    no es una comprobacion, y lo que no se mide no lo mira nadie.
+#
+#    POR QUE CONTRA LA LISTA ANTERIOR Y NO CONTRA EL DOCROOT: enumerar el destino
+#    exige SSH, y cada web sube distinto -por eso el subidor es de cada repo-.
+#    La lista de lo que ESTE sistema subio la tenemos sin salir de aqui.
+#    ⚠️ LIMITE, declarado y no disimulado: solo ve lo que este pipeline desplego
+#    alguna vez y despues dejo de desplegar. La basura anterior a la primera
+#    lista NO la ve, y para esa hace falta el listado remoto del subidor.
+LISTA_HOY="$(mktemp -t desplegado-XXXXXXXX)"
+RETIRADAS="$(mktemp -t retiradas-XXXXXXXX)"
+LISTA_ANT="$REPO/_deploy/.desplegado.txt"
+trap 'rm -f "$LISTA_HOY" "$RETIRADAS"' EXIT
+perl "$REF/receipt.pl" --arbol --listar --repo "$REPO" 2>/dev/null \
+  | sed -nE 's/^[0-9a-f]+[[:space:]]+[0-9]+[[:space:]]+//p' \
+  | LC_ALL=C sort > "$LISTA_HOY"
+: > "$RETIRADAS"
+if [ -s "$LISTA_ANT" ] && [ -s "$LISTA_HOY" ]; then
+  LC_ALL=C sort "$LISTA_ANT" > "$LISTA_ANT.orden.tmp"
+  LC_ALL=C comm -23 "$LISTA_ANT.orden.tmp" "$LISTA_HOY" > "$RETIRADAS"
+  rm -f "$LISTA_ANT.orden.tmp"
+fi
+
 echo "  $CMD"
 eval "$CMD"
 RC=$?
@@ -693,6 +726,59 @@ if [ "$G11" != 0 ]; then
   rm -f "$G11_LOG"
   exit 1
 fi
+echo
+# ── 4-bis · LO QUE SE RETIRO DEL ARBOL, ¿SIGUE SERVIDO? ──────────────────────
+#    G11 acaba de decir que lo del recibo se sirve. Esta es la OTRA mitad: que no
+#    sobre nada. Se PIDE cada fichero retirado; un 200 no es una sospecha, es el
+#    resto vivo con su URL. No se borra nada desde aqui a proposito: el docroot
+#    tiene ficheros que NO estan en el arbol y son legitimos -los receptores, y
+#    lo que se escribe en ejecucion, como los leads del formulario-, asi que un
+#    borrado a ciegas es la unica forma de convertir esta comprobacion en una
+#    perdida de datos. Se dice QUE sobra y se deja la orden preparada.
+linea; echo "  4-bis · lo que se retiro del arbol, ¿sigue servido?"; linea
+if [ ! -s "$LISTA_ANT" ]; then
+  echo "  ⚠ NO MEDIDO: no hay lista del despliegue anterior con la que comparar."
+  echo "    Esto NO es «no sobra nada»: es «nadie ha mirado». La lista se escribe"
+  echo "    al final de este despliegue, asi que desde el proximo si se compara."
+elif [ ! -s "$RETIRADAS" ]; then
+  echo "  ningun fichero se ha retirado del arbol desde el despliegue anterior."
+else
+  N_RET="$(grep -c . "$RETIRADAS")"
+  VIVAS=0
+  echo "  $N_RET fichero(s) estaban en el despliegue anterior y ya no en el arbol."
+  echo "  Se pide cada uno a produccion:"
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    cod="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITIO/$f" 2>/dev/null)"
+    case "$cod" in
+      2*|3*) VIVAS=$((VIVAS+1)); echo "    🔴 $cod  $SITIO/$f" ;;
+      *)     echo "       $cod  $f" ;;
+    esac
+  done < "$RETIRADAS"
+  echo
+  if [ "$VIVAS" = 0 ]; then
+    echo "  Los $N_RET retirados ya no se sirven. El destino cuadra con el arbol."
+  else
+    echo "  🔴 $VIVAS de $N_RET SIGUEN SERVIDOS. El arbol y el destino NO cuadran."
+    echo "     No es un fallo de la subida: el tar no borra, y G11 no mira lo que"
+    echo "     sobra. Hay que quitarlos en el destino, y eso lo hace el subidor de"
+    echo "     este repo, que es quien tiene las credenciales."
+    echo "     La lista exacta esta arriba, con su URL. Antes de borrar ninguno:"
+    echo "     mirar QUE es. Hoy un 'resto' resulto ser el fichero de licencia que"
+    echo "     la OFL exige que acompane a las fuentes."
+    perl "$REF/receipt.pl" --anotar "SOBRAN $VIVAS de $N_RET retirados siguen servidos" --repo "$REPO" >/dev/null 2>&1
+  fi
+fi
+
+# La lista de ESTE despliegue, para que el proximo pueda comparar. Se escribe
+# solo si G11 paso: una lista de un despliegue que no se pudo verificar mentiria
+# sobre lo que hay en el destino.
+if [ -s "$LISTA_HOY" ]; then
+  mkdir -p "$REPO/_deploy" 2>/dev/null
+  cp "$LISTA_HOY" "$LISTA_ANT" 2>/dev/null \
+    && echo "  (lista de $(grep -c . "$LISTA_HOY") ficheros guardada para el proximo despliegue)"
+fi
+
 echo
 echo "  PASA · desplegado y verificado contra el recibo."
 if [ "$MEDIDO" = "CANDIDATO" ]; then
