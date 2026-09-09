@@ -1,6 +1,6 @@
 # The gates
 
-35 programs and 29 test batteries. This file is the index: what each program is for,
+35 programs and 30 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **630 cases green, 0 red**, with the deploy-history bank reported
+machine the fast run is **658 cases green, 0 red**, with the deploy-history bank reported
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **779 cases green, 0 red** — **777** on a clean install — with **six** banks
+reads **782 cases green, 0 red** — **780** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -77,7 +77,7 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  630 casos en verde · 0 en rojo
+  658 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
@@ -85,7 +85,7 @@ $ bash gates/run-all.sh --fast
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  779 casos en verde · 0 en rojo
+  782 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 

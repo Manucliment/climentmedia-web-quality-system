@@ -39,6 +39,7 @@ recibo-sitemap|bash receipt-tests/tests-sitemap.sh|0|el arbol desplegable
 recibo-hook|bash receipt-tests/tests-hook.sh|0|el hook que bloquea subir sin recibo
 recibo-cdn|perl receipt-tests/cdn-controls.pl|0|G11 detras de un CDN que reescribe imagenes
 recibo-sello|bash receipt-tests/tests-sealing.sh|0|el asset sellado con ?v= y el cache de la URL desnuda
+puerta-sobras|bash deploy-tests/tests.sh|0|4-bis: lo retirado del arbol que el tar dejo vivo en el destino
 audit-vs-spec|perl audit-vs-spec-tests/tests.pl|0|la spec contra el arbol
 audit-vs-origen|bash audit-vs-source-tests/tests.sh|0|el gate de migracion (medios)
 gate-formularios|bash forms-gate-tests/tests.sh|1|el formulario en el DOM (paso 10)
