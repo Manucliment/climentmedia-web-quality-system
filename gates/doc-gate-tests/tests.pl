@@ -112,6 +112,22 @@ caso('un RUN_LOG cita una ruta muerta: es historia, no una afirmacion', 'D1',
 caso('...y CUALQUIER OTRO documento que cite esa misma ruta sigue cayendo', 'D1',
      { 'doc.md' => "Se corre con `references/audit.sh`.\n", 'real.pl' => $PROG }, 'FALLO');
 
+# 🔴 15-sep-2026 · UN NOMBRE ANTERIOR, DECLARADO COMO ANTERIOR.
+#    Salio de arreglar una ficha de verdad: se reescribio para nombrar la ruta de
+#    HOY y dejar la vieja entre parentesis como historia, y D1 siguio acusando. El
+#    gate premiaba BORRAR la historia, que es lo contrario de lo que pide el repo.
+#    Los tres casos van juntos a proposito: sin los dos negativos, esta exclusion
+#    se vuelve la forma de callar cualquier ruta muerta escribiendo «antes».
+caso('un nombre anterior entre parentesis es historia, no una afirmacion', 'D1',
+     { 'doc.md' => "Corre `real.pl` *(entonces `references/muerto.js`)* y no llamaba a setUserAgent.\n",
+       'real.pl' => $PROG }, 'PASA');
+caso('...pero «antes» suelto, sin parentesis abierto, NO exime', 'D1',
+     { 'doc.md' => "Antes lo mirabamos a mano; hoy se corre con `references/muerto.js`.\n",
+       'real.pl' => $PROG }, 'FALLO');
+caso('...ni un parentesis YA CERRADO antes de la ruta', 'D1',
+     { 'doc.md' => "Se renombro (antes era otra cosa) y hoy es `references/muerto.js`.\n",
+       'real.pl' => $PROG }, 'FALLO');
+
 print "\n== D2 · BANDERAS\n";
 caso('bandera que el programa NO acepta', 'D2',
      { 'doc.md' => "Correr `real.pl --inventada`.\n", 'real.pl' => $PROG }, 'FALLO');

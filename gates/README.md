@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **666 cases green, 0 red**, with the deploy-history bank reported
+machine the fast run is **671 cases green, 0 red**, with the deploy-history bank reported
 as `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **790 cases green, 0 red** — **788** on a clean install — with **six** banks
+reads **795 cases green, 0 red** — **793** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -77,7 +77,7 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  666 casos en verde · 0 en rojo
+  671 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
@@ -85,7 +85,7 @@ $ bash gates/run-all.sh --fast
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  790 casos en verde · 0 en rojo
+  795 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
