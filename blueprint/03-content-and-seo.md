@@ -300,9 +300,27 @@ this file is revised in the same batch as the pages** — a sweep of `href="…"
 it, because it is not HTML.
 
 > **What is checked today:** that its own URLs exist (`S1.5`), that it has no raw HTML entities
-> (`S1.6`), and that every own URL carries a description (`S1.6b`). **What is not checked, and
-> cannot be:** whether what it says is still true. That is a human reading it after a
-> repositioning.
+> (`S1.6`), that every own URL carries a description (`S1.6b`), and — since 2026-09-02 — that it
+> does not deny cookies, analytics or third-party requests while the deployable tree ships a
+> measurement loader (`S1.9`). **What is still not checked:** everything else it asserts. That is
+> a human reading it after a repositioning.
+
+🔴 **This paragraph used to end "and cannot be: whether what it says is still true." That was
+too strong, and the file proved it.** For half an hour on 2026-09-02 the live file said *"This
+website sets no cookies, runs no analytics and loads no third-party resources"* while the
+measurement loader was already deployed. **A claim that contradicts something derivable from the
+tree is not a matter of judgement — it is arithmetic**, and `S1.9` now does that arithmetic.
+
+**The general shape, which is the part worth carrying to any hand-maintained machine file:** if
+it makes factual claims about the site, at least one of those claims must be tied to something
+**derived from the site**. Otherwise it is prose nobody checks — and prose nobody checks, in the
+file that presents itself as the source of truth, is more expensive than no file at all.
+
+⚠️ **What `S1.9` deliberately does NOT do**, so nobody reads more into a green: it covers one
+family of claims, the one that already went wrong. And it exempts any block carrying a consent
+qualifier (`until`, `unless`, `opt in`, `by default`, `declin…`), because **the correct wording
+also contains the words "zero cookies"** — inside *"so declining leaves the site at zero
+cookies"*. A gate that flags the corrected text as loudly as the broken one is not a gate.
 
 ---
 
