@@ -160,6 +160,71 @@ muta "$T/n4/index.html" 's{</head>}{<script type="application/ld+json">{"telepho
   && caso "telefono SOLO en el JSON-LD: NO es fallo"    VERDE - "$T/n4"
 
 echo
+echo "== S1.9 · AGENTS.md contra lo que el arbol HACE =="
+#  El defecto real, medido: media hora sirviendo «sets no cookies, runs no
+#  analytics» con el cargador ya desplegado. Ningun gate lo veia.
+#  Los cinco casos son las cinco preguntas. Los tres VERDES no son relleno: son
+#  los que impiden que este check acuse a un fichero correcto, que es como se
+#  apaga un gate en una semana.
+AG_MALO='- **Privacy-first.** This website sets no cookies, runs no analytics and loads no
+  third-party resources. Integrations request only the scopes needed.
+'
+#  El texto BUENO dice literalmente «zero cookies» -- dentro de su matiz. Si el
+#  check acusara a esto, el arreglo correcto saldria rojo y el malo tambien:
+#  seria un gate incapaz de distinguir, o sea ninguno.
+AG_BUENO='- **Privacy-first.** This website loads nothing from a third party until the
+  visitor opts in. Analytics are off by default and the measurement script is
+  not fetched at all unless it is accepted, so declining leaves the site at zero
+  cookies and zero third-party requests.
+'
+CARGADOR='(function(){var s=document.createElement("script");
+s.src="https://www.googletagmanager.com/gtm.js?id=GTM-AAAABBB";
+document.head.appendChild(s);window.dataLayer=window.dataLayer||[];})();
+'
+
+# 1 · el defecto exacto que lo motivo
+sitio_base "$T/ag1" dir-barra
+printf '%s' "$AG_MALO"  > "$T/ag1/AGENTS.md"
+printf '%s' "$CARGADOR" > "$T/ag1/medir.js"
+caso "AGENTS.md niega cookies y el arbol las carga"  ROJO S1.9 "$T/ag1"
+
+# 2 · el MISMO arbol con el texto corregido: tiene que quedar VERDE
+sitio_base "$T/ag2" dir-barra
+printf '%s' "$AG_BUENO" > "$T/ag2/AGENTS.md"
+printf '%s' "$CARGADOR" > "$T/ag2/medir.js"
+caso "el mismo arbol con el texto matizado"          VERDE - "$T/ag2"
+
+# 3 · el mismo texto ABSOLUTO sin cargador: no hay contradiccion que ver
+sitio_base "$T/ag3" dir-barra
+printf '%s' "$AG_MALO" > "$T/ag3/AGENTS.md"
+caso "texto absoluto y sitio sin medicion: no acusa"  VERDE - "$T/ag3"
+
+# 4 · el falso positivo que aparecio al medirlo en un sitio real: una pagina
+#     que INLINEA documentacion sobre GTM dentro de un <pre>. Sin strip_pre el
+#     gate la contaba como cargador y acusaba a un sitio limpio.
+sitio_base "$T/ag4" dir-barra
+printf '%s' "$AG_MALO" > "$T/ag4/AGENTS.md"
+muta "$T/ag4/index.html" 's{<p>Texto.</p>}{<pre>El contenedor GTM-XXXXXXX empuja al dataLayer desde googletagmanager.com</pre>}' \
+  && caso "GTM citado dentro de un <pre> NO es cargador" VERDE - "$T/ag4"
+
+# 5-bis · EL CASO QUE DECIDIO LA GRANULARIDAD, y por eso esta aqui: una frase
+#   absoluta AÑADIDA a una viñeta que ya tiene su matiz. Es la forma mas probable
+#   de la proxima deriva -- nadie reescribe el parrafo, alguien le añade una
+#   linea. Medido sobre el fichero real: por BLOQUE sale 0 (el gate se calla),
+#   por FRASE sale 1. Si este caso se pone verde, el check ha vuelto a bloque.
+sitio_base "$T/ag6" dir-barra
+printf '%s' "$AG_BUENO" > "$T/ag6/AGENTS.md"
+printf '  We do not track anyone, ever.\n' >> "$T/ag6/AGENTS.md"
+printf '%s' "$CARGADOR" > "$T/ag6/medir.js"
+caso "frase absoluta añadida a una viñeta matizada"  ROJO S1.9 "$T/ag6"
+
+# 5 · el cargador en el HTML, fuera del <pre>: ahi si es cargador
+sitio_base "$T/ag5" dir-barra
+printf '%s' "$AG_MALO" > "$T/ag5/AGENTS.md"
+muta "$T/ag5/index.html" 's{</head>}{<script src="https://www.googletagmanager.com/gtm.js?id=GTM-AAAABBB"></script></head>}' \
+  && caso "el mismo dominio como <script src> SI acusa"  ROJO S1.9 "$T/ag5"
+
+echo
 echo "== la guarda: sin --root NO mide la carpeta del script =="
 bash "$AUD" >/dev/null 2>&1
 if [ $? -eq 2 ]; then OK=$((OK+1)); printf '  ok   %-46s rc=2\n' "sin --root aborta"

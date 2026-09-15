@@ -195,6 +195,54 @@ else MAL=$((MAL+1)); echo "  FALLA .qa-arbol no se esta leyendo"; fi
 r "y por tanto invalida el recibo anterior" 1 perl "$REF/receipt.pl" --verificar --repo "$R"
 rm -f "$R/.qa-arbol"
 
+# ── 12-bis · SERVIDOS_PESE_A_EXCLUIR: lo que la exclusion se lleva y SI viaja ──
+#  2-sep-2026. `AGENTS.md` se sirve en produccion y el `--exclude=*.md` del
+#  deploy -- que es carga estructural y no se puede quitar -- lo sacaba del
+#  arbol. Resultado: viajaba SIN sello (tocarlo no invalidaba el recibo) y SIN
+#  testigo (G11 no lo pedia). Justo el fichero que mas deriva, porque es el
+#  unico de los tres para maquinas que no genera nadie.
+#
+#  Los cuatro casos son las cuatro preguntas, y ninguno sobra:
+#    A · sin la variable, NADA cambia            -> el repo que no la declara
+#    B · declarado, entra -- y solo ese          -> no es una amnistia general
+#    C · declarado y ausente, se DICE            -> no puede ser un silencio
+#    D · tocarlo mueve ARBOL-HASH                -> el motivo de todo esto
+#  Sin D los otros tres pasarian con el fichero listado y sin sellar, que es el
+#  defecto exacto que esto viene a cerrar.
+echo
+echo "-- 12-bis · SERVIDOS_PESE_A_EXCLUIR: lo excluido que SI se sirve --------------"
+printf 'para maquinas\n' > "$R/AGENTS.md"
+printf 'EXCLUIR="--exclude=*.md"\n' > "$R/_deploy/deploy.conf"
+SIN="$(perl "$REF/receipt.pl" --arbol --repo "$R" --listar)"
+if printf '%s' "$SIN" | grep -q 'AGENTS\.md'; then
+  MAL=$((MAL+1)); echo "  FALLA A · sin declarar, AGENTS.md NO debe entrar (lo saca --exclude=*.md)"
+else OK=$((OK+1)); printf '  PASA  %-52s\n' "A · sin la variable, se comporta como antes"; fi
+HA="$(printf '%s' "$SIN" | awk '/^ARBOL-HASH/{print $2}')"
+
+printf 'EXCLUIR="--exclude=*.md"\nSERVIDOS_PESE_A_EXCLUIR="./AGENTS.md"\n' > "$R/_deploy/deploy.conf"
+r "B · con la variable, el arbol se calcula" 0 perl "$REF/receipt.pl" --arbol --repo "$R" --listar
+contiene "B · y AGENTS.md entra en el manifiesto"  "AGENTS.md"
+# la repesca es NOMINAL, no una amnistia a *.md: CLAUDE.md sigue fuera
+if printf '%s' "$ULTIMA" | grep -q 'CLAUDE\.md'; then
+  MAL=$((MAL+1)); echo "  FALLA B · CLAUDE.md NO estaba declarado y ha entrado: la repesca es por RUTA"
+else OK=$((OK+1)); printf '  PASA  %-52s\n' "B · y CLAUDE.md sigue fuera (repesca por ruta)"; fi
+
+# D · el motivo de todo esto: si tocarlo no mueve el hash, no esta sellado
+HB="$(perl "$REF/receipt.pl" --arbol --repo "$R" | awk '/^ARBOL-HASH/{print $2}')"
+printf 'texto NUEVO\n' > "$R/AGENTS.md"
+HC="$(perl "$REF/receipt.pl" --arbol --repo "$R" | awk '/^ARBOL-HASH/{print $2}')"
+if [ "$HB" != "$HC" ]; then OK=$((OK+1)); printf '  PASA  %-52s\n' "D · tocarlo mueve ARBOL-HASH (queda sellado)"
+else MAL=$((MAL+1)); echo "  FALLA D · AGENTS.md esta listado pero NO sellado: es lo que veniamos a arreglar"; fi
+
+# C · NEGATIVO: declarado y no esta. Callarlo seria la sonda que no puede medir.
+rm -f "$R/AGENTS.md"
+r "C · declarado y ausente: el arbol se calcula igual" 0 perl "$REF/receipt.pl" --arbol --repo "$R"
+contiene "C · y lo DICE en voz alta"          "NO ESTA EN EL REPO"
+HD="$(perl "$REF/receipt.pl" --arbol --repo "$R" | awk '/^ARBOL-HASH/{print $2}')"
+if [ "$HA" = "$HD" ]; then OK=$((OK+1)); printf '  PASA  %-52s\n' "C · y el arbol vuelve a ser el de A"
+else MAL=$((MAL+1)); echo "  FALLA C · un declarado ausente no puede cambiar el arbol"; fi
+rm -f "$R/_deploy/deploy.conf"
+
 echo
 echo "-- 13 · NEGATIVO: recibo escrito con --solo (lentes sin correr) ---------------"
 # El atajo mas comodo que existe, y el que aparecio solo en la primera corrida

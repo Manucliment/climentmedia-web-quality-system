@@ -112,6 +112,55 @@ page_list() {
   done | sort
 }
 
+# Los .js del arbol desplegable, con el MISMO filtro que page_list. Existe por
+# S1.9: el cargador de medicion casi nunca esta en el HTML -- lo normal es que
+# el HTML enlace un fichero y el fichero sea quien pide el tercero. Mirar solo
+# el HTML es mirar donde no esta.
+#
+# ⚠️ Y ademas se salta CUALQUIER directorio que empiece por punto, a cualquier
+#    nivel. `page_list` NO lo hace: se fia de que `EXCLUDE_DIRS` los nombre uno a
+#    uno. Medido el 2-sep-2026 corriendo el auditor contra un repo que tenia un
+#    `git worktree` colgando de `.claude/`: la evidencia de S1.9 salio apuntando
+#    a `.claude/worktrees/.../consent.js` en vez de al `consent.js` que se sirve.
+#    El veredicto era el mismo -- hay cargador -- pero un gate que nombra una
+#    COPIA manda a depurar el fichero que no es.
+#    Un dotdir no se sirve nunca, asi que aqui se salta y punto. La asimetria con
+#    `page_list` queda escrita a proposito: cerrarla toca a los seis sitios y a
+#    todos sus casos, y eso es una decision aparte de este check.
+js_list() {
+  find "$ROOT" -name '*.js' -type f 2>/dev/null | sed "s|^$ROOT/||" | while read -r p; do
+    keep=1
+    case "$p" in _*/*) keep=0 ;; esac
+    case "$p" in .*/*|*/.*/*) keep=0 ;; esac
+    for d in $EXCLUDE_DIRS; do
+      case "$p" in "$d"/*) keep=0; break ;; esac
+    done
+    [ "$keep" = 1 ] && echo "$p"
+  done | sort
+}
+
+# ---------------------------------------------------------------------------
+#  Los tres patrones de S1.9. Aqui arriba y no dentro del check, para que se
+#  puedan leer y discutir sin desenterrarlos de un `if`.
+# ---------------------------------------------------------------------------
+#  FIRMA_MEDICION · lo que delata a un CARGADOR, no a una mencion. Cada entrada
+#  es un dominio que se pide, un identificador de cuenta o una llamada de la
+#  API del vendedor. Es una lista con fecha, no un dogma: se amplia cuando
+#  aparezca un vendedor nuevo. Un falso NEGATIVO aqui deja pasar una
+#  contradiccion; un falso POSITIVO acusa a un sitio limpio, y por eso el HTML
+#  se lee sin sus <pre>.
+FIRMA_MEDICION='googletagmanager\.com|google-analytics\.com|gtag\(|dataLayer|GTM-[A-Z0-9]{4,}|UA-[0-9]{4,}-[0-9]|connect\.facebook\.net|fbq\(|static\.hotjar\.com|clarity\.ms|plausible\.io|cdn\.segment\.com|matomo\.js'
+
+#  AFIRMA_CERO · la familia de afirmaciones que ya se equivoco una vez. Pide una
+#  NEGACION pegada al sustantivo: «Google Analytics» a secas no casa, y tiene
+#  que no casar -- un producto que se integra con GA lo nombra en cada pagina.
+AFIRMA_CERO='(zero|no|without|never|nothing from)[a-z ,-]{0,24}(cookie|analytic|tracking|tracker|third.part)|(do|does) not (track|set|load|use|collect)'
+
+#  MATIZ_CONSENTIMIENTO · lo que convierte la afirmacion en verdadera. «cero
+#  cookies SI RECHAZAS» es cierto y es la redaccion correcta; sin esto el gate
+#  acusaria justo al texto bien escrito, que es como se desactiva un gate.
+MATIZ_CONSENTIMIENTO='(until|unless|opt-?s? ?in|opts in|consent|accept|declin|by default)'
+
 # ---------------------------------------------------------------------------
 #  resolver_ruta · LAS DOS CONVENCIONES DE URL, EN UN SOLO SITIO
 # ---------------------------------------------------------------------------
@@ -375,6 +424,117 @@ if [ -n "$DEAD_PREFIXES" ]; then
   [ "$DP" -eq 0 ] && ok "S1.8 ningun fichero para maquinas cita rutas muertas"
 else
   skip "S1.8 sin DEAD_PREFIXES configurado en _audit.conf (no se puede comprobar)"
+fi
+
+# ---------------------------------------------------------------------------
+#  S1.9 · AGENTS.md NO PUEDE CONTRADECIR AL SITIO EN LO QUE SE PUEDE MEDIR
+# ---------------------------------------------------------------------------
+#  2-sep-2026. `AGENTS.md` es el unico de los tres ficheros para maquinas que
+#  NO genera nadie, o sea el que mas deriva, y se presenta como fuente de verdad
+#  para motores de respuesta. Hasta hoy se le comprobaba que sus URLs existieran
+#  (S1.5), que no llevara entidades (S1.6) y que cada URL tuviera descripcion
+#  (S1.6b): la FORMA entera, y del FONDO nada.
+#
+#  El caso que lo paga, medido: media hora de produccion sirviendo
+#      «This website sets no cookies, runs no analytics and loads no
+#       third-party resources.»
+#  con el cargador de medicion ya desplegado. La frase era verdad cuando se
+#  escribio; el sitio cambio debajo y el fichero no. Ningun gate lo vio, porque
+#  ninguno cruzaba lo que el fichero AFIRMA con lo que el arbol HACE.
+#
+#  🔑 LA FORMA GENERAL, que es lo que se queda: un fichero para maquinas
+#     mantenido a mano que hace afirmaciones de hecho sobre el sitio necesita al
+#     menos UNA afirmacion atada a algo DERIVADO del sitio. Si no, es prosa que
+#     no comprueba nadie -- y una prosa equivocada en el fichero que dice ser la
+#     verdad es mas cara que no tener fichero.
+#
+#  🔴 POR QUE ES `bad` Y NO `warn`, contra la norma de la casa de estrenar en
+#     AVISO: aqui no hay juicio. El fichero dice «cero» y el arbol trae un
+#     cargador: es un HECHO contradictorio, como la duplicacion de `SEO-02b`.
+#     Lo que sostiene el FALLO es que el detector no acusa a texto correcto, y
+#     eso esta MEDIDO abajo, en las dos direcciones.
+#
+#  LAS DOS MITADES, y las dos tienen su trampa:
+#
+#   1 · «¿el sitio mide?» se deriva del ARBOL, no de una lista escrita al lado.
+#       Se busca la firma de un cargador en el HTML desplegable y en los .js.
+#       ⚠️ El HTML pasa por `strip_pre` PRIMERO. Sin eso, una pagina que inlinea
+#          documentacion sobre GTM (placeholders `GTM-XXXXXXX`, `dataLayer`,
+#          el dominio citado como texto) cuenta como cargador. Medido en un
+#          sitio real: 1 falso positivo sin `strip_pre`, 0 con el, y el unico
+#          hallazgo que queda es el cargador de verdad. Es la misma razon por la
+#          que existe `strip_pre`: codigo inlineado NO es marcado.
+#
+#   2 · «¿el fichero lo niega?» se mide por FRASE, y una frase con matiz de
+#       consentimiento NO cuenta.
+#       ⚠️ El matiz no es blandura: el texto CORRECTO de hoy dice literalmente
+#          «zero cookies» -- dentro de «...so declining leaves the site at zero
+#          cookies». Un grep del literal acusaria a la version buena, y un gate
+#          que acusa a lo correcto se apaga en una semana.
+#       ⚠️ NI POR LINEA NI POR BLOQUE, y las dos se probaron:
+#            · por LINEA no vale porque el markdown va cortado a ~78 columnas,
+#              asi que la afirmacion y su matiz caen en lineas distintas. Por eso
+#              primero se juntan las lineas partidas en bloques (parrafo, y cada
+#              viñeta el suyo).
+#            · por BLOQUE tampoco, y esto se descubrio MIDIENDO, no razonando:
+#              un solo «by default» en cualquier parte de una viñeta de cien
+#              palabras exime a toda la viñeta. Medido sobre el fichero real
+#              añadiendo «We do not track anyone, ever.» a la viñeta de
+#              privacidad, que es la forma mas probable de la proxima deriva:
+#                  por bloque 0 sin matizar  ·  por frase 1
+#              O sea que por bloque el gate se quedaba callado justo donde va a
+#              pasar. Se junta por bloque y se PARTE en frases.
+#       Medido sobre el AGENTS.md real: 72 bloques -> 133 frases, y 0 sin
+#       matizar. El texto de la media hora mala da 1.
+#       ⚠️ Lo que esto compra tiene precio, y queda escrito: una afirmacion cuyo
+#          matiz este en la frase SIGUIENTE («No cookies. Not unless you
+#          accept.») saldria acusada. Se acepta porque el arreglo es juntar las
+#          dos frases, que ademas se lee mejor -- y porque la alternativa era un
+#          gate ciego a la deriva mas probable.
+#
+#  Lo que esto NO contesta, dicho para que nadie lea de mas: no dice si el resto
+#  del fichero es verdad. Cubre UNA familia de afirmaciones, la que ya se
+#  equivoco. Lo demas sigue siendo una persona leyendolo.
+# ---------------------------------------------------------------------------
+if [ ! -f "$ROOT/AGENTS.md" ]; then
+  skip "S1.9 no hay AGENTS.md (nada que contrastar contra el sitio)"
+else
+  # --- 1 · derivado del arbol: ¿hay cargador de medicion? ---
+  MED_HIT=""
+  for p in $PAGES; do
+    n=$(strip_pre "$ROOT/$p" | grep -cE "$FIRMA_MEDICION")
+    [ "$n" -gt 0 ] && { MED_HIT="$p"; break; }
+  done
+  if [ -z "$MED_HIT" ]; then
+    for j in $(js_list); do
+      n=$(grep -cE "$FIRMA_MEDICION" "$ROOT/$j")
+      [ "$n" -gt 0 ] && { MED_HIT="$j"; break; }
+    done
+  fi
+
+  # --- 2 · lo que el fichero afirma, frase a frase ---
+  # awk junta las lineas partidas en bloques (parrafo, y cada viñeta el suyo) y
+  # sed parte esos bloques en frases. A partir de aqui, solo grep y comparacion
+  # numerica: este fichero tiene documentado que un check con construcciones
+  # raras aqui dentro da VERDE por no llegar a ejecutarse.
+  FRASES="$(mktemp 2>/dev/null || echo "$ROOT/.audit-agents.tmp")"
+  awk 'BEGIN{RS=""} {gsub(/\n[ \t]*[-*][ \t]+/, "\n@@B@@"); gsub(/\n/, " "); gsub(/@@B@@/, "\n"); print}' \
+    "$ROOT/AGENTS.md" | sed 's/\. /.\n/g' > "$FRASES"
+  NFRASE=$(grep -c . "$FRASES")
+  SIN_MATIZ=$(grep -iE "$AFIRMA_CERO" "$FRASES" | grep -icvE "$MATIZ_CONSENTIMIENTO")
+
+  if [ "$NFRASE" -lt 1 ]; then
+    # guardia anti-vacio, como S0: iterar sobre nada no falla, "pasa"
+    skip "S1.9 AGENTS.md no se pudo partir en frases: no se ha mirado nada"
+  elif [ -z "$MED_HIT" ]; then
+    ok "S1.9 el arbol no trae cargador de medicion: nada que AGENTS.md pueda contradecir ($NFRASE frases leidas)"
+  elif [ "$SIN_MATIZ" -gt 0 ]; then
+    bad "S1.9 AGENTS.md afirma $SIN_MATIZ vez/veces que no hay cookies/analitica/terceros, SIN matiz de consentimiento, y el arbol carga medicion en $MED_HIT"
+    grep -iE "$AFIRMA_CERO" "$FRASES" | grep -ivE "$MATIZ_CONSENTIMIENTO" | cut -c1-150 | sed 's/^/         > /'
+  else
+    ok "S1.9 el arbol carga medicion ($MED_HIT) y AGENTS.md no lo contradice ($NFRASE frases, 0 afirmaciones sin matizar)"
+  fi
+  rm -f "$FRASES"
 fi
 
 # =============================================================================

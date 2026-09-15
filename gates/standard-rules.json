@@ -2490,6 +2490,20 @@
       "por_que_sin_gate": "ya-hay-programa · lo mide same-text.pl, falta atarlo al catalogo y a la puerta"
     },
     {
+      "id": "SE-11",
+      "doc": "blueprint/03-content-and-seo.md",
+      "linea": 256,
+      "ref": "03-content-and-seo.md:256",
+      "texto": "Si se publica un AGENTS.md, tiene que ser verdad: no puede afirmar cero cookies, cero analitica o cero terceros mientras el arbol desplegable trae un cargador de medicion",
+      "tipo": "binaria",
+      "comprobable_maquina": "si",
+      "gate": "audit.sh S1.9",
+      "fecha": "2026-09-02",
+      "fecha_confianza": "alta",
+      "fuente_fecha": "el dia del defecto: media hora de produccion sirviendo la afirmacion contraria al arbol ya desplegado",
+      "conformidad": {}
+    },
+    {
       "id": "ME-01",
       "doc": "blueprint/04-measurement.md",
       "linea": 37,
