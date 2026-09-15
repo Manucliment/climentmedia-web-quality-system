@@ -1,0 +1,49 @@
+# ===========================================================================
+#  leak-terms.local.conf · los terminos PRIVADOS del barrido de fugas
+# ===========================================================================
+#  Copia este fichero a  gates/config/leak-terms.local.conf  y rellenalo con
+#  los tuyos. `.gitignore` cubre `*.conf`, asi que tu copia NO se commitea --
+#  y este `.example` si, por eso aqui solo hay nombres inventados.
+#
+#  POR QUE EXISTE. La primera version de gates/leak-sweep.js llevaba la lista
+#  de clientes DENTRO del propio programa, para poder buscarlos. O sea que el
+#  guardia escrito para que no se publicaran nombres de cliente los publico el
+#  mismo, en un repo publico, y ademas enumerados en una sola linea: quien
+#  quisiera la lista se ahorraba el trabajo de buscarla. Un patron que nombra a
+#  alguien no puede vivir en un fichero que se publica.
+#
+#  DOS DIRECTIVAS, y hacen falta las dos:
+#
+#    patron  <id>  <fragmento de expresion regular>
+#        lo que se busca. Va dentro de `\b(?: ... )\b`, asi que no hace falta
+#        anclarlo. Varias lineas del mismo id se unen con «o».
+#
+#    ejemplo <id>  <texto que TIENE que disparar ese patron>
+#        el caso positivo del autotest. Va aqui y no en el codigo por lo mismo
+#        que el patron: un caso de prueba que contiene un nombre de cliente es
+#        tan publico como el patron que lo busca.
+#
+#  ⚠️ Un `patron` sin su `ejemplo` entra en el barrido y NO se prueba nunca: un
+#     patron mal escrito no da error, simplemente no casa con nada -- y un
+#     barrido que no casa con nada se lee exactamente igual que un arbol limpio.
+#
+#  IDs que el barrido conoce (los genericos -- maquina, ip, telefono -- viven en
+#  el programa porque no nombran a nadie):
+#    cliente   dominio, marca, ciudad o calle de un cliente
+#    servidor  alias o usuario de un servidor privado
+#    persona   dominio de correo propio (se busca como `algo@<esto>.xx`)
+# ===========================================================================
+
+patron  cliente   ejemplo-cliente-uno
+patron  cliente   ejemplo-cliente-dos
+patron  cliente   Villeneuve
+patron  cliente   Rue du Moulin
+ejemplo cliente   el sitio de ejemplo-cliente-uno.example se midio en marzo
+ejemplo cliente   centro de Villeneuve (Rue du Moulin 120)
+
+patron  servidor  miservidor
+patron  servidor  u00\d{7}
+ejemplo servidor  ssh miservidor
+
+patron  persona   miservidor
+ejemplo persona   alguien@miservidor.com

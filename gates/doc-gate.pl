@@ -192,8 +192,24 @@ if (corre('D1')) {
             next if $en_cita;                               # la ruta va citada
             while ($linea =~ /`([^`\n]{2,120})`/g) {
                 my $t = $1;
+                my $antes = substr($linea, 0, $-[0]);
                 next if $t =~ m{[<>*\$\{\}]|\.\.\.};
                 next if $t =~ /\s/;
+                # 🔴 15-sep-2026 · UN NOMBRE ANTERIOR DECLARADO COMO ANTERIOR NO ES
+                #    UNA AFIRMACION SOBRE EL PRESENTE, y es la MISMA familia que la
+                #    tarea pendiente, la cita y el RUN_LOG de arriba.
+                #    El caso real, y lo cometi yo: al limpiar las rutas muertas del
+                #    renombre `references/` -> `gates/` reescribi una ficha para que
+                #    nombrara la ruta de HOY y dejara la vieja entre parentesis como
+                #    historia -- `gates/run-gate.js` *(entonces `references/...`)*.
+                #    D1 siguio viendo la vieja y acuso. O sea que arreglar la ficha
+                #    bien dejaba el gate rojo, y la unica forma de callarlo era
+                #    BORRAR de donde venia el defecto: exactamente lo que este
+                #    fichero dice en tres sitios que no se hace.
+                #    ⚠️ Lo mas estrecho que se puede: el marcador tiene que ir en un
+                #    parentesis ABIERTO justo antes (<=40 caracteres), asi que una
+                #    linea que diga «antes» suelta en cualquier parte sigue cayendo.
+                next if $antes =~ /\((?:entonces|antes|antano|formerly|then)\b[^)]{0,40}$/i;
                 # 🔴 SOLO `references/x`. El 13-ago probe a incluir tambien las
                 #    carpetas internas de repo (`_deploy/`, `_spec/`...) pensando
                 #    que eran inequivocas, y LO MEDI sobre los 5 repos y sobre la
