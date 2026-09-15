@@ -901,7 +901,7 @@ sub largo_visible {
     # seguia contando BYTES. Sin decodificar, una e acentuada son 2 y un guion
     # largo son 3, asi que el umbral castiga exactamente al frances y al
     # castellano -- las cinco webs.
-    # Medido el 20-ago: el title de site-a.example/ti-care salia 70 y en
+    # Medido el 20-ago: el title de site-a.example/le-centre salia 70 y en
     # pantalla son 64; su meta description, 175 contra 167. Los dos avisos,
     # INVENTADOS. Y los dos caian justo en la frontera del umbral, que es
     # exactamente cuando el aviso importa: nunca se dispara donde da igual.
@@ -3466,7 +3466,7 @@ sub lente_medicion {
             # pixel de Meta, asi que dentro de GTM harian falta dos permisos en dos
             # sitios que pueden divergir; en el JS del sitio la condicion es una y
             # es la misma casilla que la persona ve.
-            # Lo destapo eldestinodenora.es al poner su pixel: MED-07 no veia a
+            # Lo destapo site-e.example al poner su pixel: MED-07 no veia a
             # Meta y MED-07b avisaba de que "la politica declara un proveedor que
             # el sitio NO carga" sobre una politica que decia la verdad. Un aviso
             # falso enseña a ignorar los avisos, que es como muere un gate.
@@ -3540,7 +3540,7 @@ sub lente_medicion {
                 # 8-sep-2026 - "necess" NO CASA CON EL CASTELLANO. La exencion cubria
                 # "necessary" (EN) y "tecnic", y en espanol es "necesarias", con UNA
                 # sola ese: la casilla obligatoria de un banner en castellano salia
-                # acusada de premarcada. Lo destapo eldestinodenora.es el dia que
+                # acusada de premarcada. Lo destapo site-e.example el dia que
                 # encendio su banner, y habria acusado igual a cualquier otra web en
                 # espanol -que son tres de las cinco-.
                 # Se acorta a "neces", que cubre necesaria/necesarias/necessary a la

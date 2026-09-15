@@ -9,7 +9,7 @@
 #  -las entidades contaban CINCO caracteres donde se ve UNO- y seguia contando
 #  BYTES: una vocal acentuada valia 2 y un guion largo 3. O sea que el umbral
 #  castigaba exactamente al frances y al castellano, que es el idioma de las
-#  cinco webs. Medido ese dia en site-a.example/ti-care: title 70 contra 64
+#  cinco webs. Medido ese dia en site-a.example/le-centre: title 70 contra 64
 #  reales, meta description 175 contra 167. Los dos avisos, INVENTADOS.
 #
 #  Y lo que hace que duela: un fallo de frontera solo se ve CUANDO IMPORTA.
@@ -34,10 +34,15 @@ eval $sub; die $@ if $@;
 
 #  etiqueta                                        texto                    largo
 my @C = (
- ['title real de /ti-care (site-a, 20-ago)',
-  'Ti-Care — Centre de kinésithérapie à Etterbeek | Site A à Domicile', 64],
- ['meta description real de /ti-care',
-  'Ti-Care, centre de kinésithérapie à Etterbeek (Chaussée de Wavre 489). Rééducation, thérapie manuelle et suivi post-opératoire en cabinet. Rendez-vous au 067 49 31 21.', 167],
+ # Los dos primeros son el title y la meta description REALES de una web del parque,
+ # anonimizados el 15-sep-2026: marca, ciudad, calle y telefono eran de un cliente y
+ # esto es un repo PUBLICO. Se conservan la ACENTUACION, el guion largo y el LARGO
+ # EXACTO (64 y 167), que es lo unico que el control mide: un fallo de frontera solo
+ # se ve rozando el umbral.
+ ['title real de una web del parque (20-ago, anonimizado)',
+  'Bel-Air — Centre de kinésithérapie à Varenne | Site A à Domicile', 64],
+ ['meta description real de la misma (anonimizada)',
+  'Le Verger, centre de kinésithérapie à Varennes (Rue des Tilleuls 120). Rééducation, thérapie manuelle et suivi post-opératoire en cabinet. Rendez-vous au 02 000 00 00.', 167],
  # CONTROLES NEGATIVOS: el arreglo no puede apagar la comprobacion.
  ['CONTROL · 80 sin acentos sigue siendo 80',      ('a' x 80), 80],
  ['CONTROL · 80 CON acentos tambien es 80',        ('é' x 80), 80],

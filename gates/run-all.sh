@@ -28,6 +28,7 @@ case "${1:-}" in --rapido|--fast) RAPIDO=1 ;; esac
 
 # banco | orden | lento(1/0) | que cubre
 BANCOS="
+fugas|node leak-sweep.js ..|0|ni un nombre de cliente, ni una ruta de maquina, ni un dato personal
 doc-gate|perl doc-gate-tests/tests.pl|0|el gate de documentacion
 mismo-texto|perl same-text-tests/tests.pl|0|el texto del cliente no se pierde al rehacer la maqueta
 crawl-enlaces|perl crawl-links-tests/tests.pl|0|migas, cache compartida, R5 y R10

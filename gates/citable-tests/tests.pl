@@ -249,7 +249,7 @@ my $LARGO_GENERICO = 'Our platform reads the account data every night and produc
   check('FR4 · "comme explique plus haut" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*anterior/s);
 }
 {
-  # El hallazgo real de ti-care.html: el formulario NO esta arriba para un motor.
+  # El hallazgo real de una landing del parque: el formulario NO esta arriba para un motor.
   my ($rc, $out) = run(pageof('fr', "<p>Pour prendre rendez vous, remplissez le formulaire ci-dessus et vous serez rappele dans les vingt quatre heures.</p>"));
   check('FR5 · "ci-dessus" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*anterior/s);
 }
