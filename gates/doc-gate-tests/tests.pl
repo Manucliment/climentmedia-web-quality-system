@@ -358,6 +358,27 @@ caso('...y un numero de baterias caducado se acusa', 'D6',
        'references/.ultima-bateria' => $BAT2,
        'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
 
+#  🔴 16-sep-2026 · D6 LEIA «0 en rojo» Y «cases green», PERO NO «0 red».
+#     Los documentos de este repo estan en ingles, y el README raiz publicaba su
+#     recuento en la tercera forma: «**593 . 0 red** on --fast». Ninguno de los
+#     tres patrones la veia, asi que ese numero envejecio 85 casos por debajo de
+#     la bateria -- 593 contra 678 medidos ese dia- con D6 en VERDE y diciendo
+#     que casaba «en 3 documentos». Un gate que dice cubrir tres ficheros y solo
+#     entiende el idioma de dos es peor que uno que solo declarara dos: el
+#     tercero se lee como vigilado.
+#     Los dos casos son los dos signos, como manda la casa: si solo estuviera el
+#     rojo, un patron que acusara a cualquier «0 red» pasaria igual.
+my $ING_MAL  = "# skill\n\n| Test cases green | **365 . 0 red** on `--fast` |\n";
+my $ING_BIEN = "# skill\n\n| Test cases green | **826 . 0 red** on `--fast` |\n";
+caso('la forma INGLESA caducada tambien se acusa', 'D6',
+     { 'SKILL.md' => $ING_MAL,
+       'references/.ultima-bateria' => $BAT,
+       'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references');
+caso('...y la forma inglesa CORRECTA no se acusa', 'D6',
+     { 'SKILL.md' => $ING_BIEN,
+       'references/.ultima-bateria' => $BAT,
+       'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
+
 
 printf "\n-----------------------------------------------------------------\n";
 printf "  OK %-3d  ·  MAL %d\n", $ok, $ko;
