@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **671 cases green, 0 red**, with the deploy-history bank reported
-as `NOT MEASURED` because a fresh install has never deployed anything.
+machine the fast run is **680 cases green, 0 red** — **678** on a clean install, where the
+deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **795 cases green, 0 red** — **793** on a clean install — with **six** banks
+reads **810 cases green, 0 red** — **808** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -54,8 +54,8 @@ plus `qa-master` and `structure-gate`.
 
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
-passing, so the total goes up: on the machine these numbers were taken from it reads
-632, not 630, because two sites went out that day. `run-all.sh`
+passing, so the total goes up: on the machine these numbers were taken from the fast run reads
+680, not 678, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -77,7 +77,7 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  671 casos en verde · 0 en rojo
+  678 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
@@ -85,9 +85,36 @@ $ bash gates/run-all.sh --fast
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  795 casos en verde · 0 en rojo
+  810 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **Why the total moved from 795 to 810, and where the 15 came from.** The work is dated
+> 2026-09-02 and reached `main` on **2026-09-16**; it sat on a rescue branch in between,
+> which is a story told in that branch's commit. The fifteen are new, and they come in two
+> halves of the same defect — a file that shipped to production without being sealed or
+> checked. Measured bank by bank on 2026-09-16, before and after the merge:
+>
+> | bank | before | after |
+> |---|---:|---:|
+> | `receipt-base` — `SERVIDOS_PESE_A_EXCLUIR` | 68 | **76** |
+> | `audit` — `S1.9` | 24 | **30** |
+> | `gate-index` — the new rule now names an instrument | 158 | **159** |
+>
+> **Eight** in `receipt-base`, for `SERVIDOS_PESE_A_EXCLUIR`: the deployable tree now
+> re-includes what a repo's `EXCLUIR` removes but the deploy actually uploads, so the file
+> enters `ARBOL-HASH` and G11 asks for it. **Six** in `audit`, for `S1.9`: a hand-maintained
+> machine file may not deny cookies, analytics or third parties while the tree ships a
+> measurement loader. One of those six decided the granularity — a block-level check was
+> measurably blind to an absolute sentence appended to an already-qualified bullet, which is
+> the likeliest shape of the next drift — and another guards the false positive that showed
+> up the first time it ran against a real site: a page inlining documentation *about* GTM is
+> not a loader.
+>
+> ⚠️ **The branch's own note said seven in `audit` and did not mention `gate-index`. The
+> measurement says six and one.** Both halves of that sentence were written by adding up
+> cases somebody intended to write, not by running the banks. It is the reason this file
+> asks for `run-all.sh` instead of arithmetic.
 
 > **Why the total moved from 736 to 779 across 2026-09-01 and 02, and where the 43 came from.**
 > **31 are genuinely new** — 15 for the metadata checks below, 18 for the `roles` bank that
@@ -117,8 +144,8 @@ a `3` belongs is worse: it lets a gap read as coverage.
 
 ### Coverage is two questions, and only one of them was being asked
 
-`gate-index.js` has always answered *"does this rule name a check that exists?"* — 226 rules,
-**158 with an instrument (62%)**, the other 98 listed with `--huecos` and split into
+`gate-index.js` has always answered *"does this rule name a check that exists?"* — 257 rules,
+**159 with an instrument (62%)**, the other 98 listed with `--huecos` and split into
 machine-measurable, partial, and human judgement. That half is well kept: the gaps are counted,
 not hidden, and the report refuses to claim a ceiling of 100% because the standard itself marks
 rules no machine will ever measure.
@@ -126,7 +153,7 @@ rules no machine will ever measure.
 **It never asked the reverse: does this check that RUNS have a rule behind it?**
 
 ```
-  checks emitted .......... 156
+  checks emitted .......... 157
   with no rule claiming it .. 89   (57%)
 ```
 
