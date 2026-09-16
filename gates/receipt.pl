@@ -215,10 +215,90 @@ sub lee_excluir_deploy {
     return @re;
 }
 
+# =============================================================================
+#  1-bis · LO QUE LA EXCLUSION SE LLEVA Y AUN ASI SE SIRVE  (2-sep-2026)
+# =============================================================================
+#  `EXCLUIR` es una lista de PATRONES, y un patron no sabe de excepciones. En
+#  site-e `--exclude=*.md` es carga estructural -- medido: sin el viajarian al
+#  docroot publico nueve ficheros internos, empezando por el CLAUDE.md del
+#  repo -- y de paso se lleva por delante `AGENTS.md`, que SI se sirve.
+#
+#  El transporte ya lo resolvio: `SERVIDOS_PESE_A_EXCLUIR` en el deploy.conf
+#  declara la lista corta de rutas que viajan en una pasada aparte del tar, y
+#  el subidor guarda las DOS direcciones (nada fuera de la lista viaja, y todo
+#  lo de la lista tiene que llegar). El RECIBO no se habia enterado: seguia
+#  calculando el arbol solo con `EXCLUIR`, asi que ese fichero
+#    · no entraba en ARBOL-HASH  -> tocarlo NO invalidaba el recibo, y
+#    · no entraba en el manifiesto -> G11 no lo pedia nunca.
+#  O sea que viajaba SIN SELLO y SIN TESTIGO. Y no es un fichero cualquiera:
+#  es el unico de los tres para maquinas que no genera nadie, o sea el que mas
+#  deriva. Ver blueprint/03-content-and-seo.md seccion 5.2-bis.
+#
+#  🔴 SOLO REPESCA LO QUE `EXCLUIR` SE LLEVO. No levanta @EXCLUIR_DIR ni
+#     @EXCLUIR_FICHERO: esas son la regla de la casa y siguen sin poder
+#     relajarse desde un repo -- si un repo pudiera, el primer rojo incomodo se
+#     arreglaria relajandola. Lo que se repesca aqui es lo que el DEPLOY
+#     DECLARA que sube, que es una afirmacion con dueño y con guardia propio.
+#
+#  ⚠️ UNA RUTA DECLARADA QUE NO EXISTE NO SE PUEDE SELLAR, Y CALLARLO SERIA LA
+#     SONDA QUE NO PUEDE MEDIR. Sale en @SERVIDOS_AUSENTES y se DECLARA en el
+#     recibo. Una ausencia es un valor, no un silencio -- mismo criterio que
+#     'AUSENTE' en receptores().
+#
+#  ⚠️ Se ignora una ruta con `..` dentro: el arbol es del repo, y una
+#     declaracion que se sale de el no se sella, se descarta y se dice.
+# =============================================================================
+our @SERVIDOS_PESE_A_EXCLUIR;   # lo declarado en deploy.conf, ya normalizado
+our @SERVIDOS_AUSENTES;         # lo declarado que NO esta en el repo
+sub lee_servidos_pese_a_excluir {
+    my ($repo) = @_;
+    @SERVIDOS_PESE_A_EXCLUIR = ();
+    @SERVIDOS_AUSENTES       = ();
+    my $f = "$repo/_deploy/deploy.conf";
+    return () unless -f $f;
+    open my $fh, '<:raw', $f or return ();
+    local $/; my $txt = <$fh>; close $fh;
+    $txt = '' unless defined $txt;
+    $txt =~ s/\r\n/\n/g;
+    # La lista VACIA es legitima y significa «no hace falta repescar nada».
+    # Que la variable no exista significa otra cosa -- un repo anterior a esto --
+    # y en los dos casos el arbol se calcula como siempre.
+    my ($linea) = $txt =~ /^\s*SERVIDOS_PESE_A_EXCLUIR\s*=\s*"([^"]*)"/m;
+    return () unless defined $linea;
+    my %visto;
+    for my $p (split /\s+/, $linea) {
+        next unless $p =~ /\S/;
+        # se declaran como las lista `tar tzf`, con «./» delante
+        $p =~ s{\\}{/}g;
+        $p =~ s{^\./}{};
+        $p =~ s{^/+}{};
+        next if $p eq '';
+        next if $p =~ m{(?:^|/)\.\.(?:/|$)};
+        next if $visto{$p}++;
+        push @SERVIDOS_PESE_A_EXCLUIR, $p;
+    }
+    return @SERVIDOS_PESE_A_EXCLUIR;
+}
+
 sub arbol {
     my ($repo, %o) = @_;
     $repo = norm_ruta($repo);
     my @extra = (lee_qa_arbol($repo), lee_excluir_deploy($repo));
+    # valor 0 = declarado y aun no encontrado · 1 = encontrado y sellado
+    my %rescate = map { ($_ => 0) } lee_servidos_pese_a_excluir($repo);
+    # Los directorios por los que hay que SEGUIR BAJANDO aunque el barrido los
+    # pode: si alguien declara `assets/_priv/x.md`, podar `_priv` dejaria la
+    # declaracion sin efecto y en silencio. Se derivan de las propias rutas.
+    my %rescate_dir;
+    for my $p (keys %rescate) {
+        my @seg = split m{/}, $p;
+        pop @seg;                      # el ultimo segmento es el fichero
+        my $acc = '';
+        for my $s (@seg) {
+            $acc = ($acc eq '') ? $s : "$acc/$s";
+            $rescate_dir{$acc} = 1;
+        }
+    }
     my @out;
 
     my $recorre;
@@ -231,18 +311,28 @@ sub arbol {
             my $full = "$dir/$e";
             my $r    = $rel eq '' ? $e : "$rel/$e";
             if (-d $full) {
-                next if grep { $_ eq $e } @EXCLUIR_DIR;
-                # el guion bajo solo marca andamiaje en el PRIMER nivel:
-                # dentro de assets/ puede haber cualquier cosa
-                next if $EXCLUIR_DIR_GUION_BAJO && $rel eq '' && $e =~ /^_/;
-                next if $e =~ /^\./ && $rel eq '';
+                unless ($rescate_dir{$r}) {
+                    next if grep { $_ eq $e } @EXCLUIR_DIR;
+                    # el guion bajo solo marca andamiaje en el PRIMER nivel:
+                    # dentro de assets/ puede haber cualquier cosa
+                    next if $EXCLUIR_DIR_GUION_BAJO && $rel eq '' && $e =~ /^_/;
+                    next if $e =~ /^\./ && $rel eq '';
+                }
                 $recorre->($full, $r);
                 next;
             }
             next unless -f $full;
-            my $base = $e;
-            next if grep { $base =~ $_ } @EXCLUIR_FICHERO;
-            next if grep { $r    =~ $_ } @extra;
+            # Marcar SIEMPRE que la ruta este declarada, la excluyera un patron
+            # o no. Si solo se marcara en la rama de repesca, una ruta declarada
+            # que ya entraba por su cuenta saldria como AUSENTE: el instrumento
+            # acusando de una falta que no existe.
+            if (exists $rescate{$r}) {
+                $rescate{$r} = 1;
+            } else {
+                my $base = $e;
+                next if grep { $base =~ $_ } @EXCLUIR_FICHERO;
+                next if grep { $r    =~ $_ } @extra;
+            }
             open my $fh, '<:raw', $full or next;
             local $/;
             my $b = <$fh>;
@@ -252,6 +342,7 @@ sub arbol {
         }
     };
     $recorre->($repo, '');
+    @SERVIDOS_AUSENTES = sort grep { !$rescate{$_} } keys %rescate;
 
     @out = sort { $a->[0] cmp $b->[0] } @out;
     # El hash del arbol es el md5 de las lineas «md5<TAB>ruta». Depende del
@@ -906,6 +997,16 @@ sub escribe_recibo {
     # paginas fuera del recibo sin dejar rastro.
     push @cuerpo, "ARBOL-EXCLUIDO-POR-DEPLOY: " . join(' ', @EXCLUIDO_POR_DEPLOY)
         if @EXCLUIDO_POR_DEPLOY;
+    # Y lo que la exclusion se llevaba pero el deploy SI sube (seccion 1-bis).
+    # Va escrito por el mismo motivo que la linea de arriba: decide QUE SE MIDE.
+    # Sin ella, un fichero entra o sale del sello segun lo que diga un .conf que
+    # el recibo no enseña, y nadie puede leer el recibo y saber que cubre.
+    push @cuerpo, "ARBOL-SERVIDO-PESE-A-EXCLUIR: " . join(' ', @SERVIDOS_PESE_A_EXCLUIR)
+        if @SERVIDOS_PESE_A_EXCLUIR;
+    # Declarado y NO encontrado. No se puede sellar lo que no esta, pero callarlo
+    # convertiria «no lo he podido medir» en «no habia nada que medir».
+    push @cuerpo, "ARBOL-SERVIDO-AUSENTE: " . join(' ', @SERVIDOS_AUSENTES)
+        if @SERVIDOS_AUSENTES;
     push @cuerpo, "ARBOL-BYTES: " . eval { my $s = 0; $s += $_->[2] for @$man; $s };
     # ── 🔴 LOS RECEPTORES, SELLADOS APARTE (11-ago-2026) ────────────────────
     #  Por que aparte y no dentro de ARBOL-HASH: seccion 1-bis, con los tres
@@ -1788,6 +1889,14 @@ sub main {
         printf "ARBOL-HASH   %s\n", $hash;
         printf "FICHEROS     %d\n", scalar @$man;
         printf "BYTES        %d\n", $bytes;
+        printf "SERVIDO-PESE-A-EXCLUIR  %s\n", join(' ', @SERVIDOS_PESE_A_EXCLUIR)
+            if @SERVIDOS_PESE_A_EXCLUIR;
+        if (@SERVIDOS_AUSENTES) {
+            printf "\n  🔴 DECLARADO EN SERVIDOS_PESE_A_EXCLUIR Y NO ESTA EN EL REPO: %s\n",
+                   join(' ', @SERVIDOS_AUSENTES);
+            print  "     No se puede sellar lo que no existe. O la ruta esta mal escrita en\n";
+            print  "     _deploy/deploy.conf, o el fichero se borro y la declaracion sobrevivio.\n";
+        }
         if ($opt{listar}) {
             printf "%s  %9d  %s\n", substr($_->[1], 0, 8), $_->[2], $_->[0] for @$man;
         } else {
