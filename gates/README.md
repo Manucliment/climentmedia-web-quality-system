@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **680 cases green, 0 red** — **678** on a clean install, where the
+machine the fast run is **682 cases green, 0 red** — **680** on a clean install, where the
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** It
-reads **810 cases green, 0 red** — **808** on a clean install — with **six** banks
+reads **812 cases green, 0 red** — **810** on a clean install — with **six** banks
 reported as `NOT MEASURED`: the four that need a host or a client repository this public
 repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
 plus `qa-master` and `structure-gate`.
@@ -55,7 +55,7 @@ plus `qa-master` and `structure-gate`.
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-680, not 678, because that machine has deployed. `run-all.sh`
+682, not 680, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -77,7 +77,7 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  678 casos en verde · 0 en rojo
+  680 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
@@ -85,7 +85,7 @@ $ bash gates/run-all.sh --fast
 $ bash gates/run-all.sh
   NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  810 casos en verde · 0 en rojo
+  812 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
@@ -115,6 +115,18 @@ $ bash gates/run-all.sh
 > measurement says six and one.** Both halves of that sentence were written by adding up
 > cases somebody intended to write, not by running the banks. It is the reason this file
 > asks for `run-all.sh` instead of arithmetic.
+>
+> **And 810 is not the number at the top of this file, because the same session added two
+> more.** Merging that work meant reading the published counts, and the root README's was
+> **85 cases stale and unwatched**: it published **593**, written in the English mirror of
+> the Spanish wording, which is the one form none of D6's three patterns matched. The pair
+> of cases that pins that wording took the full run to **812**. A gate that covers three
+> documents and understands the language of two is worse than one that only claims two,
+> because the third reads as watched.
+>
+> ⚠️ **And the first draft of this very paragraph turned the gate red**, because it quoted
+> the stale figure next to the words that make the pattern. The text that explains a
+> signature contains the signature. Written apart on purpose, not softened.
 
 > **Why the total moved from 736 to 779 across 2026-09-01 and 02, and where the 43 came from.**
 > **31 are genuinely new** — 15 for the metadata checks below, 18 for the `roles` bank that

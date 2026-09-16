@@ -579,6 +579,16 @@ if (corre('D6')) {
             my @n = ($t =~ /(\d{2,5})\s*(?:\S+\s*)?0 en rojo/g);
             push @n, ($t =~ /(\d{2,5})\s+casos en verde/g);
             push @n, ($t =~ /(\d{2,5})\s+cases green/g);
+            # 🔴 16-sep-2026 · Y LA CUARTA FORMA, QUE ES LA QUE SE ESCAPABA.
+            #    Los tres patrones de arriba cubren «0 en rojo», «casos en
+            #    verde» y «cases green». El README raiz publicaba el suyo como
+            #    «**593 · 0 red** on --fast»: el espejo ingles del primero, y
+            #    ninguno lo veia. Medido ese dia: 593 publicado contra 678 de
+            #    bateria -85 casos- con D6 en VERDE y firmando que casaba «en 3
+            #    documentos». El numero llevaba semanas caducado en un repo
+            #    publico, que es exactamente lo que este check existe para
+            #    impedir, y el hueco no era del numero: era del idioma.
+            push @n, ($t =~ /(\d{2,5})\s*(?:\S+\s*)?0 red\b/g);
             push @dichos, @n;
             push @mal, map { "$d->[0] dice $_" } grep { !$valido{$_} } @n;
 
