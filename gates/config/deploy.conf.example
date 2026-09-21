@@ -51,5 +51,13 @@ FORM_URLS="/contact/"
 # measuring host.
 # NO_BROWSER=1
 
-# Where to measure from. Needs Chrome, puppeteer, lighthouse and pa11y.
+# Where to measure from: an ssh alias for a Linux host with Chrome and puppeteer.
+# The measuring host usually belongs to the MACHINE, not to one site, so the
+# normal place for it is gates/config/nav-host.local.conf (one line,
+# NAV_HOST=your-ssh-alias; *.conf is gitignored). Set it here only if this site
+# needs a different host. If neither is set, the browser step says
+# "NO MEDIDO: NAV_HOST sin configurar" and measures nothing: until 21-sep-2026
+# it silently tried a placeholder host instead, and 77 deploys went unmeasured.
+# The door reads BROWSER_HOST or NAV_HOST (and BROWSER_URLS / URLS_NAVEGADOR,
+# FORM_URLS / URLS_FORMULARIO, NO_BROWSER / SIN_NAVEGADOR).
 # BROWSER_HOST=your-measuring-host

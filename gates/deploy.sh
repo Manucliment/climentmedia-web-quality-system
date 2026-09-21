@@ -783,8 +783,52 @@ fi
 #    deshace nada. Lo que hace es dejar el veredicto en el historial. Se salta
 #    declarandolo (`SIN_NAVEGADOR=1` en deploy.conf), y la declaracion tambien
 #    se anota: un hueco declarado sigue siendo un hueco.
-NAV_HOST="${NAV_HOST:-example-host}"
-if [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
+#
+# 🔴 21-sep-2026 · EL HOST POR DEFECTO ERA UN MARCADOR, Y EL PASO 6 NO MEDIA NADA.
+#    Aqui ponia `NAV_HOST="${NAV_HOST:-example-host}"`: el nombre real se quito al
+#    anonimizar el repo y quedo el marcador. Toda web que no declarase NAV_HOST en
+#    su deploy.conf intentaba conectar a `example-host`, no llegaba, y el paso lo
+#    anotaba como «sin example-host» y seguia. **77 despliegues en cuatro webs, del
+#    26-ago al 17-sep, sin que los gates de navegador midieran lo servido**, y cada
+#    uno dejo una linea en el historial que no leia nadie. El banco no lo veia: su
+#    unico caso de esta rama traia un NAV_HOST inventado a proposito, asi que nunca
+#    ejercio el valor por defecto.
+#    → **El host de medida es un dato de la MAQUINA, no de la web ni del repo**, y
+#      en un repo publico no puede ir escrito. Orden, de mas especifico a menos:
+#        1) NAV_HOST del deploy.conf de la web (o del entorno),
+#        2) el fichero local `config/nav-host.local.conf` (NAV_HOST=...), que
+#           `*.conf` deja fuera de git igual que leak-terms.local.conf,
+#        3) nada: **NO MEDIDO en alto, sin intentar ningun host**. Un marcador
+#           que «falla al conectar» se lee como un problema de red; esto es
+#           configuracion que falta, y tiene que decirlo con ese nombre.
+#    La ruta del fichero se puede cambiar con NAV_HOST_CONF (lo usa el banco
+#    para no leer la configuracion de la maquina que lo corre).
+#    ⚠️ Y el mismo dia salio el hermano: `config/deploy.conf.example`, que es lo
+#    que copia quien clona el repo, documentaba estas cuatro claves CON NOMBRE
+#    INGLES (BROWSER_HOST, BROWSER_URLS, FORM_URLS, NO_BROWSER) y esta puerta
+#    solo leia los nombres en castellano. Quien siguiera la plantilla se quedaba
+#    sin medir igual, y sin ningun aviso. Se aceptan los dos; manda el castellano
+#    si estan los dos, porque es el que ya usan los deploy.conf que existen.
+NAV_HOST="${NAV_HOST:-${BROWSER_HOST:-}}"
+URLS_NAVEGADOR="${URLS_NAVEGADOR:-${BROWSER_URLS:-}}"
+URLS_FORMULARIO="${URLS_FORMULARIO:-${FORM_URLS:-}}"
+SIN_NAVEGADOR="${SIN_NAVEGADOR:-${NO_BROWSER:-0}}"
+NAV_HOST_CONF="${NAV_HOST_CONF:-$REF/config/nav-host.local.conf}"
+if [ -z "${NAV_HOST:-}" ] && [ -f "$NAV_HOST_CONF" ]; then
+  NAV_HOST="$(sed -n 's/^NAV_HOST=["'\'']\{0,1\}\([^"'\'' ]*\).*/\1/p' "$NAV_HOST_CONF" | head -1)"
+fi
+if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ -z "${NAV_HOST:-}" ]; then
+  echo
+  echo "  ============================================================================"
+  echo "  6 · navegador: NO MEDIDO: NAV_HOST sin configurar."
+  echo "      Ni $CONF ni el entorno lo declaran, y no existe"
+  echo "      $NAV_HOST_CONF"
+  echo "      Los gates de maqueta, pantallas, movil y formularios NO han mirado"
+  echo "      lo servido. Se arregla con una linea NAV_HOST=<alias ssh> en ese fichero."
+  echo "  ============================================================================"
+  perl "$REF/receipt.pl" --anotar "NAVEGADOR no medido: NAV_HOST sin configurar" \
+       --repo "$REPO" >/dev/null 2>&1
+elif [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
   echo
   echo "  6 · navegador: $CONF declara SIN_NAVEGADOR=1, no se mide."
   perl "$REF/receipt.pl" --anotar "NAVEGADOR no medido: SIN_NAVEGADOR=1 en deploy.conf" \

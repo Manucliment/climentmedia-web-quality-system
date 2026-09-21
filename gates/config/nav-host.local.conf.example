@@ -1,0 +1,16 @@
+# ===========================================================================
+#  nav-host.local.conf · el host desde el que se miden las webs servidas
+# ===========================================================================
+#  Copia este fichero a  gates/config/nav-host.local.conf  y pon tu alias de
+#  ssh. `.gitignore` cubre `*.conf`, asi que tu copia NO se commitea: el nombre
+#  de una maquina concreta no pinta nada en un repo publico.
+#
+#  Lo lee el paso 6 de gates/deploy.sh cuando la web no declara NAV_HOST (o
+#  BROWSER_HOST) en su deploy.conf. Si no hay ninguno de los dos, el paso dice
+#  «NO MEDIDO: NAV_HOST sin configurar» y no mide nada.
+#
+#  El host necesita Chrome (o Chromium) y puppeteer-core en ~/webtools, y tiene
+#  que ser Linux: en Windows, Chrome headless no baja de ~500 px de ancho y una
+#  medida «a 390» sale de otra pagina.
+# ===========================================================================
+NAV_HOST=your-ssh-alias
