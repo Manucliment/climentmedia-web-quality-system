@@ -19,6 +19,10 @@ T="${TEMP:-/tmp}/puerta-pruebas-$$"
 PUERTO=$(( 8400 + ($$ % 900) ))
 # las pruebas NO escriben en el historial de verdad
 export QA_RECIBOS_DIR="$T/historial-de-pruebas"
+# ni el host de medida de la maquina que corre el banco (21-sep-2026): sin esto,
+# con un config/nav-host.local.conf real, el paso 6 conectaria al servidor de verdad
+unset NAV_HOST
+export NAV_HOST_CONF="$T/no-hay-nav-host.conf"
 OK=0; MAL=0
 
 r() { local nombre="$1" esp="$2"; shift 2
@@ -357,6 +361,41 @@ contiene "nombra el host al que no llega"     "no-existe-este-host.invalid"
 grep -q "NAVEGADOR no medido: sin no-existe-este-host.invalid" "$QA_RECIBOS_DIR/history.tsv" \
   && { OK=$((OK+1)); echo "  PASA  la falta de host queda ANOTADA en el historial"; } \
   || { MAL=$((MAL+1)); echo "  FALLA la falta de host NO se anota"; }
+
+# 🔴 21-sep-2026 · EL CASO QUE FALTABA: la web NO declara NAV_HOST y la maquina
+#    tampoco. El caso de arriba trae un host inventado, asi que nunca ejercio el
+#    valor por defecto, que era el marcador `example-host`: 77 despliegues reales
+#    se quedaron sin medir con este banco en verde. Con el marcador, esto sale
+#    «no llego a example-host», que se lee como un fallo de red; tiene que salir
+#    como lo que es, configuracion que falta, y SIN intentar conectar a nada.
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "sin NAV_HOST en ningun sitio, sube"      0 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "y dice que falta configurarlo"      "NAV_HOST sin configurar"
+if printf '%s' "$ULTIMA" | grep -q "example-host"; then
+  MAL=$((MAL+1)); echo "  FALLA intenta un host marcador en vez de decir que falta"
+else OK=$((OK+1)); echo "  PASA  no intenta ningun host marcador"; fi
+grep -q "NAVEGADOR no medido: NAV_HOST sin configurar" "$QA_RECIBOS_DIR/history.tsv" \
+  && { OK=$((OK+1)); echo "  PASA  la falta de configuracion queda ANOTADA"; } \
+  || { MAL=$((MAL+1)); echo "  FALLA la falta de configuracion NO se anota"; }
+
+# Y el otro signo: el host sale del fichero LOCAL de la maquina cuando la web no
+# lo declara. Host inventado a proposito: basta con ver que lo intenta.
+printf 'NAV_HOST="no-existe-host-local.invalid"\n' > "$T/nav-host-local.conf"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "host del fichero local de la maquina"    0 env NAV_HOST_CONF="$T/nav-host-local.conf" \
+                                              bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "usa el host del fichero local"      "no-existe-host-local.invalid"
+
+# Y la plantilla publica: config/deploy.conf.example documenta BROWSER_HOST, y la
+# puerta solo leia NAV_HOST. Quien la siguiera se quedaba sin medir, sin aviso.
+printf 'BROWSER_HOST=no-existe-alias.invalid\n' >> "$T/repo/_deploy/deploy.conf"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "la clave de la plantilla (BROWSER_HOST)"  0 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "usa el host que declara la plantilla" "no-existe-alias.invalid"
+perl -i -ne 'print unless /^BROWSER_HOST=/' "$T/repo/_deploy/deploy.conf"
 
 echo
 echo "-- 13 · PASO 2-ter: no perder texto del cliente -------------------------------"
