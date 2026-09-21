@@ -964,8 +964,16 @@ SRV
     { "lente":"ESTRUCTURA","id":"EST-01","estado":"PASA","titulo":"t" } ] }
 JSON
   perl ../receipt.pl --escribir --repo "$RV" --json "$CACHE/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null 2>&1
+  # 🔴 21-sep-2026 · DESDE 14bed08 EL PASO 6 DE LA PUERTA LEE EL HOST DE MEDIDA DE
+  #    LA MAQUINA (config/nav-host.local.conf). Sin aislarlo, este fixture servido
+  #    en 127.0.0.1 se mandaria a medir por ssh al host real de quien corra el
+  #    banco: sale en 0 igual -el paso 6 va despues del PASA-, asi que ningun caso
+  #    se pondria rojo, y el banco dependeria de la maquina sin decirlo. Se aisla
+  #    igual que receipt-tests/tests-door.sh: sin NAV_HOST y con un fichero que
+  #    no existe. El paso 6 dice entonces «NO MEDIDO: NAV_HOST sin configurar».
+  NAVAIS="$CACHE/no-hay-nav-host.conf"; rm -f "$NAVAIS"
 
-  salida="$(bash ../deploy.sh "$RV" 2>&1)"; rc=$?
+  salida="$(NAV_HOST= BROWSER_HOST= NAV_HOST_CONF="$NAVAIS" bash ../deploy.sh "$RV" 2>&1)"; rc=$?
   if [ "$rc" = 0 ] && printf '%s' "$salida" | grep -q 'medido contra: CANDIDATO'; then
     printf '  OK    %-46s el gate acepta el recibo de candidato\n' "deploy.sh · recibo de CANDIDATO vale"; ok=$((ok+1))
   else
@@ -980,7 +988,7 @@ JSON
     printf '  MAL   %-46s no separa los NV del candidato\n' "los NV del candidato no piden --aun-asi"; ko=$((ko+1))
   fi
   # el bucle entero: subir (simulado) y G11 EN VERDE contra lo servido
-  salida="$(bash ../deploy.sh "$RV" --subir 2>&1)"; rc=$?
+  salida="$(NAV_HOST= BROWSER_HOST= NAV_HOST_CONF="$NAVAIS" bash ../deploy.sh "$RV" --subir 2>&1)"; rc=$?
   if [ "$rc" = 0 ] && printf '%s' "$salida" | grep -q 'desplegado y verificado contra el recibo'; then
     printf '  OK    %-46s candidato -> subir -> G11 verde\n' "los DOS momentos, de punta a punta"; ok=$((ok+1))
   else
@@ -992,7 +1000,7 @@ JSON
   #    es la mitad de todo el arreglo.
   printf ':root{--a:#fff} /* lo servido ya no es lo medido */\n' > "$RV/styles.css.bak"
   mv "$RV/styles.css" "$RV/styles.css.medido"; mv "$RV/styles.css.bak" "$RV/styles.css"
-  salida="$(bash ../deploy.sh "$RV" --servido 2>&1)"; rc=$?
+  salida="$(NAV_HOST= BROWSER_HOST= NAV_HOST_CONF="$NAVAIS" bash ../deploy.sh "$RV" --servido 2>&1)"; rc=$?
   if [ "$rc" != 0 ] && printf '%s' "$salida" | grep -q 'PRODUCCION NO SIRVE LO QUE SE MIDIO'; then
     printf '  OK    %-46s exit %s\n' "G11 sigue cerrando con recibo de candidato" "$rc"; ok=$((ok+1))
   else
