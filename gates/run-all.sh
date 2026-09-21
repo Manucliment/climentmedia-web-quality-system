@@ -45,7 +45,7 @@ audit-vs-origen|bash audit-vs-source-tests/tests.sh|0|el gate de migracion (medi
 gate-formularios|bash forms-gate-tests/tests.sh|1|el formulario en el DOM (paso 10)
 anatomia|perl anatomy-tests/tests.pl|0|una sola tabla de anatomias (09 §2)
 roles|perl roles-tests/tests.pl|0|el vocabulario de roles y las plantillas por tipo
-medir-pantallas|bash measure-screens-tests/tests.sh|1|densidad: la UNIDAD y los 19 moldes
+medir-pantallas|bash measure-screens-tests/tests.sh|1|densidad: la UNIDAD y los moldes de blueprint/moulds
 gate-estructura|bash structure-gate-tests/battery.sh|1|maqueta: prosa vs maquetada, 3 REVISAR congelados
 moldes-maqueta|bash structure-gate-tests/battery-layout.sh|1|los moldes: colisiones, contraste AA, anchos
 gate-movil|bash mobile-gate-tests/battery.sh|1|movil: accion sobre el pliegue y CTA tapado (mide en el SERVIDOR)
@@ -68,7 +68,15 @@ echo "==========================================================================
 # Bancos cuyo recuento depende de lo que esta maquina haya hecho ya, no del
 # codigo. Se suman al total igual, pero tambien aparte, para que la
 # documentacion pueda prometer un numero que se cumpla en una instalacion nueva.
-DEPENDE_DEL_ESTADO="historial"
+# 🔴 21-sep-2026 · Y LOS TRES QUE MIDEN EN EL SERVIDOR. Hasta hoy salian NO MEDIDO
+#    en TODAS las maquinas -buscaban un host marcador, `example-host`- y por eso
+#    no hacia falta apartarlos: aportaban cero en todas partes. Desde que leen el
+#    host de config/nav-host.local.conf (fuera de git), miden donde hay uno y en
+#    una instalacion nueva no. Sin apartarlos, el README tendria que publicar el
+#    total de ESTA maquina -881 el dia del cambio- y doc-gate se pondria rojo a
+#    todo el que clone el repo sin servidor de medida: el mismo falso rojo que
+#    `historial` ya enseno a evitar.
+DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil form-handler"
 TOT_ESTADO=0
 TOT_OK=0; TOT_MAL=0; ROTOS=""; NO_MEDIDOS=""
 # Cuantos bancos DEBERIAN correr. Se cuenta ANTES para poder comparar despues:

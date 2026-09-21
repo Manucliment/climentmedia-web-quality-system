@@ -26,7 +26,16 @@
 set -u
 D="$(cd "$(dirname "$0")" && pwd)"
 REF="$(cd "$D/.." && pwd)"
-HOST="${GATE_MOVIL_HOST:-example-host}"
+# 21-sep-2026 · GATE_MOVIL_HOST sigue mandando si esta puesto; si no, el host sale
+# de ../nav-host.sh, como en la puerta. Aqui ponia `:-example-host`, el marcador
+# de la anonimizacion, y este banco salio NO MEDIDO en cada bateria.
+. "$REF/nav-host.sh"
+HOST="${GATE_MOVIL_HOST:-$(nav_host "$REF")}"
+if [ -z "$HOST" ]; then
+  echo "  NO SE PUEDE MEDIR: NAV_HOST sin configurar (ni GATE_MOVIL_HOST, ni el"
+  echo "  entorno, ni $(nav_host_conf "$REF")). Esto NO es un aprobado."
+  exit 3
+fi
 REMOTO="/tmp/gate-movil-fixtures"
 
 OK=0; MAL=0

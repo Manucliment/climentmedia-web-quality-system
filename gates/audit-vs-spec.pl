@@ -610,7 +610,7 @@ sub bloque_anatomia {
         fallo(id=>'ANA-02', titulo=>'paginas que declaran rol pero incumplen su anatomia',
               dato=>join(' · ', @l[0..($#l > 6 ? 6 : $#l)]),
               umbral=>'todos los roles OBL de 09 §2 para ese tipo', proc=>'09-tipos-de-pagina §2',
-              hacer=>'cada rol que falta tiene su consecuencia escrita al lado en 09 §2, y su molde en references/moldes/');
+              hacer=>'cada rol que falta tiene su consecuencia escrita al lado en 09 §2, y su molde en blueprint/moulds/');
     }
     $n_ok and pasa(id=>'ANA-02', titulo=>'paginas con la anatomia completa', dato=>"$n_ok");
     %sin_datasec || %incompleta || $n_ok

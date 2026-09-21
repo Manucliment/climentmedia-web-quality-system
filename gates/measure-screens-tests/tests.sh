@@ -14,7 +14,11 @@
 #  pudo medir» habria sido un cero con cara de aprobado.
 #
 #  Que fija este banco:
-#   1 · los 19 moldes de references/moldes/ PASAN la regla de la unidad.
+#   1 · los moldes de blueprint/moulds/ PASAN la regla de la unidad.
+#       (Eran 19 en references/moldes/. Al pasar las rutas a ingles la carpeta
+#       cambio de sitio y este banco siguio buscando en la vieja: el bucle no
+#       encontraba nada y media un unico «caso» llamado `[0-9]*`. Nadie lo vio
+#       porque el banco salia NO MEDIDO por el host marcador. 21-sep-2026.)
 #       Es la contradiccion del 18-ago (07-trampas §47): diez de ellos pasan de
 #       una pantalla como SECCION y ninguno como UNIDAD. Si alguien vuelve a
 #       medir el contenedor, esto se pone rojo en diez moldes a la vez.
@@ -24,7 +28,17 @@
 set -u
 DIR="$(cd "$(dirname "$0")" && pwd)"
 REF="$(dirname "$DIR")"
-HOST="${NAV_HOST:-example-host}"
+MOLDES="$REF/../blueprint/moulds"
+# 21-sep-2026 · el host sale de ../nav-host.sh, como en la puerta (ver su cabecera).
+. "$REF/nav-host.sh"
+HOST="$(nav_host "$REF")"
+if [ -z "$HOST" ]; then
+  echo "BANCO · measure-screens.js (densidad y CTAs)"
+  echo
+  echo "  NO VERIFICADO · NAV_HOST sin configurar: ni el entorno ni"
+  echo "  $(nav_host_conf "$REF") dicen desde donde medir."
+  echo; echo "  NO MEDIDO (NAV_HOST sin configurar)"; exit 3
+fi
 SUB="pruebas-densidad"
 OK=0; MAL=0
 
@@ -44,7 +58,7 @@ fi
 
 ssh "$HOST" "mkdir -p $HOME_R/$SUB" </dev/null >/dev/null 2>&1
 scp -q "$DIR/fixtures/"*.html "$HOST:$HOME_R/$SUB/" </dev/null
-scp -q "$REF/moldes/"*.html "$REF/moldes/"_*.css "$HOST:$HOME_R/$SUB/" </dev/null
+scp -q "$MOLDES/"*.html "$MOLDES/"_*.css "$HOST:$HOME_R/$SUB/" </dev/null
 # 🔴 El corredor se empuja igual que el gate: vive en la skill, no en el servidor.
 # Verificado el 18-ago borrandolo de ~/webtools: sin esta linea el banco da
 # OK 0 · MAL 24, y con ella lo repone y vuelve a 24 de 24.
@@ -102,8 +116,17 @@ espera f9-faq-titulares.html   PASA  ""                              "el mismo t
 espera f6-alto-sin-texto.html  FALLA "pantallas de scroll"          "mucho alto y 48 palabras: es aire"
 espera f7-largo-pero-denso.html PASA  ""                            "mismo alto, pero lo compra el texto"
 echo
-echo "== EL REPERTORIO: los 19 moldes, por la regla de la UNIDAD (07-trampas §47)"
-for f in "$REF"/moldes/[0-9]*.html; do
+# 🔴 Se CUENTAN antes de medir. Con la carpeta equivocada, el patron no casaba,
+#    `sh` dejaba el literal `[0-9]*.html` y el bucle media UN caso inexistente --
+#    un «MAL» que parecia un problema de ancho. Cero moldes no es un repertorio
+#    que pasa: es un repertorio que no se ha encontrado, y se dice con ese nombre.
+N_MOLDES="$(ls "$MOLDES"/[0-9]*.html 2>/dev/null | wc -l | tr -dc '0-9')"
+echo "== EL REPERTORIO: los ${N_MOLDES:-0} moldes de blueprint/moulds, por la regla de la UNIDAD (07-trampas §47)"
+if [ "${N_MOLDES:-0}" -eq 0 ]; then
+  printf "  MAL   %-46s no hay ni un molde en %s\n" "repertorio" "$MOLDES"; MAL=$((MAL+1))
+fi
+for f in "$MOLDES"/[0-9]*.html; do
+  [ -f "$f" ] || continue
   n="$(basename "$f")"
   linea="$(correr "$n")"
   coin="${linea%%|*}"; resto="${linea#*|}"; fallos="${resto#*|}"
