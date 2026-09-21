@@ -17,19 +17,36 @@
 #       · FRONTERA  — casos que PARECEN defectos y no lo son. Son los que
 #                     distinguen un gate de un generador de ruido.
 #
-#  ⚠️ Toca la red: tres de estas webs estan LIVE. Solo hace GET. No despliega.
+#  ⚠️ Los casos que leen una web VIVA solo corren con EN_VIVO=1 (ver `falta`).
+#     Solo hacen GET. No despliega.
+#
+#  🔑 Todas las rutas son RELATIVAS a este directorio (el `cd` de abajo). Un
+#     trozo de este fichero copiado a otro sitio no mide nada: `../qa-master.pl`
+#     deja de existir y todos los casos salen AUSENTE, con el gate viejo y con
+#     el nuevo por igual. Medido el 21-sep-2026 (360 lineas: fuera de aqui 47
+#     MAL, dentro de aqui 49 OK).
 # =============================================================================
 set -u
 cd "$(dirname "${BASH_SOURCE[0]}")"
 QA="../qa-master.pl"
 # Donde viven los repos de nuestras 5 webs. Se puede sobreescribir:
 #   REPOS=/path/to/your/repos bash tests.sh
-# There is no sensible default here — it names YOUR checkouts — so it must be
-# set. Failing loudly beats silently measuring a directory that does not exist.
+# There is no sensible default here — it names YOUR checkouts. Unset, every case
+# that reads one is reported NOT MEASURED by name (see `falta`): failing loudly
+# beats silently measuring a directory that does not exist. The placeholder has
+# no spaces on purpose: several lines use $REPOS unquoted.
 REPOS="${REPOS:-}"
+[ -n "$REPOS" ] || REPOS="/REPOS-not-set"
+# Cases that read a LIVE site are opt-in: its answer depends on that site's
+# state today, and a positive control anchored to a live site expires the day
+# the site is fixed (see LA CACHE CONGELADA below). EN_VIVO=1 runs them.
+EN_VIVO="${EN_VIVO:-0}"
 CACHE="${TMPDIR:-/tmp}/qa-master-tests-cache"
 mkdir -p "$CACHE"
 ok=0; ko=0
+# nm = cases NOT MEASURED · nmb = hand-written blocks NOT MEASURED. The four
+# per-reason counters can add up to more than nm: one case can lack two things.
+nm=0; nmb=0; nm_cong=0; nm_repo=0; nm_anon=0; nm_vivo=0; nm_lista=0
 
 # ── LA CACHE CONGELADA DE KINE ──────────────────────────────────────────────
 # 🔴 POR QUE (11-ago-2026). Esta bateria decia «OK 180 · MAL 0» y con una cache
@@ -103,6 +120,21 @@ rm -rf "$KCACHE"; mkdir -p "$KCACHE"
 #     version debil de «el control corre».
 #     Ahora se ANOTA que falta y se sale mas abajo, despues de correr todo lo
 #     que si se puede medir sin ella.
+#     🔴 21-sep-2026 · «TODO LO QUE SI SE PUEDE MEDIR» ERAN 18 CASOS DE ~100.
+#     La salida se puso en la linea 260 y todo lo de debajo se perdia con ella,
+#     incluidas las secciones que solo usan `fixtures-*` —las cinco lentes,
+#     EST-10/11/12, la puerta, la huella, la colision de cache—: CERO
+#     referencias al sitio congelado y nunca corrian. Los dos casos de MED-09
+#     del 21-sep solo se pudieron probar a mano por esto.
+#     Y medido con la salida quitada, el sitio congelado no era la unica
+#     dependencia: 132 MAL, de cuatro clases (el congelado, $REPOS, capturas de
+#     hosts anonimizados y webs vivas), y ademas DIEZ casos en VERDE por el
+#     motivo equivocado: un `texto ... NO` o un diff de dos ficheros vacios
+#     sobre un gate que no ha medido nada pasan solos.
+#     → Ya no hay salida anticipada. Cada caso se clasifica ANTES de correr,
+#       con sus propios argumentos (`falta`), y lo que no se puede medir se
+#       imprime con nombre y se cuenta. La lista de dependencias se DERIVA del
+#       comando: un caso nuevo queda clasificado sin que nadie se acuerde.
 SIN_FIXTURE=0
 if [ ! -d "$KFIX" ]; then
   SIN_FIXTURE=1
@@ -112,9 +144,97 @@ else
   KFIX_N0="$(wc -l < "$CACHE/kfix-antes.lst")"
 fi
 
+# ── LO QUE UN CASO NECESITA Y ESTE CHECKOUT NO TIENE ────────────────────────
+# falta <argumentos del caso...>
+#   Imprime lo que le falta al caso para poder medirse, o nada. Se DERIVA de
+#   los argumentos del propio caso, no de en que seccion esta: las secciones
+#   mezclan casos de fixture propia con casos de sitio congelado, y una lista
+#   escrita al lado envejece sola. Las cuatro clases que existen (medidas el
+#   21-sep-2026 corriendo el fichero entero sin la salida anticipada):
+#     · el sitio congelado  · el caso lee "$KCACHE" y $KFIX/ no esta
+#     · un repo de $REPOS   · un argumento bajo $REPOS que no existe
+#     · host anonimizado    · https://*.example sin --candidato: `.example` no
+#                             resuelve NUNCA (RFC 2606), asi que solo se contesta
+#                             desde una captura, y la unica publicada seria $KFIX
+#     · una web viva        · cualquier otro host sin --candidato ni --sin-red,
+#                             salvo que EN_VIVO=1
+#   Con --candidato el sitio se sirve desde --repo en 127.0.0.1, asi que el host
+#   de la URL no se descarga. Un `@lista` se lee: lleva URLs dentro.
+MOT_CONG="the frozen fixture $KFIX/"
+MOT_REPO="a client checkout under \$REPOS"
+MOT_ANON="a capture of an anonymized .example host"
+MOT_VIVO="a live site (EN_VIVO=1 measures it)"
+MOT_LISTA="a URL list its block did not write"
+falta() {
+  local a f u h cand=0 sinred=0 kc=0 urls="" m=""
+  for a in "$@"; do
+    case "$a" in --candidato) cand=1 ;; --sin-red) sinred=1 ;; esac
+    [ "$a" = "$KCACHE" ] && kc=1
+  done
+  [ "$kc" = 1 ] && [ "$SIN_FIXTURE" = 1 ] && m="$m + $MOT_CONG"
+  for a in "$@"; do
+    case "$a" in "$REPOS"/*) [ -e "$a" ] || { m="$m + $MOT_REPO (${a#"$REPOS"/})"; break; } ;; esac
+  done
+  for a in "$@"; do
+    case "$a" in
+      http://*|https://*) urls="$urls $a" ;;
+      @*) f="${a#@}"
+          if [ -f "$f" ]; then urls="$urls $(grep -oE 'https?://[^[:space:]]+' "$f" | tr '\n' ' ')"
+          else m="$m + $MOT_LISTA (${f##*/})"; fi ;;
+    esac
+  done
+  if [ "$cand" = 0 ] && [ "$sinred" = 0 ]; then
+    for u in $urls; do
+      h="${u#*://}"; h="${h%%/*}"; h="${h%%:*}"
+      case "$h" in
+        127.0.0.1|localhost) ;;
+        *.example) if [ "$kc" = 0 ] || [ "$SIN_FIXTURE" = 1 ]; then m="$m + $MOT_ANON ($h)"; break; fi ;;
+        *) if [ "$EN_VIVO" != 1 ]; then m="$m + $MOT_VIVO ($h)"; break; fi ;;
+      esac
+    done
+  fi
+  printf '%s' "${m# + }"
+}
+
+# sin_medir <etiqueta> <comando...>
+#   Si al caso le falta algo, lo imprime como NO MEDIDO con el motivo, lo
+#   cuenta y devuelve 0 (= no lo corras). Si no le falta nada, devuelve 1.
+#   🔴 La clasificacion va ANTES de correr, nunca se deduce del resultado: un
+#   `texto ... NO "<literal>"` sobre un gate que no ha medido nada sale VERDE
+#   (medido el 21-sep: «no acusa al HTML del cliente (_migrate)» pasaba con
+#   $REPOS sin definir y el host sin resolver). Leer AUSENTE como «no medido»
+#   no lo veria, porque ahi no sale AUSENTE: sale OK.
+sin_medir() {
+  local eti="$1"; shift
+  local m; m="$(falta "$@")"
+  [ -z "$m" ] && return 1
+  printf '  N/M   %-46s NOT MEASURED: needs %s\n' "$eti" "$m"; nm=$((nm+1))
+  case "$m" in *"$MOT_CONG"*) nm_cong=$((nm_cong+1)) ;; esac
+  case "$m" in *"$MOT_REPO"*) nm_repo=$((nm_repo+1)) ;; esac
+  case "$m" in *"$MOT_ANON"*) nm_anon=$((nm_anon+1)) ;; esac
+  case "$m" in *"$MOT_VIVO"*) nm_vivo=$((nm_vivo+1)) ;; esac
+  case "$m" in *"$MOT_LISTA"*) nm_lista=$((nm_lista+1)) ;; esac
+  return 0
+}
+
+# mide_bloque <nombre> <argumentos de lo que el bloque mide...>
+#   Lo mismo, para los bloques que comprueban a mano (su propio printf OK/MAL)
+#   en vez de por `espera`/`texto`. Devuelve 0 si se puede medir; si no, UNA
+#   linea por el bloque entero, y 1. Se cuentan BLOQUES, no casos: cuantos
+#   casos lleva un bloque solo se sabe corriendolo, y un numero escrito a mano
+#   al lado caducaria el dia que alguien le anada uno.
+mide_bloque() {
+  local nom="$1"; shift
+  local m; m="$(falta "$@")"
+  [ -z "$m" ] && return 0
+  printf '  N/M   %-46s NOT MEASURED (block): needs %s\n' "$nom" "$m"; nmb=$((nmb+1))
+  return 1
+}
+
 # espera <etiqueta> <ESTADO> <ID> <comando...>
 espera() {
   local eti="$1" est="$2" id="$3"; shift 3
+  sin_medir "$eti" "$@" && return 0
   local out; out="$("$@" 2>&1)"
   local linea; linea="$(printf '%s\n' "$out" | grep -E "^\s+\[[A-Z ]+\] +$id " | head -1)"
   local real; real="$(printf '%s' "$linea" | sed -E 's/^\s+\[([A-Z ]+)\].*/\1/' | tr -d ' ')"
@@ -134,6 +254,7 @@ espera() {
 #   del semaforo.
 texto() {
   local eti="$1" quiero="$2" lit="$3"; shift 3
+  sin_medir "$eti" "$@" && return 0
   local out; out="$("$@" 2>&1)"
   local hay=NO; printf '%s' "$out" | grep -qF -- "$lit" && hay=SI
   if [ "$hay" = "$quiero" ]; then
@@ -214,13 +335,8 @@ for _v in h1-hero solo-marca desc-ajena desc-duplicada; do
   fi
 done
 
-# ── AQUI SE ACABA LO QUE SE PUEDE MEDIR SIN EL SITIO CONGELADO ──────────────
-#    Todo lo de abajo consume `$KCACHE`, que sale de `fixtures-frozen-site/`.
-#    Si no esta, se sale AHORA — pero diciendo la verdad de lo que si corrio,
-#    no «OK 0 · MAL 0».
-#    🔑 Y el codigo de salida distingue las dos cosas, que es de lo que va todo
-#    este repositorio: 3 = no lo he medido · 1 = lo he medido y esta MAL. Salir
-#    3 con un rojo dentro convertiria un fallo real en un hueco declarado.
+echo
+echo "== MED-07 · UN TERCERO CARGADO DESDE EL JS PROPIO · 8-sep-2026"
 # 🔴 8-sep-2026 · MED-07 MIRABA SOLO EL CONTENEDOR, Y ESA PREMISA ES FALSA.
 #    Una web puede cargar un tercero desde su PROPIO JavaScript, y hay un motivo
 #    bueno: el Consent Mode de Google no gobierna un pixel de Meta, asi que dentro
@@ -246,20 +362,7 @@ espera "MED-07b · y por tanto NO lo acusa de fantasma"   AUSENTE MED-07b \
 espera "MED-07b · declarado y no cargado, sigue avisando" AVISO MED-07b \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-tercero-declarado-que-no-existe --contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo
 
-if [ "$SIN_FIXTURE" = 1 ]; then
-  echo
-  echo "  NOT MEASURED · the frozen fixture $KFIX/ is not here."
-  echo "  It is not missing by accident: it was a capture of a real client site"
-  echo "  and it is deliberately not published. Everything in this battery that"
-  echo "  depends on a frozen site is therefore unmeasured — not passing."
-  echo "  To measure it, freeze a site you own:"
-  echo "      perl freeze-fixture.pl <URL> $KFIX"
-  echo
-  echo "  OK $ok · MAL $ko   (self-contained fixtures only)"
-  [ "$ko" -gt 0 ] && exit 1
-  exit 3
-fi
-
+echo
 echo "== CONTROLES POSITIVOS · defectos CONOCIDOS de la sintesis del 10-ago-2026"
 espera "site-a · paleta bajo AA (--primary L=0,58)"        FALLO A11Y-03 perl $QA https://site-a.example/ --solo a11y --cache "$KCACHE"
 espera "site-a · el comentario dice 4,84 y son 4,11"        FALLO A11Y-04 perl $QA https://site-a.example/ --solo a11y --cache "$KCACHE"
@@ -435,7 +538,12 @@ echo "== ARREGLO P1 · EL PESO DE UNA PAGINA NO DEPENDE DE SU SITIO EN LA LISTA"
 #     colarse por debajo del tope segun en que orden se escribiera la lista.
 texto  "site-a · la home SOLA pesa 1053 KB con font 254 KB"  SI "1053 KB · icon 313 KB · img 313 KB · font 254 KB" \
        perl $QA https://site-a.example/ --solo rendimiento --una-sola --cache "$KCACHE"
-{
+# ⚠️ Las listas se BORRAN antes: $CACHE sobrevive entre corridas, y una lista
+#    de ayer haria que el caso de abajo midiera lo de ayer. Sin su bloque, el
+#    caso de REN-04 que la lee sale NO MEDIDO por nombre, no con la vieja.
+rm -f "$CACHE"/ren-A.txt "$CACHE"/ren-B.txt "$CACHE"/ren-A.peso "$CACHE"/ren-B.peso
+# 🔴 Sin el sitio congelado este diff comparaba DOS FICHEROS VACIOS y salia OK.
+if mide_bloque "el peso NO depende del orden" --cache "$KCACHE"; then
   printf 'https://site-a.example/\nhttps://site-a.example/services\n' > "$CACHE/ren-A.txt"
   printf 'https://site-a.example/services\nhttps://site-a.example/\n' > "$CACHE/ren-B.txt"
   for o in A B; do
@@ -448,7 +556,7 @@ texto  "site-a · la home SOLA pesa 1053 KB con font 254 KB"  SI "1053 KB · ico
     printf '  MAL   %-46s el peso DEPENDE del orden:\n' "el peso NO depende del orden"; ko=$((ko+1))
     diff "$CACHE/ren-A.peso" "$CACHE/ren-B.peso" | sed 's/^/          /'
   fi
-}
+fi
 # 🔴 CONTROL NEGATIVO: el VEREDICTO de REN-04 tampoco depende del orden.
 #    Ojo, cambio del 11-ago-2026: aqui se esperaba FALLO, y ese FALLO era el
 #    falso positivo del unicode-range (ver arriba). Lo que esta linea vigila no
@@ -548,7 +656,13 @@ texto  "site-b · 11 de 67: NO dice «TODAS»"          NO "· TODAS" \
 texto  "y cuando no sabe el total del sitio, lo DICE" SI "no se cuantas paginas tiene el sitio" \
        perl $QA https://climentmedia.com/ --sin-red --sin-recibo
 # 🔴 EL RECIBO. Antes decia SIEMPRE «ALCANCE: NO DECLARADO».
-{
+#    Sin captura de site-c no hay nada que declarar: medido el 21-sep, el
+#    recibo sale con «ALCANCE: NO DECLARADO» y los tres casos en MAL, por lo
+#    que falta y no por el gate. Por eso el bloque se clasifica entero. Y el
+#    recibo de una corrida vieja se borra antes: si el fichero FALTARA, el
+#    tercer caso («ya no dice NO DECLARADO») saldria OK sin haber mirado nada.
+rm -f "$CACHE/recibo-alcance"
+if mide_bloque "el recibo declara su alcance" https://site-c.example/ --cache "$CACHE"; then
   RREPO="$CACHE/repo-alcance"; mkdir -p "$RREPO"; printf '<!doctype html><title>x</title>\n' > "$RREPO/index.html"
   perl $QA https://site-c.example/ --solo seo --una-sola --repo "$RREPO" --recibo "$CACHE/recibo-alcance" --cache "$CACHE" >/dev/null 2>&1
   if grep -q '^ALCANCE-URLS:' "$CACHE/recibo-alcance" 2>/dev/null; then
@@ -568,7 +682,7 @@ texto  "y cuando no sabe el total del sitio, lo DICE" SI "no se cuantas paginas 
     printf '  OK    %-46s NO\n' "ya no dice «ALCANCE: NO DECLARADO»"; ok=$((ok+1))
   fi
   rm -rf "$RREPO"
-}
+fi
 
 echo
 echo "== CERO PAGINAS LEIDAS ES «NO VERIFICADO», NUNCA «PASA»"
@@ -585,7 +699,11 @@ espera "con red · A11Y-0x no existe"                   AUSENTE A11Y-0x perl $QA
 echo
 echo "== ARREGLO 0.3 · LA LOTERIA DEL ORDEN"
 #  Las MISMAS dos URLs, solo cambia el orden. Antes: A11Y-08 FALLO / PASA.
-{
+#  🔴 Sin captura de site-c los dos veredictos salen VACIOS, el diff los da por
+#     iguales y el primer caso salia OK. Se clasifican los tres juntos: el
+#     negativo de abajo lee los mismos ficheros.
+rm -f "$CACHE"/ord-A.txt "$CACHE"/ord-B.txt "$CACHE"/ord-A.veredictos "$CACHE"/ord-B.veredictos
+if mide_bloque "la loteria del orden" https://site-c.example/ --cache "$CACHE"; then
   printf 'https://site-c.example/\nhttps://site-c.example/tarot-del-amor\n' > "$CACHE/ord-A.txt"
   printf 'https://site-c.example/tarot-del-amor\nhttps://site-c.example/\n' > "$CACHE/ord-B.txt"
   for o in A B; do
@@ -598,16 +716,16 @@ echo "== ARREGLO 0.3 · LA LOTERIA DEL ORDEN"
     printf '  MAL   %-46s el veredicto DEPENDE del orden:\n' "mismo veredicto en los dos ordenes"; ko=$((ko+1))
     diff "$CACHE/ord-A.veredictos" "$CACHE/ord-B.veredictos" | sed 's/^/          /'
   fi
-}
-# 🔴 CONTROL NEGATIVO: que coincidan no puede ser por haberse callado. El fallo
-#    real de jerarquia de la home tiene que seguir ahi en LOS DOS ordenes.
-for o in A B; do
-  if grep -qE '^\s+\[FALLO   \] A11Y-08' "$CACHE/ord-$o.veredictos"; then
-    printf '  OK    %-46s orden %s -> A11Y-08 FALLO\n' "el fallo real sigue vivo, no se ha apagado" "$o"; ok=$((ok+1))
-  else
-    printf '  MAL   %-46s orden %s: A11Y-08 ya no falla\n' "el fallo real sigue vivo, no se ha apagado" "$o"; ko=$((ko+1))
-  fi
-done
+  # 🔴 CONTROL NEGATIVO: que coincidan no puede ser por haberse callado. El fallo
+  #    real de jerarquia de la home tiene que seguir ahi en LOS DOS ordenes.
+  for o in A B; do
+    if grep -qE '^\s+\[FALLO   \] A11Y-08' "$CACHE/ord-$o.veredictos"; then
+      printf '  OK    %-46s orden %s -> A11Y-08 FALLO\n' "el fallo real sigue vivo, no se ha apagado" "$o"; ok=$((ok+1))
+    else
+      printf '  MAL   %-46s orden %s: A11Y-08 ya no falla\n' "el fallo real sigue vivo, no se ha apagado" "$o"; ko=$((ko+1))
+    fi
+  done
+fi
 
 echo
 echo "== ARREGLO CANDIDATO · MEDIR EL ARBOL QUE SE VA A SUBIR (11-ago-2026)"
@@ -658,7 +776,7 @@ texto  "produccion lo dice tambien, con su aviso"    SI "MEDIDO       PRODUCCION
 
 # --- 4 · 🔴 EL CONTROL NEGATIVO DE VERDAD: UN ARBOL ROTO NO SACA VERDE ------
 #     Se rompe una COPIA (nunca el repo real): se quita el <h1> de la home.
-{
+if mide_bloque "el arbol roto no saca verde (copia)" "$BCREPO"; then
   ROTO="$CACHE/bc-roto"
   rm -rf "$ROTO"
   if cp -r "$BCREPO" "$ROTO" 2>/dev/null; then
@@ -691,10 +809,14 @@ texto  "produccion lo dice tambien, con su aviso"    SI "MEDIDO       PRODUCCION
     printf '  MAL   %-46s no he podido copiar %s\n' "preparar el arbol roto" "$BCREPO"; ko=$((ko+1))
   fi
   rm -rf "$ROTO"
-}
+fi
 
 # --- 5 · el RECIBO dice contra que se midio ---------------------------------
-{
+#     Dos mitades con dependencias distintas: la del candidato solo necesita el
+#     repo; la de produccion, ademas, la captura de site-d. Y el recibo de una
+#     corrida vieja se borra: «el SITIO no es 127.0.0.1» salia OK sin recibo.
+rm -f "$CACHE/recibo-candidato" "$CACHE/recibo-produccion"
+if mide_bloque "el recibo de candidato dice contra que midio" "$BCREPO"; then
   RC="$CACHE/recibo-candidato"
   perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --recibo "$RC" >/dev/null 2>&1
   for par in "MEDIDO-CONTRA: CANDIDATO|el recibo dice que midio el CANDIDATO" \
@@ -708,14 +830,16 @@ texto  "produccion lo dice tambien, con su aviso"    SI "MEDIDO       PRODUCCION
     fi
   done
   # 🔴 CONTROL NEGATIVO: el SITIO del recibo NUNCA puede ser el localhost donde
-  #    se midio. Lo compara desplegar.sh, y un recibo apuntando a 127.0.0.1
+  #    se midio. Lo compara deploy.sh, y un recibo apuntando a 127.0.0.1
   #    haria que G11 midiera el servidor de pruebas en vez de la web.
   if grep -q '^SITIO:.*127\.0\.0\.1' "$RC" 2>/dev/null; then
     printf '  MAL   %-46s el SITIO se ha contaminado con el localhost\n' "el SITIO no es 127.0.0.1"; ko=$((ko+1))
   else
     printf '  OK    %-46s NO\n' "el SITIO no es 127.0.0.1"; ok=$((ok+1))
   fi
-  # y el de PRODUCCION se declara como tal
+fi
+# y el de PRODUCCION se declara como tal
+if mide_bloque "el recibo de produccion se declara" https://site-d.example/ --repo "$BCREPO" --cache "$CACHE"; then
   RP="$CACHE/recibo-produccion"
   perl $QA https://site-d.example/ --repo "$BCREPO" --una-sola --recibo "$RP" --cache "$CACHE" >/dev/null 2>&1
   if grep -q '^MEDIDO-CONTRA: PRODUCCION' "$RP" 2>/dev/null; then
@@ -723,7 +847,7 @@ texto  "produccion lo dice tambien, con su aviso"    SI "MEDIDO       PRODUCCION
   else
     printf '  MAL   %-46s no dice MEDIDO-CONTRA: PRODUCCION\n' "el recibo de produccion se declara"; ko=$((ko+1))
   fi
-}
+fi
 
 # --- 6 · las guardas de --candidato -----------------------------------------
 #     «No se pudo correr» sale en 2, nunca en 0. Un modo que no arranca y un
@@ -735,11 +859,16 @@ texto  "produccion lo dice tambien, con su aviso"    SI "MEDIDO       PRODUCCION
   else
     printf '  MAL   %-46s exit %s\n' "--candidato sin --repo no arranca" "$rc"; ko=$((ko+1))
   fi
-  out="$(perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --sin-red 2>&1)"; rc=$?
-  if [ "$rc" = 2 ]; then
-    printf '  OK    %-46s exit 2\n' "--candidato con --sin-red no arranca"; ok=$((ok+1))
+  # 🔴 21-sep-2026 · ESTE CASO PASABA POR EL MOTIVO EQUIVOCADO. Apuntaba a
+  #    "$BCREPO", y sin ese repo el gate sale 2 por la guarda de ANTES («necesita
+  #    --repo DIR»), sin llegar a la de --sin-red, que es la que el caso dice
+  #    probar. Medido: exit 2 con el mensaje del repo. Ahora el repo es una
+  #    fixture que existe, y se exige el mensaje de ESTA guarda, no solo el 2.
+  out="$(perl $QA https://site-d.example/ --repo fixtures-lenses/seo-bueno --candidato --sin-red 2>&1)"; rc=$?
+  if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q -- '--candidato y --sin-red se excluyen'; then
+    printf '  OK    %-46s exit 2 y lo dice\n' "--candidato con --sin-red no arranca"; ok=$((ok+1))
   else
-    printf '  MAL   %-46s exit %s (deberia ser 2)\n' "--candidato con --sin-red no arranca" "$rc"; ko=$((ko+1))
+    printf '  MAL   %-46s exit %s (deberia ser 2, por --sin-red)\n' "--candidato con --sin-red no arranca" "$rc"; ko=$((ko+1))
   fi
 }
 
@@ -747,6 +876,11 @@ texto  "produccion lo dice tambien, con su aviso"    SI "MEDIDO       PRODUCCION
 #     Fixture entera: un repo de dos ficheros, su recibo escrito por el propio
 #     receipt.pl a partir de un JSON, y un servidor de mentira para el G11.
 #     NADA de esto toca una web viva: SITIO es 127.0.0.1 y SUBIDA es un `echo`.
+#  🔴 21-sep-2026 · LLAMABA A ../desplegar.sh, QUE NO EXISTE DESDE EL 25-ago (la
+#     puerta paso a llamarse deploy.sh al unificar la skill con este repo). Los
+#     cuatro casos daban exit 127 y nadie lo vio: vivian debajo de la salida
+#     anticipada. Mismas opciones (--subir, --servido) y mismos mensajes en
+#     deploy.sh y receipt.pl, comprobado antes de cambiar la ruta.
 {
   RV="$CACHE/repo-verde"; rm -rf "$RV"; mkdir -p "$RV/_deploy"
   printf '<!doctype html><html lang="es"><head><title>x</title></head><body><main><h1>x</h1></main></body></html>\n' > "$RV/index.html"
@@ -831,11 +965,11 @@ SRV
 JSON
   perl ../receipt.pl --escribir --repo "$RV" --json "$CACHE/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null 2>&1
 
-  salida="$(bash ../desplegar.sh "$RV" 2>&1)"; rc=$?
+  salida="$(bash ../deploy.sh "$RV" 2>&1)"; rc=$?
   if [ "$rc" = 0 ] && printf '%s' "$salida" | grep -q 'medido contra: CANDIDATO'; then
-    printf '  OK    %-46s el gate acepta el recibo de candidato\n' "desplegar.sh · recibo de CANDIDATO vale"; ok=$((ok+1))
+    printf '  OK    %-46s el gate acepta el recibo de candidato\n' "deploy.sh · recibo de CANDIDATO vale"; ok=$((ok+1))
   else
-    printf '  MAL   %-46s exit %s\n' "desplegar.sh · recibo de CANDIDATO vale" "$rc"; ko=$((ko+1))
+    printf '  MAL   %-46s exit %s\n' "deploy.sh · recibo de CANDIDATO vale" "$rc"; ko=$((ko+1))
     printf '%s\n' "$salida" | tail -6 | sed 's/^/          /'
   fi
   # 🔴 los NV que son «del candidato» NO pueden exigir --aun-asi: si lo
@@ -846,7 +980,7 @@ JSON
     printf '  MAL   %-46s no separa los NV del candidato\n' "los NV del candidato no piden --aun-asi"; ko=$((ko+1))
   fi
   # el bucle entero: subir (simulado) y G11 EN VERDE contra lo servido
-  salida="$(bash ../desplegar.sh "$RV" --subir 2>&1)"; rc=$?
+  salida="$(bash ../deploy.sh "$RV" --subir 2>&1)"; rc=$?
   if [ "$rc" = 0 ] && printf '%s' "$salida" | grep -q 'desplegado y verificado contra el recibo'; then
     printf '  OK    %-46s candidato -> subir -> G11 verde\n' "los DOS momentos, de punta a punta"; ok=$((ok+1))
   else
@@ -858,7 +992,7 @@ JSON
   #    es la mitad de todo el arreglo.
   printf ':root{--a:#fff} /* lo servido ya no es lo medido */\n' > "$RV/styles.css.bak"
   mv "$RV/styles.css" "$RV/styles.css.medido"; mv "$RV/styles.css.bak" "$RV/styles.css"
-  salida="$(bash ../desplegar.sh "$RV" --servido 2>&1)"; rc=$?
+  salida="$(bash ../deploy.sh "$RV" --servido 2>&1)"; rc=$?
   if [ "$rc" != 0 ] && printf '%s' "$salida" | grep -q 'PRODUCCION NO SIRVE LO QUE SE MIDIO'; then
     printf '  OK    %-46s exit %s\n' "G11 sigue cerrando con recibo de candidato" "$rc"; ok=$((ok+1))
   else
@@ -879,9 +1013,11 @@ echo "== ARREGLO FALSOS POSITIVOS · MED-05 · MED-10 · REN-04 (11-ago-2026)"
 #     fichero existe para impedir. Los tres negativos se construyen ROMPIENDO
 #     UNA COPIA del arbol de site-a —nunca el repo real— y comprobando que el
 #     gate vuelve a acusar.
-{
-  KREPO="$REPOS/site-a-web"
-  KURL="https://site-a.example"
+KREPO="$REPOS/site-a-web"
+KURL="https://site-a.example"
+# Sin el repo, las copias no se hacian y el bloque imprimia MAL «no se pudo
+# copiar el repo»: un rojo por algo que este checkout no tiene, no por el gate.
+if mide_bloque "falsos positivos de site-a (copias del repo)" "$KREPO"; then
 
   # --- 1 · MED-05 · el patron no entendia un selector CON VALOR -------------
   #     Verificado a mano: el lector existe y esta en script.js:263,
@@ -1001,7 +1137,7 @@ echo "== ARREGLO FALSOS POSITIVOS · MED-05 · MED-10 · REN-04 (11-ago-2026)"
     fi
   fi
   rm -rf "$KROTO" "$KROTO2" "$KROTO3" "$KROTO4"
-}
+fi
 
 echo
 echo "== ACEPTADO · el silenciador, y las cerraduras que lleva (11-ago-2026)"
@@ -1012,7 +1148,10 @@ echo "== ACEPTADO · el silenciador, y las cerraduras que lleva (11-ago-2026)"
 #  ⚠️ Fixture entera dentro de $CACHE: NO toca el repo de ninguna web viva, y
 #     todo va con --sin-recibo salvo el caso que comprueba el recibo, que
 #     escribe en $CACHE y no en el repo.
-{
+#  🔴 21-sep-2026 · EL REPO ES SINTETICO, PERO EL HALLAZGO QUE SE ACEPTA NO: es
+#     el FALLO MED-07 que da PRODUCCION de site-d, asi que el bloque entero
+#     necesita esa captura. Sin ella, los 14 salian MAL. Se clasifica entero.
+if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" https://site-d.example/ --cache "$CACHE"; then
   RA="$CACHE/repo-aceptado"; rm -rf "$RA"; mkdir -p "$RA/_deploy"
   printf '<!doctype html><html lang="es"><head><title>x</title></head><body><main><h1>x</h1></main></body></html>\n' > "$RA/index.html"
   BCQA="perl $QA https://site-d.example/ --repo $RA --solo medicion --sin-recibo --cache $CACHE"
@@ -1091,7 +1230,7 @@ echo "== ACEPTADO · el silenciador, y las cerraduras que lleva (11-ago-2026)"
     printf '  MAL   %-46s se pudo estirar la caducidad a mano\n' "el aceptado va BAJO el sello"; ko=$((ko+1))
   fi
   rm -rf "$RA"
-}
+fi
 
 echo
 echo "== HUELLA sobre la evidencia COMPLETA (11-ago-2026) · el agujero cerrado"
@@ -1700,6 +1839,7 @@ espera "comentarios · REN-13 no se cree la prosa"   PASA REN-13 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo rendimiento --sin-recibo
 espera "comentarios · MED-02 no se cree la prosa"   PASA MED-02 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo medicion --sin-recibo
+echo
 echo "== EL FIXTURE DE KINE CUBRE TODO LO QUE SE LE PIDE · 11-ago-2026"
 # 🔴 ESTE ES EL GATE SOBRE EL FIXTURE, y sin el lo demas no vale. Un fixture
 #    INCOMPLETO no da error: qa-maestro simplemente sale a la red a por lo que
@@ -1707,21 +1847,51 @@ echo "== EL FIXTURE DE KINE CUBRE TODO LO QUE SE LE PIDE · 11-ago-2026"
 #    note -- exactamente el defecto que se vino a matar. Como la unica forma de
 #    que aparezca un fichero nuevo en la cache es una DESCARGA, contar ficheros
 #    antes y despues responde la pregunta de verdad: ¿ha salido a internet?
-ls "$KCACHE" | sort > "$CACHE/kfix-despues.lst"
-KFIX_N1="$(wc -l < "$CACHE/kfix-despues.lst")"
-if [ "$KFIX_N0" -eq "$KFIX_N1" ]; then
-  printf '  OK    %-46s %s entradas, 0 descargas\n' "fixture de site-a hermetico" "$KFIX_N0"; ok=$((ok+1))
-else
-  printf '  MAL   %-46s han bajado %d ficheros de la RED:\n' "fixture de site-a INCOMPLETO" "$((KFIX_N1-KFIX_N0))"; ko=$((ko+1))
-  # Se imprime la URL, no el md5: un hash no dice que falta anadir al fixture.
-  comm -13 "$CACHE/kfix-antes.lst" "$CACHE/kfix-despues.lst" | grep '\.meta$' | head -20 | while read -r f; do
-    printf '          %s\n' "$(cut -f4 < "$KCACHE/$f")"
-  done
+if mide_bloque "fixture de site-a hermetico" --cache "$KCACHE"; then
+  ls "$KCACHE" | sort > "$CACHE/kfix-despues.lst"
+  KFIX_N1="$(wc -l < "$CACHE/kfix-despues.lst")"
+  if [ "$KFIX_N0" -eq "$KFIX_N1" ]; then
+    printf '  OK    %-46s %s entradas, 0 descargas\n' "fixture de site-a hermetico" "$KFIX_N0"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s han bajado %d ficheros de la RED:\n' "fixture de site-a INCOMPLETO" "$((KFIX_N1-KFIX_N0))"; ko=$((ko+1))
+    # Se imprime la URL, no el md5: un hash no dice que falta anadir al fixture.
+    comm -13 "$CACHE/kfix-antes.lst" "$CACHE/kfix-despues.lst" | grep '\.meta$' | head -20 | while read -r f; do
+      printf '          %s\n' "$(cut -f4 < "$KCACHE/$f")"
+    done
+  fi
 fi
 
 echo
 echo "-----------------------------------------------------------------"
+# ⚠️ run-all.sh lee el ULTIMO «OK n» y el ultimo «MAL n» de esta salida: nada
+#    de lo que se imprime debajo puede llevar esa forma.
 printf "  OK %d   ·   MAL %d\n" "$ok" "$ko"
-[ "$ko" -eq 0 ] && echo "  El gate caza lo conocido, deja pasar lo bueno y no inventa." \
-                || echo "  🔴 Hay casos MAL: el gate NO se usa hasta arreglarlos."
-exit "$ko"
+if [ "$nm" -gt 0 ] || [ "$nmb" -gt 0 ]; then
+  printf "  NOT MEASURED: %d case(s) and %d hand-written block(s), each named above (N/M)\n" "$nm" "$nmb"
+  echo "  with the reason. Cases that need:"
+  [ "$nm_cong" -gt 0 ] && printf "      %-52s %d\n" "$MOT_CONG" "$nm_cong"
+  [ "$nm_repo" -gt 0 ] && printf "      %-52s %d\n" "$MOT_REPO" "$nm_repo"
+  [ "$nm_anon" -gt 0 ] && printf "      %-52s %d\n" "$MOT_ANON" "$nm_anon"
+  [ "$nm_vivo" -gt 0 ] && printf "      %-52s %d\n" "$MOT_VIVO" "$nm_vivo"
+  [ "$nm_lista" -gt 0 ] && printf "      %-52s %d\n" "$MOT_LISTA" "$nm_lista"
+  if [ "$SIN_FIXTURE" = 1 ]; then
+    echo "  The frozen fixture $KFIX/ is not missing by accident: it was a capture"
+    echo "  of a real client site and it is deliberately not published. To measure"
+    echo "  what depends on it, freeze a site you own:  perl freeze-fixture.pl <URL> $KFIX"
+  fi
+fi
+# 3 = no lo he medido todo · 1 = lo he medido y esta MAL · 0 = todo medido y bien.
+# 🔴 Antes esto era `exit "$ko"`: con exactamente 3 casos MAL salia 3, y
+#    run-all.sh lo habria contado como NO MEDIDO en vez de como rojo. Con 256,
+#    salia 0. Un rojo tiene que salir 1 sea cual sea su recuento, y gana a un
+#    hueco declarado: un rojo convertido en «no medido» es un fallo escondido.
+if [ "$ko" -gt 0 ]; then
+  echo "  🔴 Hay casos MAL: el gate NO se usa hasta arreglarlos."
+  exit 1
+fi
+if [ "$nm" -gt 0 ] || [ "$nmb" -gt 0 ]; then
+  echo "  Lo medido esta bien; lo NO MEDIDO no esta aprobado."
+  exit 3
+fi
+echo "  El gate caza lo conocido, deja pasar lo bueno y no inventa."
+exit 0
