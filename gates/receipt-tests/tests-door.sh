@@ -397,6 +397,53 @@ r "la clave de la plantilla (BROWSER_HOST)"  0 bash "$REF/deploy.sh" "$T/repo" -
 contiene "usa el host que declara la plantilla" "no-existe-alias.invalid"
 perl -i -ne 'print unless /^BROWSER_HOST=/' "$T/repo/_deploy/deploy.conf"
 
+# 🔴 21-sep-2026 · EL FICHERO LOCAL GUARDADO CON FINALES DE WINDOWS. Es un fichero
+#    que se escribe A MANO en esta maquina, y el Bloc de notas lo guarda con CRLF.
+#    La lectura de antes se quedaba el retorno de carro pegado al host: `ssh`
+#    recibia «alias\r», no llegaba, y el paso decia «no llego a alias» con el \r
+#    invisible -- o sea, un fallo de red donde hay un fichero mal leido, que es
+#    justo la confusion que el arreglo de arriba venia a quitar. Se comprueba el
+#    TEXTO pegado al punto: con el \r en medio, «.invalid. NO MEDIDO» no casa.
+#    ⚠️ MEDIDO, Y SOLO DISCRIMINA EN LINUX: el `sed` de Git Bash ya se come el \r
+#       (sobre `NAV_HOST=host-a\r\n` devuelve `host-a`), y el GNU sed de Linux lo
+#       deja pegado (`host-a\r`). En Windows este caso sale verde con y sin el
+#       arreglo; lo que prueba alli es solo que el arreglo no rompe nada. Se
+#       queda porque el repo es publico y quien lo clone lo corre en Linux.
+printf 'NAV_HOST=no-existe-crlf.invalid\r\n' > "$T/nav-host-crlf.conf"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "fichero local con finales CRLF"          0 env NAV_HOST_CONF="$T/nav-host-crlf.conf" \
+                                              bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "lee el host sin el retorno de carro"  "no llego a no-existe-crlf.invalid. NO MEDIDO"
+
+echo
+echo "-- 12-bis · EL MISMO MARCADOR EN LOS BANCOS QUE MIDEN EN EL SERVIDOR ----------"
+# 🔴 21-sep-2026 · EL ARREGLO DE LA PUERTA NO SALIA DE LA PUERTA. Tres bancos de
+#    `run-all.sh` -- densidad, movil y la plantilla del formulario -- llevaban el
+#    mismo `${...:-example-host}` escrito a mano. MEDIDO ese dia: los tres salian
+#    NO MEDIDO (exit 3) en cada bateria, asi que el «812 verde, 0 rojo» del 16-sep
+#    no incluia ni una medida en el servidor. Y detras del NO MEDIDO habia un rojo
+#    de verdad escondido: el de densidad buscaba los moldes en una carpeta que ya
+#    no existe desde que las rutas pasaron a ingles.
+#    Ahora los cuatro leen el host del MISMO sitio (`nav-host.sh`). Se exige que,
+#    sin host configurado, cada banco lo diga CON ESE NOMBRE y no nombre ningun
+#    marcador. Ninguno llega a conectar: sin host, salen antes del primer `ssh`.
+for banco in form-handler-tests/tests.sh measure-screens-tests/tests.sh mobile-gate-tests/battery.sh; do
+  r "sin host: $banco"                      3 env -u GATE_MOVIL_HOST bash "$REF/$banco"
+  contiene "  dice que falta el host"           "NAV_HOST sin configurar"
+  if printf '%s' "$ULTIMA" | grep -q "example-host"; then
+    MAL=$((MAL+1)); echo "  FALLA   y nombra un host marcador"
+  else OK=$((OK+1)); echo "  PASA    y no nombra ningun host marcador"; fi
+done
+# Y el invariante, para el que venga detras: ningun script de gates/ puede volver
+# a traer un host por defecto inventado. Se miran las lineas de CODIGO (lo que va
+# antes de un `#`): los comentarios que cuentan la historia lo nombran a proposito.
+MARCADOS="$(grep -rnE --include='*.sh' --include='*.pl' --include='*.js' \
+            '^[^#]*:-example-host' "$REF" 2>/dev/null | grep -v '/work/\|/out/')"
+if [ -z "$MARCADOS" ]; then OK=$((OK+1)); echo "  PASA  ningun script trae un host marcador por defecto"
+else MAL=$((MAL+1)); echo "  FALLA quedan hosts marcadores por defecto:"
+     printf '%s\n' "$MARCADOS" | sed 's/^/          /'; fi
+
 echo
 echo "-- 13 · PASO 2-ter: no perder texto del cliente -------------------------------"
 # 🔴 EL DEFECTO QUE LO TRAJO: remaquetando site-c.example, **10 paginas

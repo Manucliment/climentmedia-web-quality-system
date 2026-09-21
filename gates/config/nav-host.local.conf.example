@@ -5,9 +5,13 @@
 #  ssh. `.gitignore` cubre `*.conf`, asi que tu copia NO se commitea: el nombre
 #  de una maquina concreta no pinta nada en un repo publico.
 #
-#  Lo lee el paso 6 de gates/deploy.sh cuando la web no declara NAV_HOST (o
-#  BROWSER_HOST) en su deploy.conf. Si no hay ninguno de los dos, el paso dice
-#  «NO MEDIDO: NAV_HOST sin configurar» y no mide nada.
+#  Lo leen, todos por gates/nav-host.sh: el paso 6 de gates/deploy.sh (cuando la
+#  web no declara NAV_HOST o BROWSER_HOST en su deploy.conf) y los tres bancos de
+#  run-all.sh que miden en el servidor (densidad, movil y formulario). Sin el,
+#  todos dicen «NAV_HOST sin configurar» y no miden nada.
+#
+#  ⚠️ El fichero NO viaja con git, asi que un worktree nuevo no lo tiene: desde
+#  alli la puerta y esos bancos dicen NO MEDIDO. Copialo, o exporta NAV_HOST.
 #
 #  El host necesita Chrome (o Chromium) y puppeteer-core en ~/webtools, y tiene
 #  que ser Linux: en Windows, Chrome headless no baja de ~500 px de ancho y una

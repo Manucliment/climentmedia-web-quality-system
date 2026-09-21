@@ -62,7 +62,7 @@ paths/            Four entry points. Start here, not in blueprint/.
 
 blueprint/        The method. 19 reference documents — consulted, not read end to end.
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
-gates/            The executable half. 37 programs and 30 test batteries.
+gates/            The executable half. 38 programs and 30 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.
 docs/             The trap log: 81 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.
@@ -146,11 +146,11 @@ Two numbers, both published because both can go down:
 
 | Number | Today | What it means |
 |---|---|---|
-| Test cases green | **680 cases green · 0 red** on `--fast`, **810 cases green** on a full run | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect. Both figures are for a clean install; a machine that has deployed reads two more |
-| Checks **with a fixture** | **119 of 134 (88%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
+| Test cases green | **680 cases green · 0 red** on `--fast`, **830 cases green** on a full run | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect. Both figures are for a clean install; a machine that has deployed reads two more, and one with a measurement host configured runs three more banks |
+| Checks **with a fixture** | **123 of 138 (89%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
-> **And the second number states its own scope, which is the honest half of it.** That 88% is
-> measured over **4 programs out of 28**. The coverage tool prints the 24 it does not measure,
+> **And the second number states its own scope, which is the honest half of it.** That 89% is
+> measured over **4 programs out of 37**. The coverage tool prints the 33 it does not measure,
 > by name, on every run. A coverage figure without its scope is exactly the kind of claim this
 > system exists to stop, so it does not get quoted without this line.
 >

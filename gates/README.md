@@ -1,6 +1,6 @@
 # The gates
 
-37 programs and 30 test batteries. This file is the index: what each program is for,
+38 programs and 30 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -31,11 +31,27 @@ bash gates/run-all.sh --fast
 machine the fast run is **682 cases green, 0 red** — **680** on a clean install, where the
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
-**The full run is a different number, and the file now says which run it came from.** It
-reads **812 cases green, 0 red** — **810** on a clean install — with **six** banks
-reported as `NOT MEASURED`: the four that need a host or a client repository this public
-repository does not ship (`measure-screens`, `mobile-gate`, `form-handler`, `compliance`)
-plus `qa-master` and `structure-gate`.
+**The full run is a different number, and the file now says which run it came from.** On
+a clean install it reads **830 cases green, 0 red**, with **six** banks reported as
+`NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
+`form-handler`), the one that needs a client repository this public repository does not
+ship (`compliance`), plus `qa-master` and `structure-gate`.
+
+> **A machine with a measurement host reads more, and that is expected.** The three host
+> banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
+> gitignored, because a machine name has no place in a public repository). Where it
+> exists they run, so on the machine these figures were taken from the full total is
+> **881**: 830 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> counts all four banks as *machine-dependent*, and the documentation gate accepts either
+> figure.
+>
+> Until 21-sep-2026 those three banks looked for a placeholder host left behind when this
+> repository was anonymised, so they reported `NOT MEASURED` **on every machine** —
+> including the one that has the host. Nobody noticed because a declared hole is not a
+> failure. Behind one of them sat a real red: the density bank looked for its moulds in a
+> folder that stopped existing when the paths moved to English, and measured one phantom
+> case called `[0-9]*`. It now counts the moulds before measuring them, and zero is a
+> named failure.
 
 > Until 28-aug-2026 those four exited `1` or `2` instead of `3`, so a run that had simply
 > **failed to measure anything** was counted as four red banks — and the summary signed
@@ -83,9 +99,9 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  NO MEDIDO qa-master        the five lenses and their controls   (15 of its cases WERE measured)
+  NO MEDIDO qa-master        the five lenses and their controls   (18 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  812 casos en verde · 0 en rojo
+  830 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
@@ -275,8 +291,8 @@ whose verdict came from measuring a different object.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist. |
-| `coverage.pl` | How many checks have a test case. Today: **119 of 134 (88%)**. |
-| `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **158 cases.** See below. |
+| `coverage.pl` | How many checks have a test case. Today: **123 of 138 (89%)**. |
+| `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **159 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
 | `history-gate.pl` | Every recorded failure must name the check that accused. |
@@ -285,6 +301,7 @@ whose verdict came from measuring a different object.
 | `audit-vs-spec.pl` | The spec against the tree. **25 of 25 checks have a case.** |
 | `audit.sh`, `qa-final.sh` | The site auditor, and the last look before publishing. |
 | `run-gate.js` | The harness the browser gates run inside. |
+| `nav-host.sh` | Where the measurement host comes from, read once for the door and the three host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
 The coverage figure has a scope you should know: **88% is measured over 4 programs of 28**,
 not over everything. It is in the README of the repository root with the same caveat. A

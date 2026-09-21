@@ -19,7 +19,18 @@
 set -u
 DIR="$(cd "$(dirname "$0")" && pwd)"
 REF="$(dirname "$DIR")"
-HOST="${NAV_HOST:-example-host}"
+# 21-sep-2026 · el host sale de ../nav-host.sh, como en la puerta. Aqui ponia
+# `${NAV_HOST:-example-host}`, un marcador de la anonimizacion: este banco salio
+# NO MEDIDO en cada bateria sin que ninguna lo contara como otra cosa que red.
+. "$REF/nav-host.sh"
+HOST="$(nav_host "$REF")"
+if [ -z "$HOST" ]; then
+  echo "BANCO · form-handler.php (php -l y ejecucion)"
+  echo
+  echo "  NO VERIFICADO · NAV_HOST sin configurar: ni el entorno ni"
+  echo "  $(nav_host_conf "$REF") dicen desde donde medir."
+  echo; echo "  NO MEDIDO (NAV_HOST sin configurar)"; exit 3
+fi
 FH="$REF/form-handler.php"
 OK=0; MAL=0
 

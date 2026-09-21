@@ -4259,7 +4259,7 @@ sub lente_estructura {
                           ev=>[@anat_mal],
                           dato=>scalar(@anat_mal).' de '.scalar(@vistas).' paginas',
                           umbral=>'todos los roles OBL de 09 §2, por tipo de pagina', proc=>'09-tipos-de-pagina §2',
-                          hacer=>'cada rol que falta tiene su consecuencia escrita en 09 §2. Los moldes estan en references/moldes/')
+                          hacer=>'cada rol que falta tiene su consecuencia escrita en 09 §2. Los moldes estan en blueprint/moulds/')
                   : pasa(lente=>'ESTRUCTURA', id=>'EST-02c', titulo=>'anatomia completa en las paginas que declaran data-sec');
     }
 

@@ -809,22 +809,26 @@ fi
 #    solo leia los nombres en castellano. Quien siguiera la plantilla se quedaba
 #    sin medir igual, y sin ningun aviso. Se aceptan los dos; manda el castellano
 #    si estan los dos, porque es el que ya usan los deploy.conf que existen.
-NAV_HOST="${NAV_HOST:-${BROWSER_HOST:-}}"
+# 🔴 21-sep-2026 (tarde) · LA LECTURA DEL HOST SE FUE A `nav-host.sh`. Aqui habia
+#    una lectura propia, y los tres bancos que miden en el servidor seguian con
+#    su `example-host` escrito a mano: el arreglo de la puerta no habia salido de
+#    la puerta. Ahora los cuatro cargan el mismo fichero. Ver su cabecera.
 URLS_NAVEGADOR="${URLS_NAVEGADOR:-${BROWSER_URLS:-}}"
 URLS_FORMULARIO="${URLS_FORMULARIO:-${FORM_URLS:-}}"
 SIN_NAVEGADOR="${SIN_NAVEGADOR:-${NO_BROWSER:-0}}"
-NAV_HOST_CONF="${NAV_HOST_CONF:-$REF/config/nav-host.local.conf}"
-if [ -z "${NAV_HOST:-}" ] && [ -f "$NAV_HOST_CONF" ]; then
-  NAV_HOST="$(sed -n 's/^NAV_HOST=["'\'']\{0,1\}\([^"'\'' ]*\).*/\1/p' "$NAV_HOST_CONF" | head -1)"
-fi
+. "$REF/nav-host.sh"
+NAV_HOST="$(nav_host "$REF")"
+NAV_HOST_CONF="$(nav_host_conf "$REF")"
 if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ -z "${NAV_HOST:-}" ]; then
   echo
   echo "  ============================================================================"
   echo "  6 · navegador: NO MEDIDO: NAV_HOST sin configurar."
-  echo "      Ni $CONF ni el entorno lo declaran, y no existe"
+  echo "      Ni $CONF ni el entorno lo declaran, y no hay una linea NAV_HOST= en"
   echo "      $NAV_HOST_CONF"
   echo "      Los gates de maqueta, pantallas, movil y formularios NO han mirado"
   echo "      lo servido. Se arregla con una linea NAV_HOST=<alias ssh> en ese fichero."
+  echo "      (Ese fichero no viaja con git: si corres la puerta desde un worktree,"
+  echo "       no esta alli. Lanzala por la ruta de la skill o exporta NAV_HOST.)"
   echo "  ============================================================================"
   perl "$REF/receipt.pl" --anotar "NAVEGADOR no medido: NAV_HOST sin configurar" \
        --repo "$REPO" >/dev/null 2>&1

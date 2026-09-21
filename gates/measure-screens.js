@@ -36,7 +36,7 @@
               'a[href*="whatsapp"],a[href^="tel:"],button[type=submit],form';
 
   // 🔴 18-ago-2026 · QUE ES UN "BLOQUE" CUANDO EL BLOQUE ES UNA LISTA.
-  // Medidos los 19 moldes de references/moldes/ a 390x844 en el servidor
+  // Medidos los 19 moldes de blueprint/moulds/ a 390x844 en el servidor
   // (innerWidth 390, coincide:true en los 19): DIEZ pasan de una pantalla con
   // su propio contenido de ejemplo. Pero al bajar un nivel, NINGUNA de sus
   // unidades lo hace: par-alterno son 3 filas de 625/582/556 px (0,74 · 0,69 ·
@@ -263,7 +263,7 @@
  *                                 ENTERA son 3,2 pantallas.
  *
  *  🔴 18-ago-2026 · POR QUE SE MIDE LA UNIDAD Y NO EL BLOQUE. Medidos los 19
- *  moldes de references/moldes/ en el servidor a 390x844 (innerWidth 390 y
+ *  moldes de blueprint/moulds/ en el servidor a 390x844 (innerWidth 390 y
  *  coincide:true en los 19), DIEZ pasaban de una pantalla con su contenido de
  *  ejemplo: par-alterno 2,35 · rejilla 2,17 · galeria 2,03 · escalera 1,92 ·
  *  tabla-comparativa 1,53 · tabla-especificacion 1,26 · prueba-social 1,23 ·
