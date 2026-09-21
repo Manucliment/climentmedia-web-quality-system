@@ -1602,6 +1602,16 @@ espera "MED-09 · el plazo EN LETRA («dos meses»), PASA"  PASA  MED-09 \
 #    la frase parecida y no la del cliente no prueba nada.
 espera "MED-09 · la frase REAL en frances, PASA"        PASA  MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-frances --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 21-sep-2026 · LA POLITICA EN OTRA RUTA. El gate la buscaba en cinco rutas
+#    fijas; una web con un solo documento legal (`/mentions-legales/` con ancla
+#    `#confidentialite`) salia FALLO con el plazo escrito. Ahora sigue tambien el
+#    enlace de privacidad del formulario. Visto en ROJO contra el gate anterior.
+#    Y el negativo es el que importa: encontrar la pagina NO es aprobar. Mismo
+#    fixture con la frase del plazo quitada, y nada mas -> tiene que seguir FALLO.
+espera "MED-09 · politica en /mentions-legales/, PASA"   PASA  MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-otra-ruta --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-09 · la misma, SIN plazo, sigue FALLO"      FALLO MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-otra-ruta-sin-plazo --candidato --una-sola --solo medicion --sin-recibo
 # 🔴 MED-11 · cada pulsacion de mas era un correo duplicado a la clinica y una
 #    conversion de mas en su cuenta de Ads.
 espera "MED-11 · sin guarda de doble envio, FALLA"       FALLO MED-11 \

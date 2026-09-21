@@ -3819,7 +3819,27 @@ sub lente_medicion {
 
         # PC3 · caducidad de los ficheros de leads
         my $pol2 = '';
-        for my $ruta (qw(/politica-privacidad /politique-confidentialite /privacidad /privacy /politica-de-privacidade)) {
+        # 🔴 21-sep-2026 · CINCO RUTAS FIJAS NO SON «DONDE ESTA LA POLITICA».
+        #    Una web con la politica dentro de `/mentions-legales/#confidentialite`
+        #    -un solo documento legal con anclas, forma habitual en Belgica y
+        #    Francia- salia «sin plazo de conservacion» con el plazo escrito, y
+        #    el unico camino que le quedaba era taparlo en aceptado.conf.
+        #    La ruta real ya la dice la pagina: el enlace de privacidad que
+        #    acompana al formulario. Se AÑADE a la lista, nunca la sustituye, y
+        #    solo si el enlace es interno y su ruta nombra privacidad o legal.
+        #    ⚠️ Encontrar la pagina no es aprobar: sigue haciendo falta el plazo
+        #       escrito en ella (control: med-plazo-otra-ruta-sin-plazo, FALLO).
+        my @rutas_pol = qw(/politica-privacidad /politique-confidentialite /privacidad /privacy /politica-de-privacidade);
+        for my $h ($cb =~ /<a\b[^>]*\bhref\s*=\s*["']([^"'#]+)/gi) {
+            my $abs = abs_url($h, $cu) or next;
+            next unless is_internal($abs);
+            my ($ruta_pol) = $abs =~ m{^[a-z]+://[^/]+(/[^?#]*)}i;
+            next unless defined $ruta_pol;
+            push @rutas_pol, $ruta_pol
+                if $ruta_pol =~ /confidentialit|privac|privacid|mentions-legales|aviso-legal|datenschutz|rgpd|gdpr/i;
+        }
+        my %pol_vista;
+        for my $ruta (grep { !$pol_vista{$_}++ } @rutas_pol) {
             my $x = fetch("$ROOT$ruta"); $pol2 .= tag_text($x->{body}) if $x->{code} == 200;
         }
         # 🔴 EL NUMERO PUEDE IR EN LETRA, Y HASTA EL 21-ago-2026 ESO ERA UN
