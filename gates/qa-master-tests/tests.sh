@@ -17,8 +17,10 @@
 #       · FRONTERA  — casos que PARECEN defectos y no lo son. Son los que
 #                     distinguen un gate de un generador de ruido.
 #
-#  ⚠️ Los casos que leen una web VIVA solo corren con EN_VIVO=1 (ver `falta`).
-#     Solo hacen GET. No despliega.
+#  ⚠️ NINGUN CASO SALE A INTERNET (22-sep-2026). Los hosts `.example` los
+#     contesta `fake-production.pl` con arboles SINTETICOS de `fixtures-sites/`,
+#     y todo lo demas (terceros por HTTPS, webs vivas) se rechaza en el proxy.
+#     No despliega.
 #
 #  🔑 Todas las rutas son RELATIVAS a este directorio (el `cd` de abajo). Un
 #     trozo de este fichero copiado a otro sitio no mide nada: `../qa-master.pl`
@@ -29,24 +31,25 @@
 set -u
 cd "$(dirname "${BASH_SOURCE[0]}")"
 QA="../qa-master.pl"
-# Donde viven los repos de nuestras 5 webs. Se puede sobreescribir:
-#   REPOS=/path/to/your/repos bash tests.sh
-# There is no sensible default here — it names YOUR checkouts. Unset, every case
-# that reads one is reported NOT MEASURED by name (see `falta`): failing loudly
-# beats silently measuring a directory that does not exist. The placeholder has
-# no spaces on purpose: several lines use $REPOS unquoted.
-REPOS="${REPOS:-}"
-[ -n "$REPOS" ] || REPOS="/REPOS-not-set"
-# Cases that read a LIVE site are opt-in: its answer depends on that site's
-# state today, and a positive control anchored to a live site expires the day
-# the site is fixed (see LA CACHE CONGELADA below). EN_VIVO=1 runs them.
-EN_VIVO="${EN_VIVO:-0}"
-CACHE="${TMPDIR:-/tmp}/qa-master-tests-cache"
-mkdir -p "$CACHE"
+# Los repos de las webs que mide este banco son ARBOLES SINTETICOS suyos desde
+# el 22-sep-2026. Antes $REPOS apuntaba a los checkouts de nuestras webs de
+# cliente, que un repositorio publico no puede traer, y 13 casos no los podia
+# correr nadie mas. Un caso que nombre un repo que no esta aqui sale NO MEDIDO
+# con su nombre (ver `falta`).
+REPOS="fixtures-repos"
+# 🔴 LA CACHE ES DE ESTA CORRIDA Y NACE VACIA (22-sep-2026). Antes era una
+#    carpeta fija de /tmp que sobrevivia entre corridas: con webs vivas hacia
+#    de cache tibia, y el 11-ago costo diez falsos rojos (abajo). Hoy todo lo
+#    que se mide sale de un fixture del repo, asi que una cache de ayer solo
+#    puede devolver los bytes de ayer de un fixture cambiado hoy. Y con $$ en el
+#    nombre, dos corridas a la vez no se pisan.
+CACHE="${TMPDIR:-/tmp}/qa-master-tests-cache-$$"
+rm -rf "$CACHE"; mkdir -p "$CACHE"
+SRVPROD=""
 ok=0; ko=0
-# nm = cases NOT MEASURED · nmb = hand-written blocks NOT MEASURED. The four
-# per-reason counters can add up to more than nm: one case can lack two things.
-nm=0; nmb=0; nm_cong=0; nm_repo=0; nm_anon=0; nm_vivo=0; nm_lista=0
+# nm = cases NOT MEASURED · nmb = hand-written blocks NOT MEASURED. The per-
+# reason counters can add up to more than nm: one case can lack two things.
+nm=0; nmb=0; nm_repo=0; nm_anon=0; nm_https=0; nm_vivo=0; nm_lista=0; nm_prod=0
 
 # ── LA CACHE CONGELADA DE KINE ──────────────────────────────────────────────
 # 🔴 POR QUE (11-ago-2026). Esta bateria decia «OK 180 · MAL 0» y con una cache
@@ -66,16 +69,31 @@ nm=0; nmb=0; nm_cong=0; nm_repo=0; nm_anon=0; nm_vivo=0; nm_lista=0
 #    dom-*.json` y `fixtures-seo14/`— y el caso pasa a probar EL GATE en vez del
 #    estado de produccion.
 #
-#    QUE ES fixtures-frozen-site/: la cache exacta que esta bateria estaba
-#    leyendo el 11-ago-2026, trio a trio (.meta/.body/.hdr). Detalle y como se
-#    regenera, en su LEEME.md.
-#    ⚠️ Se COPIA a un directorio de trabajo antes de correr: qa-maestro escribe
-#       en su --cache, y el fixture tiene que quedar intacto.
-#    ⚠️ site-a deja de ser un control VIVO. La cobertura sobre webs vivas la
-#       siguen dando bc, site-c, cm y site-b. Cuando a una de esas se le arregle
-#       un defecto que aqui es control positivo, toca el mismo tratamiento.
-KFIX="fixtures-frozen-site"
-KCACHE="$CACHE-site-a"
+#    Se congelo en fixtures-frozen-site/: la cache exacta que esta bateria
+#    leia el 11-ago-2026, trio a trio (.meta/.body/.hdr).
+#    🔴 Y NO SE PUDO PUBLICAR: era la captura byte a byte de la web de un
+#    cliente, y publicar la web de otro para que pase una prueba no es un trato
+#    que haga este repositorio. Desde entonces esos 18 casos salian NO MEDIDO
+#    en todas partes. Y las otras webs «vivas» (bc, site-c, site-b, site-e) se
+#    anonimizaron a `*.example`, que no resuelve nunca: otros 89 casos y un
+#    bloque de 14 que tampoco podia correr nadie. Los 18 de climentmedia.com
+#    EN VIVO si corrian, y varios ya habian caducado: la web se arreglo.
+#
+# 🔴 22-sep-2026 · LA SALIDA DE VERDAD: SITIOS SINTETICOS EN UNA PRODUCCION
+#    LOCAL. `fixtures-sites/<host>/` es un arbol escrito para este banco que
+#    reproduce, con contenido inventado, justo el defecto (o el acierto) que
+#    cada caso comprueba. `fake-production.pl` lo sirve por HTTP con cabeceras
+#    de produccion (estado, tipo, gzip, Cache-Control), y el banco le manda
+#    todo el trafico por `http_proxy`: los casos conservan su nombre de host
+#    (`site-d.example`) y miden en modo PRODUCCION, no candidato. Lo que no es
+#    un `.example` servido por un fixture NO se alcanza: HTTPS se rechaza en el
+#    proxy y un host desconocido recibe 502. El banco entero es hermetico, y
+#    el ultimo bloque lo comprueba en el registro del propio servidor.
+#    ⚠️ El contenedor de GTM se descargaba de googletagmanager.com por HTTPS,
+#       y MED-03/07/08 viven dentro de «si se ha podido descargar». Esos casos
+#       pasan el suyo con `--contenedor` (la costura que el gate tiene para
+#       esto): `fixtures-sites/<host>/_gtm.js`, que el servidor no sirve nunca
+#       (nada que empiece por `_`).
 
 # ── UN 404 MALO, SERVIDO EN LOCAL ────────────────────────────────────────────
 # 🔴 19-ago-2026 · LOS DOS CASOS DE EST-03 SONDEABAN site-d.example VIVA, y
@@ -91,7 +109,7 @@ CENT404="centinela-$$-$(date +%s)"
 printf '%s\n' "$CENT404" > "fixtures-fingerprint/_sentinel.txt"
 perl "../receipt-tests/test-server.pl" "fixtures-fingerprint" "$P404" >/dev/null 2>&1 &
 SRV404=$!
-trap 'kill $SRV404 2>/dev/null; rm -f fixtures-fingerprint/_sentinel.txt' EXIT
+trap 'kill $SRV404 $SRVPROD 2>/dev/null; rm -f fixtures-fingerprint/_sentinel.txt; rm -rf "$CACHE"' EXIT
 sleep 1
 # CENTINELA: sin esto, un puerto ocupado por otra sesion mide OTRA web y las
 # pruebas pasan por el motivo equivocado. Ya paso una vez, media hora.
@@ -103,15 +121,44 @@ else
   U404="http://127.0.0.1:$P404/"
 fi
 rm -f fixtures-fingerprint/_sentinel.txt
-rm -rf "$KCACHE"; mkdir -p "$KCACHE"
-#  🔴 THE FROZEN FIXTURE DOES NOT SHIP. It was a byte-for-byte capture of a real
-#     client's site — 95 HTTP triples, a live clinic's home page — and publishing
-#     somebody else's website to make a test pass is not a trade this repository
-#     makes. Freeze your own with `freeze-fixture.pl`; its README says how.
-#     Exit 3, not 2 and not 1: in this system 3 means I DID NOT MEASURE IT, and
-#     `run-all.sh` prints it as NOT MEASURED and names it in the summary. A 1
-#     would send somebody hunting a defect that does not exist, and a 0 would let
-#     a hole read as a pass — which is the failure this whole repository is about.
+# ── LA PRODUCCION DE MENTIRA (22-sep-2026) ──────────────────────────────────
+#    Mismo trato que los otros dos servidores de este banco: puerto libre
+#    comprobado ANTES, y centinela DESPUES. Un puerto ocupado por otra sesion
+#    contestaria con otra web y los casos pasarian por el motivo equivocado.
+PPROD=$(( 30000 + ($$ % 20000) ))
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if (exec 3<>/dev/tcp/127.0.0.1/$PPROD) 2>/dev/null; then PPROD=$(( PPROD + 1 )); else break; fi
+done
+TOKPROD="produccion-$$-$(date +%s)"
+perl fake-production.pl fixtures-sites "$PPROD" "$TOKPROD" "$CACHE/produccion.log" > "$CACHE/produccion.out" 2>&1 &
+SRVPROD=$!
+PROD_OK=0
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  # ⚠️ Nada de `--noproxy '*'` aqui: ANULA el -x, y la primera version de este
+  #    centinela preguntaba por `centinela.example` a un DNS que no lo conoce.
+  #    Medido: el servidor habia arrancado («listo») y el banco lo daba por caido.
+  if [ "$(curl -s --max-time 2 -x "http://127.0.0.1:$PPROD" http://centinela.example/_centinela-produccion 2>/dev/null)" = "$TOKPROD" ]; then
+    PROD_OK=1; break
+  fi
+  sleep 0.3
+done
+if [ "$PROD_OK" = 1 ]; then
+  # 🔑 curl solo lee `http_proxy` en MINUSCULA (la mayuscula la ignora a
+  #    proposito, por seguridad); `https_proxy` en las dos. Todo lo HTTPS acaba
+  #    en un CONNECT que el servidor rechaza al instante: ningun tercero sale.
+  export http_proxy="http://127.0.0.1:$PPROD" https_proxy="http://127.0.0.1:$PPROD" HTTPS_PROXY="http://127.0.0.1:$PPROD"
+  export no_proxy="127.0.0.1,localhost" NO_PROXY="127.0.0.1,localhost"
+  unset ALL_PROXY all_proxy
+else
+  printf '  MAL   %-46s no arranco en el puerto %s\n' "la produccion de mentira" "$PPROD"; ko=$((ko+1))
+fi
+
+#  🔴 LA HISTORIA DE LA SALIDA ANTICIPADA, que es de donde sale `falta`:
+#     Hasta el 22-sep este banco dependia de un sitio congelado que no se
+#     publica. Exit 3, not 2 and not 1: in this system 3 means I DID NOT MEASURE
+#     IT, and `run-all.sh` prints it as NOT MEASURED. A 1 would send somebody
+#     hunting a defect that does not exist, and a 0 would let a hole read as a
+#     pass — which is the failure this whole repository is about.
 #     🔴 1-sep-2026 · Y HASTA HOY ESTE ABANDONO SE LLEVABA POR DELANTE PRUEBAS
 #     QUE NO NECESITAN LA FIXTURE. Salia aqui mismo con «OK 0 · MAL 0», asi que
 #     en un checkout sin el sitio congelado —o sea, en CUALQUIERA menos el
@@ -135,43 +182,37 @@ rm -rf "$KCACHE"; mkdir -p "$KCACHE"
 #       con sus propios argumentos (`falta`), y lo que no se puede medir se
 #       imprime con nombre y se cuenta. La lista de dependencias se DERIVA del
 #       comando: un caso nuevo queda clasificado sin que nadie se acuerde.
-SIN_FIXTURE=0
-if [ ! -d "$KFIX" ]; then
-  SIN_FIXTURE=1
-else
-  cp "$KFIX"/* "$KCACHE"/ 2>/dev/null || { echo "🔴 $KFIX is present but empty: cannot run"; exit 2; }
-  ls "$KCACHE" | sort > "$CACHE/kfix-antes.lst"
-  KFIX_N0="$(wc -l < "$CACHE/kfix-antes.lst")"
-fi
+#     🔴 22-sep-2026 · Y con los sitios sinteticos, esas clases dejan de ser
+#       dependencias externas: un `.example` se mide si su fixture existe.
 
 # ── LO QUE UN CASO NECESITA Y ESTE CHECKOUT NO TIENE ────────────────────────
 # falta <argumentos del caso...>
 #   Imprime lo que le falta al caso para poder medirse, o nada. Se DERIVA de
 #   los argumentos del propio caso, no de en que seccion esta: las secciones
-#   mezclan casos de fixture propia con casos de sitio congelado, y una lista
-#   escrita al lado envejece sola. Las cuatro clases que existen (medidas el
-#   21-sep-2026 corriendo el fichero entero sin la salida anticipada):
-#     · el sitio congelado  · el caso lee "$KCACHE" y $KFIX/ no esta
-#     · un repo de $REPOS   · un argumento bajo $REPOS que no existe
-#     · host anonimizado    · https://*.example sin --candidato: `.example` no
-#                             resuelve NUNCA (RFC 2606), asi que solo se contesta
-#                             desde una captura, y la unica publicada seria $KFIX
-#     · una web viva        · cualquier otro host sin --candidato ni --sin-red,
-#                             salvo que EN_VIVO=1
+#   mezclan casos de muchas clases, y una lista escrita al lado envejece sola.
+#   Las clases que existen desde el 22-sep-2026:
+#     · un repo              · un argumento bajo $REPOS que no existe
+#     · un sitio sintetico   · http://*.example sin --candidato ni --sin-red, y
+#                              sin carpeta en fixtures-sites/: la produccion de
+#                              mentira contestaria 502. Se DERIVA del disco.
+#     · https a un .example  · la produccion de mentira no habla TLS: un caso asi
+#                              es un caso mal escrito, y se dice con ese nombre
+#     · una web viva         · cualquier otro host sin --candidato ni --sin-red.
+#                              El banco no sale a internet NUNCA: se congela.
+#     · la produccion        · no arranco: nada de lo servido por ella se mide
 #   Con --candidato el sitio se sirve desde --repo en 127.0.0.1, asi que el host
 #   de la URL no se descarga. Un `@lista` se lee: lleva URLs dentro.
-MOT_CONG="the frozen fixture $KFIX/"
-MOT_REPO="a client checkout under \$REPOS"
-MOT_ANON="a capture of an anonymized .example host"
-MOT_VIVO="a live site (EN_VIVO=1 measures it)"
+MOT_REPO="a repository fixture under $REPOS/"
+MOT_ANON="a site fixture under fixtures-sites/"
+MOT_HTTPS="http, not https: the fake production does not speak TLS"
+MOT_VIVO="a live site: this bench never goes online, freeze it under fixtures-sites/"
 MOT_LISTA="a URL list its block did not write"
+MOT_PROD="the fake production, which did not start"
 falta() {
-  local a f u h cand=0 sinred=0 kc=0 urls="" m=""
+  local a f u h cand=0 sinred=0 urls="" m=""
   for a in "$@"; do
     case "$a" in --candidato) cand=1 ;; --sin-red) sinred=1 ;; esac
-    [ "$a" = "$KCACHE" ] && kc=1
   done
-  [ "$kc" = 1 ] && [ "$SIN_FIXTURE" = 1 ] && m="$m + $MOT_CONG"
   for a in "$@"; do
     case "$a" in "$REPOS"/*) [ -e "$a" ] || { m="$m + $MOT_REPO (${a#"$REPOS"/})"; break; } ;; esac
   done
@@ -188,8 +229,12 @@ falta() {
       h="${u#*://}"; h="${h%%/*}"; h="${h%%:*}"
       case "$h" in
         127.0.0.1|localhost) ;;
-        *.example) if [ "$kc" = 0 ] || [ "$SIN_FIXTURE" = 1 ]; then m="$m + $MOT_ANON ($h)"; break; fi ;;
-        *) if [ "$EN_VIVO" != 1 ]; then m="$m + $MOT_VIVO ($h)"; break; fi ;;
+        *.example)
+          if   [ "$PROD_OK" != 1 ];      then m="$m + $MOT_PROD"; break
+          elif [ "${u%%://*}" = https ]; then m="$m + $MOT_HTTPS ($h)"; break
+          elif [ ! -d "fixtures-sites/$h" ]; then m="$m + $MOT_ANON ($h)"; break
+          fi ;;
+        *) m="$m + $MOT_VIVO ($h)"; break ;;
       esac
     done
   fi
@@ -209,11 +254,12 @@ sin_medir() {
   local m; m="$(falta "$@")"
   [ -z "$m" ] && return 1
   printf '  N/M   %-46s NOT MEASURED: needs %s\n' "$eti" "$m"; nm=$((nm+1))
-  case "$m" in *"$MOT_CONG"*) nm_cong=$((nm_cong+1)) ;; esac
   case "$m" in *"$MOT_REPO"*) nm_repo=$((nm_repo+1)) ;; esac
   case "$m" in *"$MOT_ANON"*) nm_anon=$((nm_anon+1)) ;; esac
+  case "$m" in *"$MOT_HTTPS"*) nm_https=$((nm_https+1)) ;; esac
   case "$m" in *"$MOT_VIVO"*) nm_vivo=$((nm_vivo+1)) ;; esac
   case "$m" in *"$MOT_LISTA"*) nm_lista=$((nm_lista+1)) ;; esac
+  case "$m" in *"$MOT_PROD"*) nm_prod=$((nm_prod+1)) ;; esac
   return 0
 }
 
@@ -364,9 +410,9 @@ espera "MED-07b · declarado y no cargado, sigue avisando" AVISO MED-07b \
 
 echo
 echo "== CONTROLES POSITIVOS · defectos CONOCIDOS de la sintesis del 10-ago-2026"
-espera "site-a · paleta bajo AA (--primary L=0,58)"        FALLO A11Y-03 perl $QA https://site-a.example/ --solo a11y --cache "$KCACHE"
-espera "site-a · el comentario dice 4,84 y son 4,11"        FALLO A11Y-04 perl $QA https://site-a.example/ --solo a11y --cache "$KCACHE"
-espera "site-a · favicon de 320 KB en 13 paginas"           FALLO REN-07  perl $QA https://site-a.example/ --solo rendimiento --cache "$KCACHE"
+espera "site-a · paleta bajo AA (--primary L=0,58)"        FALLO A11Y-03 perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
+espera "site-a · el comentario dice 4,84 y son 4,11"        FALLO A11Y-04 perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
+espera "site-a · favicon de 320 KB en 13 paginas"           FALLO REN-07  perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
 # 🔴 ESTE CASO ESPERABA `FALLO REN-04` Y ERA UN FALSO POSITIVO DEL GATE, no un
 #    defecto de site-a. Sumaba los 4 .woff2 DECLARADOS; los cuatro llevan
 #    `unicode-range` y Chrome baja 2 (112,9 KB), medido. Verificado aparte del
@@ -374,11 +420,11 @@ espera "site-a · favicon de 320 KB en 13 paginas"           FALLO REN-07  perl 
 #    latin-ext. Se cambia la expectativa Y se fija el numero, que es lo que
 #    distingue «lo he arreglado» de «lo he apagado». Los controles negativos
 #    —fuente sin unicode-range, y rango que el sitio SI usa— estan al final.
-espera "site-a · las 2 fuentes que el navegador SI baja"    PASA  REN-04  perl $QA https://site-a.example/ --solo rendimiento --cache "$KCACHE"
+espera "site-a · las 2 fuentes que el navegador SI baja"    PASA  REN-04  perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
 texto  "site-a · REN-04 dice cuantas descuenta y por que"   SI "2 de 4 NO se bajan" \
-       perl $QA https://site-a.example/ --solo rendimiento --cache "$KCACHE"
-espera "site-a · PNG de 2,3 MB / logo a 200 B/px"           FALLO REN-02  perl $QA https://site-a.example/ --solo rendimiento --cache "$KCACHE"
-espera "bc · page_view_gracias sin disparador (G1)"       FALLO MED-03  perl $QA https://site-d.example/ --gracias /gracias/ --solo medicion --cache "$CACHE"
+       perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
+espera "site-a · PNG de 2,3 MB / logo a 200 B/px"           FALLO REN-02  perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
+espera "bc · page_view_gracias sin disparador (G1)"       FALLO MED-03  perl $QA http://site-d.example/ --gracias /gracias/ --solo medicion --cache "$CACHE"
 # ⚠️ `--sin-recibo` en TODA prueba que apunte a un repo de verdad (anadido el
 #    11-ago-2026). Sin el, estas dos lineas escribian un `.qa-recibo` DENTRO de
 #    site-d-web cada vez que se corria la bateria —y encima un recibo de
@@ -405,56 +451,56 @@ espera "MED-05 · el mismo, con lector: PASA"              PASA  MED-05 \
 #    capturada como evidencia y no se despliega. En site-c daba 16 atributos, de
 #    los que 4 de los 5 visibles eran de su Elementor.
 texto  "MED-05 · no acusa al HTML del cliente (_migrate)"  NO "_migrate/origen" \
-       perl $QA https://site-d.example/ --repo $REPOS/site-d-web --solo medicion --sin-recibo --cache "$CACHE"
+       perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo medicion --sin-recibo --cache "$CACHE"
 espera "404 malo servido en local · sin h1 ni enlaces"             FALLO EST-03  perl $QA $U404 --solo estructura
-espera "bc · styles.css del repo NO desplegado (G11)"     FALLO EST-09  perl $QA https://site-d.example/ --repo $REPOS/site-d-web --solo estructura --sin-recibo --cache "$CACHE"
-espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA https://site-d.example/ --solo medicion --cache "$CACHE"
-espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA https://site-d.example/ --solo medicion --cache "$CACHE"
+espera "bc · styles.css del repo NO desplegado (G11)"     FALLO EST-09  perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo estructura --sin-recibo --cache "$CACHE"
+espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
+espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
 # 8-sep-2026 - LA CARA CONTRARIA, y hacia falta: el caso de arriba solo prueba que
 # el check CAZA. Este prueba que no acusa a quien esta bien, que es donde estaba el
 # defecto: la exencion decia "necess" y en castellano es "necesarias", con una sola
 # ese, asi que la casilla obligatoria de cualquier banner en espanol salia acusada.
-espera "site-e · «necesarias» en castellano NO es premarcada"  PASA  MED-06  perl $QA https://site-e.example/ --solo medicion --cache "$CACHE"
-espera "cm · og:image:alt al 0% donde vive el estandar"   FALLO SEO-06  perl $QA https://climentmedia.com/ --solo seo --cache "$CACHE"
-espera "site-b · ficha que solo existe con JS (G10)"     FALLO SEO-14  perl $QA "https://shop.site-b.example/produto.html?sku=MOB-001" --solo seo --cache "$CACHE"
-espera "site-c(fixture) · 27,7 pantallas y 1 CTA"           FALLO EST-06  perl $QA https://site-c.example/ --solo estructura --dom dom-site-c-broken.json --cache "$CACHE"
-espera "site-c(fixture) · fila coja y titular huerfano"     FALLO EST-07  perl $QA https://site-c.example/ --solo estructura --dom dom-site-c-broken.json --cache "$CACHE"
+espera "site-e · «necesarias» en castellano NO es premarcada"  PASA  MED-06  perl $QA http://site-e.example/ --solo medicion --cache "$CACHE"
+espera "cm · og:image:alt al 0% donde vive el estandar"   FALLO SEO-06  perl $QA http://cm.example/ --solo seo --cache "$CACHE"
+espera "site-b · ficha que solo existe con JS (G10)"     FALLO SEO-14  perl $QA "http://shop.site-b.example/produto.html?sku=MOB-001" --solo seo --cache "$CACHE"
+espera "site-c(fixture) · 27,7 pantallas y 1 CTA"           FALLO EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-site-c-broken.json --cache "$CACHE"
+espera "site-c(fixture) · fila coja y titular huerfano"     FALLO EST-07  perl $QA http://site-c.example/ --solo estructura --dom dom-site-c-broken.json --cache "$CACHE"
 
 echo
 echo "== CONTROLES QUE DEBEN PASAR"
-espera "bc REPO con --primary ya corregido a L=0,54"      PASA  A11Y-03 perl $QA https://site-d.example/ --solo a11y --css $REPOS/site-d-web/styles.css --cache "$CACHE"
-espera "site-c · su 404 (la unica que pasa maqueta)"        PASA  EST-03  perl $QA https://site-c.example/ --solo estructura --cache "$CACHE"
-espera "bc · comprime html/css/js (PC17)"                 PASA  REN-08  perl $QA https://site-d.example/ --solo rendimiento --cache "$CACHE"
-espera "bc · 0 webfonts, la mejor maqueta sin ninguna"    PASA  REN-04  perl $QA https://site-d.example/ --solo rendimiento --cache "$CACHE"
-espera "cm · sitemap con la pagina dentro"                PASA  SEO-16  perl $QA https://climentmedia.com/ --solo seo --cache "$CACHE"
+espera "bc REPO con --primary ya corregido a L=0,54"      PASA  A11Y-03 perl $QA http://site-d.example/ --solo a11y --css $REPOS/site-d-web/styles.css --cache "$CACHE"
+espera "site-c · su 404 (la unica que pasa maqueta)"        PASA  EST-03  perl $QA http://site-c.example/ --solo estructura --cache "$CACHE"
+espera "bc · comprime html/css/js (PC17)"                 PASA  REN-08  perl $QA http://site-d.example/ --solo rendimiento --cache "$CACHE"
+espera "bc · 0 webfonts, la mejor maqueta sin ninguna"    PASA  REN-04  perl $QA http://site-d.example/ --solo rendimiento --cache "$CACHE"
+espera "cm · sitemap con la pagina dentro"                PASA  SEO-16  perl $QA http://cm.example/ --solo seo --cache "$CACHE"
 
 echo
 echo "== CASOS FRONTERA · PARECEN defectos y NO lo son"
-espera "cm · 8 de 9 <img> con alt=\"\" DECORATIVO (X3)"     PASA  SEO-10  perl $QA https://climentmedia.com/ --solo seo --cache "$CACHE"
-espera "configurador · 0 CTA y 14 <button> (excepcion)"   PASA  EST-06  perl $QA https://site-c.example/ --solo estructura --dom dom-configurator.json --cache "$CACHE"
-espera "configurador · se anota, no se arregla"           AVISO EST-06b perl $QA https://site-c.example/ --solo estructura --dom dom-configurator.json --cache "$CACHE"
-espera "guia de PROSA de 12,4 pantallas (sospecha)"       PASA  EST-06  perl $QA https://site-c.example/ --solo estructura --dom dom-long-prose.json --cache "$CACHE"
-espera "tactil 44x44: es AAA, nunca FALLO"                AVISO A11Y-12 perl $QA https://site-d.example/ --solo a11y --cache "$CACHE"
-espera "sin hoja de tokens: NO medido != aprobado (X12)"  NOVERIF A11Y-03 perl $QA https://site-d.example/ --solo a11y --css /no/existe.css --cache "$CACHE"
-espera "ancho clampado: la medida se tira entera (PC15)"  NOVERIF EST-05  perl $QA https://site-c.example/ --solo estructura --dom dom-unmeasured.json --cache "$CACHE"
-espera "hover sin fondo declarado: no se acusa"           NOVERIF A11Y-03b perl $QA https://site-a.example/ --solo a11y --cache "$KCACHE"
+espera "cm · 8 de 9 <img> con alt=\"\" DECORATIVO (X3)"     PASA  SEO-10  perl $QA http://cm.example/ --solo seo --cache "$CACHE"
+espera "configurador · 0 CTA y 14 <button> (excepcion)"   PASA  EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-configurator.json --cache "$CACHE"
+espera "configurador · se anota, no se arregla"           AVISO EST-06b perl $QA http://site-c.example/ --solo estructura --dom dom-configurator.json --cache "$CACHE"
+espera "guia de PROSA de 12,4 pantallas (sospecha)"       PASA  EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-long-prose.json --cache "$CACHE"
+espera "tactil 44x44: es AAA, nunca FALLO"                AVISO A11Y-12 perl $QA http://site-d.example/ --solo a11y --cache "$CACHE"
+espera "sin hoja de tokens: NO medido != aprobado (X12)"  NOVERIF A11Y-03 perl $QA http://site-d.example/ --solo a11y --css /no/existe.css --cache "$CACHE"
+espera "ancho clampado: la medida se tira entera (PC15)"  NOVERIF EST-05  perl $QA http://site-c.example/ --solo estructura --dom dom-unmeasured.json --cache "$CACHE"
+espera "hover sin fondo declarado: no se acusa"           NOVERIF A11Y-03b perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
 
 echo
 echo "== ARREGLO 0.1 · EL FONDO SE LEE, NO SE ASUME BLANCO"
 texto  "cm · lee el fondo REAL de body (rgb(7,7,8))"   SI "= #070708" \
-       perl $QA https://climentmedia.com/ --solo a11y --una-sola --cache "$CACHE"
+       perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
 texto  "site-c · lee el fondo REAL (oklch 16%)"          SI "var(--noche) = #12071c" \
-       perl $QA https://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
+       perl $QA http://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
 texto  "cm · ya NO mide contra un blanco inventado"    NO "sobre #ffffff" \
-       perl $QA https://climentmedia.com/ --solo a11y --una-sola --cache "$CACHE"
-espera "site-c · su paleta oscura PASA (era FALLO falso)" PASA  A11Y-03 perl $QA https://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
+       perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "site-c · su paleta oscura PASA (era FALLO falso)" PASA  A11Y-03 perl $QA http://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: en una web que SI es blanca, el fallo real sigue vivo.
-espera "site-a · fondo blanco de verdad: sigue FALLANDO"  FALLO A11Y-03 perl $QA https://site-a.example/ --solo a11y --una-sola --cache "$KCACHE"
+espera "site-a · fondo blanco de verdad: sigue FALLANDO"  FALLO A11Y-03 perl $QA http://site-a.example/ --solo a11y --una-sola --cache "$CACHE"
 texto  "site-a · y sigue senalando el par real 4,11:1"    SI "#258998 sobre #ffffff = 4.11:1" \
-       perl $QA https://site-a.example/ --solo a11y --una-sola --cache "$KCACHE"
-espera "CENTINELA: ratio 1,00:1 -> grita, no acusa"     NOVERIF A11Y-03z perl $QA https://site-c.example/ --solo a11y --una-sola --css css-sentinel.css --cache "$CACHE"
-espera "CENTINELA: y el par imposible NO es fallo"      PASA    A11Y-03  perl $QA https://site-c.example/ --solo a11y --una-sola --css css-sentinel.css --cache "$CACHE"
-espera "CENTINELA: sin regla imposible, no salta"       AUSENTE A11Y-03z perl $QA https://site-c.example/ --solo a11y --una-sola --css css-no-sentinel.css --cache "$CACHE"
+       perl $QA http://site-a.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "CENTINELA: ratio 1,00:1 -> grita, no acusa"     NOVERIF A11Y-03z perl $QA http://site-c.example/ --solo a11y --una-sola --css css-sentinel.css --cache "$CACHE"
+espera "CENTINELA: y el par imposible NO es fallo"      PASA    A11Y-03  perl $QA http://site-c.example/ --solo a11y --una-sola --css css-sentinel.css --cache "$CACHE"
+espera "CENTINELA: sin regla imposible, no salta"       AUSENTE A11Y-03z perl $QA http://site-c.example/ --solo a11y --una-sola --css css-no-sentinel.css --cache "$CACHE"
 
 echo
 echo "== ARREGLO 0.2 · LA LISTA SALE DEL SITEMAP QUE YA SE DESCARGABA"
@@ -468,48 +514,48 @@ echo "== ARREGLO 0.2 · LA LISTA SALE DEL SITEMAP QUE YA SE DESCARGABA"
 #     desaparece. Se añade además site-c, donde SEO-02 sí tiene dos duplicados
 #     entre DOCUMENTOS DISTINTOS (md5 3f9d37425d/75548f7c5d y 4b523fac03/
 #     7a411caae4), para que quede probado que SEO-02 no se ha apagado.
-espera "site-b · el defecto real, en su sitio (G10)"       FALLO SEO-14 perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
-espera "site-b · con --una-sola vuelve el falso PASA"      PASA  SEO-14 perl $QA https://shop.site-b.example/ --solo seo --una-sola --cache "$CACHE"
-espera "site-c · 2 titles repetidos entre docs DISTINTOS"     FALLO SEO-02 perl $QA https://site-c.example/ --solo seo --cache "$CACHE"
-espera "site-c · con --una-sola vuelve el falso PASA"         PASA  SEO-02 perl $QA https://site-c.example/ --solo seo --una-sola --cache "$CACHE"
+espera "site-b · el defecto real, en su sitio (G10)"       FALLO SEO-14 perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
+espera "site-b · con --una-sola vuelve el falso PASA"      PASA  SEO-14 perl $QA http://shop.site-b.example/ --solo seo --una-sola --cache "$CACHE"
+espera "site-c · 2 titles repetidos entre docs DISTINTOS"     FALLO SEO-02 perl $QA http://site-c.example/ --solo seo --cache "$CACHE"
+espera "site-c · con --una-sola vuelve el falso PASA"         PASA  SEO-02 perl $QA http://site-c.example/ --solo seo --una-sola --cache "$CACHE"
 texto  "el informe DECLARA el alcance de cada lente"        SI "ALCANCE      cuantas paginas ha mirado cada lente" \
-       perl $QA https://site-c.example/ --solo a11y --cache "$CACHE"
+       perl $QA http://site-c.example/ --solo a11y --cache "$CACHE"
 texto  "y dice de donde ha sacado la lista"                 SI "del sitemap" \
-       perl $QA https://site-c.example/ --solo a11y --cache "$CACHE"
+       perl $QA http://site-c.example/ --solo a11y --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: SEO-16 pregunta si la pagina PEDIDA esta en el sitemap.
 #    Si se comparara contra la lista expandida seria PASA por construccion.
-espera "SEO-16 sigue midiendo (URL pedida fuera del sitemap)" AVISO SEO-16 perl $QA https://site-c.example/no-esta-en-el-sitemap --solo seo --una-sola --cache "$CACHE"
+espera "SEO-16 sigue midiendo (URL pedida fuera del sitemap)" AVISO SEO-16 perl $QA http://site-c.example/no-esta-en-el-sitemap --solo seo --una-sola --cache "$CACHE"
 
 echo
 echo "== ARREGLO 0.5b · EL ENLACE DE SALTO, EN EL IDIOMA QUE SEA"
-espera "site-c · <a class=saltar href=#principal> (castellano)" PASA  A11Y-02 perl $QA https://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
-espera "site-a · <a class=skip>Aller au contenu (frances)"      PASA  A11Y-02 perl $QA https://site-a.example/ --solo a11y --una-sola --cache "$KCACHE"
-espera "bc · <a class=skip>Saltar al contenido"               PASA  A11Y-02 perl $QA https://site-d.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "site-c · <a class=saltar href=#principal> (castellano)" PASA  A11Y-02 perl $QA http://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "site-a · <a class=skip>Aller au contenu (frances)"      PASA  A11Y-02 perl $QA http://site-a.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "bc · <a class=skip>Saltar al contenido"               PASA  A11Y-02 perl $QA http://site-d.example/ --solo a11y --una-sola --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: las dos que de verdad NO lo tienen siguen acusadas.
-espera "cm · no tiene ninguno: sigue FALLANDO"                FALLO A11Y-02 perl $QA https://climentmedia.com/ --solo a11y --una-sola --cache "$CACHE"
-espera "site-b · no tiene ninguno: sigue FALLANDO"           FALLO A11Y-02 perl $QA https://shop.site-b.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "cm · no tiene ninguno: sigue FALLANDO"                FALLO A11Y-02 perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "site-b · no tiene ninguno: sigue FALLANDO"           FALLO A11Y-02 perl $QA http://shop.site-b.example/ --solo a11y --una-sola --cache "$CACHE"
 
 echo
 echo "== ARREGLO 0.6 · 404 O 0 KB ES FALLO, NO «LIGERO»"
-espera "bc · favicon.svg devuelve 404 (salia PASA 0 KB)"   FALLO REN-07 perl $QA https://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
-espera "bc · y el barrido general lo caza tambien"         FALLO REN-13 perl $QA https://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "bc · favicon.svg devuelve 404 (salia PASA 0 KB)"   FALLO REN-07 perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "bc · y el barrido general lo caza tambien"         FALLO REN-13 perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
 texto  "bc · lo dice con su estado, no con su peso"        SI "HTTP 404" \
-       perl $QA https://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
+       perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: el check de PESO no se ha perdido por el camino, y una
 #    web cuyos recursos responden todos no puede salir acusada por esto.
-espera "site-a · 320 KB de favicon: sigue siendo FALLO de PESO" FALLO REN-07 perl $QA https://site-a.example/ --solo rendimiento --una-sola --cache "$KCACHE"
-espera "site-c · todos sus recursos responden"                  PASA  REN-13 perl $QA https://site-c.example/ --solo rendimiento --una-sola --cache "$CACHE"
-espera "site-c · su favicon existe y es ligero"                 PASA  REN-07 perl $QA https://site-c.example/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "site-a · 320 KB de favicon: sigue siendo FALLO de PESO" FALLO REN-07 perl $QA http://site-a.example/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "site-c · todos sus recursos responden"                  PASA  REN-13 perl $QA http://site-c.example/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "site-c · su favicon existe y es ligero"                 PASA  REN-07 perl $QA http://site-c.example/ --solo rendimiento --una-sola --cache "$CACHE"
 # 19-ago-2026 - UN FAVICON EN data: NO SE DESCARGA, asi que nunca entraba en la
 #   lista de RECURSOS, y la web que lo declara del mejor modo posible -cero
 #   peticiones- salia como "sin favicon declarado". Este caso es el que lo fija.
-espera "cm - favicon en data: URI, no es un hueco"          PASA  REN-07 perl $QA https://climentmedia.com/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "cm - favicon en data: URI, no es un hueco"          PASA  REN-07 perl $QA http://cm.example/ --solo rendimiento --una-sola --cache "$CACHE"
 # 🔴 FRONTERA que este mismo arreglo destapo y casi cuesta un FALLO FALSO en una
 #    web viva: /ad-account-audit/ declara href="ad-account-audit.css". La lista
 #    de paginas viaja SIN barra final, y resolverlo contra `.../audit` daba
 #    `/ad-account-audit.css` (404) en vez de `/ad-account-audit/...` (200). Se
 #    resuelve contra la URL EFECTIVA. Sin esto, REN-13 acusaba en falso.
-espera "cm · href relativo bajo URL con barra: NO es 404"     PASA  REN-13 perl $QA https://climentmedia.com/ad-account-audit/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "cm · href relativo bajo URL con barra: NO es 404"     PASA  REN-13 perl $QA http://cm.example/ad-account-audit/ --solo rendimiento --una-sola --cache "$CACHE"
 
 # 🔴 24-ago-2026 · REN-13 EN MODO CANDIDATO · DOS BACKENDS BAJO UN DOMINIO.
 #    El candidato sirve SOLO el arbol que se va a subir. Si el dominio lo sirven
@@ -526,7 +572,7 @@ espera "candidato · y no se calla: se dice con nombre"        NOVERIF REN-13b p
 #    por un falso negativo — que es peor, porque no se ve.
 espera "candidato · una ruta rota de las NUESTRAS sigue roja" FALLO   REN-13  perl $QA https://climentmedia.com/ --repo fixtures-ren13/nuestra-rota --candidato --una-sola --solo rendimiento --sin-recibo
 texto  "cm · y ademas ahora SI pesa su CSS (antes, invisible)" SI "css 15 KB" \
-       perl $QA https://climentmedia.com/ad-account-audit/ --solo rendimiento --una-sola --cache "$CACHE"
+       perl $QA http://cm.example/ad-account-audit/ --solo rendimiento --una-sola --cache "$CACHE"
 
 echo
 echo "== ARREGLO P1 · EL PESO DE UNA PAGINA NO DEPENDE DE SU SITIO EN LA LISTA"
@@ -537,17 +583,17 @@ echo "== ARREGLO P1 · EL PESO DE UNA PAGINA NO DEPENDE DE SU SITIO EN LA LISTA"
 #     Y la direccion del error es la mala: INFRAVALORA. Un sitio pesado podia
 #     colarse por debajo del tope segun en que orden se escribiera la lista.
 texto  "site-a · la home SOLA pesa 1053 KB con font 254 KB"  SI "1053 KB · icon 313 KB · img 313 KB · font 254 KB" \
-       perl $QA https://site-a.example/ --solo rendimiento --una-sola --cache "$KCACHE"
+       perl $QA http://site-a.example/ --solo rendimiento --una-sola --cache "$CACHE"
 # ⚠️ Las listas se BORRAN antes: $CACHE sobrevive entre corridas, y una lista
 #    de ayer haria que el caso de abajo midiera lo de ayer. Sin su bloque, el
 #    caso de REN-04 que la lee sale NO MEDIDO por nombre, no con la vieja.
 rm -f "$CACHE"/ren-A.txt "$CACHE"/ren-B.txt "$CACHE"/ren-A.peso "$CACHE"/ren-B.peso
 # 🔴 Sin el sitio congelado este diff comparaba DOS FICHEROS VACIOS y salia OK.
-if mide_bloque "el peso NO depende del orden" --cache "$KCACHE"; then
-  printf 'https://site-a.example/\nhttps://site-a.example/services\n' > "$CACHE/ren-A.txt"
-  printf 'https://site-a.example/services\nhttps://site-a.example/\n' > "$CACHE/ren-B.txt"
+if mide_bloque "el peso NO depende del orden" http://site-a.example/ --cache "$CACHE"; then
+  printf 'http://site-a.example/\nhttp://site-a.example/services\n' > "$CACHE/ren-A.txt"
+  printf 'http://site-a.example/services\nhttp://site-a.example/\n' > "$CACHE/ren-B.txt"
   for o in A B; do
-    perl $QA "@$CACHE/ren-$o.txt" --solo rendimiento --sin-recibo --cache "$KCACHE" 2>&1 \
+    perl $QA "@$CACHE/ren-$o.txt" --solo rendimiento --sin-recibo --cache "$CACHE" 2>&1 \
       | grep -A2 'REN-01' | grep -E 'DATO|DONDE' | sed 's/  */ /g' > "$CACHE/ren-$o.peso"
   done
   if diff -q "$CACHE/ren-A.peso" "$CACHE/ren-B.peso" >/dev/null; then
@@ -567,7 +613,7 @@ for o in A B; do
   espera "site-a · REN-04 no depende del orden (orden $o)" PASA REN-04 perl $QA "@$CACHE/ren-$o.txt" --solo rendimiento --sin-recibo --cache "$CACHE"
 done
 texto  "la muestra dice que ha cogido una MUESTRA repartida" SI "MUESTRA repartida por la lista" \
-       perl $QA https://climentmedia.com/ --solo rendimiento --cache "$CACHE"
+       perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
 
 echo
 echo "== ARREGLO P2 · SE DEDUPLICA POR DOCUMENTO, NO POR CADENA DE URL"
@@ -575,22 +621,22 @@ echo "== ARREGLO P2 · SE DEDUPLICA POR DOCUMENTO, NO POR CADENA DE URL"
 #  (md5 e55587a629cc) y produto.html?sku=* otro (39f60689ed61). Verificado a
 #  mano con curl+md5sum el 10-ago-2026.
 texto  "site-b · declara que 25 URLs son 11 documentos"  SI "25 URLs sirven 11 documentos distintos" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "site-b · SEO-02 cuenta DOCUMENTOS, no URLs"      SI "11 documentos distintos" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "site-b · el defecto NO se pierde: lo dice SEO-14" SI "este MISMO documento se sirve en" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO de SEO-04: deja de castigar la canonicalizacion BIEN
 #    hecha (?cat=* -> loja.html, verificado a mano) y sigue acusando a la que
 #    de verdad no tiene canonical (produto.html?sku=*).
-espera "site-b · SEO-04 sigue acusando (falta canonical)" FALLO SEO-04 perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+espera "site-b · SEO-04 sigue acusando (falta canonical)" FALLO SEO-04 perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "site-b · y ya NO acusa a ?cat= con canonical OK"  NO "loja.html?cat=" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "site-b · SI acusa a la ficha sin canonical"       SI "produto.html?sku=MOB-001 (sin canonical)" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: en una web SIN duplicados de fichero no cambia nada.
 texto  "site-c · sin ficheros repetidos, no deduplica nada"  NO "documentos distintos (" \
-       perl $QA https://site-c.example/ --solo seo --cache "$CACHE"
+       perl $QA http://site-c.example/ --solo seo --cache "$CACHE"
 
 echo
 echo "== ARREGLO P3 · EL ENLACE DE SALTO SE RECONOCE POR DONDE ESTA, NO SOLO POR SU DESTINO"
@@ -621,11 +667,11 @@ else
 fi
 # 🔴 CONTROLES SOBRE WEBS VIVAS: las 3 que lo tienen siguen pasando y las 2 que
 #    NO lo tienen siguen acusadas. Sin esto, «6 OK» podria ser un gate apagado.
-espera "site-c · sigue detectando su salto real"       PASA  A11Y-02 perl $QA https://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
-espera "site-a · sigue detectando su salto real"       PASA  A11Y-02 perl $QA https://site-a.example/ --solo a11y --una-sola --cache "$KCACHE"
-espera "bc · sigue detectando su salto real"         PASA  A11Y-02 perl $QA https://site-d.example/ --solo a11y --una-sola --cache "$CACHE"
-espera "cm · no lo tiene: SIGUE acusada"             FALLO A11Y-02 perl $QA https://climentmedia.com/ --solo a11y --una-sola --cache "$CACHE"
-espera "site-b · no lo tiene: SIGUE acusada"        FALLO A11Y-02 perl $QA https://shop.site-b.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "site-c · sigue detectando su salto real"       PASA  A11Y-02 perl $QA http://site-c.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "site-a · sigue detectando su salto real"       PASA  A11Y-02 perl $QA http://site-a.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "bc · sigue detectando su salto real"         PASA  A11Y-02 perl $QA http://site-d.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "cm · no lo tiene: SIGUE acusada"             FALLO A11Y-02 perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "site-b · no lo tiene: SIGUE acusada"        FALLO A11Y-02 perl $QA http://shop.site-b.example/ --solo a11y --una-sola --cache "$CACHE"
 
 echo
 echo "== ARREGLO P4 · UN VECTOR NO TIENE RESOLUCION: NO SE MIDE EN B/px"
@@ -633,26 +679,26 @@ echo "== ARREGLO P4 · UN VECTOR NO TIENE RESOLUCION: NO SE MIDE EN B/px"
 #  y REN-02 los acusaba de «sobredimensionados» por 2,278 / 2,330 / 1,247 B/px,
 #  mandando «reencodear a WebP» un logo vectorial. Bytes verificados con curl.
 texto  "cm · ya NO acusa a meta.svg por B/px"         NO "meta.svg" \
-       perl $QA https://climentmedia.com/ --solo rendimiento --cache "$CACHE"
+       perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
 texto  "cm · ya NO acusa a googleads.svg por B/px"    NO "googleads.svg" \
-       perl $QA https://climentmedia.com/ --solo rendimiento --cache "$CACHE"
-espera "cm · los SVG se vigilan por PESO, y pasan"    PASA REN-02b perl $QA https://climentmedia.com/ --solo rendimiento --cache "$CACHE"
+       perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
+espera "cm · los SVG se vigilan por PESO, y pasan"    PASA REN-02b perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: el check de B/px NO se ha desactivado. El logo BITMAP de
 #    site-a (1080x1080 en un hueco de 40x40) sigue siendo FALLO.
-espera "site-a · el PNG sobredimensionado sigue FALLANDO" FALLO REN-02 perl $QA https://site-a.example/ --solo rendimiento --una-sola --cache "$KCACHE"
+espera "site-a · el PNG sobredimensionado sigue FALLANDO" FALLO REN-02 perl $QA http://site-a.example/ --solo rendimiento --una-sola --cache "$CACHE"
 texto  "site-a · y lo sigue diciendo en B/px"           SI "B/px" \
-       perl $QA https://site-a.example/ --solo rendimiento --una-sola --cache "$KCACHE"
+       perl $QA http://site-a.example/ --solo rendimiento --una-sola --cache "$CACHE"
 
 echo
 echo "== ARREGLO P5 · EL ALCANCE SE EMITE Y EL DENOMINADOR ES EL SITIO"
 texto  "el denominador ya NO es la lista auditada"    SI "denominador: el SITIO" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "y dice cuantas de la lista, aparte"           SI "de la lista auditada)" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: «TODAS» solo puede salir si de verdad se han mirado
 #    todas las del SITIO. En site-b se miran 11 de 67: no puede aparecer.
 texto  "site-b · 11 de 67: NO dice «TODAS»"          NO "· TODAS" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "y cuando no sabe el total del sitio, lo DICE" SI "no se cuantas paginas tiene el sitio" \
        perl $QA https://climentmedia.com/ --sin-red --sin-recibo
 # 🔴 EL RECIBO. Antes decia SIEMPRE «ALCANCE: NO DECLARADO».
@@ -662,9 +708,9 @@ texto  "y cuando no sabe el total del sitio, lo DICE" SI "no se cuantas paginas 
 #    recibo de una corrida vieja se borra antes: si el fichero FALTARA, el
 #    tercer caso («ya no dice NO DECLARADO») saldria OK sin haber mirado nada.
 rm -f "$CACHE/recibo-alcance"
-if mide_bloque "el recibo declara su alcance" https://site-c.example/ --cache "$CACHE"; then
+if mide_bloque "el recibo declara su alcance" http://site-c.example/ --cache "$CACHE"; then
   RREPO="$CACHE/repo-alcance"; mkdir -p "$RREPO"; printf '<!doctype html><title>x</title>\n' > "$RREPO/index.html"
-  perl $QA https://site-c.example/ --solo seo --una-sola --repo "$RREPO" --recibo "$CACHE/recibo-alcance" --cache "$CACHE" >/dev/null 2>&1
+  perl $QA http://site-c.example/ --solo seo --una-sola --repo "$RREPO" --recibo "$CACHE/recibo-alcance" --cache "$CACHE" >/dev/null 2>&1
   if grep -q '^ALCANCE-URLS:' "$CACHE/recibo-alcance" 2>/dev/null; then
     printf '  OK    %-46s %s\n' "el recibo YA declara su alcance" "$(grep -m1 '^ALCANCE-URLS:' "$CACHE/recibo-alcance")"; ok=$((ok+1))
   else
@@ -693,8 +739,8 @@ espera "sin red · dice cuales no ha podido leer"       NOVERIF A11Y-0x perl $QA
 espera "sin red · la de rendimiento tampoco"           NOVERIF REN-00  perl $QA https://climentmedia.com/ --sin-red --sin-recibo
 espera "sin red · ni la de estructura"                 NOVERIF EST-01  perl $QA https://climentmedia.com/ --sin-red --sin-recibo
 # 🔴 CONTROL NEGATIVO: con red, ninguno de esos avisos aparece.
-espera "con red · A11Y-00 no existe"                   AUSENTE A11Y-00 perl $QA https://climentmedia.com/ --solo a11y --una-sola --cache "$CACHE"
-espera "con red · A11Y-0x no existe"                   AUSENTE A11Y-0x perl $QA https://climentmedia.com/ --solo a11y --una-sola --cache "$CACHE"
+espera "con red · A11Y-00 no existe"                   AUSENTE A11Y-00 perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "con red · A11Y-0x no existe"                   AUSENTE A11Y-0x perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
 
 echo
 echo "== ARREGLO 0.3 · LA LOTERIA DEL ORDEN"
@@ -703,9 +749,9 @@ echo "== ARREGLO 0.3 · LA LOTERIA DEL ORDEN"
 #     iguales y el primer caso salia OK. Se clasifican los tres juntos: el
 #     negativo de abajo lee los mismos ficheros.
 rm -f "$CACHE"/ord-A.txt "$CACHE"/ord-B.txt "$CACHE"/ord-A.veredictos "$CACHE"/ord-B.veredictos
-if mide_bloque "la loteria del orden" https://site-c.example/ --cache "$CACHE"; then
-  printf 'https://site-c.example/\nhttps://site-c.example/tarot-del-amor\n' > "$CACHE/ord-A.txt"
-  printf 'https://site-c.example/tarot-del-amor\nhttps://site-c.example/\n' > "$CACHE/ord-B.txt"
+if mide_bloque "la loteria del orden" http://site-c.example/ --cache "$CACHE"; then
+  printf 'http://site-c.example/\nhttp://site-c.example/tarot-del-amor\n' > "$CACHE/ord-A.txt"
+  printf 'http://site-c.example/tarot-del-amor\nhttp://site-c.example/\n' > "$CACHE/ord-B.txt"
   for o in A B; do
     perl $QA "@$CACHE/ord-$o.txt" --sin-recibo --cache "$CACHE" 2>&1 \
       | grep -E '^\s+\[[A-Z ]+\] ' | sed 's/  *$//' > "$CACHE/ord-$o.veredictos"
@@ -744,35 +790,35 @@ BCREPO="$REPOS/site-d-web"
 # --- 1 · lo que el candidato NO puede medir sale NO VERIFICADO, nunca PASA ---
 #     Los cuatro. Si alguno saliera PASA, el gate estaria aprobando algo que ha
 #     contestado su propio servidor de pruebas.
-espera "candidato · G11 no se mide contra si mismo"    NOVERIF EST-09 perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo estructura --sin-recibo
-espera "candidato · la compresion es del host"         NOVERIF REN-08 perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo rendimiento --sin-recibo
-espera "candidato · Cache-Control es del host"         NOVERIF REN-09 perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo rendimiento --sin-recibo
-espera "candidato · el ESTADO 404 es del host"         NOVERIF EST-03 perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo estructura --sin-recibo
+espera "candidato · G11 no se mide contra si mismo"    NOVERIF EST-09 perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo estructura --sin-recibo
+espera "candidato · la compresion es del host"         NOVERIF REN-08 perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo rendimiento --sin-recibo
+espera "candidato · Cache-Control es del host"         NOVERIF REN-09 perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo rendimiento --sin-recibo
+espera "candidato · el ESTADO 404 es del host"         NOVERIF EST-03 perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo estructura --sin-recibo
 # 🔴 CONTROLES NEGATIVOS: los mismos checks contra PRODUCCION siguen midiendo.
 #    Sin esto, «NO VERIFICADO en candidato» podria ser un check apagado del todo.
-espera "produccion · REN-08 sigue midiendo y pasa"     PASA  REN-08 perl $QA https://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
-espera "produccion · EST-09 sigue cazando el desfase"  FALLO EST-09 perl $QA https://site-d.example/ --repo "$BCREPO" --solo estructura --sin-recibo --cache "$CACHE"
+espera "produccion · REN-08 sigue midiendo y pasa"     PASA  REN-08 perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "produccion · EST-09 sigue cazando el desfase"  FALLO EST-09 perl $QA http://site-d.example/ --repo "$BCREPO" --solo estructura --sin-recibo --cache "$CACHE"
 espera "EST-03 sigue cazando un 404 callejon" FALLO EST-03 perl $QA $U404 --solo estructura --una-sola
 
 # --- 2 · el candidato VE los arreglos que produccion todavia no tiene --------
 #     Verificado a mano el 11-ago: el repo declara --primary oklch(0.54 ...) y
 #     produccion sirve oklch(0.58 ...); el repo trae favicon.svg (262 B) y
 #     produccion devuelve HTTP 404 en /favicon.svg.
-espera "candidato · la paleta del repo YA llega a AA"  PASA  A11Y-03 perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo a11y --sin-recibo
-espera "produccion · la paleta subida sigue por debajo" FALLO A11Y-03 perl $QA https://site-d.example/ --solo a11y --una-sola --cache "$CACHE"
-espera "candidato · el favicon del repo existe"        PASA  REN-07 perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo rendimiento --sin-recibo
-espera "produccion · el favicon subido sigue en 404"   FALLO REN-07 perl $QA https://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
+espera "candidato · la paleta del repo YA llega a AA"  PASA  A11Y-03 perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo a11y --sin-recibo
+espera "produccion · la paleta subida sigue por debajo" FALLO A11Y-03 perl $QA http://site-d.example/ --solo a11y --una-sola --cache "$CACHE"
+espera "candidato · el favicon del repo existe"        PASA  REN-07 perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo rendimiento --sin-recibo
+espera "produccion · el favicon subido sigue en 404"   FALLO REN-07 perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
 
 # --- 3 · el informe dice CONTRA QUE se midio --------------------------------
 texto  "el informe declara que mide el CANDIDATO"    SI "MEDIDO       🔴 CANDIDATO" \
-       perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo seo --sin-recibo
+       perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo seo --sin-recibo
 texto  "y enumera lo que no ha podido medir"         SI "LO QUE EL CANDIDATO NO PUEDE MEDIR" \
-       perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo estructura --sin-recibo
+       perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --solo estructura --sin-recibo
 # 🔴 CONTROL NEGATIVO: midiendo produccion NO puede decir que mide el candidato.
 texto  "produccion NO se hace pasar por candidato"   NO "MEDIDO       🔴 CANDIDATO" \
-       perl $QA https://site-d.example/ --solo seo --una-sola --cache "$CACHE"
+       perl $QA http://site-d.example/ --solo seo --una-sola --cache "$CACHE"
 texto  "produccion lo dice tambien, con su aviso"    SI "MEDIDO       PRODUCCION" \
-       perl $QA https://site-d.example/ --solo seo --una-sola --cache "$CACHE"
+       perl $QA http://site-d.example/ --solo seo --una-sola --cache "$CACHE"
 
 # --- 4 · 🔴 EL CONTROL NEGATIVO DE VERDAD: UN ARBOL ROTO NO SACA VERDE ------
 #     Se rompe una COPIA (nunca el repo real): se quita el <h1> de la home.
@@ -786,7 +832,7 @@ if mide_bloque "el arbol roto no saca verde (copia)" "$BCREPO"; then
       printf '  MAL   %-46s la copia sigue teniendo <h1>: la prueba no probaria nada\n' "preparar el arbol roto"; ko=$((ko+1))
     else
       printf '  OK    %-46s <h1> fuera de la home de la copia\n' "preparar el arbol roto"; ok=$((ok+1))
-      espera "roto · el candidato LO CAZA"            FALLO SEO-09 perl $QA https://site-d.example/ --repo "$ROTO" --candidato --una-sola --solo seo --sin-recibo
+      espera "roto · el candidato LO CAZA"            FALLO SEO-09 perl $QA http://site-d.example/ --repo "$ROTO" --candidato --una-sola --solo seo --sin-recibo
       # 🔴 EXPECTATIVA CADUCADA EL 11-ago-2026 · aqui se esperaba FALLO SEO-14
       #    sobre este mismo arbol, y era un ARTEFACTO del umbral viejo
       #    (`length($txt) < 200 || @h1 == 0`). El fixture solo pierde el <h1>
@@ -798,12 +844,12 @@ if mide_bloque "el arbol roto no saca verde (copia)" "$BCREPO"; then
       #    La linea NO se borra: se le da la vuelta y pasa a ser el CONTROL
       #    NEGATIVO del arreglo. Si SEO-14 vuelve a apuntarse el tanto de
       #    SEO-09, esto sale MAL.
-      espera "roto · SEO-14 NO se apunta el tanto de SEO-09" PASA SEO-14 perl $QA https://site-d.example/ --repo "$ROTO" --candidato --una-sola --solo seo --sin-recibo
+      espera "roto · SEO-14 NO se apunta el tanto de SEO-09" PASA SEO-14 perl $QA http://site-d.example/ --repo "$ROTO" --candidato --una-sola --solo seo --sin-recibo
       # 🔴 LA OTRA MITAD DEL FALLO, EN UNA LINEA: el MISMO arbol roto, medido
       #    contra produccion, saca PASA en el mismo check. Este caso tiene que
       #    seguir saliendo PASA: es la prueba de que sin --candidato el recibo
       #    no dice nada del arbol que sella.
-      espera "roto · midiendo PRODUCCION el defecto NO existe" PASA SEO-09 perl $QA https://site-d.example/ --repo "$ROTO" --solo seo --una-sola --sin-recibo --cache "$CACHE"
+      espera "roto · midiendo PRODUCCION el defecto NO existe" PASA SEO-09 perl $QA http://site-d.example/ --repo "$ROTO" --solo seo --una-sola --sin-recibo --cache "$CACHE"
     fi
   else
     printf '  MAL   %-46s no he podido copiar %s\n' "preparar el arbol roto" "$BCREPO"; ko=$((ko+1))
@@ -818,9 +864,9 @@ fi
 rm -f "$CACHE/recibo-candidato" "$CACHE/recibo-produccion"
 if mide_bloque "el recibo de candidato dice contra que midio" "$BCREPO"; then
   RC="$CACHE/recibo-candidato"
-  perl $QA https://site-d.example/ --repo "$BCREPO" --candidato --una-sola --recibo "$RC" >/dev/null 2>&1
+  perl $QA http://site-d.example/ --repo "$BCREPO" --candidato --una-sola --recibo "$RC" >/dev/null 2>&1
   for par in "MEDIDO-CONTRA: CANDIDATO|el recibo dice que midio el CANDIDATO" \
-             "SITIO: https://site-d.example|el SITIO sigue siendo el dominio real" \
+             "SITIO: http://site-d.example|el SITIO sigue siendo el dominio real" \
              "NV-POR-CANDIDATO:|separa los NV que contesta G11"; do
     lit="${par%%|*}"; eti="${par#*|}"
     if grep -q "^$lit" "$RC" 2>/dev/null; then
@@ -839,9 +885,9 @@ if mide_bloque "el recibo de candidato dice contra que midio" "$BCREPO"; then
   fi
 fi
 # y el de PRODUCCION se declara como tal
-if mide_bloque "el recibo de produccion se declara" https://site-d.example/ --repo "$BCREPO" --cache "$CACHE"; then
+if mide_bloque "el recibo de produccion se declara" http://site-d.example/ --repo "$BCREPO" --cache "$CACHE"; then
   RP="$CACHE/recibo-produccion"
-  perl $QA https://site-d.example/ --repo "$BCREPO" --una-sola --recibo "$RP" --cache "$CACHE" >/dev/null 2>&1
+  perl $QA http://site-d.example/ --repo "$BCREPO" --una-sola --recibo "$RP" --cache "$CACHE" >/dev/null 2>&1
   if grep -q '^MEDIDO-CONTRA: PRODUCCION' "$RP" 2>/dev/null; then
     printf '  OK    %-46s %s\n' "el recibo de produccion se declara" "$(grep -m1 '^MEDIDO-CONTRA:' "$RP")"; ok=$((ok+1))
   else
@@ -853,7 +899,7 @@ fi
 #     «No se pudo correr» sale en 2, nunca en 0. Un modo que no arranca y un
 #     modo que arranca y aprueba NO se pueden ver igual desde un script.
 {
-  out="$(perl $QA https://site-d.example/ --candidato 2>&1)"; rc=$?
+  out="$(perl $QA http://site-d.example/ --candidato 2>&1)"; rc=$?
   if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q -- '--candidato necesita --repo'; then
     printf '  OK    %-46s exit 2 y lo dice\n' "--candidato sin --repo no arranca"; ok=$((ok+1))
   else
@@ -864,7 +910,7 @@ fi
   #    --repo DIR»), sin llegar a la de --sin-red, que es la que el caso dice
   #    probar. Medido: exit 2 con el mensaje del repo. Ahora el repo es una
   #    fixture que existe, y se exige el mensaje de ESTA guarda, no solo el 2.
-  out="$(perl $QA https://site-d.example/ --repo fixtures-lenses/seo-bueno --candidato --sin-red 2>&1)"; rc=$?
+  out="$(perl $QA http://site-d.example/ --repo fixtures-lenses/seo-bueno --candidato --sin-red 2>&1)"; rc=$?
   if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q -- '--candidato y --sin-red se excluyen'; then
     printf '  OK    %-46s exit 2 y lo dice\n' "--candidato con --sin-red no arranca"; ok=$((ok+1))
   else
@@ -1022,7 +1068,7 @@ echo "== ARREGLO FALSOS POSITIVOS · MED-05 · MED-10 · REN-04 (11-ago-2026)"
 #     UNA COPIA del arbol de site-a —nunca el repo real— y comprobando que el
 #     gate vuelve a acusar.
 KREPO="$REPOS/site-a-web"
-KURL="https://site-a.example"
+KURL="http://site-a.example"
 # Sin el repo, las copias no se hacian y el bloque imprimia MAL «no se pudo
 # copiar el repo»: un rojo por algo que este checkout no tiene, no por el gate.
 if mide_bloque "falsos positivos de site-a (copias del repo)" "$KREPO"; then
@@ -1159,10 +1205,10 @@ echo "== ACEPTADO · el silenciador, y las cerraduras que lleva (11-ago-2026)"
 #  🔴 21-sep-2026 · EL REPO ES SINTETICO, PERO EL HALLAZGO QUE SE ACEPTA NO: es
 #     el FALLO MED-07 que da PRODUCCION de site-d, asi que el bloque entero
 #     necesita esa captura. Sin ella, los 14 salian MAL. Se clasifica entero.
-if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" https://site-d.example/ --cache "$CACHE"; then
+if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" http://site-d.example/ --cache "$CACHE"; then
   RA="$CACHE/repo-aceptado"; rm -rf "$RA"; mkdir -p "$RA/_deploy"
   printf '<!doctype html><html lang="es"><head><title>x</title></head><body><main><h1>x</h1></main></body></html>\n' > "$RA/index.html"
-  BCQA="perl $QA https://site-d.example/ --repo $RA --solo medicion --sin-recibo --cache $CACHE"
+  BCQA="perl $QA http://site-d.example/ --repo $RA --solo medicion --sin-recibo --cache $CACHE"
 
   # La huella NO se escribe a mano: se saca de la linea HUELLA que imprime el
   # propio informe. Asi este caso prueba ademas el flujo real —copiar la huella
@@ -1212,7 +1258,7 @@ if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" https://site-d.exampl
     echo ""
     echo "[ACEPTADO]"
     echo "CHECK:    MED-08"
-    echo "HALLAZGO: DONDE=https://site-d.example/politica-cookies"
+    echo "HALLAZGO: DONDE=http://site-d.example/politica-cookies"
     echo "MOTIVO:   El cliente dice que su abogado la esta revisando."
     echo "ACEPTA:   Manuel Climent"
     echo "FECHA:    2026-08-11"
@@ -1224,7 +1270,7 @@ if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" https://site-d.exampl
   # 8 · el recibo lo lleva dentro, bajo el SELLO
   conf "$H"
   RAC="$CACHE/recibo-aceptado"
-  perl $QA https://site-d.example/ --repo "$RA" --solo medicion --recibo "$RAC" --cache "$CACHE" >/dev/null 2>&1
+  perl $QA http://site-d.example/ --repo "$RA" --solo medicion --recibo "$RAC" --cache "$CACHE" >/dev/null 2>&1
   if grep -q '^ACEPTADO: 1' "$RAC" 2>/dev/null && grep -q '^ACEPTADO-001-HUELLA: ' "$RAC" 2>/dev/null; then
     printf '  OK    %-46s %s\n' "el recibo lleva el aceptado y su huella" "$(grep -m1 '^ACEPTADO-001:' "$RAC" | cut -c1-46)"; ok=$((ok+1))
   else
@@ -1310,9 +1356,9 @@ echo "== HUELLA sobre la evidencia COMPLETA (11-ago-2026) · el agujero cerrado"
   #     NO puede presentarse como si cubriera el sitio entero: huella con EVP y
   #     el aviso en la cara del informe.
   texto "muestra -> la huella sale marcada EVP"         SI "EVP=" \
-        perl $QA https://site-d.example/ --solo rendimiento --sin-recibo -q --cache "$CACHE"
+        perl $QA http://site-d.example/ --solo rendimiento --sin-recibo -q --cache "$CACHE"
   texto "y el informe dice que la aceptacion es PARCIAL" SI "PARCIAL MUESTRA: se han mirado" \
-        perl $QA https://site-d.example/ --solo rendimiento --sin-recibo -q --cache "$CACHE"
+        perl $QA http://site-d.example/ --solo rendimiento --sin-recibo -q --cache "$CACHE"
 }
 
 echo
@@ -1333,11 +1379,11 @@ echo "== SEO-14 · «no tiene contenido» NO es «es corta» (11-ago-2026)"
 #    POSITIVA: la region servida esta VACIA **y** el HTML ensena quien la va a
 #    rellenar (marcador de carga, o contenedor vacio que nombra su guion).
 FSEO14="fixtures-seo14"
-BCU="https://site-d.example/"
+BCU="http://site-d.example/"
 
 # --- el caso real que bloqueaba el despliegue de site-a ---
 espera "SEO-14 · site-a /merci: corta y COMPLETA, pasa"   PASA  SEO-14 \
-       perl $QA https://site-a.example/ --solo seo --gracias /merci --sin-recibo --cache "$KCACHE"
+       perl $QA http://site-a.example/ --solo seo --gracias /merci --sin-recibo --cache "$CACHE"
 
 # --- fixtures: los dos lados, aislados de la red ---
 espera "SEO-14 · pagina corta legitima (132 car., 1 h1)" PASA  SEO-14 \
@@ -1361,9 +1407,9 @@ espera "SEO-14 · esqueleto pero la pagina SI se sirve"   PASA  SEO-14 \
 #     Si el mensaje vuelve a ser «N caracteres» a secas, el check ha vuelto a
 #     medir longitud aunque el veredicto salga igual.
 texto  "SEO-14 · la acusacion NOMBRA la senal"          SI "marcador de carga" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "SEO-14 · y dice que la region esta VACIA"       SI "region de contenido servida esta VACIA" \
-       perl $QA https://shop.site-b.example/ --solo seo --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 
 echo
 echo "== EL TECHO DE --max-urls SE DECLARA · 11-ago-2026"
@@ -1373,22 +1419,22 @@ echo "== EL TECHO DE --max-urls SE DECLARA · 11-ago-2026"
 #    del check, y una aceptacion firmada sobre ese hallazgo se leia como una
 #    decision sobre el sitio entero cubriendo el 62%.
 texto  "TECHO · el bloque ALCANCE dice PARCIAL"          SI "· PARCIAL" \
-       perl $QA https://site-d.example --solo a11y --cache "$CACHE"
+       perl $QA http://site-d.example --solo a11y --cache "$CACHE"
 texto  "TECHO · y con el denominador del SITIO"          SI "25 de 40 del sitio" \
-       perl $QA https://site-d.example --solo a11y --cache "$CACHE"
+       perl $QA http://site-d.example --solo a11y --cache "$CACHE"
 texto  "TECHO · nombra el tope que recorto"              SI "tope --max-urls 25" \
-       perl $QA https://site-d.example --solo a11y --cache "$CACHE"
+       perl $QA http://site-d.example --solo a11y --cache "$CACHE"
 # La huella de un check recortado tiene que llevar EVP (no EV): es lo que impide
 # que una aceptacion tomada sobre 25 de 40 se presente como si cubriera 40.
 texto  "TECHO · la huella de A11Y-08 lleva EVP, no EV"   SI "EVP=" \
-       perl $QA https://site-d.example --solo a11y --cache "$CACHE"
+       perl $QA http://site-d.example --solo a11y --cache "$CACHE"
 # 🔴 LA FRONTERA · un sitio que se mide ENTERO no puede salir PARCIAL. Sin este
 #    caso, «marcarlo todo PARCIAL siempre» pasaria por arreglo, y entonces la
 #    palabra dejaria de significar nada —que es como muere un aviso—.
 texto  "TECHO · un sitio medido ENTERO dice TODAS"       SI "· TODAS" \
-       perl $QA https://site-a.example --solo a11y --cache "$KCACHE"
+       perl $QA http://site-a.example --solo a11y --cache "$CACHE"
 texto  "TECHO · y ese NO declara recorte"                NO "TECHO: se han mirado" \
-       perl $QA https://site-a.example --solo a11y --cache "$KCACHE"
+       perl $QA http://site-a.example --solo a11y --cache "$CACHE"
 
 echo
 echo "== COLISION DE CACHE CON crawl-links.pl · 11-ago-2026"
@@ -1408,7 +1454,7 @@ echo "== COLISION DE CACHE CON crawl-links.pl · 11-ago-2026"
 #       ella): chocan las SUBPAGINAS. Con --una-sola no se ve nada.
 #    El arreglo es VALIDAR AL LEER (`_meta_qam`), no cambiar la clave -- el
 #    prefijo invalida las caches pre-pobladas y tumbo esta bateria de 180 a 170.
-COL="$CACHE-colision"; rm -rf "$COL"; mkdir -p "$COL"
+COL="$CACHE/colision"; rm -rf "$COL"; mkdir -p "$COL"   # DENTRO de la cache de la corrida: el trap la borra entera
 # Puerto muerto: si la semilla NO se acepta, la re-descarga falla al instante
 # (connection refused) y la prueba sigue sin tocar la red.
 COLURL="http://127.0.0.1:1/"
@@ -1474,27 +1520,27 @@ echo "== REN-05 · EL COCIENTE DE TERCEROS ES POR PAGINA · 11-ago-2026"
 #    Ahora manda el cociente DENTRO de la peor pagina, que no se mueve al medir
 #    mas. Este check no tenia NI UN CASO en esta bateria hasta hoy.
 espera "REN-05 · bc: terceros al 93% de una pagina"      FALLO REN-05 \
-       perl $QA https://site-d.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
+       perl $QA http://site-d.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
 # 🔴 EL CONTROL DE REGRESION, y es el que justifica el arreglo entero: el mismo
 #    sitio tiene que dar el MISMO veredicto mire una pagina, tres o cuarenta.
 espera "REN-05 · mismo veredicto con 1 pagina"           FALLO REN-05 \
-       perl $QA https://site-d.example/ --solo rendimiento --cache "$CACHE" --una-sola
+       perl $QA http://site-d.example/ --solo rendimiento --cache "$CACHE" --una-sola
 espera "REN-05 · mismo veredicto con las 40"             FALLO REN-05 \
-       perl $QA https://site-d.example/ --solo rendimiento --cache "$CACHE" --max-urls 40 --muestra 40
+       perl $QA http://site-d.example/ --solo rendimiento --cache "$CACHE" --max-urls 40 --muestra 40
 # Un porcentaje sin pagina no es accionable: hay que poder ir a mirarla.
 texto  "REN-05 · NOMBRA la peor pagina"                  SI "politica-cookies" \
-       perl $QA https://site-d.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
+       perl $QA http://site-d.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
 # Segundo positivo con otro perfil: site-b carga su propio dominio principal.
 espera "REN-05 · site-b: 89% en la home"                FALLO REN-05 \
-       perl $QA https://shop.site-b.example/ --solo rendimiento --cache "$CACHE"
+       perl $QA http://shop.site-b.example/ --solo rendimiento --cache "$CACHE"
 # 🔴 LA FRONTERA · una web sin terceros no puede salir acusada.
 espera "REN-05 · cm no tiene terceros: PASA"             PASA  REN-05 \
-       perl $QA https://climentmedia.com/ --solo rendimiento --cache "$CACHE"
+       perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
 # 🔴 Y el negativo del arreglo del arreglo: con el peor inicializado a 0 y `>`,
 #    una web con CERO terceros no fijaba pagina y el DATO decia «sin pagina
 #    medible» — que se lee «no he podido mirar» siendo «he mirado y es cero».
 texto  "REN-05 · cero terceros dice 0%, no «no medible»" NO "sin pagina medible" \
-       perl $QA https://climentmedia.com/ --solo rendimiento --cache "$CACHE"
+       perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
 
 echo
 echo "== EST-10 · UN DESPLEGABLE CON MENOS DE 3 DESTINOS · 17-ago-2026"
@@ -1848,24 +1894,30 @@ espera "comentarios · REN-13 no se cree la prosa"   PASA REN-13 \
 espera "comentarios · MED-02 no se cree la prosa"   PASA MED-02 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo medicion --sin-recibo
 echo
-echo "== EL FIXTURE DE KINE CUBRE TODO LO QUE SE LE PIDE · 11-ago-2026"
-# 🔴 ESTE ES EL GATE SOBRE EL FIXTURE, y sin el lo demas no vale. Un fixture
-#    INCOMPLETO no da error: qa-maestro simplemente sale a la red a por lo que
-#    falte, y entonces la mitad de la medida vuelve a ser produccion sin que se
-#    note -- exactamente el defecto que se vino a matar. Como la unica forma de
-#    que aparezca un fichero nuevo en la cache es una DESCARGA, contar ficheros
-#    antes y despues responde la pregunta de verdad: ¿ha salido a internet?
-if mide_bloque "fixture de site-a hermetico" --cache "$KCACHE"; then
-  ls "$KCACHE" | sort > "$CACHE/kfix-despues.lst"
-  KFIX_N1="$(wc -l < "$CACHE/kfix-despues.lst")"
-  if [ "$KFIX_N0" -eq "$KFIX_N1" ]; then
-    printf '  OK    %-46s %s entradas, 0 descargas\n' "fixture de site-a hermetico" "$KFIX_N0"; ok=$((ok+1))
+echo "== LA PRODUCCION DE MENTIRA NO HA TENIDO QUE INVENTARSE NADA · 22-sep-2026"
+# 🔴 EL HEREDERO DEL «FIXTURE DE KINE HERMETICO» (11-ago-2026). Aquel contaba
+#    los ficheros de la cache congelada antes y despues: uno nuevo solo podia
+#    ser una DESCARGA, o sea media medida hecha contra produccion sin decirlo.
+#    Aqui la pregunta es la misma y se contesta en el registro del servidor:
+#      · 502 = un caso pidio un host que no tiene fixture. Un fixture INCOMPLETO
+#        no da error: el gate mide lo que le devuelven, y un 502 es «algo».
+#      · y tiene que haber pasado trafico de verdad: con el proxy mal exportado,
+#        el registro sale VACIO, «0 hosts sin fixture» seria cierto, y el banco
+#        entero habria medido otra cosa. Un registro vacio no es hermetico: es mudo.
+if [ "$PROD_OK" != 1 ]; then
+  printf '  N/M   %-46s NOT MEASURED (block): needs %s\n' "la produccion no se ha inventado nada" "$MOT_PROD"; nmb=$((nmb+1))
+elif [ "$(ls -d fixtures-sites/*.example 2>/dev/null | wc -l | tr -d ' ')" = 0 ]; then
+  printf '  N/M   %-46s NOT MEASURED (block): needs %s\n' "la produccion no se ha inventado nada" "$MOT_ANON"; nmb=$((nmb+1))
+else
+  servidas="$(awk -F'\t' '$1 != "CONNECT" && $3 != 502' "$CACHE/produccion.log" 2>/dev/null | wc -l | tr -d ' ')"
+  sin_fixture="$(awk -F'\t' '$3 == 502' "$CACHE/produccion.log" 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$servidas" -gt 0 ] && [ "$sin_fixture" = 0 ]; then
+    printf '  OK    %-46s %s peticiones servidas, 0 a hosts sin fixture\n' "la produccion no se ha inventado nada" "$servidas"; ok=$((ok+1))
+  elif [ "$servidas" = 0 ]; then
+    printf '  MAL   %-46s su registro esta VACIO: el proxy no se ha usado\n' "la produccion no se ha inventado nada"; ko=$((ko+1))
   else
-    printf '  MAL   %-46s han bajado %d ficheros de la RED:\n' "fixture de site-a INCOMPLETO" "$((KFIX_N1-KFIX_N0))"; ko=$((ko+1))
-    # Se imprime la URL, no el md5: un hash no dice que falta anadir al fixture.
-    comm -13 "$CACHE/kfix-antes.lst" "$CACHE/kfix-despues.lst" | grep '\.meta$' | head -20 | while read -r f; do
-      printf '          %s\n' "$(cut -f4 < "$KCACHE/$f")"
-    done
+    printf '  MAL   %-46s %s peticiones a hosts SIN fixture:\n' "la produccion no se ha inventado nada" "$sin_fixture"; ko=$((ko+1))
+    awk -F'\t' '$3 == 502 {print $1}' "$CACHE/produccion.log" | sort | uniq -c | head -10 | sed 's/^/          /'
   fi
 fi
 
@@ -1877,16 +1929,12 @@ printf "  OK %d   ·   MAL %d\n" "$ok" "$ko"
 if [ "$nm" -gt 0 ] || [ "$nmb" -gt 0 ]; then
   printf "  NOT MEASURED: %d case(s) and %d hand-written block(s), each named above (N/M)\n" "$nm" "$nmb"
   echo "  with the reason. Cases that need:"
-  [ "$nm_cong" -gt 0 ] && printf "      %-52s %d\n" "$MOT_CONG" "$nm_cong"
-  [ "$nm_repo" -gt 0 ] && printf "      %-52s %d\n" "$MOT_REPO" "$nm_repo"
-  [ "$nm_anon" -gt 0 ] && printf "      %-52s %d\n" "$MOT_ANON" "$nm_anon"
-  [ "$nm_vivo" -gt 0 ] && printf "      %-52s %d\n" "$MOT_VIVO" "$nm_vivo"
+  [ "$nm_repo" -gt 0 ]  && printf "      %-52s %d\n" "$MOT_REPO" "$nm_repo"
+  [ "$nm_anon" -gt 0 ]  && printf "      %-52s %d\n" "$MOT_ANON" "$nm_anon"
+  [ "$nm_https" -gt 0 ] && printf "      %-52s %d\n" "$MOT_HTTPS" "$nm_https"
+  [ "$nm_vivo" -gt 0 ]  && printf "      %-52s %d\n" "$MOT_VIVO" "$nm_vivo"
   [ "$nm_lista" -gt 0 ] && printf "      %-52s %d\n" "$MOT_LISTA" "$nm_lista"
-  if [ "$SIN_FIXTURE" = 1 ]; then
-    echo "  The frozen fixture $KFIX/ is not missing by accident: it was a capture"
-    echo "  of a real client site and it is deliberately not published. To measure"
-    echo "  what depends on it, freeze a site you own:  perl freeze-fixture.pl <URL> $KFIX"
-  fi
+  [ "$nm_prod" -gt 0 ]  && printf "      %-52s %d\n" "$MOT_PROD" "$nm_prod"
 fi
 # 3 = no lo he medido todo · 1 = lo he medido y esta MAL · 0 = todo medido y bien.
 # 🔴 Antes esto era `exit "$ko"`: con exactamente 3 casos MAL salia 3, y
