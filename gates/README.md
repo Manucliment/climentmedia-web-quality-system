@@ -126,25 +126,35 @@ $ bash gates/run-all.sh
 > That step closed the bank at **303 OK · 0 MAL · 0 not measured, exit 0** on a clean clone.
 > Each site was checked by breaking the property its cases detect and watching them go red.
 >
-> **Last, +13: gate fixes brought their own cases.** Building those sites found two defects
-> in the gate itself, and fixing the second exposed a third. The first: SEO-04 hashed the page *without comments* and the
-> canonical target *raw*, so one HTML comment made a file differ from itself and a
-> well-canonicalised variant was accused. The fix compares raw with raw, and ships two
-> cases: the variant with a comment passes (red against the old gate), and a canonical to a
-> *different* document is still accused (+2).
+> **Last, +24: gate fixes brought their own cases.** Building those sites found two defects
+> in the gate itself, and fixing them exposed two more.
+> The first: SEO-04 hashed the page *without comments* and the canonical target *raw*, so
+> one HTML comment made a file differ from itself and a well-canonicalised variant was
+> accused. The fix compares raw with raw, and ships two cases: the variant with a comment
+> passes (red against the old gate), and a canonical to a *different* document is still
+> accused (+2).
 > The second: without `--contact` and without a URL naming a contact page, MEDICION looked
 > for the form only in the FIRST URL of the list, so with the form on the home and the home
 > listed second, MED-09/10/11 vanished from the report with no FAIL and no NOT MEASURED. It
 > now searches the pages it read, in an order that does not come from the list, and says
 > NOT MEASURED when none has a form, like the accessibility lens (+6: both orders give the
 > same verdict, and the no-form site is NOT MEASURED; five of the six were red against the
-> old gate). The third: the accessibility lens started from the FIRST URL of the list, not
-> from the home, and named the home as the place even when the form came from another page;
-> with a newsletter on the home and the lead form on the contact page, the two lenses judged
-> two different forms in the same run. Both now take the page from one shared function, in
+> old gate).
+> The third: the accessibility lens started from the FIRST URL of the list, not from the
+> home, and named the home as the place even when the form came from another page; with a
+> newsletter on the home and the lead form on the contact page, the two lenses judged two
+> different forms in the same run. Both now take the page from one shared function, in
 > that fixed order (+5: the same verdict in both orders, the right page named, and both
-> lenses on the contact form; three were red against the old gate). The bank now closes
-> **316 OK · 0 MAL · 0 not measured, exit 0**.
+> lenses on the contact form; three were red against the old gate).
+> The fourth: the SEO lens passed on ZERO pages read. A home that answers 404 with a body is
+> not "no network", so with the home gone the lens skipped the page and signed fifteen
+> PASS lines over nothing ("0 distinct documents"), exit 0. It now names the pages it could
+> not read and, with none, is NOT MEASURED as a whole, like the accessibility and structure
+> lenses; MED-01 stopped claiming "no measurement at all" without having read a page. A 404
+> home does not switch the network off, on purpose: with the sitemap expanded, the other
+> pages of that same site are read and their real failures still come out (+11, on a new
+> synthetic site with no home; the six that fix something were red against the old gate).
+> The bank now closes **327 OK · 0 MAL · 0 not measured, exit 0**.
 >
 > Running what had been hidden found three things wrong with the bench itself: the door
 > block called a script renamed a month earlier (four cases at `exit 127`), ten cases had
