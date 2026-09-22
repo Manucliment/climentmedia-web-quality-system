@@ -675,6 +675,20 @@ texto  "site-b · y ya NO acusa a ?cat= con canonical OK"  NO "loja.html?cat=" \
        perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
 texto  "site-b · SI acusa a la ficha sin canonical"       SI "produto.html?sku=MOB-001 (sin canonical)" \
        perl $QA http://shop.site-b.example/ --solo seo --cache "$CACHE"
+# 🔴 22-sep-2026 · Y EL ARREGLO DE ARRIBA SE CAIA CON UN SOLO COMENTARIO HTML.
+#    SEO-04 hasheaba esta pagina SIN comentarios y el destino del canonical
+#    CRUDO: con cualquier comentario dentro, «el mismo fichero» salia distinto y
+#    la variante bien canonicalizada volvia a salir acusada. Lo encontro quien
+#    construyo shop.site-b.example, que tuvo que escribir sus paginas sin
+#    comentarios para esquivarlo. Medido con este fixture: el mismo loja.html con
+#    comentario FALLO y sin comentario PASA, con el gate viejo.
+#    El negativo es el que importa: comparar lo mismo en los dos lados no puede
+#    volverse «perdonar cualquier canonical». La ficha lleva el MISMO comentario y
+#    apunta a OTRO documento: sigue en FALLO.
+espera "SEO-04 · variante con comentario, mismo fichero: PASA" PASA  SEO-04 \
+       perl $QA "https://tienda.example/loja.html?cat=espejos" --repo fixtures-seo04/canonical-con-comentario --candidato --una-sola --solo seo --sin-recibo
+espera "SEO-04 · canonical a OTRO documento: sigue FALLO"  FALLO SEO-04 \
+       perl $QA "https://tienda.example/ficha.html?sku=ESP-60" --repo fixtures-seo04/canonical-con-comentario --candidato --una-sola --solo seo --sin-recibo
 # 🔴 CONTROL NEGATIVO: en una web SIN duplicados de fichero no cambia nada.
 texto  "site-c · sin ficheros repetidos, no deduplica nada"  NO "documentos distintos (" \
        perl $QA http://site-c.example/ --solo seo --cache "$CACHE"
