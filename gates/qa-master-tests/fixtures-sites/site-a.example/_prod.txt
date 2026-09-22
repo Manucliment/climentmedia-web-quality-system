@@ -1,0 +1,9 @@
+# La produccion de mentira de site-a.example (la lee fake-production.pl; este
+# fichero no se sirve: empieza por guion bajo).
+#
+# El receptor del formulario es PHP y solo acepta POST. En la produccion real
+# un GET a /contact.php contestaba 405 (medido el 11-ago-2026, ver MED-10 en
+# tests.sh). El contact.php de ESTA carpeta es lo que ese servidor devuelve a
+# un GET -el HTML del 405-, no el fuente: el fuente vive en el repo
+# (fixtures-repos/site-a-web/contact.php), que es lo que mide el candidato.
+status /contact.php 405

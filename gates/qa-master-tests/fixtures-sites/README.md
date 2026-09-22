@@ -31,7 +31,7 @@ site's own `404.html`). The gate does not know it is a fixture.
 
 | File | What it is |
 |---|---|
-| `_prod.conf` | server behaviour for this host: `gzip off` · `header <path\|prefix*> <Name: value>` · `status <path> <code>` |
+| `_prod.txt` | server behaviour for this host: `gzip off` · `header <path\|prefix*> <Name: value>` · `status <path> <code>` |
 | `_gtm.js` | a synthetic GTM container, passed with `--contenedor` to the cases that need MED-03/07/08 (the real one is HTTPS) |
 | `_generar.pl` | the generator that wrote the tree, when there is one. Regenerate instead of hand-editing |
 

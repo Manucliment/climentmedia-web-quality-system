@@ -23,7 +23,11 @@
 #     · /_centinela-produccion  -> devuelve <centinela>. El banco lo comprueba
 #                                  antes de creerse que el puerto es suyo.
 #
-#  CONFIGURACION POR SITIO (opcional): <raiz>/<host>/_prod.conf, una por linea:
+#  CONFIGURACION POR SITIO (opcional): <raiz>/<host>/_prod.txt, una por linea:
+#  (⚠️ .txt y no .conf: el .gitignore de este repo ignora `*.conf` para que las
+#   configuraciones privadas no se publiquen, y la primera version se llamaba
+#   _prod.conf. El banco pasaba en esta maquina y habria fallado en un clon
+#   limpio: los tres ficheros no estaban en git. Medido antes de publicar.)
 #     gzip off                      no comprimir nunca (por defecto: SI, si el
 #                                   cliente lo acepta y el tipo es de texto)
 #     header <ruta> <Nombre: valor> cabecera extra; <ruta> es exacta o termina en *
@@ -72,7 +76,7 @@ sub leer { my ($f) = @_; open my $h, '<:raw', $f or return undef; local $/; my $
 sub conf {
     my ($raiz) = @_;
     my %c = (gzip => 1, header => [], status => {});
-    my $t = leer("$raiz/_prod.conf");
+    my $t = leer("$raiz/_prod.txt");
     return \%c unless defined $t;
     for my $l (split /\r?\n/, $t) {
         next if $l =~ /^\s*(#|$)/;

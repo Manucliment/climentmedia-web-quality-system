@@ -1,0 +1,10 @@
+# cm.example · produccion de mentira (fake-production.pl)
+# /ad-account-audit/ es una CARPETA con index.html. Un servidor estatico de
+# verdad contesta a la URL sin barra con un 301 a la de con barra, y es la
+# URL EFECTIVA (la de la barra) contra la que se resuelve el href relativo de
+# su hoja. Sin este 301, `ad-account-audit.css` resolveria a la raiz y daria 404.
+status /ad-account-audit 301
+header /ad-account-audit Location: http://cm.example/ad-account-audit/
+# Cabeceras de cache como las de un host estatico.
+header /img/* Cache-Control: public, max-age=31536000
+header /styles.css Cache-Control: public, max-age=3600
