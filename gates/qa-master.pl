@@ -451,7 +451,7 @@ my %POR_PAGINA = map { $_ => 1 } (
     # sale de la union de las hojas DE ESAS PAGINAS: una hoja que solo usa la
     # pagina 30 no entra en la union, asi que tambien la recorta el techo.
     qw(A11Y-01 A11Y-02 A11Y-03 A11Y-04 A11Y-05 A11Y-06 A11Y-07 A11Y-08),
-    # MED-02 y MED-06 sobre todas · el resto es del sitio o la de contacto
+    # MED-02 y MED-06 sobre todas · el resto es del sitio o de la pagina del formulario
     qw(MED-02 MED-06),
     # EST-01 y EST-02 sobre todas, cada una con SU tipo
     qw(EST-01 EST-02),
@@ -3342,7 +3342,7 @@ sub lente_medicion {
     #    miden en la home; pero el orden del consent y las casillas premarcadas
     #    son de CADA pagina, y aqui se miraba solo una. Se declara que mira que.
     alcance('MEDICION', [@vistas], undef,
-            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-10/11 la de contacto');
+            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-09/10/11 la primera de las leidas con <form> (--contacto, las que nombran contacto, el resto; orden fijo, no el de la lista)');
 
     my ($gtm) = $h =~ /\b(GTM-[A-Z0-9]+)\b/;
     if (!$gtm) { for my $p (@vistas) { my $b = fetch($p)->{body} // ''; ($gtm) = $b =~ /\b(GTM-[A-Z0-9]+)\b/; last if $gtm } }
@@ -3762,10 +3762,46 @@ sub lente_medicion {
     }
 
     # ── Formulario: receptor y doble envio ──────────────────────────────────
-    my $cu = $opt{contacto} ne '' ? "$ROOT$opt{contacto}" : '';
-    if (!$cu) { for my $u (@PAGES) { $cu = $u, last if $u =~ m{/(contact|contacto|kontakt)} } }
-    $cu ||= $URLS[0];
-    my $cb = fetch($cu)->{body} // '';
+    # 🔴 22-sep-2026 · LA PAGINA DEL FORMULARIO SE ELEGIA POR SU POSICION EN LA
+    #    LISTA, y si no tenia formulario MED-10, MED-11 y MED-09 NO SE EMITIAN:
+    #    ni PASA, ni FALLO, ni NO VERIFICADO. Era `$cu ||= $URLS[0]`: sin
+    #    --contacto y sin una URL que nombrara «contacto», se miraba solo la
+    #    PRIMERA de la lista. Medido con fixtures-lenses/med-formulario-en-portada
+    #    (dos paginas, el formulario solo en la portada): portada primero, MED-09
+    #    y MED-11 FALLO; servicios primero, las tres desaparecian del informe. El
+    #    mismo sitio, dos veredictos, y el segundo en silencio. Es el defecto que
+    #    la lente de ACCESIBILIDAD arreglo el 19-ago y esta no heredo.
+    #    Ahora el formulario SE BUSCA entre las paginas leidas (fetch cachea: no
+    #    cuesta red) y, si no aparece en ninguna, se DICE. El orden de busqueda
+    #    NO sale de la lista: --contacto, luego las URLs que nombran contacto,
+    #    luego el resto; dentro de cada grupo la URL mas corta y, a igualdad, la
+    #    primera alfabeticamente -el mismo criterio que el representante de 3c-.
+    #    Asi dos sitios iguales dan el mismo veredicto los pida quien los pida.
+    my @por_contacto = sort { length($a) <=> length($b) or $a cmp $b }
+                       grep {  m{/(contact|contacto|kontakt)} } @PAGES;
+    my @por_resto    = sort { length($a) <=> length($b) or $a cmp $b }
+                       grep { !m{/(contact|contacto|kontakt)} } @PAGES;
+    my %cand_vista;
+    my @cand_form = grep { !$cand_vista{$_}++ }
+                    (($opt{contacto} ne '' ? ("$ROOT$opt{contacto}") : ()), @por_contacto, @por_resto);
+    my ($cu, $cb) = ('', '');
+    for my $u (@cand_form) {
+        my $b = fetch($u)->{body} // '';
+        next unless $b =~ /<form\b/i;
+        ($cu, $cb) = ($u, $b);
+        last;
+    }
+    if ($cb !~ /<form\b/i) {
+        for my $f (['MED-10', 'receptor del formulario'],
+                   ['MED-11', 'guarda de doble envio'],
+                   ['MED-09', 'plazo de conservacion de los datos del formulario']) {
+            nv(lente=>'MEDICION', id=>$f->[0], titulo=>$f->[1],
+               dato=>'ninguna de las '.scalar(@cand_form).' paginas leidas trae un <form>',
+               umbral=>'si el sitio tiene formulario, esto TIENE que medirse: es por donde llegan los leads, y sus datos los que hay que purgar',
+               proc=>'G8 · PC3 · antes del 22-sep estas tres se saltaban en silencio si la primera URL de la lista no tenia formulario',
+               hacer=>'si hay formulario y no sale aqui, pasar --contacto /ruta/ y volver a correr: el gate no lo esta viendo');
+        }
+    }
     if ($cb =~ /<form\b/i) {
         my ($fo) = $cb =~ /(<form\b[^>]*>)/i;
         my $act = attr($fo,'action');
@@ -3811,7 +3847,7 @@ sub lente_medicion {
                 $x->{code} == 404
                   ? fallo(lente=>'MEDICION', id=>'MED-10', titulo=>'el receptor del formulario devuelve 404',
                           donde=>$a, umbral=>'no 404', proc=>'qa-final.sh §4', hacer=>'desplegar el receptor, o corregir el action')
-                  : pasa(lente=>'MEDICION', id=>'MED-10', titulo=>'receptor del formulario', dato=>"$a (HTTP $x->{code})");
+                  : pasa(lente=>'MEDICION', id=>'MED-10', titulo=>'receptor del formulario', donde=>$cu, dato=>"$a (HTTP $x->{code})");
             }
         }
         # MED-11 · guarda de doble envio
@@ -3822,7 +3858,7 @@ sub lente_medicion {
         }
         $js .= $cb;
         ($js =~ /disabled\s*=\s*(true|!0)|\.disabled\s*=|enviando|sending|isSubmitting|aria-busy/i)
-          ? pasa(lente=>'MEDICION', id=>'MED-11', titulo=>'guarda de doble envio')
+          ? pasa(lente=>'MEDICION', id=>'MED-11', titulo=>'guarda de doble envio', donde=>$cu)
           : fallo(lente=>'MEDICION', id=>'MED-11', titulo=>'sin guarda de doble envio',
                   donde=>$cu, umbral=>'deshabilitar el boton mientras se envia',
                   proc=>'G8 · lo dice el codigo de quien SI lo bloquea: site-b/js/configurator.js:575 «uma pessoa enviou QUATRO vezes em dois minutos por nao ver resposta»',

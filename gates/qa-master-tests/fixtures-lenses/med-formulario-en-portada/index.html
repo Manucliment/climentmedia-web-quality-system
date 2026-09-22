@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tienda Ejemplo | Espejos a medida</title>
+<meta name="description" content="Portada de un fixture de pruebas con el unico formulario del sitio: sin guarda contra el doble envio y con una politica de privacidad que no dice cuanto se guardan los datos.">
+<link rel="canonical" href="https://tienda.example/">
+</head>
+<body>
+<main>
+  <h1>Espejos a medida</h1>
+  <p>La portada del fixture. Es la unica pagina del sitio con formulario, y ninguna URL del sitio nombra la palabra contacto: el gate tiene que encontrarlo igual, venga la portada primera o segunda en la lista.</p>
+  <h2>Pide presupuesto</h2>
+  <form action="/presupuesto.php" method="post">
+    <label for="n">Nombre</label><input id="n" name="nombre" type="text" autocomplete="name">
+    <label for="e">Correo</label><input id="e" name="email" type="email" autocomplete="email">
+    <button type="submit">Enviar</button>
+  </form>
+  <p><a href="/servicios.html">Servicios</a> · <a href="/politica-privacidad/">Privacidad</a></p>
+</main>
+</body>
+</html>

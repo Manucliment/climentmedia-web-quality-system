@@ -1883,6 +1883,25 @@ espera "A11Y-09 - sin ningun <form>: NO VERIFICADO, no ausente" NOVERIF A11Y-09 
        perl $QA https://climentmedia.com --repo fixtures-lenses/sin-formulario --candidato --una-sola --solo accesibilidad --sin-recibo
 espera "A11Y-11 - sin ningun <form>: NO VERIFICADO, no ausente" NOVERIF A11Y-11 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/sin-formulario --candidato --una-sola --solo accesibilidad --sin-recibo
+# 🔴 22-sep-2026 · Y MEDICION TENIA EL MISMO DEFECTO, UN MES MAS. Sin --contacto
+#   y sin una URL que nombrara «contacto», MED-10/11 (y la busqueda de la
+#   politica de MED-09) miraban solo la PRIMERA URL de la lista. Con el
+#   formulario en la portada y la portada SEGUNDA, las tres desaparecian: ni
+#   FALLO ni NO VERIFICADO. Los dos ordenes tienen que dar el mismo veredicto;
+#   los de «portada SEGUNDA» y los tres «sin ningun <form>» se vieron en ROJO
+#   (AUSENTE) contra el gate anterior.
+espera "MED-11 · form en la portada, portada PRIMERA: FALLO" FALLO MED-11 \
+       perl $QA https://tienda.example/ https://tienda.example/servicios.html --repo fixtures-lenses/med-formulario-en-portada --candidato --solo medicion --sin-recibo
+espera "MED-11 · el mismo sitio, portada SEGUNDA: FALLO" FALLO MED-11 \
+       perl $QA https://tienda.example/servicios.html https://tienda.example/ --repo fixtures-lenses/med-formulario-en-portada --candidato --solo medicion --sin-recibo
+espera "MED-09 · el mismo sitio, portada SEGUNDA: FALLO" FALLO MED-09 \
+       perl $QA https://tienda.example/servicios.html https://tienda.example/ --repo fixtures-lenses/med-formulario-en-portada --candidato --solo medicion --sin-recibo
+espera "MED-10 - sin ningun <form>: NO VERIFICADO"      NOVERIF MED-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/sin-formulario --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-11 - sin ningun <form>: NO VERIFICADO"      NOVERIF MED-11 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/sin-formulario --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-09 - sin ningun <form>: NO VERIFICADO"      NOVERIF MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/sin-formulario --candidato --una-sola --solo medicion --sin-recibo
 
 espera "SEO-07 · sin tarjeta de Twitter/X, AVISA"        AVISO SEO-07 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-pobre --candidato --una-sola --solo seo --sin-recibo

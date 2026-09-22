@@ -32,7 +32,7 @@ machine the fast run is **682 cases green, 0 red** — **680** on a clean instal
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1117 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1123 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1168**: 1117 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1174**: 1123 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,11 +101,11 @@ $ bash gates/run-all.sh --fast
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  1117 casos en verde · 0 en rojo
+  1123 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
-> **Why the full run moved on 2026-09-22 (830 → 1117 on a clean install), and why
+> **Why the full run moved on 2026-09-22 (830 → 1123 on a clean install), and why
 > `qa-master` is no longer in the NOT MEASURED list.**
 >
 > **First, +113: cases that already existed started running.** `qa-master` exited `3`
@@ -126,12 +126,19 @@ $ bash gates/run-all.sh
 > That step closed the bank at **303 OK · 0 MAL · 0 not measured, exit 0** on a clean clone.
 > Each site was checked by breaking the property its cases detect and watching them go red.
 >
-> **Last, +2: a gate fix brought its own cases.** Building one of those sites showed that
-> SEO-04 hashed the page *without comments* and the canonical target *raw*, so one HTML
-> comment made a file differ from itself and a well-canonicalised variant was accused. The
-> fix compares raw with raw, and ships two cases: the variant with a comment passes (red
-> against the old gate), and a canonical to a *different* document is still accused. The
-> bank now closes **305 OK · 0 MAL · 0 not measured, exit 0**.
+> **Last, +8: two gate fixes brought their own cases.** Building those sites found two defects
+> in the gate itself. The first: SEO-04 hashed the page *without comments* and the
+> canonical target *raw*, so one HTML comment made a file differ from itself and a
+> well-canonicalised variant was accused. The fix compares raw with raw, and ships two
+> cases: the variant with a comment passes (red against the old gate), and a canonical to a
+> *different* document is still accused (+2).
+> The second: without `--contact` and without a URL naming a contact page, MEDICION looked
+> for the form only in the FIRST URL of the list, so with the form on the home and the home
+> listed second, MED-09/10/11 vanished from the report with no FAIL and no NOT MEASURED. It
+> now searches the pages it read, in an order that does not come from the list, and says
+> NOT MEASURED when none has a form, like the accessibility lens (+6: both orders give the
+> same verdict, and the no-form site is NOT MEASURED; five of the six were red against the
+> old gate). The bank now closes **311 OK · 0 MAL · 0 not measured, exit 0**.
 >
 > Running what had been hidden found three things wrong with the bench itself: the door
 > block called a script renamed a month earlier (four cases at `exit 127`), ten cases had
@@ -475,7 +482,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **305 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **311 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until
