@@ -542,7 +542,7 @@ escribe("$REPO/favicon.svg", <<'SVG');
 SVG
 
 # enviar.php · SOLO en produccion: el receptor. El proxy no ejecuta PHP; con
-# `status /enviar.php 405` (en _prod.conf) contesta a un GET como un receptor
+# `status /enviar.php 405` (en _prod.txt) contesta a un GET como un receptor
 # bien puesto. En el repo los receptores viven en _deploy/ y no se sirven.
 escribe("$SITIO/enviar.php", "<?php\n// Receptor ficticio del formulario de contacto. A un GET contesta 405.\n");
 
