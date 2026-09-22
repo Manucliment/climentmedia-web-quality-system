@@ -1,0 +1,6 @@
+# fixture: la portada SIN formulario y dos paginas con formularios distintos.
+# a.html sin region viva para los errores (A11Y-10 FALLO), b.html con ella.
+# Hasta el 22-sep-2026 la lente de accesibilidad miraba el formulario de la
+# PRIMERA URL de la lista: a.html primera, FALLO con DONDE en la home (que no
+# tiene formulario); b.html primera, PASA. Ahora lo elige
+# pagina_del_formulario, en orden fijo: a.html (misma longitud, alfabetico).

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contacto | Tienda Ejemplo</title>
+<meta name="description" content="Pagina de contacto del fixture: el formulario de los leads, con region viva para los errores y el boton bloqueado mientras se envia.">
+<link rel="canonical" href="https://tienda.example/contacto.html">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<main id="contenido">
+  <h1>Contacto</h1>
+  <p>El formulario de los leads. Avisa de los errores con una region viva y marca el boton como ocupado mientras envia.</p>
+  <form action="/contacto.php" method="post">
+    <p role="alert" aria-live="polite"></p>
+    <label for="n">Nombre</label><input id="n" name="nombre" type="text" autocomplete="name">
+    <label for="e">Correo</label><input id="e" name="email" type="email" autocomplete="email">
+    <button type="submit" aria-busy="false">Enviar</button>
+  </form>
+</main>
+</body>
+</html>
