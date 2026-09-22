@@ -32,16 +32,17 @@ machine the fast run is **682 cases green, 0 red** — **680** on a clean instal
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **943 cases green, 0 red**, with **six** banks reported as
+a clean install it reads **1115 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
-ship (`compliance`), plus `qa-master` and `structure-gate`.
+ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
+below.)
 
 > **A machine with a measurement host reads more, and that is expected.** The three host
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **994**: 943 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1166**: 1115 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -99,23 +100,31 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  NO MEDIDO qa-master        the five lenses and their controls   (131 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  943 casos en verde · 0 en rojo
-  NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
+  1115 casos en verde · 0 en rojo
+  NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
-> **Why the full run moved by 113 on 2026-09-22 (830 → 943 on a clean install, 881 → 994
-> on the machine with a host): cases that already existed started running.** `qa-master`
-> exits `3` without the frozen fixture, and it used to exit *early*: on line 260, after 18
-> cases. Everything below that line was skipped — including the five lens sections,
-> EST-10/11/12, the deploy door, the fingerprint and the cache collision, which use only
-> fixtures shipped in this repository and never read the frozen site. Each case is now
-> classified **before** it runs, from its own arguments, and only the ones that need
-> something this checkout lacks are skipped and named: the frozen fixture, a client
-> checkout under `$REPOS`, a capture of an anonymized `.example` host (they never resolve),
-> or a live site (opt-in with `EN_VIVO=1`). Measured with the internet blocked at the
-> proxy: the same 131 pass, case for case.
+> **Why the full run moved twice on 2026-09-22 (830 → 1115 on a clean install), and why
+> `qa-master` is no longer in the NOT MEASURED list.**
+>
+> **First, +113: cases that already existed started running.** `qa-master` exited `3`
+> without its frozen fixture, and it exited *early*: on line 260, after 18 cases. Everything
+> below that line was skipped — including the five lens sections, EST-10/11/12, the deploy
+> door, the fingerprint and the cache collision, which use only fixtures shipped in this
+> repository. Each case is now classified **before** it runs, from its own arguments. That
+> step ran 131 cases and named the other ~120 as unmeasurable **by anyone**: a capture of a
+> client site that cannot be published, hosts anonymised to `*.example` (which never
+> resolve), client repositories, and one site measured live (which fixes itself, and had
+> already expired several of its own controls).
+>
+> **Then, +172: those ~120 now run against synthetic sites.** `qa-master-tests/fixtures-sites/`
+> holds one invented site per host, written to reproduce exactly what its cases check, and
+> `fake-production.pl` serves them as production through a local proxy — status codes,
+> gzip, headers, each site's own 404. HTTPS is refused, so the bench never goes online, and
+> its last block reads the server's log to prove no case asked for a host without a fixture.
+> The bank now closes **303 OK · 0 MAL · 0 not measured, exit 0** on a clean clone.
+> Each site was checked by breaking the property its cases detect and watching them go red.
 >
 > Running what had been hidden found three things wrong with the bench itself: the door
 > block called a script renamed a month earlier (four cases at `exit 127`), ten cases had
@@ -449,34 +458,33 @@ With no config the runner **prints a line saying so**. Printing nothing would re
 
 ## What does not ship, and why
 
-Two fixture sets are **frozen byte-for-byte captures of real client sites**: 286 files of
+Two fixture sets were **frozen byte-for-byte captures of real client sites**: 286 files of
 HTTP capture triples (6.9 MB) and eight captured client pages (164 KB). Publishing somebody
 else's website to make a test pass is not a trade this repository makes, so they are
 excluded.
 
-The batteries that depend on them do not pretend otherwise:
-
-- `qa-master-tests/tests.sh` exits **3 — NOT MEASURED** when anything could not be
-  covered, and names each case it skipped (`N/M`) with the reason. It no longer bails: every
-  case is classified before it runs, from its own arguments, so everything that needs
-  **only** the synthetic fixtures runs — **131 cases** on a public checkout. Until
-  2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until 2026-09-22 it bailed on line
-  260 with 18, skipping 113 self-contained cases that sat below the line. If any measured
-  case fails it exits **1**, not 3 — a real defect must not come out dressed as a declared
-  gap.
+- **`qa-master-tests/tests.sh` no longer needs its capture.** Since 2026-09-22 every case
+  that read it — and every case that measured an anonymised `*.example` host, a client
+  repository, or a live site — runs against a **synthetic site** in
+  `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
+  `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
+  **303 cases** and exits **0**. A case that names a host with no fixture is still reported
+  `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
+  never 3 — a real defect must not come out dressed as a declared gap.
+  How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until
+  2026-09-21 it bailed on line 260 with 18; on 2026-09-21 it ran the 131 self-contained
+  cases and named the rest as unmeasurable by anyone.
 - `structure-gate-tests/battery.sh` marks the eight affected cases `NOT MEASURED`
   individually, counts them separately, and exits **3** if any were skipped and nothing
-  else failed.
-
-To close the gap, freeze a site **you own**:
+  else failed. To close that gap, freeze a page **you own** (its README says how):
 
 ```bash
 perl gates/qa-master-tests/freeze-fixture.pl <URL> <name>
 ```
 
-Everything else in both batteries is synthetic and ships intact — 92 files in one, 35 in the
-other. "Ships intact" is about the files; whether they **run** is the paragraph above, and
-for one of the two banks the answer used to be no.
+Everything else in both batteries is synthetic and ships intact. "Ships intact" is about the
+files; whether they **run** is the paragraph above, and for `qa-master` the answer used to be
+no.
 
 ---
 
