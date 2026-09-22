@@ -1524,11 +1524,29 @@ sub lente_seo {
         $c = $s unless utf8::decode($c);   # HTML que no sea UTF-8: bytes crudos
         return substr($c, 0, $n);
     };
-    alcance('SEO', [@PAGES], undef, 'SEO-01..14 sobre todas las de la lista · SEO-15/16/17 son del sitio');
-
+    # 🔴 22-sep-2026 · CERO PAGINAS LEIDAS SALIA POR PASA EN ESTA LENTE. El bucle
+    #    se saltaba en silencio toda pagina que no fuera 200 con HTML, y los
+    #    veredictos de abajo agregan sobre listas vacias: con la home en 404
+    #    (index.html quitado de un sitio de la produccion de mentira) salian
+    #    quince PASA, entre ellos «SEO-02 titles unicos · 0 documentos
+    #    distintos», VEREDICTO PASA y exit 0. $NET_OK no lo ve porque la red SI
+    #    contesta: una home que responde 404 con cuerpo no es «sin red». Las
+    #    lentes de accesibilidad y estructura ya tenian esta guarda; esta no.
+    #    Ahora se cuentan las leidas, se DICE cuales no, y con cero la lente
+    #    entera es NO VERIFICADO y se para ahi -tambien SEO-15/16/17: sin una
+    #    sola pagina legible, «sitemap con la pagina dentro» hablaria de una URL
+    #    que da 404, y con --sin-red robots y sitemap salian FALLO sin haberlos
+    #    pedido-. El recibo lee eso como «la lente corrio y no midio NADA», y la
+    #    puerta no sella.
+    #    ⚠️ Una home en 404 NO apaga $NET_OK, y es a proposito: con el sitemap
+    #       expandido las otras ocho paginas de ese mismo sitio SI se leen, y esta
+    #       lente encuentra cuatro FALLO de verdad en ellas. Tratar la 404 como
+    #       «sin red» los tiraria a la basura y daria un motivo falso.
+    my (@leidas_seo, @no_leidas_seo);
     for my $u (@PAGES) {
         my $r = fetch($u);
-        next unless $r->{code} == 200 && $r->{body} =~ /</;
+        if ($r->{code} != 200 || ($r->{body} // '') !~ /</) { push @no_leidas_seo, "$u (HTTP $r->{code})"; next }
+        push @leidas_seo, $u;
         my $h = sin_com($r->{body});
         my $tipo = tipo_de($u);
 
@@ -1648,6 +1666,21 @@ sub lente_seo {
                          . $porque
                          . ($nurls > 1 ? ", y este MISMO documento se sirve en $nurls URLs con el mismo title" : '');
         }
+    }
+
+    alcance('SEO', [@leidas_seo], undef, 'SEO-01..14 sobre todas las leidas de la lista · SEO-15/16/17 son del sitio');
+    @no_leidas_seo and nv(lente=>'SEO', id=>'SEO-0x', titulo=>'paginas que no he podido leer',
+                          donde=>join(' · ', @no_leidas_seo[0..($#no_leidas_seo>3?3:$#no_leidas_seo)]),
+                          ev=>[@no_leidas_seo],
+                          dato=>scalar(@no_leidas_seo).' de '.scalar(@PAGES),
+                          umbral=>'todas las de la lista responden 200 con HTML',
+                          proc=>'qa-maestro', hacer=>'lo que no se ha leido no esta medido, y los PASA de esta lente no hablan de ello');
+    if (!@leidas_seo) {
+        nv(lente=>'SEO', id=>'SEO-00', titulo=>'la lente entera',
+           dato=>'0 de '.scalar(@PAGES).' paginas legibles',
+           umbral=>'al menos una pagina 200 con HTML', proc=>'qa-maestro',
+           hacer=>'sin una sola pagina leida no hay SEO que medir, y eso NO es un aprobado');
+        return;
     }
 
     # --- veredictos ---
@@ -3380,7 +3413,22 @@ sub lente_medicion {
     my ($gtm) = $h =~ /\b(GTM-[A-Z0-9]+)\b/;
     if (!$gtm) { for my $p (@vistas) { my $b = fetch($p)->{body} // ''; ($gtm) = $b =~ /\b(GTM-[A-Z0-9]+)\b/; last if $gtm } }
 
-    if (!$gtm) {
+    # 🔴 22-sep-2026 · MED-01 AFIRMABA «sin medicion ninguna» SIN HABER LEIDO NADA.
+    #    Con --sin-red, o con la home en 404 y --una-sola, no hay ni una pagina
+    #    200 con HTML, y la busqueda del contenedor de arriba recorre cuerpos
+    #    vacios o de la pagina 404: no encontrar GTM ahi no dice nada del sitio.
+    #    Aqui NO se para la lente entera, como en SEO: MED-05 se mide en el REPO
+    #    (--repo) y funciona sin paginas -lo prueban sus casos con --sin-red-.
+    #    Solo cae lo que sale de las paginas: el contenedor y lo que cuelga de el.
+    my $alguna_leida = ($HOME->{code} == 200 && ($HOME->{body} // '') =~ /</)
+                       || grep { my $r = fetch($_); $r->{code} == 200 && ($r->{body} // '') =~ /</ } @vistas;
+    if (!$alguna_leida) {
+        nv(lente=>'MEDICION', id=>'MED-01', titulo=>'contenedor o medicion directa',
+           dato=>'ni la home ni ninguna de las '.scalar(@vistas).' paginas responde 200 con HTML',
+           umbral=>'al menos una pagina legible donde buscar el contenedor',
+           proc=>'qa-final.sh §3 · antes del 22-sep esto salia «sin medicion ninguna» sin haber leido una sola pagina',
+           hacer=>'que la web conteste y volver a correr: sin paginas no se puede saber si mide o no, y eso NO es un aviso de que no mide');
+    } elsif (!$gtm) {
         my ($ga) = $h =~ /\b(G-[A-Z0-9]{8,}|AW-\d+)\b/;
         $ga ? aviso(lente=>'MEDICION', id=>'MED-01', titulo=>'medicion directa, sin contenedor', dato=>$ga,
                     umbral=>'GTM si hay publicidad', proc=>'04-medicion §1',

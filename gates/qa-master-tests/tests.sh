@@ -796,6 +796,30 @@ espera "sin red · ni la de estructura"                 NOVERIF EST-01  perl $QA
 # 🔴 CONTROL NEGATIVO: con red, ninguno de esos avisos aparece.
 espera "con red · A11Y-00 no existe"                   AUSENTE A11Y-00 perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
 espera "con red · A11Y-0x no existe"                   AUSENTE A11Y-0x perl $QA http://cm.example/ --solo a11y --una-sola --cache "$CACHE"
+# 🔴 22-sep-2026 · LA LENTE SEO NO TENIA ESTA GUARDA, y MED-01 tampoco. Con
+#   --sin-red la SEO firmaba trece PASA sin haber leido nada (y SEO-15/16 FALLO
+#   sin haber pedido robots ni sitemap), y MED-01 decia «sin medicion ninguna».
+espera "sin red · ni la de SEO"                        NOVERIF SEO-00  perl $QA https://climentmedia.com/ --sin-red --sin-recibo
+espera "sin red · MED-01 no afirma «sin medicion»"     NOVERIF MED-01  perl $QA https://climentmedia.com/ --sin-red --sin-recibo
+#   Y CON RED TAMBIEN SE LEEN CERO PAGINAS: una home que responde 404 CON
+#   CUERPO no apaga $NET_OK -la red contesta-, y ahi la SEO salia en verde:
+#   quince PASA, «SEO-02 · 0 documentos distintos», exit 0. sin-home.example no
+#   tiene index.html; su raiz sirve su 404.html. Los seis que arreglan algo -los
+#   dos de sin red y estos cuatro- se vieron en ROJO contra el gate anterior
+#   (AUSENTE, AVISO · AUSENTE, PASA, AVISO, AUSENTE).
+espera "home en 404 · la de SEO NO sale por PASA"      NOVERIF SEO-00  perl $QA http://sin-home.example/ --solo seo --una-sola --cache "$CACHE"
+espera "home en 404 · SEO-02 no aprueba 0 documentos"  AUSENTE SEO-02  perl $QA http://sin-home.example/ --solo seo --una-sola --cache "$CACHE"
+espera "home en 404 · MED-01 no afirma «sin medicion»" NOVERIF MED-01  perl $QA http://sin-home.example/ --solo medicion --una-sola --cache "$CACHE"
+espera "home en 404 · dice cual no ha podido leer"     NOVERIF SEO-0x  perl $QA http://sin-home.example/ --solo seo --cache "$CACHE"
+# 🔴 CONTROLES NEGATIVOS. La 404 NO es «sin red»: con el sitemap expandido la
+#   otra pagina SI se lee y su defecto tiene que seguir saliendo. Y con una
+#   home legible ni SEO-00 ni SEO-0x existen, y MED-01 sigue midiendo. Cada uno
+#   se vio en ROJO contra una copia del gate con la guarda disparando siempre
+#   (SEO-0x, contra una que daba por ilegible toda pagina).
+espera "home en 404 · la otra pagina SI se mide"       FALLO   SEO-03  perl $QA http://sin-home.example/ --solo seo --cache "$CACHE"
+espera "con red · SEO-00 no existe"                    AUSENTE SEO-00  perl $QA http://cm.example/ --solo seo --una-sola --cache "$CACHE"
+espera "con red · SEO-0x no existe"                    AUSENTE SEO-0x  perl $QA http://cm.example/ --solo seo --una-sola --cache "$CACHE"
+espera "con red · MED-01 sigue midiendo"               AVISO   MED-01  perl $QA http://cm.example/ --solo medicion --una-sola --cache "$CACHE"
 
 echo
 echo "== ARREGLO 0.3 · LA LOTERIA DEL ORDEN"
@@ -1522,8 +1546,24 @@ espera "cache AJENA (| de crawl) NO vale como HIT"       NOVERIF SEO-00 \
        perl $QA "$COLURL" --solo seo --cache "$COL" --sin-recibo
 # (b) meta PROPIO -> HIT. Sin este caso, «rechazarlo todo» pasaria por arreglo
 #     y el gate se quedaria sin cache sin que nadie se entere.
-printf '200\t118\ttext/html; charset=utf-8\t%s\t0.001' "$COLURL" > "$COL/$COLK.meta"
+# 🔴 22-sep-2026 · ESTE CASO PASABA GRACIAS AL DEFECTO QUE SE ARREGLO ESE DIA.
+#     Solo se sembraba la clave CON barra, la de la home (fetch("$ROOT/")). La
+#     lista normaliza la raiz SIN barra, y esa clave no estaba: la lente SEO iba
+#     a la red, el puerto 1 la rechazaba y leia CERO paginas -medido contra el
+#     gate anterior: «SEO-02 · 0 documentos distintos» y trece PASA-. SEO-00 no
+#     salia porque entonces solo queria decir «sin red». Ahora tambien quiere
+#     decir «cero paginas leidas», asi que se siembran las DOS claves y se exige
+#     ademas que la pagina se LEYO de la cache: con el puerto muerto no hay otra
+#     forma de tener un documento.
+COLK2="$(perl -MDigest::MD5=md5_hex -e 'print md5_hex($ARGV[0])' "${COLURL%/}")"
+for k in "$COLK" "$COLK2"; do
+  printf '<!doctype html><html lang="es"><head><title>Semilla</title></head><body><main><h1>Semilla</h1></main></body></html>' > "$COL/$k.body"
+done
+printf '200\t118\ttext/html; charset=utf-8\t%s\t0.001' "$COLURL"      > "$COL/$COLK.meta"
+printf '200\t118\ttext/html; charset=utf-8\t%s\t0.001' "${COLURL%/}"  > "$COL/$COLK2.meta"
 espera "cache PROPIA (\\t de qa-maestro) SIGUE valiendo"  AUSENTE SEO-00 \
+       perl $QA "$COLURL" --solo seo --cache "$COL" --sin-recibo
+texto  "cache PROPIA · y la pagina se LEYO de ella"      SI "DATO   1 documentos distintos" \
        perl $QA "$COLURL" --solo seo --cache "$COL" --sin-recibo
 
 echo
