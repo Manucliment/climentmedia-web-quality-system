@@ -32,7 +32,7 @@ machine the fast run is **682 cases green, 0 red** — **680** on a clean instal
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **830 cases green, 0 red**, with **six** banks reported as
+a clean install it reads **943 cases green, 0 red**, with **six** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `qa-master` and `structure-gate`.
@@ -41,7 +41,7 @@ ship (`compliance`), plus `qa-master` and `structure-gate`.
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **881**: 830 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **994**: 943 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -99,11 +99,31 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  NO MEDIDO qa-master        the five lenses and their controls   (18 of its cases WERE measured)
+  NO MEDIDO qa-master        the five lenses and their controls   (131 of its cases WERE measured)
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  830 casos en verde · 0 en rojo
+  943 casos en verde · 0 en rojo
   NO MEDIDOS: qa-master measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **Why the full run moved by 113 on 2026-09-22 (830 → 943 on a clean install, 881 → 994
+> on the machine with a host): cases that already existed started running.** `qa-master`
+> exits `3` without the frozen fixture, and it used to exit *early*: on line 260, after 18
+> cases. Everything below that line was skipped — including the five lens sections,
+> EST-10/11/12, the deploy door, the fingerprint and the cache collision, which use only
+> fixtures shipped in this repository and never read the frozen site. Each case is now
+> classified **before** it runs, from its own arguments, and only the ones that need
+> something this checkout lacks are skipped and named: the frozen fixture, a client
+> checkout under `$REPOS`, a capture of an anonymized `.example` host (they never resolve),
+> or a live site (opt-in with `EN_VIVO=1`). Measured with the internet blocked at the
+> proxy: the same 131 pass, case for case.
+>
+> Running what had been hidden found three things wrong with the bench itself: the door
+> block called a script renamed a month earlier (four cases at `exit 127`), ten cases had
+> been passing for the wrong reason (a "must NOT contain" over an empty output, or a diff of
+> two empty files), and one guard case exited `2` from the wrong guard. All three are fixed.
+> The door block is also isolated from the machine's measuring host, the same way
+> `receipt-tests/tests-door.sh` is: otherwise its local fixture would be sent to a real
+> host over ssh, and still exit `0`.
 
 > **Why the total moved from 795 to 810, and where the 15 came from.** The work is dated
 > 2026-09-02 and reached `main` on **2026-09-16**; it sat on a rescue branch in between,
@@ -436,13 +456,14 @@ excluded.
 
 The batteries that depend on them do not pretend otherwise:
 
-- `qa-master-tests/tests.sh` exits **3 — NOT MEASURED** when the frozen fixture is absent,
-  naming what it could not cover. It first runs everything that needs **only** its own
-  synthetic fixtures — 15 assertions today — and reports those counts honestly before it
-  bails. Until 2026-09-01 it did not: it bailed on line 98 with `OK 0 · MAL 0`, so on any
-  checkout but ours this bank measured **nothing at all**, including the cases that had no
-  use for a frozen site. If one of those self-contained assertions fails it exits **1**, not
-  3 — a real defect must not come out dressed as a declared gap.
+- `qa-master-tests/tests.sh` exits **3 — NOT MEASURED** when anything could not be
+  covered, and names each case it skipped (`N/M`) with the reason. It no longer bails: every
+  case is classified before it runs, from its own arguments, so everything that needs
+  **only** the synthetic fixtures runs — **131 cases** on a public checkout. Until
+  2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until 2026-09-22 it bailed on line
+  260 with 18, skipping 113 self-contained cases that sat below the line. If any measured
+  case fails it exits **1**, not 3 — a real defect must not come out dressed as a declared
+  gap.
 - `structure-gate-tests/battery.sh` marks the eight affected cases `NOT MEASURED`
   individually, counts them separately, and exits **3** if any were skipped and nothing
   else failed.
