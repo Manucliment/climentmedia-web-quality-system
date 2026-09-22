@@ -1,0 +1,6 @@
+# fixture: dos paginas, y el UNICO formulario esta en la portada.
+# Ninguna URL nombra «contacto», asi que el gate tiene que buscar el
+# formulario entre las paginas leidas. Hasta el 22-sep-2026 miraba solo
+# la PRIMERA de la lista: con servicios.html primera, MED-09/10/11
+# desaparecian del informe. Los casos piden el sitio en los DOS ordenes
+# y exigen el mismo veredicto.
