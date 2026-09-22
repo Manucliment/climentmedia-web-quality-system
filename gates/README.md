@@ -32,7 +32,7 @@ machine the fast run is **682 cases green, 0 red** — **680** on a clean instal
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1128 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1139 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1179**: 1128 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1190**: 1139 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,11 +101,11 @@ $ bash gates/run-all.sh --fast
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (10 of its cases WERE measured)
-  1128 casos en verde · 0 en rojo
+  1139 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
-> **Why the full run moved on 2026-09-22 (830 → 1128 on a clean install), and why
+> **Why the full run moved on 2026-09-22 (830 → 1139 on a clean install), and why
 > `qa-master` is no longer in the NOT MEASURED list.**
 >
 > **First, +113: cases that already existed started running.** `qa-master` exited `3`
@@ -498,7 +498,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **316 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **327 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until
