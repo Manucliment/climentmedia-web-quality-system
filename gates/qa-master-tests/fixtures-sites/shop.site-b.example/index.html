@@ -12,9 +12,10 @@
      (SEO-14), en noindex a proposito. Un fichero sirve loja.html y cada
      loja.html?cat=... con canonical a loja.html (bien hecho: SEO-04 no la
      castiga); otro sirve cada produto.html?sku=... SIN canonical (SEO-04 si).
-     loja.html NO lleva comentario A PROPOSITO: SEO-04 compara el md5 de la
-     pagina SIN comentarios con el md5 CRUDO del destino del canonical, asi que
-     un comentario la haria distinta de si misma (defecto del gate, anotado).
+     loja.html se escribio SIN comentario porque SEO-04 comparaba el md5 de la
+     pagina sin comentarios con el md5 crudo del destino del canonical, y un
+     comentario la hacia distinta de si misma. Arreglado en el gate el 22-sep-2026:
+     su caso vive en fixtures-seo04/canonical-con-comentario.
      El sitemap declara 67 URLs; con el tope de 25 se miran 11 documentos.
      OJO: en este comentario no puede aparecer NINGUNA etiqueta entre angulos. -->
 <html lang="pt-BR">

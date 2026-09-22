@@ -1559,7 +1559,18 @@ sub lente_seo {
         else {
             my ($a,$b) = ($can, $r->{url}); s{/$}{} for ($a,$b);
             if (lc($a) ne lc($b)) {
-                my $mio    = md5_hex($h);
+                # 🔴 22-sep-2026 · SE COMPARABAN DOS COSAS DISTINTAS. Aqui ponia
+                #    `md5_hex($h)`, y `$h` es esta pagina SIN COMENTARIOS (sin_com,
+                #    arriba), mientras que el destino se hashea CRUDO. En cuanto la
+                #    pagina lleva un comentario HTML, los dos md5 difieren siendo
+                #    el mismo fichero, y una canonicalizacion bien hecha sale
+                #    acusada: el defecto que el arreglo P2 vino a quitar, de vuelta
+                #    por la puerta de atras. Medido con fixtures-seo04: el mismo
+                #    loja.html con comentario FALLO, sin comentario PASA.
+                #    La regla escrita encima dice «byte a byte»: crudo contra crudo.
+                #    (El unico md5 del gate que partia de `sin_com`; G11, REN-12 y
+                #    la deduplicacion ya comparaban crudo en los dos lados.)
+                my $mio    = md5_hex($r->{body});
                 my $canabs = abs_url($can, $r->{url}) // $can;
                 my $rc     = is_internal($canabs) ? fetch($canabs) : undef;
                 my $mismo  = ($rc && $rc->{code} == 200 && defined $rc->{body}
