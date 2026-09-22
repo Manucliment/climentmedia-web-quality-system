@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>http://cm.example/</loc></url>
+  <url><loc>http://cm.example/servicios</loc></url>
+  <url><loc>http://cm.example/ad-account-audit/</loc></url>
+  <url><loc>http://cm.example/casos</loc></url>
+  <url><loc>http://cm.example/sobre</loc></url>
+  <url><loc>http://cm.example/contacto</loc></url>
+</urlset>

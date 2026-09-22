@@ -1,0 +1,33 @@
+/* CM Estudio · hoja comun (sitio sintetico de qa-master-tests).
+   Tema oscuro: el fondo de la pagina se declara en la regla body y NO se
+   llama --background. Un lector que lo busque solo por ese nombre y asuma
+   blanco mide el texto claro contra un fondo que no existe. */
+:root {
+  --bg: rgb(7,7,8);
+  --fg: #f4f4f2;
+  --muted: #a3a3a0;
+  --accent: #ff6a3d;
+  --line: #2a2a2c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: rgb(7,7,8); color: #f4f4f2; font: 16px/1.6 system-ui, sans-serif; }
+a { color: #f4f4f2; }
+h1, h2 { line-height: 1.2; }
+h1 { font-size: 2.4rem; max-width: 22ch; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+.logo { font-weight: 700; text-decoration: none; }
+nav a { margin-left: 16px; color: #a3a3a0; text-decoration: none; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 24px; }
+section { padding: 32px 0; }
+.muted { color: var(--muted); max-width: 60ch; }
+.btn { display: inline-block; padding: 12px 20px; background: var(--accent); color: #070708; border-radius: 6px; text-decoration: none; }
+.btn-ghost { display: inline-block; padding: 12px 20px; color: #f4f4f2; border: 1px solid var(--line); border-radius: 6px; text-decoration: none; }
+.hero-img { display: block; margin-top: 24px; max-width: 100%; height: auto; }
+.logos { list-style: none; padding: 0; display: flex; gap: 24px; }
+.logos li { display: flex; align-items: center; gap: 8px; }
+.pasos ol { padding-left: 0; list-style: none; }
+.pasos li { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.divisor { display: block; max-width: 100%; height: auto; margin-top: 24px; }
+.ficha { border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.ficha p { color: var(--muted); }
+footer { padding: 24px; color: var(--muted); border-top: 1px solid var(--line); }

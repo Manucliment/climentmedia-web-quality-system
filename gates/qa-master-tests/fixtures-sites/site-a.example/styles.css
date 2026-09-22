@@ -1,0 +1,101 @@
+/* ==========================================================================
+   site-a.example - hoja unica del sitio
+   Fixture SINTETICO de gates/qa-master-tests: marca, textos y colores
+   inventados. Reproduce a proposito lo que el banco fija de esta web:
+     - el token --primary no llega a AA sobre blanco, y su comentario
+       (linea 27) dice un contraste que no tiene;
+     - dos familias con dos cortes cada una (latin y latin-ext), de los
+       que el navegador solo pide los dos que el texto usa;
+     - un :hover que cambia solo el color y deja el fondo a la regla
+       hermana del mismo estado.
+   Ojo al editar: los controles negativos del banco buscan en este
+   fichero la palabra clave de los rangos de las fuentes y cuentan que
+   desaparece. No la nombres en ningun comentario.
+   ========================================================================== */
+
+/* --- Paleta ---------------------------------------------------------------
+   Los pares se miden con qa-master.pl (A11Y-03); un comentario no es una
+   medicion (A11Y-04). */
+:root {
+  --background: #ffffff;
+  --ink: oklch(0.25 0.02 230);
+  --muted: oklch(0.45 0.02 230);
+  --line: oklch(0.90 0.01 210);
+  --surface: oklch(0.99 0.005 210);
+  --primary-dark: oklch(0.40 0.06 215);
+  --radius: 0.75rem;
+  --primary: oklch(0.58 0.09 210); /* 4,84:1 sobre blanco, AA */
+}
+
+/* --- Tipografia ------------------------------------------------------------ */
+@font-face {
+  font-family: "Fictive Sans";
+  src: url("/fonts/fictive-sans-latin-ext.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Fictive Sans";
+  src: url("/fonts/fictive-sans-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Fictive Serif";
+  src: url("/fonts/fictive-serif-latin-ext.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Fictive Serif";
+  src: url("/fonts/fictive-serif-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* --- Base ------------------------------------------------------------------ */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Fictive Sans", system-ui, sans-serif; line-height: 1.6; color: var(--ink); background: var(--background); }
+h1, h2, h3 { font-family: "Fictive Serif", Georgia, serif; line-height: 1.2; }
+main { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem 3rem; }
+a { color: var(--primary); }
+a:hover { color: var(--primary-dark); }
+.skip { position: absolute; left: -999px; top: 0; padding: 0.5rem 1rem; background: var(--ink); color: #fff; }
+.skip:focus { left: 1rem; }
+
+/* --- Cabecera y pie -------------------------------------------------------- */
+.site-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; text-decoration: none; color: var(--ink); }
+.nav ul { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.nav a { text-decoration: none; color: var(--ink); }
+.site-footer { padding: 2rem 1rem; color: var(--surface); background: var(--ink); }
+.site-footer a { color: #fff; }
+
+/* --- Componentes ----------------------------------------------------------- */
+.btn { display: inline-block; padding: 0.75rem 1.25rem; border-radius: var(--radius); font-weight: 600; text-decoration: none; color: #fff; background: var(--primary); }
+.btn:hover { background: var(--primary-dark); }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; }
+.chips li { border: 1px solid var(--line); border-radius: 999px; }
+.chips li:hover { background: var(--primary); }
+.chips li a { display: block; padding: 0.25rem 0.75rem; text-decoration: none; color: var(--ink); }
+.chips li:hover a { color: var(--surface); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+.card { padding: 1.25rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.card h3 { margin-top: 0; color: var(--primary-dark); }
+.note { font-size: 0.875rem; color: var(--muted); }
+.tarifs { width: 100%; border-collapse: collapse; }
+.tarifs th, .tarifs td { padding: 0.5rem; border-bottom: 1px solid var(--line); text-align: left; }
+.form label { display: block; margin-top: 1rem; font-weight: 600; }
+.form input, .form textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--muted); border-radius: 0.25rem; color: var(--ink); background: #fff; }
+.form button { margin-top: 1rem; }
+.pop { position: fixed; right: 1rem; bottom: 1rem; max-width: 22rem; padding: 1.25rem; border-radius: var(--radius); box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2); color: var(--ink); background: #fff; }
+.pop[hidden] { display: none; }
+.pop__close { float: right; border: 0; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--muted); background: none; }

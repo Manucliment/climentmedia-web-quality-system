@@ -106,10 +106,18 @@ nm=0; nmb=0; nm_repo=0; nm_anon=0; nm_https=0; nm_vivo=0; nm_lista=0; nm_prod=0
 #    ninguna web de cliente siga rota.
 P404=$(( 8600 + ($$ % 300) ))
 CENT404="centinela-$$-$(date +%s)"
-printf '%s\n' "$CENT404" > "fixtures-fingerprint/_sentinel.txt"
-perl "../receipt-tests/test-server.pl" "fixtures-fingerprint" "$P404" >/dev/null 2>&1 &
+# 🔴 22-sep-2026 · EL CENTINELA SE ESCRIBIA DENTRO DEL REPO (fixtures-fingerprint/),
+#    que comparten todas las corridas. Dos a la vez se pisaban: la segunda
+#    sobrescribia el centinela de la primera, la primera leia el ajeno y daba su
+#    servidor por caido -- y el `rm -f` de cualquiera borraba el del otro. Visto
+#    con cinco corridas del banco a la vez. Ahora se sirve una COPIA de la
+#    corrida, dentro de su cache: mismos ficheros, y el repo no se toca.
+R404="$CACHE/raiz-404"
+cp -r fixtures-fingerprint "$R404"
+printf '%s\n' "$CENT404" > "$R404/_sentinel.txt"
+perl "../receipt-tests/test-server.pl" "$R404" "$P404" >/dev/null 2>&1 &
 SRV404=$!
-trap 'kill $SRV404 $SRVPROD 2>/dev/null; rm -f fixtures-fingerprint/_sentinel.txt; rm -rf "$CACHE"' EXIT
+trap 'kill $SRV404 $SRVPROD 2>/dev/null; rm -rf "$CACHE"' EXIT
 sleep 1
 # CENTINELA: sin esto, un puerto ocupado por otra sesion mide OTRA web y las
 # pruebas pasan por el motivo equivocado. Ya paso una vez, media hora.
@@ -120,7 +128,7 @@ if [ "$RESP404" != "$CENT404" ]; then
 else
   U404="http://127.0.0.1:$P404/"
 fi
-rm -f fixtures-fingerprint/_sentinel.txt
+rm -f "$R404/_sentinel.txt"
 # ── LA PRODUCCION DE MENTIRA (22-sep-2026) ──────────────────────────────────
 #    Mismo trato que los otros dos servidores de este banco: puerto libre
 #    comprobado ANTES, y centinela DESPUES. Un puerto ocupado por otra sesion
@@ -424,7 +432,11 @@ espera "site-a · las 2 fuentes que el navegador SI baja"    PASA  REN-04  perl 
 texto  "site-a · REN-04 dice cuantas descuenta y por que"   SI "2 de 4 NO se bajan" \
        perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
 espera "site-a · PNG de 2,3 MB / logo a 200 B/px"           FALLO REN-02  perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
-espera "bc · page_view_gracias sin disparador (G1)"       FALLO MED-03  perl $QA http://site-d.example/ --gracias /gracias/ --solo medicion --cache "$CACHE"
+# ⚠️ 22-sep-2026 · `--contenedor` en los casos de site-d que necesitan el
+#    contenedor (MED-03/07/08): antes se descargaba de googletagmanager.com por
+#    HTTPS, y el banco ya no sale a internet. Sin el, esos checks salen NO
+#    VERIFICADO o ausentes. Es la costura que el gate trae para esto.
+espera "bc · page_view_gracias sin disparador (G1)"       FALLO MED-03  perl $QA http://site-d.example/ --gracias /gracias/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
 # ⚠️ `--sin-recibo` en TODA prueba que apunte a un repo de verdad (anadido el
 #    11-ago-2026). Sin el, estas dos lineas escribian un `.qa-recibo` DENTRO de
 #    site-d-web cada vez que se corria la bateria —y encima un recibo de
@@ -454,7 +466,7 @@ texto  "MED-05 · no acusa al HTML del cliente (_migrate)"  NO "_migrate/origen"
        perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo medicion --sin-recibo --cache "$CACHE"
 espera "404 malo servido en local · sin h1 ni enlaces"             FALLO EST-03  perl $QA $U404 --solo estructura
 espera "bc · styles.css del repo NO desplegado (G11)"     FALLO EST-09  perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo estructura --sin-recibo --cache "$CACHE"
-espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
+espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA http://site-d.example/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
 espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
 # 8-sep-2026 - LA CARA CONTRARIA, y hacia falta: el caso de arriba solo prueba que
 # el check CAZA. Este prueba que no acusa a quien esta bien, que es donde estaba el
@@ -501,6 +513,10 @@ texto  "site-a · y sigue senalando el par real 4,11:1"    SI "#258998 sobre #ff
 espera "CENTINELA: ratio 1,00:1 -> grita, no acusa"     NOVERIF A11Y-03z perl $QA http://site-c.example/ --solo a11y --una-sola --css css-sentinel.css --cache "$CACHE"
 espera "CENTINELA: y el par imposible NO es fallo"      PASA    A11Y-03  perl $QA http://site-c.example/ --solo a11y --una-sola --css css-sentinel.css --cache "$CACHE"
 espera "CENTINELA: sin regla imposible, no salta"       AUSENTE A11Y-03z perl $QA http://site-c.example/ --solo a11y --una-sola --css css-no-sentinel.css --cache "$CACHE"
+# 🔴 22-sep-2026 · EL AUSENTE DE ARRIBA SALE VERDE TAMBIEN SIN MEDIR NADA: con la
+#    home vacia, A11Y-03z no aparece porque no hay nada que mirar (medido al
+#    construir site-c.example). Su testigo: con la MISMA hoja, la paleta se mide.
+espera "CENTINELA: sin regla imposible, la lente SI mide" PASA A11Y-03 perl $QA http://site-c.example/ --solo a11y --una-sola --css css-no-sentinel.css --cache "$CACHE"
 
 echo
 echo "== ARREGLO 0.2 · LA LISTA SALE DEL SITEMAP QUE YA SE DESCARGABA"
@@ -518,6 +534,11 @@ espera "site-b · el defecto real, en su sitio (G10)"       FALLO SEO-14 perl $Q
 espera "site-b · con --una-sola vuelve el falso PASA"      PASA  SEO-14 perl $QA http://shop.site-b.example/ --solo seo --una-sola --cache "$CACHE"
 espera "site-c · 2 titles repetidos entre docs DISTINTOS"     FALLO SEO-02 perl $QA http://site-c.example/ --solo seo --cache "$CACHE"
 espera "site-c · con --una-sola vuelve el falso PASA"         PASA  SEO-02 perl $QA http://site-c.example/ --solo seo --una-sola --cache "$CACHE"
+# 🔴 22-sep-2026 · Y ESE PASA TAMBIEN SALE SIN HOME: la lente SEO no tiene la guarda
+#    de «cero paginas leidas» que si tienen accesibilidad y estructura, y con la
+#    home en 404 da SEO-02 PASA con «0 documentos distintos». Testigo: leyo UNO.
+texto  "site-c · --una-sola SI ha leido la home"              SI "DATO   1 documentos distintos" \
+       perl $QA http://site-c.example/ --solo seo --una-sola --cache "$CACHE"
 texto  "el informe DECLARA el alcance de cada lente"        SI "ALCANCE      cuantas paginas ha mirado cada lente" \
        perl $QA http://site-c.example/ --solo a11y --cache "$CACHE"
 texto  "y dice de donde ha sacado la lista"                 SI "del sitemap" \
@@ -539,6 +560,16 @@ echo
 echo "== ARREGLO 0.6 · 404 O 0 KB ES FALLO, NO «LIGERO»"
 espera "bc · favicon.svg devuelve 404 (salia PASA 0 KB)"   FALLO REN-07 perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
 espera "bc · y el barrido general lo caza tambien"         FALLO REN-13 perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
+# 🔴 22-sep-2026 · EN EL BANCO HERMETICO, ESE FALLO TIENE DOS MOTIVOS. El gate
+#    reconstruye la URL del contenedor (https://www.googletagmanager.com/gtm.js?id=...)
+#    y la cuenta como recurso; aqui el proxy rechaza todo HTTPS, asi que sale
+#    «HTTP 0» y REN-13 seguiria en FALLO aunque el favicon existiera (medido:
+#    con favicon.svg presente, REN-07 y «HTTP 404» caen y REN-13 no). El
+#    «HTTP 404» de abajo lo imprime tambien REN-07, asi que tampoco lo ata.
+#    Este literal es el del DONDE de REN-13, con su «icon ·»: es el unico testigo
+#    de que el barrido general sigue viendo el favicon.
+texto  "bc · REN-13 nombra el favicon, no solo el contenedor" SI "favicon.svg (icon · HTTP 404)" \
+       perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
 texto  "bc · lo dice con su estado, no con su peso"        SI "HTTP 404" \
        perl $QA http://site-d.example/ --solo rendimiento --una-sola --cache "$CACHE"
 # 🔴 CONTROL NEGATIVO: el check de PESO no se ha perdido por el camino, y una
@@ -582,7 +613,12 @@ echo "== ARREGLO P1 · EL PESO DE UNA PAGINA NO DEPENDE DE SU SITIO EN LA LISTA"
 #         segunda de la lista ->  912 KB (font 113 KB)
 #     Y la direccion del error es la mala: INFRAVALORA. Un sitio pesado podia
 #     colarse por debajo del tope segun en que orden se escribiera la lista.
-texto  "site-a · la home SOLA pesa 1053 KB con font 254 KB"  SI "1053 KB · icon 313 KB · img 313 KB · font 254 KB" \
+# ⚠️ 22-sep-2026 · LOS NUMEROS SON DEL SITIO SINTETICO, NO DE LA WEB REAL. Aquella
+#    pesaba 1053 KB (icon 313 · img 313 · font 254), y reproducirla costaba ~880 KB
+#    de binarios en cada arbol. Lo que el caso fija sigue igual: REN-01 suma los 4
+#    woff2 declarados y se los atribuye a la home SOLA, e icon e img son el mismo
+#    PNG. Visto en rojo contra una copia del gate sin el arreglo P1: 253 frente a 252.
+texto  "site-a · la home SOLA pesa 253 KB con font 202 KB"  SI "253 KB · font 202 KB · icon 23 KB · img 23 KB" \
        perl $QA http://site-a.example/ --solo rendimiento --una-sola --cache "$CACHE"
 # ⚠️ Las listas se BORRAN antes: $CACHE sobrevive entre corridas, y una lista
 #    de ayer haria que el caso de abajo midiera lo de ayer. Sin su bloque, el
@@ -613,6 +649,11 @@ for o in A B; do
   espera "site-a · REN-04 no depende del orden (orden $o)" PASA REN-04 perl $QA "@$CACHE/ren-$o.txt" --solo rendimiento --sin-recibo --cache "$CACHE"
 done
 texto  "la muestra dice que ha cogido una MUESTRA repartida" SI "MUESTRA repartida por la lista" \
+       perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
+# 🔴 22-sep-2026 · EL LITERAL DE ARRIBA ES UNA NOTA FIJA de la lente: sale aunque no
+#    se haya descargado nada (medido: con el host en 502 sigue apareciendo). El
+#    testigo de que la muestra es REAL: 3 de las 6 URLs del sitemap.
+texto  "la muestra mira 3 de las 6 del sitemap"              SI "3 de  6 del sitio · PARCIAL" \
        perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
 
 echo
@@ -1208,7 +1249,7 @@ echo "== ACEPTADO · el silenciador, y las cerraduras que lleva (11-ago-2026)"
 if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" http://site-d.example/ --cache "$CACHE"; then
   RA="$CACHE/repo-aceptado"; rm -rf "$RA"; mkdir -p "$RA/_deploy"
   printf '<!doctype html><html lang="es"><head><title>x</title></head><body><main><h1>x</h1></main></body></html>\n' > "$RA/index.html"
-  BCQA="perl $QA http://site-d.example/ --repo $RA --solo medicion --sin-recibo --cache $CACHE"
+  BCQA="perl $QA http://site-d.example/ --repo $RA --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --sin-recibo --cache $CACHE"
 
   # La huella NO se escribe a mano: se saca de la linea HUELLA que imprime el
   # propio informe. Asi este caso prueba ademas el flujo real —copiar la huella
@@ -1270,7 +1311,7 @@ if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" http://site-d.example
   # 8 · el recibo lo lleva dentro, bajo el SELLO
   conf "$H"
   RAC="$CACHE/recibo-aceptado"
-  perl $QA http://site-d.example/ --repo "$RA" --solo medicion --recibo "$RAC" --cache "$CACHE" >/dev/null 2>&1
+  perl $QA http://site-d.example/ --repo "$RA" --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --recibo "$RAC" --cache "$CACHE" >/dev/null 2>&1
   if grep -q '^ACEPTADO: 1' "$RAC" 2>/dev/null && grep -q '^ACEPTADO-001-HUELLA: ' "$RAC" 2>/dev/null; then
     printf '  OK    %-46s %s\n' "el recibo lleva el aceptado y su huella" "$(grep -m1 '^ACEPTADO-001:' "$RAC" | cut -c1-46)"; ok=$((ok+1))
   else

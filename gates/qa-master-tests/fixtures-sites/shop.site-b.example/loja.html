@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loja · Todos os espelhos e moveis | Site B</title>
+<meta name="description" content="O catalogo inteiro com medidas, acabamentos e precos, pronto para comprar online com a entrega incluida no preco final.">
+<link rel="canonical" href="http://shop.site-b.example/loja.html">
+<meta name="robots" content="noindex,follow">
+<meta property="og:image" content="http://shop.site-b.example/img/og-loja.png">
+<meta property="og:image:alt" content="Espelho redondo sobre uma bancada clara">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/loja.css">
+</head>
+<body>
+<div id="app-header"></div>
+<main id="conteudo"><div id="shop"><div class="container"><div class="skeleton" style="height:60vh"></div></div></div></main>
+<div id="app-footer"></div>
+<script type="module">
+  import { initShop } from '/js/loja.js';
+  initShop(document.getElementById('shop'), new URLSearchParams(location.search).get('cat'));
+</script>
+</body>
+</html>

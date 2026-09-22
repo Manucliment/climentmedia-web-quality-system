@@ -1,0 +1,62 @@
+/* Arcano Ejemplo · hoja unica. Negocio INVENTADO para qa-master-tests.
+   Tema OSCURO: el fondo de la pagina lo pinta `body` con var(--noche), que es
+   oklch(16% ...) y resuelve a #12071c. Ningun token se llama --background: el
+   gate tiene que LEER el fondo de la regla body, no asumir blanco (arreglo 0.1).
+   Todos los textos son claros sobre ese fondo y pasan AA; medidos contra un
+   blanco inventado suspenderian todos. Un token por linea: el lector de tokens
+   del gate coge la primera declaracion de cada linea. */
+:root {
+  --noche: oklch(16% 0.045 306);
+  --panel: oklch(24% 0.05 306);
+  --luna: oklch(94% 0.02 300);
+  --bruma: oklch(80% 0.04 300);
+  --oro: oklch(84% 0.13 85);
+}
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.6;
+  background: var(--noche);
+  color: var(--luna);
+}
+a {
+  color: var(--oro);
+}
+.saltar {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: .5rem 1rem;
+  background: var(--oro);
+  color: var(--noche);
+}
+.saltar:focus {
+  left: 1rem;
+}
+header, main, footer {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+}
+nav a {
+  margin-right: 1rem;
+}
+.lema {
+  color: var(--bruma);
+}
+.tarjeta {
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+  color: var(--luna);
+}
+.boton {
+  display: inline-block;
+  padding: .6rem 1.2rem;
+  text-decoration: none;
+  background: var(--oro);
+  color: var(--noche);
+}
+footer {
+  font-size: .9rem;
+  color: var(--bruma);
+}

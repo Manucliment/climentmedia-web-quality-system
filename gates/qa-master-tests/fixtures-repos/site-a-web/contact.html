@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact et rendez-vous · Centre Fictif de Kiné</title>
+<meta name="description" content="Demandez un rendez-vous au Centre Fictif de Kiné : laissez vos coordonnées et nous vous rappelons en semaine pour fixer la première séance.">
+<link rel="canonical" href="http://site-a.example/contact">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preload" href="/fonts/fictive-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/fictive-serif-latin.woff2" as="font" type="font/woff2" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Contact · Centre Fictif de Kiné">
+<meta property="og:image" content="http://site-a.example/assets/logo-centre.png">
+<meta property="og:image:alt" content="Logo du Centre Fictif de Kiné">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Accueil","item":"http://site-a.example/"},{"@type":"ListItem","position":2,"name":"Contact","item":"http://site-a.example/contact"}]}</script>
+<script src="/script.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+<header class="site-header">
+  <a class="brand" href="/"><img src="/assets/logo-centre.png" width="40" height="40" alt=""> Centre Fictif de Kiné</a>
+  <nav class="nav" aria-label="Navigation principale">
+    <ul>
+      <li><a href="/services">Nos soins</a></li>
+      <li><a href="/le-centre">Le centre</a></li>
+      <li><a href="/reeducation">Rééducation</a></li>
+      <li><a href="/tarifs">Tarifs</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+<main id="main">
+  <h1>Contact et rendez-vous</h1>
+  <p>Laissez vos coordonnées et quelques mots sur votre situation : nous vous rappelons en semaine pour fixer la première séance.</p>
+  <form class="form" action="/contact.php" method="post">
+    <label for="nom">Nom et prénom</label>
+    <input id="nom" name="nom" type="text" autocomplete="name" required>
+    <label for="email">Adresse électronique</label>
+    <input id="email" name="email" type="email" autocomplete="email" required>
+    <label for="message">Votre message</label>
+    <textarea id="message" name="message" rows="5"></textarea>
+    <button class="btn" type="submit">Envoyer la demande</button>
+  </form>
+  <p class="note">Vos données servent uniquement à vous recontacter. Voir la <a href="/politique-confidentialite">politique de confidentialité</a>.</p>
+</main>
+<footer class="site-footer">
+  <p><strong>Centre Fictif de Kiné</strong> · 1 rue de l’Exemple, 0000 Exempleville</p>
+  <p><a href="mailto:contact@site-a.example">contact@site-a.example</a> · <a href="/politique-confidentialite">Politique de confidentialité</a></p>
+  <p>Site de démonstration : établissement, personnes et textes inventés.</p>
+</footer>
+<div class="pop" id="pop-rdv" role="dialog" aria-labelledby="pop-titre" hidden>
+  <button type="button" class="pop__close" data-pop-act="close" aria-label="Fermer">×</button>
+  <h2 id="pop-titre">Prendre rendez-vous</h2>
+  <p>Laissez vos coordonnées : nous vous rappelons en semaine pour fixer la séance.</p>
+  <p><a class="btn" href="/contact">Remplir le formulaire</a></p>
+</div>
+</body>
+</html>
