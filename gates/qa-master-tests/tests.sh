@@ -1883,6 +1883,27 @@ espera "A11Y-09 - sin ningun <form>: NO VERIFICADO, no ausente" NOVERIF A11Y-09 
        perl $QA https://climentmedia.com --repo fixtures-lenses/sin-formulario --candidato --una-sola --solo accesibilidad --sin-recibo
 espera "A11Y-11 - sin ningun <form>: NO VERIFICADO, no ausente" NOVERIF A11Y-11 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/sin-formulario --candidato --una-sola --solo accesibilidad --sin-recibo
+# 🔴 22-sep-2026 · Y LA BUSQUEDA DEL 19-ago EMPEZABA POR LA PRIMERA URL DE LA
+#   LISTA, no por la home (`$h` es `$URLS[0]`), y el DONDE decia la home aunque
+#   el formulario saliera de otra pagina. Con dos formularios, el veredicto
+#   dependia del orden: a.html primera, FALLO en la home -que no tiene
+#   formulario-; b.html primera, PASA. Ahora la pagina la elige
+#   pagina_del_formulario, la MISMA funcion que usa MEDICION, en orden fijo.
+#   «b.html primera», el DONDE y «mide el de CONTACTO» se vieron en ROJO contra
+#   el gate anterior (PASA, la home, FALLO).
+espera "A11Y-10 · dos formularios, a.html primera: FALLO" FALLO A11Y-10 \
+       perl $QA https://tienda.example/a.html https://tienda.example/b.html --repo fixtures-lenses/a11y-formulario-orden --candidato --solo accesibilidad --sin-recibo
+espera "A11Y-10 · el mismo sitio, b.html primera: FALLO" FALLO A11Y-10 \
+       perl $QA https://tienda.example/b.html https://tienda.example/a.html --repo fixtures-lenses/a11y-formulario-orden --candidato --solo accesibilidad --sin-recibo
+texto  "A11Y-10 · y nombra la pagina del formulario"    SI "DONDE  https://tienda.example/a.html" \
+       perl $QA https://tienda.example/a.html https://tienda.example/b.html --repo fixtures-lenses/a11y-formulario-orden --candidato --solo accesibilidad --sin-recibo
+# 🔴 LAS DOS LENTES MIDEN EL MISMO FORMULARIO. Con un boletin en la portada y el
+#   formulario de los leads en /contacto, accesibilidad juzgaba el boletin y
+#   medicion el de contacto, en la misma corrida. Ahora las dos, el de contacto.
+espera "A11Y-10 · portada y contacto: mide el de CONTACTO" PASA A11Y-10 \
+       perl $QA https://tienda.example/ https://tienda.example/contacto.html --repo fixtures-lenses/a11y-formulario-contacto --candidato --solo accesibilidad --sin-recibo
+espera "MED-11 · y MEDICION mide ese MISMO formulario" PASA MED-11 \
+       perl $QA https://tienda.example/ https://tienda.example/contacto.html --repo fixtures-lenses/a11y-formulario-contacto --candidato --solo medicion --sin-recibo
 # 🔴 22-sep-2026 · Y MEDICION TENIA EL MISMO DEFECTO, UN MES MAS. Sin --contacto
 #   y sin una URL que nombrara «contacto», MED-10/11 (y la busqueda de la
 #   politica de MED-09) miraban solo la PRIMERA URL de la lista. Con el

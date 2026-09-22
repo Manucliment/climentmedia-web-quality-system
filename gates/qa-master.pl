@@ -2773,6 +2773,43 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
 }
 
 # =============================================================================
+#  LA PAGINA DEL FORMULARIO · UNA regla para las dos lentes que lo miran
+# =============================================================================
+#  🔴 22-sep-2026 · ACCESIBILIDAD Y MEDICION ELEGIAN «EL FORMULARIO» CADA UNA A
+#     SU MANERA, y las dos dependian del ORDEN de la lista.
+#       · MEDICION miraba solo la primera URL si ninguna nombraba «contacto».
+#       · ACCESIBILIDAD empezaba por `$h`, que NO es la home: es la PRIMERA URL
+#         de la lista. Medido con fixtures-lenses/a11y-formulario-orden: a.html
+#         primera, A11Y-10 PASA; b.html primera, A11Y-10 FALLO, y encima con
+#         DONDE (y HUELLA) en la home, que no tiene formulario ninguno.
+#     Y dos lentes con dos reglas para «el formulario» acaban hablando de dos
+#     formularios distintos bajo el mismo nombre -la misma leccion que el cepo
+#     de A11Y-11 dejo escrita con forms-gate.js F3-. Por eso una sola funcion,
+#     y un orden que NO sale de la lista:
+#       1. la de --contacto, si se ha dado;
+#       2. las URLs que nombran contacto;
+#       3. el resto (la home es la mas corta, asi que va primera de estas);
+#     dentro de cada grupo la URL mas corta y, a igualdad, la primera
+#     alfabeticamente -el criterio del representante de 3c-. Se detecta el
+#     formulario SIN comentarios: un <form> dentro de un comentario no es uno.
+#     Devuelve (url, cuerpo crudo, cuantas se miraron); url vacia si ninguna
+#     de las leidas trae formulario. fetch esta memorizado: no cuesta red.
+sub pagina_del_formulario {
+    my @contacto = sort { length($a) <=> length($b) or $a cmp $b }
+                   grep {  m{/(contact|contacto|kontakt)} } @PAGES;
+    my @resto    = sort { length($a) <=> length($b) or $a cmp $b }
+                   grep { !m{/(contact|contacto|kontakt)} } @PAGES;
+    my %visto;
+    my @cand = grep { !$visto{$_}++ }
+               (($opt{contacto} ne '' ? ("$ROOT$opt{contacto}") : ()), @contacto, @resto);
+    for my $u (@cand) {
+        my $cuerpo = fetch($u)->{body} // '';
+        return ($u, $cuerpo, scalar @cand) if sin_com($cuerpo) =~ /<form\b/i;
+    }
+    return ('', '', scalar @cand);
+}
+
+# =============================================================================
 #  6 · LENTE 3 · ACCESIBILIDAD
 #     Procedencia: G2 · G8 · X7 · PC8 · PC13 · sospecha de metodo (44x44)
 # =============================================================================
@@ -2851,7 +2888,7 @@ sub lente_a11y {
     #    justo el fallo que este fichero existe para no cometer.
     my $leidas = scalar(@vistas) - scalar(@no_leidas);
     alcance('ACCESIBILIDAD', [@leidas], undef,
-            'A11Y-01/02/05/06/07/08 sobre todas las leidas · la PALETA sobre la union de sus hojas');
+            'A11Y-01/02/05/06/07/08 sobre todas las leidas · la PALETA sobre la union de sus hojas · A11Y-09/10/11 la pagina del formulario, la misma que MEDICION (orden fijo, no el de la lista)');
     @no_leidas and nv(lente=>'ACCESIBILIDAD', id=>'A11Y-0x', titulo=>'paginas que no he podido leer',
                       donde=>join(' · ', @no_leidas[0..($#no_leidas>3?3:$#no_leidas)]),
                       ev=>[@no_leidas],
@@ -3222,11 +3259,14 @@ sub lente_a11y {
                 : pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-08', titulo=>'jerarquia de titulares sin saltos', dato=>scalar(@vistas).' paginas');
 
     # ── FORMULARIO (G8) ─────────────────────────────────────────────────────
-    my $formsrc = $h;
-    # La huella tiene que IDENTIFICAR algo: "la pagina del --dom" no vale como
-    # hallazgo, porque no dice cual es. Se compone la URL de verdad.
-    my $form_de  = $ROOT . ($opt{dom} ne '' ? $opt{dom} : '/');
-    my $curl_contacto = $opt{contacto} ne '' ? "$ROOT$opt{contacto}" : '';
+    # 🔴 22-sep-2026 · la pagina la elige `pagina_del_formulario`, la MISMA
+    #    funcion que usa MEDICION: antes se empezaba por `$h` -que es la PRIMERA
+    #    URL de la lista, no la home- y el DONDE decia la home aunque el
+    #    formulario saliera de otra pagina. Ver la cabecera de esa funcion.
+    #    La huella sigue identificando algo: `$form_de` es la URL de la que ha
+    #    salido el formulario, y nada mas.
+    my ($form_de, $form_crudo, $form_cand) = pagina_del_formulario();
+    my $formsrc = sin_com($form_crudo);
     # 19-ago-2026 - SIN --contacto, LAS TRES DE ABAJO NO SE EMITIAN. Ni PASA, ni
     #   FALLO, ni NO VERIFICADO: desaparecian del informe. La linea era
     #   `$formsrc = fetch(...)->{body} // $h`, y ese `// $h` sustituia por la
@@ -3236,19 +3276,12 @@ sub lente_a11y {
     #   nada. El veredicto dependia de que alguien se acordara de una bandera.
     #   Ahora el formulario SE BUSCA entre las paginas ya leidas (fetch cachea, no
     #   cuesta red) y, si no aparece en ninguna, se DICE en vez de callarse.
-    if ($h !~ /<form\b/i) {
-        for my $u (grep { $_ } ($curl_contacto, @PAGES)) {
-            my $b = fetch($u)->{body} // '';
-            next unless $b =~ /<form\b/i;
-            $formsrc = $b; $form_de = $u; last;
-        }
-    }
-    if ($formsrc !~ /<form\b/i) {
+    if ($form_de eq '') {
         for my $f (['A11Y-09','campos con autocomplete'],
                        ['A11Y-10','region viva para los errores del formulario'],
                        ['A11Y-11','honeypot blindado para lector de pantalla']) {
             nv(lente=>'ACCESIBILIDAD', id=>$f->[0], titulo=>$f->[1],
-               dato=>'ninguna de las '.scalar(@PAGES).' paginas leidas trae un <form>',
+               dato=>'ninguna de las '.$form_cand.' paginas leidas trae un <form>',
                umbral=>'si el sitio tiene formulario, esto TIENE que medirse: es la unica conversion de la mayoria',
                proc=>'G8 - antes del 19-ago estas tres se saltaban en silencio cuando no habia --contacto',
                hacer=>'si hay formulario y no sale aqui, pasar --contacto /ruta/ y volver a correr: el gate no lo esta viendo');
@@ -3771,38 +3804,23 @@ sub lente_medicion {
     #    y MED-11 FALLO; servicios primero, las tres desaparecian del informe. El
     #    mismo sitio, dos veredictos, y el segundo en silencio. Es el defecto que
     #    la lente de ACCESIBILIDAD arreglo el 19-ago y esta no heredo.
-    #    Ahora el formulario SE BUSCA entre las paginas leidas (fetch cachea: no
-    #    cuesta red) y, si no aparece en ninguna, se DICE. El orden de busqueda
-    #    NO sale de la lista: --contacto, luego las URLs que nombran contacto,
-    #    luego el resto; dentro de cada grupo la URL mas corta y, a igualdad, la
-    #    primera alfabeticamente -el mismo criterio que el representante de 3c-.
-    #    Asi dos sitios iguales dan el mismo veredicto los pida quien los pida.
-    my @por_contacto = sort { length($a) <=> length($b) or $a cmp $b }
-                       grep {  m{/(contact|contacto|kontakt)} } @PAGES;
-    my @por_resto    = sort { length($a) <=> length($b) or $a cmp $b }
-                       grep { !m{/(contact|contacto|kontakt)} } @PAGES;
-    my %cand_vista;
-    my @cand_form = grep { !$cand_vista{$_}++ }
-                    (($opt{contacto} ne '' ? ("$ROOT$opt{contacto}") : ()), @por_contacto, @por_resto);
-    my ($cu, $cb) = ('', '');
-    for my $u (@cand_form) {
-        my $b = fetch($u)->{body} // '';
-        next unless $b =~ /<form\b/i;
-        ($cu, $cb) = ($u, $b);
-        last;
-    }
-    if ($cb !~ /<form\b/i) {
+    #    Ahora el formulario SE BUSCA entre las paginas leidas y, si no aparece en
+    #    ninguna, se DICE. La pagina la elige `pagina_del_formulario`, la MISMA
+    #    funcion que usa ACCESIBILIDAD (22-sep, mas tarde): las dos lentes miden
+    #    el mismo formulario, en un orden que no sale de la lista.
+    my ($cu, $cb, $n_cand) = pagina_del_formulario();
+    if ($cu eq '') {
         for my $f (['MED-10', 'receptor del formulario'],
                    ['MED-11', 'guarda de doble envio'],
                    ['MED-09', 'plazo de conservacion de los datos del formulario']) {
             nv(lente=>'MEDICION', id=>$f->[0], titulo=>$f->[1],
-               dato=>'ninguna de las '.scalar(@cand_form).' paginas leidas trae un <form>',
+               dato=>'ninguna de las '.$n_cand.' paginas leidas trae un <form>',
                umbral=>'si el sitio tiene formulario, esto TIENE que medirse: es por donde llegan los leads, y sus datos los que hay que purgar',
                proc=>'G8 · PC3 · antes del 22-sep estas tres se saltaban en silencio si la primera URL de la lista no tenia formulario',
                hacer=>'si hay formulario y no sale aqui, pasar --contacto /ruta/ y volver a correr: el gate no lo esta viendo');
         }
     }
-    if ($cb =~ /<form\b/i) {
+    if ($cu ne '') {
         my ($fo) = $cb =~ /(<form\b[^>]*>)/i;
         my $act = attr($fo,'action');
         if (!defined $act || $act eq '') {

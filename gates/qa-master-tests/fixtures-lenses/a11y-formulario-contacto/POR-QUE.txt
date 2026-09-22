@@ -1,0 +1,5 @@
+# fixture: formulario en la portada (un boletin, sin region viva) Y en
+# contacto.html (el de los leads, con region viva y guarda de doble envio).
+# Las dos lentes tienen que medir el MISMO formulario, el de contacto:
+# A11Y-10 y MED-11 PASA, pida la lista la portada primera o segunda.
+# Hasta el 22-sep-2026 accesibilidad miraba el de la primera URL de la lista.

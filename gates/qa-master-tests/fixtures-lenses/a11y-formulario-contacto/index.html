@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tienda Ejemplo | Portada con boletin</title>
+<meta name="description" content="Portada de un fixture de pruebas con un formulario de boletin; el formulario de contacto, que es el de los leads, esta en contacto.html.">
+<link rel="canonical" href="https://tienda.example/">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<main id="contenido">
+  <h1>Portada</h1>
+  <p>Un boletin en la portada, sin region viva para los errores. El formulario que trae los leads es el de la pagina de contacto, y ese es el que las dos lentes tienen que medir.</p>
+  <form action="/boletin.php" method="post">
+    <label for="c">Correo</label><input id="c" name="email" type="email" autocomplete="email">
+    <button type="submit">Suscribirme</button>
+  </form>
+  <p><a href="/contacto.html">Contacto</a></p>
+</main>
+</body>
+</html>
