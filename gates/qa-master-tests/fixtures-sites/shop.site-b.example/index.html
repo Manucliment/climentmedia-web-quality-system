@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!-- SITIO SINTETICO shop.site-b.example · LA HOME. Contenido inventado.
+     Es la unica pagina de la tienda que SI viene servida: h1 y texto en el HTML.
+     Dos rejillas (catGrid, featGrid) las enriquece su guion con un marcador de
+     carga dentro: usar JS NO es el defecto, y por eso SEO-14 tiene que PASAR
+     aqui mirada sola (--una-sola). El defecto vive en loja.html y produto.html.
+     Sin enlace de salto (A11Y-02 FALLA a proposito, en toda la web).
+     Las imagenes grandes vienen del dominio PRINCIPAL (site-b.example, el
+     WordPress): son terceros para este host y pesan ~89% de esta pagina (REN-05).
+     LA TIENDA (loja.html) y LA FICHA (produto.html) son el defecto: region de
+     contenido servida VACIA, marcador de carga y contenedor que nombra su guion
+     (SEO-14), en noindex a proposito. Un fichero sirve loja.html y cada
+     loja.html?cat=... con canonical a loja.html (bien hecho: SEO-04 no la
+     castiga); otro sirve cada produto.html?sku=... SIN canonical (SEO-04 si).
+     loja.html NO lleva comentario A PROPOSITO: SEO-04 compara el md5 de la
+     pagina SIN comentarios con el md5 CRUDO del destino del canonical, asi que
+     un comentario la haria distinta de si misma (defecto del gate, anotado).
+     El sitemap declara 67 URLs; con el tope de 25 se miran 11 documentos.
+     OJO: en este comentario no puede aparecer NINGUNA etiqueta entre angulos. -->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site B Loja · Espelhos e moveis sob medida</title>
+<meta name="description" content="Espelhos redondos, organicos e com LED, e moveis de banheiro sob medida. Escolha a medida, veja o preco final e compre online.">
+<link rel="canonical" href="http://shop.site-b.example/">
+<meta name="robots" content="noindex,follow">
+<meta property="og:title" content="Site B Loja · Espelhos e moveis sob medida">
+<meta property="og:image" content="http://shop.site-b.example/img/og-loja.png">
+<meta property="og:image:alt" content="Espelho redondo sobre uma bancada clara">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/loja.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"Site B Loja","url":"http://shop.site-b.example/"}</script>
+</head>
+<body>
+<header class="topo">
+  <a class="marca" href="/" aria-label="Site B Loja, inicio"><img src="/img/logo.svg" alt="Site B Loja" width="120" height="32"></a>
+  <nav aria-label="Principal">
+    <a href="/loja.html">Loja</a>
+    <a href="/medidas.html">Guia de medidas</a>
+    <a href="/entrega.html">Entrega</a>
+    <a href="/contato.html">Contato</a>
+  </nav>
+</header>
+<main id="conteudo">
+<section class="heroi">
+  <img src="http://site-b.example/wp-content/uploads/2026/07/banner-espelhos.png" alt="Tres espelhos redondos em uma parede clara" width="1200" height="500">
+  <h1>Espelhos e moveis de banheiro sob medida</h1>
+  <p>Cada peca sai da oficina com a medida exata do seu espaco. Voce escolhe o formato, o acabamento da moldura e os extras, e o preco final aparece antes de fechar o pedido, sem surpresa na entrega.</p>
+  <p><a class="botao" href="/loja.html">Ver a loja</a></p>
+</section>
+<section>
+  <h2>Categorias</h2>
+  <p>Redondos, retangulares, organicos, com LED, de camarim, de banheiro e moveis de apoio. Toque em uma categoria para ver os modelos e as medidas disponiveis.</p>
+  <div id="catGrid" class="grade"><div class="skeleton" style="height:18vh"></div></div>
+</section>
+<section>
+  <h2>Os mais pedidos este mes</h2>
+  <img src="/img/destaque-led.png" alt="Espelho com LED aceso sobre a pia" width="600" height="400">
+  <div id="featGrid" class="grade"><div class="skeleton" style="height:22vh"></div></div>
+</section>
+<section class="faixa">
+  <img src="http://site-b.example/wp-content/uploads/2026/07/oficina-bancada.png" alt="Bancada da oficina com molduras em preparacao" width="800" height="400">
+  <h2>Como funciona</h2>
+  <p>Voce mede a parede com o nosso guia, escolhe o modelo e envia o pedido. A oficina confirma as medidas por mensagem antes de cortar o vidro, e so depois disso o pedido entra em producao. O prazo habitual e de duas a tres semanas.</p>
+  <p>O vidro tem cinco milimetros, bordas lapidadas e protecao contra umidade no verso. As molduras sao de madeira macica ou de aluminio pintado, e os modelos com LED levam fonte externa e interruptor de toque.</p>
+  <p>Se a peca chegar com algum dano, a troca e feita sem custo. As condicoes completas estao nas paginas de entrega, de trocas e de garantia.</p>
+</section>
+</main>
+<footer class="rodape">
+  <p><a href="/sobre.html">Sobre</a> · <a href="/trocas.html">Trocas</a> · <a href="/garantia.html">Garantia</a> · <a href="/cuidados.html">Cuidados</a> · <a href="/privacidade.html">Privacidade</a></p>
+  <p>Site B Loja · site de demonstracao, dados inventados.</p>
+</footer>
+<script type="module" src="/js/home.js"></script>
+</body>
+</html>

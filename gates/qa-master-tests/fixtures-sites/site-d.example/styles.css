@@ -1,0 +1,46 @@
+/* Clinica Dental Ejemplo · sitio ficticio del banco de pruebas de qa-master */
+:root {
+  --background: oklch(0.99 0.005 210);
+  --foreground: oklch(0.25 0.02 250);
+  --primary: oklch(0.58 0.09 210);
+  --primary-foreground: oklch(0.99 0.005 210);
+  --muted: oklch(0.45 0.02 250);
+  --surface: #ffffff;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.6; }
+a { color: var(--primary); }
+.skip { position: absolute; left: -999px; top: 0; padding: 8px 12px; background: var(--foreground); color: var(--background); }
+.skip:focus { left: 8px; }
+.cab { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; }
+.cab nav a { margin-left: 16px; color: var(--foreground); text-decoration: none; }
+main { max-width: 860px; margin: 0 auto; padding: 24px; }
+section { margin: 32px 0; }
+h1, h2, h3, h4 { line-height: 1.2; color: var(--foreground); }
+.btn { display: inline-block; padding: 12px 20px; border: 0; border-radius: var(--radius); background: var(--primary); color: var(--primary-foreground); text-decoration: none; font-weight: 600; }
+.aviso { color: var(--muted); font-style: italic; }
+.portada, .ilustra { max-width: 100%; height: auto; border-radius: var(--radius); }
+.pie { padding: 24px; background: var(--foreground); color: var(--background); }
+.pie a { color: var(--background); }
+.cc { position: fixed; left: 16px; right: 16px; bottom: 16px; padding: 16px; border-radius: var(--radius); background: var(--surface); color: var(--foreground); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15); }
+.cc label { margin-right: 12px; }
+.cc__btn { padding: 8px 16px; border: 0; border-radius: var(--radius); background: var(--primary); color: var(--primary-foreground); }
+.contacto label { display: block; margin-bottom: 12px; }
+.contacto input, .contacto textarea { display: block; width: 100%; max-width: 480px; margin-top: 4px; padding: 10px 12px; border: 1px solid; border-radius: 6px; font: inherit; }
+.contacto .errores { min-height: 1.5em; margin: 8px 0; }
+h1 { font-size: 2.25rem; margin: 0 0 16px; letter-spacing: -0.01em; }
+h2 { font-size: 1.5rem; margin: 0 0 12px; }
+h3, h4 { font-size: 1.15rem; margin: 20px 0 8px; }
+p { margin: 0 0 12px; max-width: 68ch; }
+ul { margin: 0 0 16px; padding-left: 20px; }
+li { margin-bottom: 6px; }
+img { display: block; }
+.intro { display: grid; gap: 16px; align-items: start; }
+.intro .btn { justify-self: start; }
+.marca img { width: 120px; height: auto; }
+.cab nav { display: flex; flex-wrap: wrap; gap: 4px 0; }
+.pie p { margin: 0 auto 8px; max-width: 860px; font-size: 0.9rem; }
+.cc p { margin-bottom: 8px; font-size: 0.95rem; }
+.cc[hidden] { display: none; }
+[hidden] { display: none !important; }

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditorías de anuncios para pymes | CM Estudio</title>
+<meta name="description" content="Repo sintético de qa-master-tests: la portada de la agencia reducida a lo que prueba MED-05. Contenido inventado.">
+<link rel="canonical" href="https://climentmedia.com/">
+</head>
+<!-- REPO SINTETICO (22-sep-2026). Sustituye al checkout de la web de la
+     agencia, que un repo publico no puede traer. Reproduce lo que el caso
+     «MED-05 · data-sec no cuenta como huerfano» fija: la portada EMITE un
+     data-sec y ningun JavaScript del sitio lo lee, porque quien lo lee es el
+     GATE (EST-01/EST-02c), y 09 §1 lo exige. Al lado, un data-plan que SI tiene
+     lector en script.js: el check tiene algo real que cruzar, no una lista vacia. -->
+<body>
+<header><a href="/">CM Estudio</a></header>
+<main>
+  <section data-sec="hero">
+    <h1>Tu cuenta de anuncios, leída de arriba abajo</h1>
+    <p>Revisamos la configuración, la medición y el gasto de tus campañas.</p>
+    <button type="button" class="plan" data-plan="auditoria">Quiero la auditoría</button>
+  </section>
+</main>
+<script src="script.js" defer></script>
+</body>
+</html>

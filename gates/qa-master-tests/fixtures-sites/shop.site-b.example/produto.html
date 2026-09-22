@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produto | Site B Loja</title>
+<meta name="description" content="Escolha a medida, o acabamento e os extras, veja o preco final atualizado e compre online com garantia de tres anos.">
+<meta name="robots" content="noindex,follow">
+<meta property="og:image" content="http://shop.site-b.example/img/og-loja.png">
+<meta property="og:image:alt" content="Espelho redondo sobre uma bancada clara">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/loja.css">
+</head>
+<body>
+<div id="app-header"></div>
+<main id="conteudo"><div id="product"><div class="container"><div class="skeleton" style="height:70vh"></div></div></div></main>
+<div id="app-footer"></div>
+<script type="module">
+  import { initProduct } from '/js/produto.js';
+  initProduct(document.getElementById('product'), new URLSearchParams(location.search).get('sku'));
+</script>
+</body>
+</html>

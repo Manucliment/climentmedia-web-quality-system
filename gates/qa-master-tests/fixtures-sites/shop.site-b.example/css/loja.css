@@ -1,0 +1,28 @@
+/* SITIO SINTETICO shop.site-b.example · hoja propia de la tienda. Contenido inventado. */
+:root {
+  --fondo: #faf8f4;
+  --texto: #1f1c18;
+  --suave: #5a534a;
+  --acento: #7a3e12;
+  --acento-texto: #ffffff;
+  --linea: #e4ded3;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font: 17px/1.6 system-ui, sans-serif; }
+a { color: var(--acento); }
+.topo { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem 1.25rem; border-bottom: 1px solid var(--linea); }
+.topo nav a { margin-left: 1rem; text-decoration: none; }
+main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+.heroi img, .faixa img { width: 100%; height: auto; border-radius: 6px; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.15; margin: 1.25rem 0 .75rem; }
+h2 { font-size: 1.4rem; margin: 2rem 0 .5rem; }
+p { max-width: 62ch; color: var(--suave); }
+.botao { display: inline-block; padding: .7rem 1.2rem; border-radius: 6px; background: var(--acento); color: var(--acento-texto); text-decoration: none; }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1rem; }
+.skeleton { background: linear-gradient(90deg, #eee8dd, #f6f2ea, #eee8dd); border-radius: 6px; }
+.rodape { border-top: 1px solid var(--linea); padding: 1.5rem 1.25rem; font-size: .9rem; }
+.rodape p { color: var(--suave); }
+form { display: grid; gap: .5rem; max-width: 30rem; }
+textarea { font: inherit; padding: .5rem; border: 1px solid var(--linea); border-radius: 6px; }
+button { font: inherit; padding: .6rem 1rem; border: 0; border-radius: 6px; background: var(--acento); color: var(--acento-texto); }
+[hidden] { display: none !important; }

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: http://shop.site-b.example/sitemap.xml
