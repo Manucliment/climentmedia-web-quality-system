@@ -441,7 +441,7 @@ sub bloque_intake {
         fallo(id=>'INT-02', titulo=>'el destino de los leads es el de la PLANTILLA, sin tocar',
               dato=>join(' · ', @dirs),
               umbral=>'un buzon real, y que sea uno que LEAN',
-              proc=>'00-intake.md §A + §C · references/form-handler.php',
+              proc=>'blueprint/00-intake.md §A + §C · gates/form-handler.php',
               hacer=>'form-handler.php se COPIA. Si sale de aqui con el valor de ejemplo, el formulario contesta 200 y el correo no llega a nadie — que es el defecto que este check viene a cerrar');
     } else {
         fallo(id=>'INT-02', titulo=>'no consta a donde llegan los leads',

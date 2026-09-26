@@ -3428,7 +3428,7 @@ sub lente_a11y {
     nv(lente=>'ACCESIBILIDAD', id=>'A11Y-14', titulo=>'texto sobre foto o degradado',
        umbral=>'>=4,5:1 sobre la zona real de la imagen',
        proc=>'PC13 · 167 elementos no medibles con getComputedStyle en las 5 webs (site-b 70 · site-a 40 · cm 35 · site-c 18 · bc 4)',
-       hacer=>'references/measure-contrast-on-photo.py YA EXISTE. «No medible» no es «aprobado»');
+       hacer=>'gates/measure-contrast-on-photo.py YA EXISTE. «No medible» no es «aprobado»');
 }
 
 # =============================================================================
@@ -4692,7 +4692,7 @@ sub lente_estructura {
     nv(lente=>'ESTRUCTURA', id=>'EST-08', titulo=>'el grafo de enlaces: huerfanas, profundidad, anclas',
        umbral=>'0 huerfanas · profundidad <=3 · el hijo enlaza de vuelta al hub',
        proc=>'08-qa-final A-ter.3 · es el unico gate que mira el GRAFO: /blog/ de Site C listo 11 entradas sin enlazar a ninguna con todos los demas gates en verde',
-       hacer=>"perl references/crawl-links.pl $ROOT/ /tmp/cache-enlaces /tmp/g.json 400  &&  perl references/linking-gate.pl /tmp/g.json");
+       hacer=>"perl gates/crawl-links.pl $ROOT/ /tmp/cache-enlaces /tmp/g.json 400  &&  perl gates/linking-gate.pl /tmp/g.json");
 
     # EST-09 · repo vs produccion (G11)
     # 🔴 CONTRA EL CANDIDATO ESTE CHECK NO EXISTE, Y ES EL MAS IMPORTANTE DE
