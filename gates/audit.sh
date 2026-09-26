@@ -377,7 +377,11 @@ for MF in llms.txt AGENTS.md; do
   NIN=$(echo "$URLS" | grep -c "^$BASE_URL")
   [ "$MISSM" -eq 0 ] && ok "S1.5 las $NIN URLs propias de $MF existen ($NEXT externas, no comprobadas en local)"
   # S1.6 son texto plano: una entidad HTML se lee literal.
-  if grep -qE '&(amp|mdash|ndash|middot|rarr|larr|quot|iquest|aacute|eacute|iacute|oacute|uacute|ntilde);' "$ROOT/$MF"; then
+  # 26-sep-2026 · era una LISTA CERRADA de entidades con nombre y no veia la
+  # numerica que el propio blueprint pone de ejemplo (03 §5: «d&#x27;un»), ni
+  # egrave, ccedil, rsquo o nbsp. Ahora es el patron de 03 §5: cualquier
+  # entidad con nombre o numerica. Casos: c14 (rojo) y v14 (verde) del banco.
+  if grep -qE '&([a-zA-Z][a-zA-Z0-9]*|#[0-9]+|#[xX][0-9a-fA-F]+);' "$ROOT/$MF"; then
     bad "S1.6 $MF tiene entidades HTML sin decodificar (es texto plano: se leen literales)"
   else
     ok "S1.6 $MF sin entidades HTML crudas"

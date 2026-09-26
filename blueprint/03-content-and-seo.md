@@ -67,7 +67,10 @@ sort allmiss.txt | uniq -c | sort -rn | head -20
 | **The client's favicon** | not a generic glyph |
 
 And at site level: `robots.txt`, `sitemap.xml` and `llms.txt`, **all three from the same loop**
-as the pages, with a gate that fails if they diverge.
+as the pages. Generating them together is the protection: **no gate compares `llms.txt` with
+the sitemap**. What exists is narrower — `gates/audit.sh` S1.5 checks that every own URL in
+`llms.txt` exists in the tree — and `audit.sh` is not part of the door. *(Until 26-sep-2026 this
+line promised a gate that fails if they diverge.)*
 
 ### 2.1 · Five checks can all pass on a page that contradicts itself
 
@@ -172,8 +175,8 @@ grep -o '&[a-zA-Z]\+;\|&#x\?[0-9a-fA-F]\+;' llms.txt   # must come back empty
 ```
 
 Minimum contents: the name, one line on what they do and where, phone and hours, the pages
-with their descriptions, and the services. **The same URLs as the sitemap**, verified by the
-gate.
+with their descriptions, and the services. **The same URLs as the sitemap** — which no gate
+checks today (see the start of this document): generate both from the same page list.
 
 ### 5.1 · It is a ROUTER, not an index
 

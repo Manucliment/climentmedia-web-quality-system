@@ -75,7 +75,10 @@
   --wrap-flujo:    48rem;    /* 768px · cadenas y cronologias: lectura vertical*/
   --wrap-spec:     58rem;    /* 928px · tablas de especificacion               */
 
-  /* ── TIPOGRAFIA · 7 escalones, ratio 1,20-1,33 ───────────────────────────
+  /* ── TIPOGRAFIA · 7 escalones ─────────────────────────────────────────────
+     Los fijos (12/14/16/19,2px) suben x1,14-1,20; los tres titulares son
+     clamp, asi que su salto cambia con el viewport. (Aqui ponia «ratio
+     1,20-1,33», que no cuadra con estos valores.)
      Ya en produccion en climentmedia/styles.css. NO se reinventa.            */
   --fs-display: clamp(2.6rem, 7vw, 5rem);      /* h1            ~42-80px      */
   --fs-title:   clamp(1.9rem, 4.2vw, 3rem);    /* h2            ~30-48px      */

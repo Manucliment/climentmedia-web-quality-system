@@ -180,6 +180,40 @@ page('i', '_seo/borrador.html', 'Incrementality testing', 'Incrementality testin
   my ($rc, $out) = run('i', '--keyword', 'incrementality testing');
   check('EXC1 · lo que hay en _seo/ no cuenta (no se publica)', $rc, $out, 0, qr/VEREDICTO: PASA/);
 }
+# 26-sep-2026 · la lista de carpetas era de nombres escritos a mano y no tenia
+# `_candidato`, `_og` ni `_archivo`: la copia del candidato de una web
+# canibalizaba a su propia pagina. citable.pl ya lo habia cambiado a la regla
+# «nada que empiece por _ se publica»; este gate se quedo con la lista.
+page('i2', 'ok/index.html', 'Titulo i2', 'H1 i2');
+page('i2', '_candidato/learn/incrementality-testing/index.html',
+     'Incrementality testing', 'Incrementality testing');
+{
+  my ($rc, $out) = run('i2', '--keyword', 'incrementality testing');
+  check('EXC2 · la copia de _candidato/ no canibaliza (regla ^_, no lista)', $rc, $out, 0,
+        qr/VEREDICTO: PASA - NUEVO\s*$/m);
+}
+
+# --- PALABRAS VACIAS EN FRANCES Y NEERLANDES ---------------------------------
+# 26-sep-2026 · la lista era solo de castellano e ingles. En una web en frances
+# «pour» y «les» contaban como contenido, asi que dos temas distintos salian en
+# la zona gris por compartir dos palabras vacias.
+page('j', 'fr/kine-sportifs/index.html', 'Kine pour les sportifs', 'Kine pour les sportifs');
+{
+  my ($rc, $out) = run('j', '--keyword', 'massage pour les seniors');
+  check('STOP3 · FR: «pour les» no acerca dos temas distintos -> NUEVO limpio', $rc, $out, 0,
+        qr/VEREDICTO: PASA - NUEVO\s*$/m);
+}
+page('k', 'nl/wat-is-een-kinesitherapeut/index.html', 'Wat is een kinesitherapeut', 'Wat is een kinesitherapeut');
+{
+  my ($rc, $out) = run('k', '--keyword', 'wat is een osteopaat');
+  check('STOP4 · NL: «wat een» no acerca dos temas distintos -> NUEVO limpio', $rc, $out, 0,
+        qr/VEREDICTO: PASA - NUEVO\s*$/m);
+}
+{
+  my ($rc, $out) = run('k', '--keyword', 'wat is een kinesitherapeut');
+  check('STOP5 · ...pero el mismo termino en NL SI canibaliza (control negativo)', $rc, $out, 1,
+        qr/CANIBALIZA/);
+}
 
 # --- NO MEDIDO ---------------------------------------------------------------
 {

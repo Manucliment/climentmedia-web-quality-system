@@ -964,7 +964,7 @@ if (banda.length > 12)    avisos.push(`${banda.length} tamanos de fuente en la b
 // y anthropic 2. Avisar a partir de 1 marcaria sitios mejores que el nuestro.
 // Nuestra mediana es 7 y site-b llega a 15, asi que >2 separa igual.
 if (saltosCiegos > 2)     avisos.push(`${saltosCiegos} saltos tipograficos <1,08x: imperceptibles y hay que mantenerlos (aviso >2)`);
-if (espaciados.size > 20) avisos.push(`${espaciados.size} valores de espaciado distintos (aviso >20; el contrato son 6)`);
+if (espaciados.size > 20) avisos.push(`${espaciados.size} valores de espaciado distintos (aviso >20; el contrato son los 8 tokens de 11 §6)`);
 // El suelo de 45 cpl es una regla de ESCRITORIO. A 390px la columna la fija el
 // aparato: medido, una guia correcta da 40 cpl en movil y eso no es un defecto,
 // es un telefono. En movil solo se vigila el techo.

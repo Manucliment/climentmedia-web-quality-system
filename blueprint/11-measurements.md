@@ -92,13 +92,18 @@ not give you 65 characters. Empirical calibration at 16px:
 
 **The sources for the limit** (this is not taste):
 
-- **WCAG 2.1, SC 1.4.8 "Visual Presentation" (level AAA):** *width is no more than 80
-  characters or glyphs* (40 for CJK). The same criterion requires line spacing of **at least
-  1.5** within a paragraph, and paragraph spacing at least 1.5× the line spacing.
+- **WCAG 2.2, SC 1.4.8 "Visual Presentation" (level AAA, same text since 2.0):** *width is
+  no more than 80 characters or glyphs* (40 for CJK). The same criterion requires line
+  spacing of **at least 1.5** within a paragraph, and paragraph spacing at least 1.5× the
+  line spacing. The standard as a whole is **WCAG 2.2 AA** (`14-accessibility.md`); this AAA
+  criterion is a house rule on top of it.
 - **Butterick, *Practical Typography*:** aim for an average line length of 45–90 characters,
   including spaces.
 
-**House rule:** target **34 em (~65ch, 65–75 CPL)**, hard ceiling **42 em (80 CPL)**.
+**House rule:** target **34 em (~65ch, 65–75 CPL in the calibration font)**, container ceiling
+**42 em**. **The 80 CPL ceiling is measured, not implied by the `em`:** the table above puts
+41.7 em at 82 CPL in English, and a narrower system face gave 81 CPL at 34 em (see
+`--measure-max` in §6).
 
 > ### WRITE THE RULE IN `em`, NOT IN `ch` — and why the table above can mislead you
 >
@@ -334,10 +339,12 @@ page carries**, which is the client's editorial decision.
   --wrap:          1120px;
   --wrap-wide:     1280px;   /* grids and media only, NEVER running text */
   --measure:       34em;     /* prose target                            */
-  --measure-max:   42em;     /* hard ceiling: 80 CPL                    */
+  --measure-max:   42em;     /* container ceiling; the CPL is MEASURED  */
   --measure-lead:  28em;     /* standfirsts: shorter on purpose         */
 
-  /* ---------- TYPE — 7 steps, ratio 1.20-1.33 --------------------------
+  /* ---------- TYPE — 7 steps ------------------------------------------
+     The fixed steps 12/14/16/19.2px go up by x1.14-1.20; the three
+     headings are clamps, so their ratio moves with the viewport.
      Reference: 5 steps in the 11-28px band and ZERO jumps below 1.08.    */
   --fs-display: clamp(2.6rem, 7vw, 5rem);      /* h1        ~42-80px */
   --fs-title:   clamp(1.9rem, 4.2vw, 3rem);    /* h2        ~30-48px */
@@ -437,14 +444,20 @@ only been seen green proves nothing). Run exactly as written, at 1440px:
 | Site D home | **PASS** | 0 | — |
 | Site C interior | **PASS** | 0 | — |
 
-**Gate thresholds** (all four, at both widths):
+**Gate thresholds** — what `gates/structure-gate.js` enforces, at both widths:
 
-| Check | Limit | Where it comes from |
-|---|---|---|
-| Paragraphs over 80 CPL | **0** | WCAG 2.1 SC 1.4.8 (AAA) |
-| Text column | **≤42 em** | equivalent to 80 CPL (§1.3) |
-| Text steps (11–28px) | **≤6**, and **0** jumps below 1.08 | reference median is 5 and 0 |
-| Section padding ÷ inner gap | **≥2** | measured: 2.75 passes, 1.25 fails |
+| Check | Limit | Verdict | Where it comes from |
+|---|---|---|---|
+| Paragraphs over 80 CPL | **0** | **FAIL** (`ANCHO`) | WCAG 2.2 SC 1.4.8 (AAA), a house rule |
+| Font sizes in the 11–28px band | **≤12** | warning | the contract is 6 steps in that band; 12 leaves room for a client's own |
+| Type jumps below 1.08× | **≤2** | warning | reference median 0; two well-built references reach 1 and 2 |
+| Distinct spacing values | **≤20** | warning | the contract is the 8 spacing tokens of §6 |
+| Median line length of the reading paragraphs | **45–90 CPL** (only the ceiling on mobile) | warning | Butterick, 45–90 |
+
+**Two warnings at once make a FAIL.** Two numbers of this document are **design targets that
+no gate measures**: the **42 em** container ceiling (a width, not a character count: §1.3) and
+**section padding ÷ inner gap ≥ 2** (measured by hand: 2.75 passes, 1.25 fails). *(Until
+26-sep-2026 this table said «all four» and listed those two as gate thresholds.)*
 
 ---
 

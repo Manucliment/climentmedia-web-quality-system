@@ -101,7 +101,19 @@ my %STOP = map { $_ => 1 } qw(
   the a an and or of for to in on at by with from is are was were be been being
   what how why when where which who whose your you our we us it its this that these those
   can could should would may might will do does did not
+  les des sur par est aux ses son pour avec dans votre notre vous nous
+  mais plus tout tous toute toutes cette ces une sont chez sous apres
+  avant aussi meme tres bien leur leurs elle
+  com sem seu sua nosso nossa voce pelo pela das dos numa ate apos antes
+  muito quando onde
+  van het een dat deze die ook meer maar naar door wordt worden zijn hun
+  onze wat waar hoe dan als
 );
+# 26-sep-2026 · las cuatro lineas de arriba (frances, portugues, neerlandes)
+# son las de SEO-05 en qa-master.pl, copiadas tal cual: hasta hoy aqui solo
+# habia castellano e ingles, y en una web en frances «pour» y «les» contaban
+# como contenido. Si se amplia una de las dos listas, la otra tambien.
+# Casos: STOP3 y STOP4 del banco.
 sub content_words {
   my @w = grep { length($_) > 2 and !$STOP{$_} } split /\s+/, norm($_[0]);
   my %seen; return grep { !$seen{$_}++ } @w;
@@ -117,7 +129,11 @@ my @files;
     for my $e (readdir $dh) {
       next if $e eq '.' or $e eq '..';
       # Carpetas que NO se publican: contarlas produce colisiones fantasma.
-      next if $e =~ /^(\.git|\.claude|node_modules|_deploy|_spec|_seo|_qa|_kit|_migrate|_post-images|ds-bundle|\.design-sync|_cowork)$/;
+      # 26-sep-2026 · era una lista de nombres y no tenia `_candidato`, `_og`
+      # ni `_archivo`: la copia del candidato canibalizaba a su propia pagina.
+      # Ahora es la misma REGLA que citable.pl: nada que empiece por `_` se
+      # publica. Caso: EXC2 del banco.
+      next if $e =~ /^_/ or $e =~ /^(\.git|\.claude|\.design-sync|node_modules|ds-bundle)$/;
       my $p = "$d/$e";
       if (-d $p) { push @stack, $p }
       elsif ($e =~ /\.html?$/i) { push @files, $p }
