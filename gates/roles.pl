@@ -34,9 +34,13 @@ my $MOLDES = "$DIR/../blueprint/moulds";
 my $DEST   = "$MOLDES/types";
 my $MD     = "$DIR/../blueprint/09-page-types.md";
 my $MD10   = "$DIR/../blueprint/10-layout-vocabulary.md";
+my $MD3    = "$DIR/../paths/3-add-page.md";
 
 my @MAL;
 sub mal { push @MAL, $_[0] }
+# Cuantas frases «X required in N of the M» comprobo E2. Sale en la linea de OK:
+# un control que no encuentra nada que mirar no puede leerse como un verde.
+my $N_E2 = 0;
 sub slurp { my $f = shift; open my $h, '<:raw', $f or return undef;
             local $/; my $t = <$h>; close $h; return $t }
 
@@ -126,6 +130,18 @@ sub gate {
             . "`SOLO-VOCABULARIO` en roles.tsv: o entra en un tipo, o se declara")
             unless ($ROL{$k}{nota} // '') =~ /SOLO-VOCABULARIO/;
     }
+    # B2 · Y AL REVES: un rol que SI pide alguna anatomia y sigue declarado
+    #     `SOLO-VOCABULARIO`. 🔴 26-sep-2026: esta comprobacion solo existia en
+    #     un sentido -la misma forma de defecto que H, del 1-sep-, y el dia que un
+    #     tipo nuevo empezara a pedir `contexto` la tabla seguiria diciendo «nadie
+    #     lo pide», y la hoja de referencia lo repetiria. Una declaracion que ya no
+    #     es verdad no es un matiz: es la informacion que le falta a quien la lee.
+    for my $k (@ORDEN_ROL) {
+        next unless $usado{$k};
+        mal("B · el rol `$k` lo pide al menos una anatomia y roles.tsv lo sigue "
+            . "declarando `SOLO-VOCABULARIO`: esa declaracion ha envejecido, quitala")
+            if ($ROL{$k}{nota} // '') =~ /SOLO-VOCABULARIO/;
+    }
     # C · el molde que se promete tiene que existir en el cajon.
     for my $k (@ORDEN_ROL) {
         for my $m (@{ $ROL{$k}{moldes} }) {
@@ -179,6 +195,44 @@ sub gate {
             my ($t, $d) = (num($1), num($2));
             mal("E · $donde dice «$2 de $1 con molde» y los datos dan $con de $tot")
                 unless defined $d && defined $t && $d == $con && $t == $tot;
+        }
+    }
+    # E2 · «`siblings` (required in 5 of the 11)» TAMBIEN se deriva.
+    #     🔴 26-sep-2026: la frase estaba escrita a mano en 09 §1 y en paths/3,
+    #     y al entrar dos tipos nuevos iba a seguir diciendo «de 11» con 13
+    #     anatomias. Es la misma enfermedad que E cura para los moldes, y el propio
+    #     09 §1 la cuenta de si mismo («a count nobody re-derives drifts»). Se
+    #     cuenta de anatomy.tsv: en cuantos tipos es OBLIGATORIO el rol, de
+    #     cuantos tipos que llevan anatomia (legal y 404 no llevan).
+    my (%oblig_en, $n_anat);
+    $n_anat = 0;
+    for my $t (@TIPOS) {
+        my @r = grep { length } split /\s+/, ($t->[1] // '');
+        next unless @r;
+        $n_anat++;
+        my %una; $oblig_en{$_}++ for grep { !$una{$_}++ } @r;
+    }
+    my %clave_de = map { lc($ROL{$_}{en}) => $_ } @ORDEN_ROL;
+    $N_E2 = 0;
+    for my $par (["09 §1", $md], ["10 §6", slurp($MD10)], ["paths/3", slurp($MD3)]) {
+        my ($donde, $txt) = @$par;
+        next unless defined $txt;
+        # La frase cruza saltos de linea de cita («>») en los dos sitios donde vive.
+        while ($txt =~ /`?(\w+)`?(?:[\s>]*\(|[\s>]+is[\s>]+)required in (\w+) of the (\w+)/gi) {
+            my ($en, $dice_d, $dice_t) = ($1, $2, $3);
+            my $k = $clave_de{lc $en};
+            next unless defined $k;          # no es un rol: no es asunto de este gate
+            my ($d, $t) = (num($dice_d), num($dice_t));
+            if (!defined $d || !defined $t) {
+                mal("E2 · $donde escribe «$en required in $dice_d of the $dice_t» y NO SE LEER esos numeros: "
+                    . "amplia la tabla de num() en vez de tocar el documento");
+                next;
+            }
+            my $hay = $oblig_en{$k} // 0;
+            $N_E2++;
+            mal("E2 · $donde dice que `$en` es obligatorio en $dice_d de $dice_t anatomias, "
+                . "y anatomy.tsv da $hay de $n_anat")
+                unless $d == $hay && $t == $n_anat;
         }
     }
     # G · TODO molde del cajon declara CUANDO y CUANDO NO.
@@ -264,8 +318,8 @@ sub gate {
         print "\n  ", scalar(@MAL), " problema(s).\n";
         return 1;
     }
-    printf "ROLES OK · %d roles (%d con molde, %d a mano) · %d tipos con plantilla\n",
-           $tot, $con, $tot - $con, scalar(@TIPOS);
+    printf "ROLES OK · %d roles (%d con molde, %d a mano) · %d tipos con plantilla · %d recuento(s) de roles obligatorios comprobados en la documentacion\n",
+           $tot, $con, $tot - $con, scalar(@TIPOS), $N_E2;
     return 0;
 }
 # 🔴 ESTA LISTA LLEGABA HASTA `fourteen` Y SE ROMPIO EL MISMO DIA. Al pasar el
