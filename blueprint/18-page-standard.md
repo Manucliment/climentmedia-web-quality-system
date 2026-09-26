@@ -4,7 +4,7 @@
 > that is stated here because the previous header claimed the opposite.**
 >
 > It said `node gates/fold-page-standard.js` rewrote it from `gates/standard-rules.json`.
-> Measured: that script wrote to `gates/18-estandar-de-pagina.md` — the Spanish filename
+> Measured: that script wrote to a Spanish filename *(then `gates/18-estandar-de-pagina.md`)* — the name
 > from before the 2026-08-25 rename to English — a file that does not exist in the repo, so
 > every run **created it as an untracked duplicate** while this document went unregenerated
 > since 25-Aug. A generator that silently stopped feeding the file it claims to own is worse
