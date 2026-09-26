@@ -3435,6 +3435,120 @@ sub lente_a11y {
 #  7 · LENTE 4 · MEDICION Y LEGAL
 #     Procedencia: G1 · G9 · G12 · G13 · PC1 · PC3 · PC5 · 04-medicion.md
 # =============================================================================
+
+# ── LOS SCRIPTS PROPIOS DE UNA PAGINA · 26-sep-2026 ──────────────────────────
+#  🔴 LA MEDICION DE LA CASA NO ESTA EN EL HTML. Nuestras webs cargan un
+#     consent.js PROPIO que declara el Consent Mode v2 en `denied` e inyecta
+#     googletagmanager.com/gtm.js SOLO cuando el visitante acepta. El id del
+#     contenedor vive en ese fichero y en ninguna pagina. Esta lente lo buscaba
+#     solo en el HTML servido, asi que decia MED-01 «sin medicion ninguna» sobre
+#     webs que miden, y MED-02/03/07 no corrian nunca. La linea falsa salia en
+#     cada recibo. Es la leccion que audit-vs-spec.pl aprendio el mismo dia
+#     (docs/traps/85.md): un script PROPIO de la pagina es parte de la pagina.
+#
+#  QUE ES «PROPIO»: un <script src> que resuelve al MISMO host que se mide y
+#  responde 200 con algo que no es HTML (una ruta que no existe y devuelve la
+#  404, o la portada, no es un script). Un tercero NO se descarga nunca: lo que
+#  diga su fichero no es la medicion del sitio, y en modo candidato ademas
+#  saldria a internet. Tampoco cuenta un fichero del arbol que ninguna pagina
+#  carga: sin <script> no mide nada.
+#  En modo candidato `fetch` traduce el mismo host al servidor local, asi que se
+#  lee el ARBOL; en modo red, lo SERVIDO. Es la frontera de todo el programa, sin
+#  un camino aparte que pueda medir un objeto distinto al de las paginas.
+
+# js_sin_com: el JavaScript sin sus comentarios.
+#   Un consent.js bien documentado NOMBRA identificadores en sus comentarios: el
+#   marcador de la plantilla, el contenedor anterior, el pixel que se descarto.
+#   Leidos como codigo, el gate se queda con el primer id que ve -que es el del
+#   comentario- o suma un proveedor que nadie carga. Es la misma trampa que
+#   `sin_com` cerro para el HTML el 17-ago.
+#   ⚠️ Solo `/* ... */` y las `//` que ABREN una linea. Una `//` a media linea
+#      suele estar dentro de una cadena -`"https://www.googletagmanager.com/..."`-
+#      y es justo la URL que se busca.
+sub js_sin_com {
+    my $x = shift; return '' unless defined $x;
+    $x =~ s{/\*.*?\*/}{}gs;
+    $x =~ s{^[ \t]*//[^\n]*}{}gm;
+    return $x;
+}
+
+# trozos_de_script(url_de_la_pagina, html_sin_comentarios)
+#   Cada <script> de la pagina, en orden de documento:
+#     { doc, async, defer, src, propio, txt }
+#   `txt` es lo que ESE script ejecuta: el contenido si va en linea; el fichero
+#   sin comentarios si es propio; y la URL si es de un tercero (la URL basta para
+#   saber que carga gtm.js, y el fichero no es nuestro).
+#   `async`/`defer` solo cuentan con `src` (en un script en linea no hacen nada),
+#   y `type=module` es diferido por defecto, tambien en linea.
+sub trozos_de_script {
+    my ($pag, $html) = @_;
+    my @t;
+    my $n = 0;
+    while (($html // '') =~ /(<script\b[^>]*>)(.*?)<\/script\s*>/gis) {
+        my ($tag, $dentro) = ($1, $2);
+        $n++;
+        my $src = attr($tag, 'src');
+        $src = undef if defined $src && $src eq '';
+        # los booleanos se miran con el src QUITADO: un `/async.js` no es `async`
+        (my $resto = $tag) =~ s/\bsrc\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)//i;
+        my $modulo = lc(attr($tag, 'type') // '') eq 'module' ? 1 : 0;
+        my $async  = (($src || $modulo) && $resto =~ /[\s<]async\b/i) ? 1 : 0;
+        my $defer  = (!$async && (($src && $resto =~ /[\s<]defer\b/i) || $modulo)) ? 1 : 0;
+        my %x = (doc => $n, async => $async, defer => $defer, src => '', propio => 0, txt => $dentro);
+        if (defined $src) {
+            my $a = abs_url($src, $pag);
+            $x{src} = $a // $src;
+            $x{txt} = $x{src};
+            if ($a && is_internal($a)) {
+                my $r = fetch($a);
+                if ($r->{code} == 200 && ($r->{ctype} // '') !~ /html/i
+                    && ($r->{body} // '') !~ /\A\s*</) {
+                    $x{txt}    = js_sin_com($r->{body});
+                    $x{propio} = 1;
+                }
+            }
+        }
+        push @t, \%x;
+    }
+    return @t;
+}
+
+# ruta_corta: `https://host/consent.js?v=abc` -> `/consent.js`. Es lo que se
+#   imprime en el DATO de MED-01: dice DONDE se encontro sin arrastrar el sello
+#   de cache, que cambia en cada despliegue y no dice nada.
+sub ruta_corta {
+    my $u = shift // '';
+    $u =~ s{^https?://[^/]+}{};
+    $u =~ s/[?#].*\z//s;
+    return $u eq '' ? '/' : $u;
+}
+
+# id_marcador: el id de una plantilla todavia sin rellenar (GTM-XXXXXXX,
+#   G-XXXXXXXXXX). La web esta montada y NO mide: no es «sin medicion», y
+#   tampoco es un contenedor que se pueda descargar.
+sub id_marcador { my $i = shift // ''; return $i =~ /X{4,}/i ? 1 : 0 }
+
+# ids_en_pagina(url, cuerpo, patron): [id, donde] del HTML (sin comentarios) y de
+#   cada script propio (sin comentarios). `donde` es '' para el HTML -el DATO de
+#   siempre- y la ruta del script si salio de uno.
+sub ids_en_pagina {
+    my ($pag, $cuerpo, $re) = @_;
+    my $b = sin_com($cuerpo // '');
+    my @r = map { [$_, ''] } ($b =~ /$re/g);
+    for my $x (trozos_de_script($pag, $b)) {
+        next unless $x->{propio};
+        push @r, map { [$_, ruta_corta($x->{src})] } ($x->{txt} =~ /$re/g);
+    }
+    return @r;
+}
+
+# antes(a, b): la clave [fase, doc, posicion] a se ejecuta antes que b.
+sub antes {
+    my ($a, $b) = @_;
+    for my $i (0 .. 2) { return 1 if $a->[$i] < $b->[$i]; return 0 if $a->[$i] > $b->[$i] }
+    return 0;
+}
+
 sub lente_medicion {
     unless ($NET_OK) {
         nv(lente=>'MEDICION', id=>'MED-00', titulo=>'la lente entera', umbral=>'requiere red',
@@ -3447,10 +3561,25 @@ sub lente_medicion {
     #    miden en la home; pero el orden del consent y las casillas premarcadas
     #    son de CADA pagina, y aqui se miraba solo una. Se declara que mira que.
     alcance('MEDICION', [@vistas], undef,
-            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-09/10/11 la primera de las leidas con <form> (--contacto, las que nombran contacto, el resto; orden fijo, no el de la lista)');
+            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-09/10/11 la primera de las leidas con <form> (--contacto, las que nombran contacto, el resto; orden fijo, no el de la lista) · el contenedor y el consent default se buscan en el HTML Y en los scripts PROPIOS que carga cada pagina');
 
-    my ($gtm) = $h =~ /\b(GTM-[A-Z0-9]+)\b/;
-    if (!$gtm) { for my $p (@vistas) { my $b = fetch($p)->{body} // ''; ($gtm) = $b =~ /\b(GTM-[A-Z0-9]+)\b/; last if $gtm } }
+    # El contenedor: home primero, luego cada pagina; en cada una el HTML y sus
+    # scripts propios. Gana el primer id REAL; un marcador de plantilla solo se
+    # usa si no aparece ninguno real.
+    # 🔴 26-sep-2026 · la segunda busqueda (pagina a pagina) leia el cuerpo SIN
+    #    quitar los comentarios: una pagina sin un solo script de medicion y con
+    #    `<!-- pendiente: GTM-... -->` salia PASA «contenedor». Ahora las dos
+    #    pasan por `ids_en_pagina`, que quita los del HTML y los del JS.
+    my $RE_GTM = qr/\b(GTM-[A-Z0-9]+)\b/;
+    my ($gtm, $gtm_donde, $marcador, $marcador_donde);
+    for my $par ([ "$ROOT/", $HOME->{body} ], map { [ $_, fetch($_)->{body} ] } @vistas) {
+        for my $x (ids_en_pagina($par->[0], $par->[1], $RE_GTM)) {
+            if (id_marcador($x->[0])) { ($marcador, $marcador_donde) = @$x unless defined $marcador; next }
+            ($gtm, $gtm_donde) = @$x; last;
+        }
+        last if $gtm;
+    }
+    my $en = sub { my ($i, $d) = @_; return $d ne '' ? "$i · en $d" : $i };
 
     # 🔴 22-sep-2026 · MED-01 AFIRMABA «sin medicion ninguna» SIN HABER LEIDO NADA.
     #    Con --sin-red, o con la home en 404 y --una-sola, no hay ni una pagina
@@ -3467,24 +3596,60 @@ sub lente_medicion {
            umbral=>'al menos una pagina legible donde buscar el contenedor',
            proc=>'qa-final.sh §3 · antes del 22-sep esto salia «sin medicion ninguna» sin haber leido una sola pagina',
            hacer=>'que la web conteste y volver a correr: sin paginas no se puede saber si mide o no, y eso NO es un aviso de que no mide');
-    } elsif (!$gtm) {
-        my ($ga) = $h =~ /\b(G-[A-Z0-9]{8,}|AW-\d+)\b/;
-        $ga ? aviso(lente=>'MEDICION', id=>'MED-01', titulo=>'medicion directa, sin contenedor', dato=>$ga,
+    } elsif (!$gtm && !defined $marcador) {
+        # Medicion directa (gtag): en el HTML de la home o en sus scripts propios
+        # -un consent.js de tipo "gtag" lleva el G- dentro, como el GTM-.
+        my ($ga, $ga_donde);
+        for my $x (ids_en_pagina("$ROOT/", $HOME->{body}, qr/\b(G-[A-Z0-9]{8,}|AW-\d+)\b/)) {
+            next if id_marcador($x->[0]);
+            ($ga, $ga_donde) = @$x; last;
+        }
+        $ga ? aviso(lente=>'MEDICION', id=>'MED-01', titulo=>'medicion directa, sin contenedor', dato=>$en->($ga, $ga_donde),
                     umbral=>'GTM si hay publicidad', proc=>'04-medicion §1',
                     hacer=>'sin contenedor no se puede cambiar la medicion sin tocar la web. Correcto si el cliente no hace publicidad')
             : aviso(lente=>'MEDICION', id=>'MED-01', titulo=>'sin medicion ninguna',
                     umbral=>'correcto si el cliente no mide · FALLO si hace publicidad', proc=>'qa-final.sh §3',
                     hacer=>'climentmedia.com esta asi: cero eventos, y sus CTA apuntan a servidor NUESTRO —se podrian contar en el log sin anadir un tercero. «Vendemos medicion de anuncios y no sabemos cuanta gente pulsa el boton» (PC16)');
     } else {
-        pasa(lente=>'MEDICION', id=>'MED-01', titulo=>'contenedor', dato=>$gtm);
+        if ($gtm) {
+            pasa(lente=>'MEDICION', id=>'MED-01', titulo=>'contenedor', dato=>$en->($gtm, $gtm_donde));
+        } else {
+            aviso(lente=>'MEDICION', id=>'MED-01', titulo=>'contenedor declarado con un MARCADOR: aun no mide',
+                  dato=>$en->($marcador, $marcador_donde),
+                  umbral=>'el id real del contenedor',
+                  proc=>'26-sep-2026 · webs montadas con la plantilla de consent.js antes de que exista su contenedor. Antes se contaba como una web que no mide, y no es lo mismo: esta ya esta montada',
+                  hacer=>'poner el id del contenedor cuando exista. Hasta entonces la web NO mide: el orden del consentimiento se comprueba igual (MED-02), y el cruce con el contenedor espera al id');
+        }
 
         # MED-02 · orden del consent
         # ⚠️ Patron tolerante a espacios: `consent', 'default'` no casa con
         #    `consent'*,*'*default`. Ese error dio un falso FALLO en la auditoria.
+        #
+        # 🔴 26-sep-2026 · EL ORDEN ES DE EJECUCION, NO DE TEXTO, y ahora cruza
+        #    los scripts propios. Con la medicion de la casa el default vive en
+        #    consent.js y la carga de gtm.js TAMBIEN, detras; la pagina no nombra
+        #    ni una cosa ni otra. Cada <script> de la pagina es un trozo con su
+        #    clave [fase, orden en el documento, posicion dentro]:
+        #      fase 0  en linea, o externo sin async/defer: corre al leerse
+        #      fase 1  defer (y type=module): corre al terminar el documento
+        #      async   el PEOR caso de cada lado: para cargar gtm.js cuenta como
+        #              fase 0 (puede correr en cuanto se lee), para declarar el
+        #              default como fase 2 (puede llegar la ultima)
+        #    Asi `<script defer src=consent.js>` arriba y el fragmento de GTM
+        #    abajo en linea sale FALLO: en el texto el default va antes, pero el
+        #    fragmento corre primero. Ordenar por texto lo aprobaba.
+        #    ⚠️ Dentro de un mismo fichero manda el TEXTO: el default tiene que
+        #    estar escrito antes que el codigo que inyecta gtm.js. Una funcion
+        #    que lo inyecta definida arriba y llamada despues saldria FALLO
+        #    aunque no cargue nada antes: es el lado barato del error, y lo que
+        #    pide la forma de la casa.
         my (@sin_consent, @consent_tarde);
         for my $p (@vistas) {
             my $b = sin_com(fetch($p)->{body});   # los comentarios fuera ANTES del filtro: uno que nombre GTM hacia entrar aqui a una pagina sin contenedor
-            next unless $b =~ /\bGTM-[A-Z0-9]+\b|googletagmanager\.com/;   # sin contenedor no aplica
+            my @tr = trozos_de_script($p, $b);
+            my $RE_CONT = qr/\bGTM-[A-Z0-9]+\b|googletagmanager\.com/;
+            next unless $b =~ $RE_CONT
+                     || grep { $_->{propio} && $_->{txt} =~ $RE_CONT } @tr;   # sin contenedor no aplica
             # 🔴 17-ago-2026 · SIN QUITAR LOS COMENTARIOS, ESTE CHECK SE APRUEBA
             #    CON UN COMENTARIO. Salio escribiendo su propio caso: el fixture
             #    llevaba `<!-- MED-02 · GTM PRIMERO y el consent default
@@ -3495,24 +3660,34 @@ sub lente_medicion {
             #    positivo: aqui un comentario APRUEBA un check de cumplimiento
             #    que deberia suspender, y el dano cae en el visitante al que se
             #    le ponen cookies sin haber aceptado nada.
-            my $gp  = index($b, 'googletagmanager.com/gtm.js');
-            my $cp2 = ($b =~ /consent['"]?\s*,?\s*['"]?default/) ? $-[0] : -1;
-            if    ($cp2 < 0)                 { push @sin_consent, $p }
-            elsif ($gp >= 0 && $cp2 > $gp)   { push @consent_tarde, $p }
+            my ($kd, $kg);   # claves del primer default y de la primera carga de gtm.js
+            for my $x (@tr) {
+                my $t = $x->{txt} // '';
+                if ($t =~ /consent['"]?\s*,?\s*['"]?default/) {
+                    my $k = [ ($x->{async} ? 2 : $x->{defer} ? 1 : 0), $x->{doc}, $-[0] ];
+                    $kd = $k if !$kd || antes($k, $kd);
+                }
+                if ($t =~ m{googletagmanager\.com/gtm\.js}) {
+                    my $k = [ ($x->{async} ? 0 : $x->{defer} ? 1 : 0), $x->{doc}, $-[0] ];
+                    $kg = $k if !$kg || antes($k, $kg);
+                }
+            }
+            if    (!$kd)                    { push @sin_consent, $p }
+            elsif ($kg && !antes($kd, $kg)) { push @consent_tarde, $p }
         }
         if (@sin_consent) {
             fallo(lente=>'MEDICION', id=>'MED-02', titulo=>'sin consent default: cookies antes de aceptar',
                   donde=>join(' · ', @sin_consent[0..($#sin_consent>2?2:$#sin_consent)]),
                   ev=>[@sin_consent],
                   dato=>scalar(@sin_consent).' de '.scalar(@vistas).' paginas',
-                  umbral=>'gtag("consent","default",...) ANTES de cargar el contenedor', proc=>'04-medicion §3',
-                  hacer=>'el bloque de consent default va inline en el <head>, delante de todo');
+                  umbral=>'gtag("consent","default",...) ANTES de cargar el contenedor, en la pagina o en un script propio que carga', proc=>'04-medicion §3',
+                  hacer=>'el bloque de consent default va inline en el <head>, delante de todo, o arriba del consent.js propio que inyecta el contenedor');
         } elsif (@consent_tarde) {
             fallo(lente=>'MEDICION', id=>'MED-02', titulo=>'consent default DESPUES del contenedor',
                   donde=>join(' · ', @consent_tarde[0..($#consent_tarde>2?2:$#consent_tarde)]),
                   ev=>[@consent_tarde],
                   dato=>scalar(@consent_tarde).' de '.scalar(@vistas).' paginas',
-                  umbral=>'antes', proc=>'04-medicion §3', hacer=>'moverlo arriba: cuando llega, las cookies ya estan puestas');
+                  umbral=>'antes, en orden de EJECUCION: un script con defer corre despues de todo lo que va en linea', proc=>'04-medicion §3', hacer=>'moverlo arriba: cuando llega, las cookies ya estan puestas. Si el default vive en un consent.js con defer, ninguna pagina puede cargar gtm.js por su cuenta');
         } else {
             pasa(lente=>'MEDICION', id=>'MED-02', titulo=>'consent default antes del contenedor', dato=>scalar(@vistas).' paginas');
         }
@@ -3521,7 +3696,12 @@ sub lente_medicion {
         # 8-sep-2026 - EL CONTENEDOR PUEDE VENIR DE UN FICHERO. Ver --contenedor:
         # sin esta costura, MED-03/05/07 solo se podian probar contra webs vivas.
         my $cont;
-        if ($opt{contenedor} ne '') {
+        if (!$gtm) {
+            # 26-sep-2026 · solo hay un MARCADOR de plantilla: no hay contenedor
+            # que descargar (y con --contenedor se estaria cruzando un fixture
+            # contra una web que todavia no carga ninguno).
+            $cont = { code => 0, body => '', marcador => 1 };
+        } elsif ($opt{contenedor} ne '') {
             if (open my $fh, '<:raw', $opt{contenedor}) {
                 local $/; my $b = <$fh>; close $fh;
                 $cont = { code => 200, body => $b };
@@ -3531,7 +3711,18 @@ sub lente_medicion {
         } else {
             $cont = fetch("https://www.googletagmanager.com/gtm.js?id=$gtm");
         }
-        if ($cont->{code} != 200 || length($cont->{body}) < 1000) {
+        if ($cont->{marcador}) {
+            nv(lente=>'MEDICION', id=>'MED-03', titulo=>'cruce eventos <-> disparadores del contenedor',
+               dato=>"$marcador es un marcador de plantilla: no hay gtm.js que cruzar",
+               umbral=>'todo evento emitido tiene disparador, y todo disparador tiene emisor',
+               proc=>'G1 · 26-sep-2026',
+               hacer=>'se cruza cuando el contenedor exista y su id este puesto. No es un aprobado');
+            nv(lente=>'MEDICION', id=>'MED-07', titulo=>'la politica nombra a los proveedores del contenedor',
+               dato=>"$marcador es un marcador de plantilla: el contenedor todavia no carga ningun proveedor",
+               umbral=>'cada proveedor real, por su nombre, con sus cookies y su plazo',
+               proc=>'G9 · 26-sep-2026',
+               hacer=>'volver a medir con el id real: es entonces cuando la politica tiene que nombrar lo que el contenedor carga');
+        } elsif ($cont->{code} != 200 || length($cont->{body}) < 1000) {
             nv(lente=>'MEDICION', id=>'MED-03', titulo=>'cruce eventos <-> disparadores del contenedor',
                dato=>"gtm.js?id=$gtm devolvio HTTP $cont->{code}",
                umbral=>'todo evento emitido tiene disparador, y todo disparador tiene emisor',
@@ -3542,11 +3733,15 @@ sub lente_medicion {
             # eventos que EMITE el sitio: marcado + JS servido + la de gracias
             my %emit;
             my @scan = ($h);
+            # 26-sep-2026 · el JS propio entra SIN sus comentarios (`js_sin_com`):
+            # un consent.js documentado nombra el pixel que se descarto o el evento
+            # que se evito, y aqui eso se leia como un proveedor cargado o un
+            # evento emitido.
             for my $t ($h =~ /(<script\b[^>]*>)/gi) {
                 my $src = attr($t,'src') or next;
                 my $a = abs_url($src, $ROOT.'/') or next;
                 next unless is_internal($a);
-                my $x = fetch($a); push @scan, $x->{body} if $x->{code} == 200;
+                my $x = fetch($a); push @scan, js_sin_com($x->{body}) if $x->{code} == 200;
             }
             if ($opt{gracias} ne '') {
                 my $g = fetch("$ROOT$opt{gracias}");
@@ -3555,7 +3750,7 @@ sub lente_medicion {
                     my $src = attr($t,'src') or next;
                     my $a = abs_url($src, "$ROOT$opt{gracias}") or next;
                     next unless is_internal($a);
-                    my $x = fetch($a); push @scan, $x->{body} if $x->{code} == 200;
+                    my $x = fetch($a); push @scan, js_sin_com($x->{body}) if $x->{code} == 200;
                 }
             }
             for my $s (@scan) {
@@ -3611,9 +3806,33 @@ sub lente_medicion {
                                          || $propio =~ /fbevents|connect\.facebook/;
             my $pol = '';
             my $polurl = '';
-            for my $ruta (qw(/politica-cookies /politica-de-cookies /politique-cookies /cookies /cookie-policy /politica-privacidad /politique-confidentialite /privacidad)) {
-                my $x = fetch("$ROOT$ruta");
-                if ($x->{code} == 200) { $pol .= tag_text($x->{body}); $polurl ||= "$ROOT$ruta" }
+            # 🔴 26-sep-2026 · LA POLITICA SE BUSCABA SOLO EN RUTAS FIJAS, y en
+            #    castellano y frances. En cuanto MED-07 empezo a correr sobre la
+            #    medicion de la casa, una web con su politica en /privacy.html,
+            #    enlazada desde el pie de cada pagina, salio FALLO «no hay pagina
+            #    de cookies/privacidad» -y un FALLO de aqui cierra la puerta-.
+            #    Las rutas fijas se quedan, y ademas cuenta cualquier enlace
+            #    INTERNO de la portada cuya ruta o texto hable de privacidad o
+            #    cookies: la web dice donde tiene su politica, no hay que adivinarlo.
+            #    ⚠️ Solo ensancha donde se BUSCA la politica: lo que se exige que
+            #       nombre sigue siendo lo mismo, y una pagina que no existe (404)
+            #       sigue sin contar.
+            my @rutas_pol = map { "$ROOT$_" } qw(/politica-cookies /politica-de-cookies /politique-cookies /cookies /cookie-policy /politica-privacidad /politique-confidentialite /privacidad /privacy /privacy-policy);
+            { my %ya = map { $_ => 1 } @rutas_pol;
+              while ($h =~ /(<a\b[^>]*>)(.*?)<\/a\s*>/gis) {
+                  my ($tag, $txt) = ($1, $2);
+                  my $href = attr($tag, 'href') or next;
+                  my $u = abs_url($href, "$ROOT/") or next;
+                  next unless is_internal($u);
+                  $u =~ s/#.*\z//s;
+                  (my $txt_plano = $txt) =~ s/<[^>]*>/ /g;
+                  next unless $u =~ m{privac|cookie|confidential|datenschutz|rgpd|gdpr}i
+                           || $txt_plano =~ /privac|cookie|confidential|datenschutz/i;
+                  push @rutas_pol, $u unless $ya{$u}++;
+              } }
+            for my $u (@rutas_pol) {
+                my $x = fetch($u);
+                if ($x->{code} == 200) { $pol .= tag_text($x->{body}); $polurl ||= $u }
             }
             if ($pol eq '') {
                 fallo(lente=>'MEDICION', id=>'MED-07', titulo=>'hay contenedor y no hay pagina de cookies/privacidad',

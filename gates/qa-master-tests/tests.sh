@@ -446,6 +446,115 @@ espera "MED-07b · declarado y no cargado, sigue avisando" AVISO MED-07b \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-tercero-declarado-que-no-existe --contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo
 
 echo
+echo "== MEDICION DE LA CASA · EL CONTENEDOR VIVE EN UN consent.js PROPIO · 26-sep-2026"
+# 🔴 26-sep-2026 · LA LENTE BUSCABA EL CONTENEDOR SOLO EN EL HTML. Nuestras webs
+#    cargan un consent.js propio que declara el Consent Mode v2 en `denied` e
+#    inyecta gtm.js solo al aceptar; el id vive en ese fichero y en ninguna
+#    pagina. Resultado: MED-01 «sin medicion ninguna» en cada recibo, y MED-02,
+#    MED-03 y MED-07 sin correr nunca. Misma leccion que audit-vs-spec.pl el
+#    mismo dia (trampa §85): un script PROPIO de la pagina es parte de la pagina.
+#
+#    VISTO EN ROJO PRIMERO, con el gate de antes sobre estos mismos fixtures:
+#    OK 8 · MAL 18 de 26. El bueno daba AVISO MED-01 «sin medicion ninguna» y
+#    MED-02/07 AUSENTES; los dos de orden en la pagina, FALLO pero por «sin
+#    consent default» (no «DESPUES»), y el de orden dentro de consent.js,
+#    AUSENTE; el marcador, «sin medicion ninguna»; la red, igual que el bueno;
+#    el del comentario HTML, PASA «contenedor»; y los de la politica, AUSENTES.
+#    Los 8 verdes eran los controles de «no es nuestro» (tercero y fichero sin
+#    cargar), el ESTADO de los dos de orden, el del marcador (AVISO, por otro
+#    motivo) y el de Meta en un comentario (MED-07 no corria): tienen que seguir
+#    igual con el nuevo. Con el gate nuevo, 26 de 26. Y cada mecanismo apagado
+#    en una copia del gate pone rojo su control (nueve mutantes, nueve rojos;
+#    ver docs/traps/85.md).
+MCJ="--contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo"
+espera "casa · MED-01 encuentra el contenedor en consent.js" PASA MED-01 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js $MCJ
+# 🔑 El fichero nombra DOS ids falsos en comentarios ANTES del bueno (un
+#    marcador y uno viejo). El que cuenta es el que ejecuta el codigo.
+texto  "casa · y es el del codigo, no el de un comentario" SI "GTM-CASA123 · en /consent.js" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js $MCJ
+espera "casa · MED-02 default antes de cargar gtm.js"   PASA  MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js $MCJ
+espera "casa · MED-07 corre y la politica nombra a Google" PASA MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js $MCJ
+# El comentario de consent.js nombra el pixel de Meta (fbevents.js) como
+# descartado. Un comentario no carga nada: si se leyera como codigo, MED-07
+# sumaria a Meta y FALLARIA contra una politica que dice la verdad.
+texto  "casa · MED-07 no suma proveedores de un comentario" NO "Meta / Facebook" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js $MCJ
+
+# ── Controles: lo que NO es la medicion del sitio ──
+# Un tercero no es nuestro: el MISMO consent.js servido desde otro host (la
+# produccion de mentira SI lo sirve, con GTM-AJENO77 dentro). No se descarga.
+espera "no nuestro · consent.js de otro host no cuenta" AVISO MED-01 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-externo $MCJ
+texto  "no nuestro · y no aparece su contenedor"        NO "GTM-AJENO77" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-externo $MCJ
+# Un fichero en el arbol que ninguna pagina carga no mide nada.
+espera "sin cargar · consent.js en el arbol, sin <script>" AVISO MED-01 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-sin-cargar $MCJ
+texto  "sin cargar · y lo dice como «sin medicion»"     SI "sin medicion ninguna" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-sin-cargar $MCJ
+# 🔴 Un comentario HTML que NOMBRA un contenedor no es un contenedor. Salio al
+#    escribir estos casos: la segunda busqueda de MED-01 (pagina a pagina, si la
+#    home no lo traia) leia el cuerpo SIN quitar comentarios, y esta pagina
+#    —sin un solo script de medicion— daba PASA «contenedor GTM-COMENT1».
+espera "comentario · un id en un <!-- --> no mide"      AVISO MED-01 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-comentario-html $MCJ
+
+# ── Controles de ORDEN: el default bien escrito que llega tarde ──
+espera "orden · gtm.js directo ANTES de consent.js"     FALLO MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-gtm-directo $MCJ
+texto  "orden · y por llegar tarde, no por no existir"  SI "consent default DESPUES del contenedor" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-gtm-directo $MCJ
+# 🔴 El que distingue ordenar por EJECUCION de ordenar por TEXTO: consent.js va
+#    arriba con defer y el fragmento de GTM abajo en linea. En el texto el
+#    default esta antes; al ejecutar, el fragmento corre primero.
+espera "orden · fragmento en linea DESPUES, corre ANTES" FALLO MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-inline-despues $MCJ
+texto  "orden · defer no adelanta al script en linea"   SI "consent default DESPUES del contenedor" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-inline-despues $MCJ
+espera "orden · dentro de consent.js la carga va antes" FALLO MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-orden-interno $MCJ
+
+# ── El marcador de plantilla y MED-07 ──
+espera "marcador · GTM-XXXXXXX avisa"                   AVISO MED-01 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-marcador $MCJ
+texto  "marcador · y dice cual, no «sin medicion»"      SI "GTM-XXXXXXX · en /consent.js" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-marcador $MCJ
+texto  "marcador · NO dice «sin medicion ninguna»"      NO "sin medicion ninguna" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-marcador $MCJ
+# Con un marcador no hay contenedor que descargar: el cruce se declara no hecho.
+espera "marcador · MED-03 no verificado, no aprobado"   NOVERIF MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-marcador $MCJ
+espera "politica muda · MED-07 caza al proveedor"       FALLO MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-politica-muda $MCJ
+# 🔴 En cuanto MED-07 empezo a correr sobre la medicion de la casa, la web de la
+#    agencia salio FALLO «hay contenedor y no hay pagina de cookies/privacidad»:
+#    su politica esta en /privacy.html, fuera de las rutas fijas que MED-07
+#    conocia (todas en castellano o frances), y un FALLO de aqui cierra la puerta.
+#    La politica se busca ahora tambien en los enlaces internos de la portada,
+#    por RUTA o por TEXTO. Cada mitad tiene su caso, en rutas que ninguna ruta
+#    fija alcanza, y cada uno se vio ROJO con su mitad quitada de una copia del
+#    gate. El tercero guarda el otro lado: enlazar una politica que no existe no
+#    es tener una.
+espera "politica · la encuentra por el TEXTO del enlace" PASA MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-politica-por-texto $MCJ
+espera "politica · la encuentra por la RUTA del enlace"  PASA MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-politica-por-ruta $MCJ
+espera "politica · un enlace a un 404 no es politica"   FALLO MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-consent-js-politica-rota $MCJ
+
+# ── Modo RED (produccion, sin --candidato): la misma web servida por HTTP, con
+#    la portada pidiendo consent.js por ruta RELATIVA y con ?v= ──
+espera "red · MED-01 lee el consent.js servido"         PASA  MED-01 \
+       perl $QA http://casa.example/ --solo medicion --una-sola --contenedor fixtures-lenses/contenedor-solo-google.js --cache "$CACHE"
+espera "red · MED-02 default antes de cargar gtm.js"    PASA  MED-02 \
+       perl $QA http://casa.example/ --solo medicion --una-sola --contenedor fixtures-lenses/contenedor-solo-google.js --cache "$CACHE"
+espera "red · MED-07 corre sobre lo servido"            PASA  MED-07 \
+       perl $QA http://casa.example/ --solo medicion --una-sola --contenedor fixtures-lenses/contenedor-solo-google.js --cache "$CACHE"
+
+echo
 echo "== CONTROLES POSITIVOS · defectos CONOCIDOS de la sintesis del 10-ago-2026"
 espera "site-a · paleta bajo AA (--primary L=0,58)"        FALLO A11Y-03 perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
 espera "site-a · el comentario dice 4,84 y son 4,11"        FALLO A11Y-04 perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
@@ -2106,7 +2215,18 @@ espera "comentarios · A11Y-08 no se cree la prosa"  PASA A11Y-08 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo accesibilidad --sin-recibo
 espera "comentarios · REN-13 no se cree la prosa"   PASA REN-13 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo rendimiento --sin-recibo
-espera "comentarios · MED-02 no se cree la prosa"   PASA MED-02 \
+# 🔴 26-sep-2026 · ESTE CASO ESPERABA `PASA MED-02` Y ESE PASA ERA SOBRE NADA.
+#    La pagina no carga ningun contenedor: solo NOMBRA uno en un comentario. Con
+#    el gate de antes, la segunda busqueda de MED-01 leia el cuerpo sin quitar
+#    comentarios, encontraba GTM-ZZZ9999 ahi y daba PASA «contenedor»; MED-02, que
+#    SI quita comentarios, se saltaba la pagina y firmaba «PASA · 1 paginas» sin
+#    haber comprobado ninguna. El caso fijaba como contrato ese verde vacio.
+#    Lo que el caso quiere probar -que la prosa no hace FALLAR a MED-02- se
+#    cumple mejor asi: sin contenedor, MED-01 dice «sin medicion ninguna» y
+#    MED-02 no se emite, porque no hay nada cuyo orden mirar.
+espera "comentarios · MED-02 no se cree la prosa"   AUSENTE MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo medicion --sin-recibo
+espera "comentarios · MED-01 tampoco: prosa no es contenedor" AVISO MED-01 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo medicion --sin-recibo
 echo
 echo "== LA PRODUCCION DE MENTIRA NO HA TENIDO QUE INVENTARSE NADA · 22-sep-2026"
