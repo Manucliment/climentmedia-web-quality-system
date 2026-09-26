@@ -182,7 +182,11 @@ A list of URLs tells a model **what exists**. It does not tell it **which one to
 ⚠️ **And that is as far as the claim goes.** An earlier draft of this line said it was *"the
 difference between being crawled and being cited"* — which is an AEO claim, and our own
 verified research says the opposite: there is **no public evidence that AI crawlers consume
-`llms.txt` at all**, and it is kept as cheap insurance, not counted as an achievement. The
+`llms.txt` at all** — and since 2026-05-15 Google says so in writing: Search, AI features
+included, does not use `llms.txt` or any other "special" file for AI, and creating one neither
+helps nor hurts ([AI optimization guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)).
+OpenAI, Anthropic and Perplexity publish one for their own docs and declare nothing about reading
+anyone else's. It is kept as cheap insurance, not counted as an achievement. The
 honest case for the shape below is smaller and still sufficient: **we already generate this
 file, so it costs nothing to generate it well.** Do not sell it as a citation lever.
 
@@ -309,8 +313,9 @@ presents itself as the source of truth for answer engines. A stale `AGENTS.md` i
 `AGENTS.md`, because a wrong correction is louder than an absent one.
 
 **The division of labour is the part that survives the argument**, because without it they
-become three copies of a sitemap. `llms.txt` answers *"which page should I open?"* — and that
-one IS fetched by a browsing model, because browsing is the whole mechanism. `AGENTS.md` was
+become three copies of a sitemap. `llms.txt` answers *"which page should I open?"* — which a
+browsing model *could* use, because browsing is the whole mechanism; that one does is not
+measured, and the paragraph above says nobody has shown it. `AGENTS.md` was
 intended for *"what do I say when I am not going to open anything at all"*; whether anything
 reads it there is the open question of §5.2-bis.
 
@@ -444,7 +449,8 @@ perl gates/ai-crawlers.pl --url https://example.com/
 ```
 
 First thing to check, because if the bots cannot crawl, nothing else on this page matters.
-Ten required agents, three advisory.
+Eleven required agents, three advisory. (Ten until 2026-09-26: `Claude-SearchBot`, the index
+behind Claude's search, was missing, so a `robots.txt` that blocked it came out green.)
 
 **It is not a `grep`, and that is the whole point.** A `grep -c GPTBot robots.txt` is wrong
 in the four cases that actually occur, and all four have a case in the bank:
@@ -496,8 +502,18 @@ than five sentences in one paragraph. Severity is `BLOCKS` / `WEAKENS` / `POLISH
 is deliberately **no numerical score**.
 
 **Two block sizes, and this document only had one.** A 40–60 word capsule serves the
-featured-snippet surface. The citation surface is **134–167 words, self-contained**. Those
-are different surfaces, and a page can be excellent at one and absent from the other.
+featured-snippet surface. A longer self-contained passage is what an answer engine can lift
+whole. Those are different surfaces, and a page can be excellent at one and absent from the other.
+
+🔴 **The "134–167 words" band that used to stand here is NOT a measured fact, and it is not
+ours.** Traced on 2026-09-26: it does not come from the GEO study (arXiv 2311.09735), which
+never tested passage length — its nine methods are rewrites (cite sources, add statistics,
+add quotations…), and its measured gains are up to ~40% on visibility *inside* a generated
+answer. The earliest source found is an SEO vendor's "study" (2025, proprietary data, no
+method published; the same page recommended a schema type Google had already retired). And
+Google's own guide (2026-05-15) says there is no ideal length and no need to chunk content for
+AI. `citable.pl` still reports the band, as a **warning with that label**: a prior, never a
+target, and never a success criterion for a plan.
 
 🔴 **It refuses to score a language it has no patterns for.** A gate that sweeps a
 page it cannot parse and reports "0 findings" looks like coverage and is a hole, so it

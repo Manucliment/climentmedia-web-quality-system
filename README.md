@@ -69,7 +69,7 @@ config.example.md Everything specific to your site. The programs are never edite
 GLOSSARY.md       Receipt, gate, lens, scope, mould, primitive, prose-page.
 ```
 
-**Do not read the 18 references.** Open the path for your job; it points at what you
+**Do not read the 19 references.** Open the path for your job; it points at what you
 need, when you need it. The references are lookup material.
 
 ---

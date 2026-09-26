@@ -12,8 +12,11 @@
 > injecting a probe: **36 composed pages** (a real 1280 desktop plus a real 390 mobile via an
 > `<iframe>`) and **148 pages** in a static sweep.
 >
-> **This document does not yet have a gate wired to the door.** Until it does, this is a
-> specification without a gate.
+> **Gated now — this header said otherwise until 2026-09-26.** The accessibility lens of
+> `gates/qa-master.pl` (`A11Y-01` … `A11Y-14`) implements the table below and runs on every
+> deploy. The standard is **WCAG 2.2 AA** (W3C Recommendation, current since 2023, updated
+> Dec-2024; WCAG 3 is still a Working Draft). Not measured by any gate: the 2.5.8 target size
+> (`A11Y-12` is a fixed notice, it does not measure 24×24), 200% zoom and 320 px reflow.
 
 ---
 

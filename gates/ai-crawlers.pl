@@ -55,11 +55,16 @@ use warnings;
 # Es una lista con fecha, no un dogma. Se revisa cuando cambie el mercado.
 my @BOTS = (
   [ 'Googlebot',      'requerido', 'el billete de entrada: las citas de AI Overviews salen casi siempre del top-5 organico' ],
-  [ 'GPTBot',         'requerido', 'OpenAI, rastreo general' ],
+  [ 'GPTBot',         'requerido', 'OpenAI, entrenamiento de modelos. Bloquearlo NO quita de la busqueda de ChatGPT: eso es OAI-SearchBot' ],
   [ 'OAI-SearchBot',  'requerido', 'OpenAI, el que alimenta la busqueda de ChatGPT' ],
   [ 'ChatGPT-User',   'requerido', 'OpenAI, la peticion en vivo cuando un usuario pregunta' ],
-  [ 'ClaudeBot',      'requerido', 'Anthropic, rastreo' ],
-  [ 'Claude-User',    'requerido', 'Anthropic, peticion en vivo' ],
+  [ 'ClaudeBot',      'requerido', 'Anthropic, entrenamiento de modelos' ],
+  # 26-sep-2026 · faltaba. La pagina de rastreadores de Anthropic (abr-2026) separa tres:
+  # ClaudeBot (entrenamiento), Claude-SearchBot (el indice de busqueda) y Claude-User (la
+  # peticion del usuario, que SI respeta robots.txt). Sin este, un robots.txt que bloqueara
+  # la busqueda de Claude salia en verde.
+  [ 'Claude-SearchBot','requerido', 'Anthropic, el indice de la busqueda de Claude' ],
+  [ 'Claude-User',    'requerido', 'Anthropic, peticion en vivo (respeta robots.txt)' ],
   [ 'PerplexityBot',  'requerido', 'Perplexity, rastreo' ],
   [ 'Perplexity-User','requerido', 'Perplexity, peticion en vivo' ],
   [ 'Bingbot',        'requerido', 'alimenta Copilot' ],

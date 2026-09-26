@@ -42,7 +42,7 @@ at.
 ### Rung 1 · The page DECLARES what it is
 
 ```html
-<main data-tipo="service">
+<main data-tipo="servicio">
 ```
 
 Without this the gate **infers the type from the URL**, and a service landing page shaped like
@@ -53,7 +53,7 @@ it by looking at the site.
 
 ```json
 "types": {
-  "by_slug": { "love-tarot": "service", "blog": "hub" }
+  "by_slug": { "love-tarot": "servicio", "blog": "hub" }
 }
 ```
 

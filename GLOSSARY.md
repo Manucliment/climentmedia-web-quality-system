@@ -38,7 +38,7 @@ one lens to save time, but a receipt missing a lens does not deploy.
 program rather than by remembering. It refuses to reach the line that uploads unless a
 valid receipt exists, and it runs the served-equals-measured check after uploading.
 
-**Receipt** — `.qa-receipt`, written by the master gate into the site repository. It
+**Receipt** — `.qa-recibo`, written by the master gate into the site repository. It
 carries: the verdict per lens, the **md5 of the deployable tree**, the standard version,
 an expiry, **the list of everything nobody looked at**, and the **scope**. It turns "I
 ran the QA" into a fact somebody else can check.

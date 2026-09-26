@@ -5,7 +5,7 @@
 #  Uso:  bash _migrate/audit-vs-source.sh [_migrate/origen]
 #
 #  ⚠️ POR QUE ESTE GATE Y NO UNA LISTA DE COMPROBACION
-#  Los checklists comprueban lo que uno ya sabe mirar. En Site A a Domicile eso
+#  Los checklists comprueban lo que uno ya sabe mirar. En Site A eso
 #  dejo pasar, uno detras de otro:
 #    · 13 imagenes de 19, incluido el logotipo
 #    · las 5 fichas del equipo

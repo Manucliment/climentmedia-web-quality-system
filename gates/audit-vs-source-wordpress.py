@@ -4,7 +4,7 @@
 POR QUE ESTE GATE Y NO UNA LISTA DE COMPROBACION
 Un checklist responde "¿esta lo que espero?". Esto responde "¿que tenian ellos
 que nosotros no?". Enumera desde SU LADO, asi que detecta categorias enteras que
-no se me habian ocurrido. En Site A a Domicile los checklists dejaron pasar 13
+no se me habian ocurrido. En Site A los checklists dejaron pasar 13
 imagenes, 5 fichas de equipo, GTM entero y un formulario completo, todos los
 gates en verde.
 

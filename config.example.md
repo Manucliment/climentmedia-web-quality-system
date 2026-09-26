@@ -127,6 +127,6 @@ is only which of them **must exist**, so it can fail when they do not:
 The `.gitignore` shipped here already covers it:
 
 - `*.conf` (except `*.conf.example`) — they may carry hostnames and upload commands.
-- `.qa-receipt` — per-site, per-run, and superseded on every deploy.
+- `.qa-recibo` — per-site, per-run, and superseded on every deploy.
 - The holes file — it records what is owed **by the client**, in internal language.
   It is excluded from deployment on purpose, on every site.

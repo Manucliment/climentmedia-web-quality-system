@@ -108,11 +108,14 @@ and pour its required rows, **in order**, in as empty sections:
 
 ```html
 <section class="section" data-sec="hero">…</section>
-<section class="section" data-sec="offer">…</section>
-<section class="section" data-sec="qualification">…</section>
+<section class="section" data-sec="oferta">…</section>
+<section class="section" data-sec="calificacion">…</section>
 …
-<section class="section" data-sec="closing">…</section>
+<section class="section" data-sec="cierre">…</section>
 ```
+
+The values are the Spanish keys of `gates/roles.tsv` (first column), not their English names:
+the gates compare them literally (`blueprint/09-page-types.md §1`).
 
 The `data-sec` is not decorative: it is what makes the anatomy checkable. The background
 treatment **is not mixed in** with the role.

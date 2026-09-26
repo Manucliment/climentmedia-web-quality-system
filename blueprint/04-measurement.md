@@ -162,3 +162,16 @@ And the conversion event **once, and only on the thank-you page.**
 > Not measured yet: whether the gates that run on every deploy send cookieless pings while
 > they measure a first visit (they do not click "accept", so no session is created, but
 > consent mode can still ping). Until that is measured, treat it as open.
+
+## 8 · Traffic from AI assistants and AI search — where it shows up
+
+Until 2026-09-26 no document here said where to look. There are official places now:
+
+| What | Where | Note |
+|---|---|---|
+| Visits sent by ChatGPT, Gemini, Claude, Copilot… | GA4, default channel **AI Assistant** (medium `ai-assistant`), since 2026-05-13 | Google does not publish the referrer list. ChatGPT also tags its links `utm_source=chatgpt.com` |
+| Google's own AI Overviews and AI Mode | **NOT** in AI Assistant: they count as Organic Search | Search Console → *Generative AI performance*: impressions only, by page, country, date and device, all sites since 2026-08-31. AI Overviews and AI Mode are not separated from each other |
+| Citations in Copilot and Bing's AI summaries | Bing Webmaster Tools → *AI Performance* (public preview) | Needs the site verified there (`06-publishing.md §4-bis`) |
+
+A visitor who declines cookies is not a session in GA4 (Consent Mode, §3–§4): read these numbers
+as a floor, never as the size of the channel.
