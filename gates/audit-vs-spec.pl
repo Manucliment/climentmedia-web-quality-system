@@ -574,12 +574,23 @@ sub bloque_paginas {
 #  tiene?». Es la misma clase de pregunta —enumerar desde fuera de mi cabeza—
 #  con la unica fuente que existe cuando no hay origen: 09 §2.
 sub bloque_anatomia {
-    my (%sin_datasec, %incompleta, $n_ok);
+    my (%sin_datasec, %incompleta, $n_ok, @tipo_raro);
     for my $e (@ENT) {
         my ($ruta, $h) = html_de($e);
-        next unless defined $h;
         my $tipo = $e->{tipo};
-        next unless exists $ANATOMIA{$tipo} && @{$ANATOMIA{$tipo}};
+        # 🔴 26-sep-2026 · UN TIPO QUE NO ESTA EN LA TABLA SE SALTABA EN SILENCIO.
+        #    Esta linea era `next unless exists $ANATOMIA{$tipo} && ...`, y sin
+        #    nada detras: dos paginas con `tipo: "pagina"` (una «a propos» y una de
+        #    empleo, que no encajaban en ningun tipo de 09 §2) salian del bloque sin
+        #    dejar rastro, y el gate firmaba «FALLO 0» sin haberlas mirado. qa-master
+        #    ya lo decia en voz alta (EST-02d); este programa no. Una pagina cuya
+        #    anatomia nadie comprueba no es una pagina que la cumple.
+        if (!exists $ANATOMIA{$tipo}) {
+            push @tipo_raro, ($ruta // $e->{slug}) . " (tipo «$tipo»)";
+            next;
+        }
+        next unless defined $h;
+        next unless @{$ANATOMIA{$tipo}};
         my ($main) = $h =~ m{<main\b[^>]*>(.*?)</main>}si; $main //= $h;
         my @secs = $main =~ /data-sec\s*=\s*["']([a-z-]+)["']/gi;
         if (!@secs) { push @{$sin_datasec{$tipo}}, $ruta; next }
@@ -613,7 +624,12 @@ sub bloque_anatomia {
               hacer=>'cada rol que falta tiene su consecuencia escrita al lado en 09 §2, y su molde en blueprint/moulds/');
     }
     $n_ok and pasa(id=>'ANA-02', titulo=>'paginas con la anatomia completa', dato=>"$n_ok");
-    %sin_datasec || %incompleta || $n_ok
+    @tipo_raro and nv(id=>'ANA-03', titulo=>'paginas de la spec con un tipo que no existe: su anatomia NO se ha comprobado',
+                      dato=>scalar(@tipo_raro).' · '.join(' · ', @tipo_raro[0..($#tipo_raro > 6 ? 6 : $#tipo_raro)]),
+                      umbral=>'tipo = uno de los de 09 §2: '.join(' ', sort keys %ANATOMIA),
+                      proc=>'09 §2 · 26-sep-2026: dos paginas con tipo «pagina» salian de este bloque sin una linea y el gate daba «FALLO 0»',
+                      hacer=>'declarar su tipo de 09 §2. Si ninguno encaja, el hueco es de la tabla, no de la pagina: se amplia 09 §2 (es una decision), no se declara el tipo mas cercano');
+    %sin_datasec || %incompleta || $n_ok || @tipo_raro
         or nv(id=>'ANA-01', titulo=>'anatomia', hacer=>'ninguna entidad con anatomia definida que comprobar');
 }
 

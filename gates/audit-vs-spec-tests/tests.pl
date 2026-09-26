@@ -455,6 +455,21 @@ caso('ANA-02 · con los cuatro roles de `hub`, pasa',
        . '<section data-sec="calificacion"><h2>Cual te conviene</h2></section>'
        . '<section data-sec="cierre"><h2>Fin</h2></section></main></body></html>' });
 
+# 🔴 ANA-03 · 26-sep-2026 · UN TIPO QUE NO EXISTE SE SALTABA SIN DEJAR RASTRO.
+#    Dos paginas con `tipo: "pagina"` salian del bloque de anatomia sin una linea
+#    y el gate firmaba «FALLO 0». El caso de rojo es ese mismo; el de control
+#    comprueba que un tipo que SI existe no lo dispara.
+my $PAGINA_SIN_TIPO = '<html><body><main>'
+    . '<section data-sec="hero"><h1>Quienes somos</h1></section>'
+    . '<section data-sec="contexto"><h2>Nuestra historia</h2></section></main></body></html>';
+caso('ANA-03 · un tipo que no existe NO se salta en silencio',
+     "{$BASE,\"pages\":[{\"slug\":\"quienes-somos\",\"tipo\":\"pagina\"}]}", 'NO VERIF:ANA-03', 'greenfield',
+     { 'quienes-somos/index.html' => $PAGINA_SIN_TIPO });
+caso('ANA-03 · ...y un tipo que existe no lo dispara',
+     "{$BASE,\"pages\":[{\"slug\":\"servicios\",\"tipo\":\"hub\"}]}", '!ANA-03', 'greenfield',
+     { 'servicios/index.html' => '<html><body><main data-tipo="hub">'
+       . '<section data-sec="hero"><h1>Servicios</h1></section></main></body></html>' });
+
 # ENL-02 · un hub con menos de 4 hijos no es un hub: es una pagina con enlaces.
 # Importa porque la arquitectura se decide ANTES de escribir (paso 3), y un hub
 # flaco descubierto al final obliga a rehacer las URLs -- que es lo unico que no

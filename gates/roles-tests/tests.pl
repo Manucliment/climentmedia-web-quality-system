@@ -101,6 +101,13 @@ caso('B · rol sin anatomia y SIN declarar',
      'no lo usa ninguna anatomia',
      sub { cambiar("$G/roles.tsv", '|SOLO-VOCABULARIO: ninguna anatomia', '|ninguna anatomia') });
 
+# B2 · y al reves (26-sep-2026): un rol que SI pide una anatomia y sigue
+#      declarado de solo vocabulario. `mapa` lo piden ciudad y contacto.
+caso('B2 · rol que pide una anatomia y SIGUE declarado solo-vocabulario',
+     'esa declaracion ha envejecido',
+     sub { cambiar("$G/roles.tsv", "|Donde, que zonas cubre, como llegar\n",
+                                   "|Donde, que zonas cubre, como llegar|SOLO-VOCABULARIO: caducada\n") });
+
 # C · un molde prometido que no esta en el cajon.
 caso('C · el rol apunta a un molde que no existe',
      'ese molde no esta en blueprint/moulds/',
@@ -122,6 +129,16 @@ caso('E · el documento publica un recuento de moldes falso',
      'have a mould',
      sub { cambiar("$BP/09-page-types.md", 'Twelve of the fifteen have a mould',
                                            'Thirteen of the fifteen have a mould') });
+
+# E2 · 26-sep-2026 · «`siblings` (required in N of the M)» se deriva igual. Al
+#      entrar dos tipos nuevos, la frase escrita a mano iba a seguir diciendo
+#      «de 11». El rojo tiene que salir por el recuento, no por otra cosa.
+caso('E2 · el documento publica un recuento de rol obligatorio falso',
+     'es obligatorio en',
+     sub { my $t = leer("$BP/09-page-types.md") // return 0;
+           my $n = ($t =~ s/\(required in (\d+) of the (\d+)\)/'(required in ' . ($1 + 1) . " of the $2)"/e);
+           escribir("$BP/09-page-types.md", $t) if $n;
+           return $n });
 
 # G · 10 §4 promete que todo molde lleva su CUANDO y su CUANDO NO en la cabecera.
 #     Hasta el 1-sep-2026 esa promesa no la comprobaba nadie, y la hoja de

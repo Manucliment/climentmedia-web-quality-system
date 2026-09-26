@@ -884,9 +884,14 @@ if (rolesFaltan.length)
 if (TIPO_RARO)
   fallos.push(`ANATOMIA · data-tipo="${TIPO_RARO}" no esta en la tabla (gates/anatomy.tsv): ` +
               `no se ha comprobado NINGUNA anatomia`);
+/* 🔴 26-sep-2026 · este mensaje decia «obligatorio en las 11 anatomias», escrito
+ * a mano, y era falso: `cierre` lo piden 9 de 11 (contacto y landing no lo
+ * llevan a proposito). Ahora se cuenta de la tabla incrustada, que es la que el
+ * gate usa para decidir: un recuento que nadie re-deriva envejece solo. */
+const N_CON_CIERRE = Object.values(ANATOMIA).filter(r => r.includes('cierre')).length;
 if (PERFIL.cierre && ultimo && ultimo.ctas === 0)
   fallos.push(`ANATOMIA · el ultimo bloque («${ultimo.que}») no tiene ninguna accion: ` +
-              `falta el rol «cierre», obligatorio en las 11 anatomias`);
+              `falta el rol «cierre», obligatorio en ${N_CON_CIERRE} de las ${Object.keys(ANATOMIA).length} anatomias`);
 
 /* --- E7 · hero que convierte, no que enlaza ------------------------------ */
 if (PERFIL.hero) {
