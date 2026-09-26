@@ -4512,7 +4512,7 @@ sub lente_estructura {
                         umbral=>'404 real del host + h1 propio + >=3 enlaces internos vivos',
                         proc=>'09 §2.11 · G7 · el ESTADO 404 lo da el host, no el arbol',
                         motivo=>'el contenido del 404.html cumple; que el host lo sirva CON estado 404 solo se ve en produccion',
-                        hacer=>'comprobarlo despues de subir: curl -o /dev/null -w "%{http_code}" https://dominio/loquesea')
+                        hacer=>'lo contesta G11 al subir (deploy.sh --subir o --servido): pide dos URLs inventadas y exige 404 CON este 404.html, no la pagina del servidor')
               : pasa(lente=>'ESTRUCTURA', id=>'EST-03', titulo=>'la pagina 404 saca de ahi', dato=>scalar(@int)." enlaces internos, $viv comprobados vivos"))
           : fallo(lente=>'ESTRUCTURA', id=>'EST-03', titulo=>'la pagina 404 es un callejon sin salida',
                   donde=>$probe_ev, dato=>sprintf('%d bytes · h1: %s · %d enlaces internos · %d vivos',

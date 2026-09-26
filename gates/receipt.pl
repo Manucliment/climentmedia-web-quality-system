@@ -1505,6 +1505,25 @@ sub baja {
     return ($b, $code, $hdr);
 }
 
+# ── el cuerpo de una respuesta que NO es 200, y sin seguir redirecciones ────
+#    `baja` tira el cuerpo de todo lo que no sea 200 y sigue los saltos: es lo
+#    correcto para comparar ficheros y lo contrario de lo que hace falta para la
+#    404 del host. Una URL inventada tiene que contestar 404 ELLA MISMA —un 301
+#    que acaba en 404 es una cadena, no un 404— y lo que se juzga es el cuerpo.
+sub baja_error {
+    my ($url) = @_;
+    my $tmp = ($ENV{TEMP} || '/tmp') . '/recibo-404-' . md5_hex($url . $$) . '.bin';
+    my $code = `curl -sS --compressed -A "$UA" -H "Accept: $ACCEPT" -o "$tmp" -w "%{http_code}" "$url" 2>/dev/null`;
+    $code =~ s/\D//g;
+    $code = $code || 0;
+    my $b = '';
+    if (-f $tmp) {
+        if (open my $fh, '<:raw', $tmp) { local $/; $b = <$fh>; $b = '' unless defined $b; close $fh }
+        unlink $tmp;
+    }
+    return ($b, $code);
+}
+
 # =============================================================================
 #  5-bis · EL SITEMAP Y LA FECHA QUE CAMBIA SOLA
 # =============================================================================
@@ -1619,9 +1638,76 @@ sub servido {
     return (2, [ 'no se de que URL bajar: falta SITIO en el recibo' ]) unless $base;
 
     my $max = $o{max} || 400;
-    my (@mal, @nohay, @ok, @solo_fecha, @transformadas, @sellados);
+    my (@mal, @nohay, @ok, @solo_fecha, @transformadas, @sellados, @por_404);
     my (%codigos, $bloqueados, $ausentes);
     $bloqueados = $ausentes = 0;
+    # ═════════════════════════════════════════════════════════════════════════
+    #  🔴 G11 TAMBIEN LE PREGUNTA AL HOST POR SU 404 (26-sep-2026)
+    # ═════════════════════════════════════════════════════════════════════════
+    #  EST-03 tiene dos mitades y el candidato solo puede medir una: el
+    #  CONTENIDO del 404.html. La otra —que el host conteste una URL inventada
+    #  con 404 y CON ESA pagina— quedaba «para despues de subir», y despues de
+    #  subir no la pedia nadie: la puerta decia que G11 ya la contestaba, y G11
+    #  no pedia ninguna URL que no existiera.
+    #  Medido el dia que salio: una web recien publicada, recibo PASA y G11 PASA,
+    #  ensenaba en cada URL rota la pagina GENERICA del servidor (805 bytes, sin
+    #  menu ni salida). Su .htaccess pasaba el banco en un Apache de verdad; el
+    #  host era LiteSpeed y trata distinto la subpeticion del ErrorDocument.
+    #  Ningun gate de antes de subir lo puede ver: hay que preguntarselo al host.
+    #  Se piden DOS rutas inventadas, sin extension y con .html, porque en
+    #  nuestras webs recorren reglas distintas del .htaccess. Cada una tiene que
+    #  dar 404 ELLA MISMA y servir el 404.html del arbol: byte a byte, o al
+    #  menos con su <title> si el host retoca bytes. Un 200 es un soft 404, un
+    #  3xx es una cadena, y un cuerpo que no es el del arbol es el del servidor.
+    my (@e404_mal, @e404_ok);
+    my $e404_nv = '';
+    my ($p404) = grep { $_->[0] eq '404.html' } @{ $R->{_manifiesto} };
+    if (!$p404) {
+        $e404_nv = 'el arbol no trae 404.html: no hay pagina contra la que comparar';
+    } else {
+        my $md5_404 = $p404->[1];
+        my $titulo  = '';
+        if (open my $fh, '<:raw', "$repo/404.html") {
+            local $/; my $t = <$fh>; close $fh;
+            ($titulo) = (defined $t ? $t : '') =~ m{<title[^>]*>([^<]+)</title>}i;
+            $titulo = '' unless defined $titulo;
+        }
+        my $tok  = substr(md5_hex(time . $$ . rand()), 0, 10);
+        my $raiz = $base; $raiz =~ s{/+$}{};
+        for my $suf ('', '.html') {
+            my ($b, $code) = baja_error("$raiz/no-existe-g11-$tok$suf");
+            my $ev = "/no-existe-g11-<aleatorio>$suf";
+            # Lo que el gate no ha podido preguntar no es informacion sobre la
+            # web: mismo criterio que los «negados» del recorrido de abajo.
+            if ($code == 0 || $code == 401 || $code == 403 || $code == 407
+                || $code == 408 || $code == 429) {
+                $e404_nv = "no he podido preguntar: $ev -> HTTP $code (negado o sin respuesta)";
+                @e404_mal = (); @e404_ok = ();
+                last;
+            }
+            if ($code != 404) {
+                push @e404_mal, sprintf('%s  ·  HTTP %d · tiene que ser 404%s', $ev, $code,
+                      $code == 200                  ? ' (un 200 es un soft 404: el buscador indexa basura)'
+                    : ($code >= 300 && $code < 400) ? ' (un salto que acaba en 404 es una cadena, no un 404)'
+                    : ($code >= 500)                ? ' (el host se rompe en su propia pagina de error)'
+                    :                                 '');
+            } elsif (md5_hex($b) eq $md5_404) {
+                push @e404_ok, "$ev  ·  404 con el 404.html del arbol, byte a byte";
+            } elsif ($titulo ne '' && index($b, $titulo) >= 0) {
+                push @e404_ok, "$ev  ·  404 con la pagina del arbol (mismo <title>; el host cambia bytes)";
+            } else {
+                push @e404_mal, sprintf('%s  ·  404, pero NO con la pagina del arbol: %d bytes que no son el 404.html',
+                                        $ev, length $b);
+            }
+        }
+    }
+
+    # Las DOS rutas inventadas han devuelto el 404.html del arbol byte a byte:
+    # entonces ese fichero esta servido, aunque no en su propia URL (ver abajo).
+    # Con el <title> a secas no esta probado, y no cuenta.
+    my $e404_exacto = (@e404_ok == 2 && !@e404_mal
+                       && !grep { !/byte a byte/ } @e404_ok) ? 1 : 0;
+
     my $n = 0;
     for my $f (@{ $R->{_manifiesto} }) {
         my ($rel, $md5) = @$f;
@@ -1671,6 +1757,17 @@ sub servido {
             $ucode  = 200;
         }
         next if $hallado;
+        # 🔴 26-sep-2026 · EL 404.html QUE NO SE SIRVE EN SU PROPIA URL, A PROPOSITO.
+        #    Una web que bloquea /404.html pedida a mano («la pagina de error no
+        #    es una pagina») lo veia aqui como NO HALLADO en cada subida, y la
+        #    puerta avisaba de algo que no es un fallo: un guardia que grita
+        #    siempre ensena a no mirarlo. Si la 404 del host acaba de devolver
+        #    ESTE fichero byte a byte (arriba), esta servido: cuenta, y se dice por que.
+        if ($rel eq '404.html' && $e404_exacto) {
+            push @ok, $rel;
+            push @por_404, "$rel  ·  $ultimo, pero es EXACTAMENTE el cuerpo de la 404 del host (EST-03)";
+            next;
+        }
         if ($ultimo =~ /md5 distinto/) { push @mal,   "$rel  ·  $ultimo" }
         else {
             push @nohay, "$rel  ·  $ultimo";
@@ -1751,7 +1848,9 @@ sub servido {
     #  🔴 Y si lo unico que se ha podido mirar son imagenes que el CDN
     #  transforma, NO hay verde: no se ha verificado ni un fichero. Es la misma
     #  regla del «0 comparados» de arriba, con otro disfraz.
-    my $veredicto = (@mal || @rec_mal)                ? 'FALLA'
+    # La 404 del host pesa como un receptor roto: produccion no esta sirviendo
+    # lo que se aprobo (el 404.html va en el arbol sellado).
+    my $veredicto = (@mal || @rec_mal || @e404_mal)   ? 'FALLA'
                   : ($comparados == 0)                ? 'GATE-ROTO'
                   : (!@ok && @transformadas)          ? 'COBERTURA'
                   : ($bloqueados > $comparados)       ? 'COBERTURA'
@@ -1765,8 +1864,10 @@ sub servido {
         sellados => \@sellados,
         arbol => scalar @{ $R->{_manifiesto} }, veredicto => $veredicto,
         rec_mal => \@rec_mal, rec_ok => \@rec_ok,
+        e404_mal => \@e404_mal, e404_ok => \@e404_ok, e404_nv => $e404_nv,
+        por_404 => \@por_404,
     );
-    return (((@mal || @rec_mal) ? 1 : 0), \@mal, \@nohay, \@ok, $R, \%diag);
+    return (((@mal || @rec_mal || @e404_mal) ? 1 : 0), \@mal, \@nohay, \@ok, $R, \%diag);
 }
 
 # =============================================================================
@@ -2005,6 +2106,7 @@ sub main {
         # enlaza de verdad. Se imprime igual porque taparlo escondería el dia en
         # que el sello deje de emitirse y todo el mundo vuelva a la URL desnuda.
         print "  SELLADO-OK  $_\n" for @{ $D->{sellados} || [] };
+        print "  VERIFICADO-POR-LA-404  $_\n" for @{ $D->{por_404} || [] };
         # 🔴 Su propio bloque, y con el hueco dicho. No son OK: son imagenes que
         #    un CDN reescribe, asi que su md5 NO se ha comprobado ni se puede.
         if (@{ $D->{transformadas} || [] }) {
@@ -2024,6 +2126,15 @@ sub main {
             print "  RECEPTOR-MAL  $_\n" for @{ $D->{rec_mal} };
             print "  receptor      $_\n" for @{ $D->{rec_ok} };
         }
+        # ── la 404 del host (EST-03), en su propio bloque ──────────────────
+        if (@{ $D->{e404_ok} || [] } || @{ $D->{e404_mal} || [] }) {
+            printf "  404 del host (EST-03): %d bien · %d mal\n",
+                   scalar @{ $D->{e404_ok} }, scalar @{ $D->{e404_mal} };
+            print "  404-MAL       $_\n" for @{ $D->{e404_mal} };
+            print "  404           $_\n" for @{ $D->{e404_ok} };
+        } elsif (($D->{e404_nv} // '') ne '') {
+            print "  404 del host (EST-03): NO VERIFICADO · $D->{e404_nv}\n";
+        }
         print "  NO HALLADO $_\n" for @$nohay[0 .. ($#$nohay > 9 ? 9 : $#$nohay)];
         print "  ... y " . (@$nohay - 10) . " no hallados mas\n" if @$nohay > 10;
         historial(sitio => ($R->{SITIO} // ''), accion => 'SERVIDO',
@@ -2038,6 +2149,17 @@ sub main {
             printf "\n  (%d sitemap identico salvo <lastmod>: lo estampa _gen.ps1 al generar.\n",
                    scalar @{ $D->{solo_fecha} };
             print  "   Se compara TODO lo demas byte a byte —quitar una URL sigue saltando.)\n";
+        }
+        # Va ANTES del bloque del receptor, que sale con `return` y lo taparia.
+        my $rojo404 = @{ $D->{e404_mal} || [] } ? 1 : 0;
+        if ($rojo404) {
+            print "\n🔴 UNA URL ROTA NO ENSENA LA PAGINA 404 DEL SITIO.\n";
+            print "   Quien llega por un enlace viejo o mal escrito se queda en un callejon\n";
+            print "   sin salida, y no se nota mirando la web: todas las paginas que existen\n";
+            print "   se ven perfectas. Causas ya vistas: una regla del .htaccess que el host\n";
+            print "   trata distinto que el Apache del banco (LiteSpeed rellena REDIRECT_STATUS\n";
+            print "   solo cuando el error viene de mod_rewrite), o un ErrorDocument que no\n";
+            print "   apunta al 404.html.\n";
         }
         if (@{ $D->{rec_mal} }) {
             print "\n🔴 UN RECEPTOR DE LEADS NO ESTA BIEN EN PRODUCCION.\n";
@@ -2057,6 +2179,7 @@ sub main {
             }
             return 1;
         }
+        return 1 if $rojo404;
         # ── 🔴 el gate se declara roto ANTES de dejar pasar nada ────────────
         if ($D->{veredicto} eq 'GATE-ROTO') {
             printf "\n🔴 G11 NO HA COMPARADO NI UN FICHERO (0 de %d). ESTO ES UN FALLO DEL GATE.\n",

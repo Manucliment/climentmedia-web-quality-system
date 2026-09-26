@@ -1120,6 +1120,17 @@ JSON
     printf '  MAL   %-46s exit %s\n' "los DOS momentos, de punta a punta" "$rc"; ko=$((ko+1))
     printf '%s\n' "$salida" | tail -8 | sed 's/^/          /'
   fi
+  # 🔴 26-sep-2026 · la puerta decia «Las N que el candidato no podia medir (...)
+  #    ya tienen respuesta», con EST-03 dentro, y G11 no preguntaba por la 404
+  #    del host. Ahora dice que ha contestado G11 LEYENDOLO DE G11. Este arbol no
+  #    trae 404.html, asi que EST-03 NO puede salir como contestada.
+  if printf '%s' "$salida" | grep -q 'G11 acaba de contestar: EST-09$' \
+     && printf '%s' "$salida" | grep -q 'Y NO ha contestado: REN-08 REN-09 EST-03\.$'; then
+    printf '  OK    %-46s EST-09 si, EST-03 no (no hay 404.html)\n' "la puerta dice lo que G11 ha contestado"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s\n' "la puerta dice lo que G11 ha contestado"; ko=$((ko+1))
+    printf '%s\n' "$salida" | grep -n 'contestar\|contestado' | sed 's/^/          /'
+  fi
   # 🔴 CONTROL NEGATIVO: si lo servido NO es lo del recibo, G11 tiene que
   #    seguir cerrando la puerta. Un recibo de candidato NO exime de G11: esa
   #    es la mitad de todo el arreglo.

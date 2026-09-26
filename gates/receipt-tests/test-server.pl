@@ -99,7 +99,26 @@ while (my $c = $s->accept) {
         print $c "HTTP/1.0 200 OK\r\nContent-Length: " . length($b)
                . "\r\nContent-Type: text/plain\r\n\r\n$b";
     } else {
-        print $c "HTTP/1.0 404 Not Found\r\nContent-Length: 3\r\n\r\n404";
+        # ── LA 404 DEL HOST, a peticion (26-sep-2026) ───────────────────────
+        #  Sin marcador, como siempre: un 404 de 3 bytes, que es la pagina
+        #  GENERICA del servidor —justo lo que ensenaba LiteSpeed el dia que
+        #  G11 aprendio a preguntar por ella—.
+        #    <raiz>/_errordoc.txt -> sirve ESE fichero con 404: un ErrorDocument
+        #                            bien puesto.
+        #    <raiz>/_soft404.txt  -> sirve ESE fichero con 200: un soft 404.
+        my $ed = marcador("$raiz/_errordoc.txt");
+        my $sf = marcador("$raiz/_soft404.txt");
+        my ($doc, $st) = $ed ne '' ? ($ed, '404 Not Found')
+                       : $sf ne '' ? ($sf, '200 OK')
+                       :             ('', '');
+        $doc =~ s/\s+//g;
+        if ($doc ne '' && -f "$raiz/$doc" && open my $eh, '<:raw', "$raiz/$doc") {
+            local $/; my $b = <$eh>; close $eh; $b = '' unless defined $b;
+            print $c "HTTP/1.0 $st\r\nContent-Length: " . length($b)
+                   . "\r\nContent-Type: text/html\r\n\r\n$b";
+        } else {
+            print $c "HTTP/1.0 404 Not Found\r\nContent-Length: 3\r\n\r\n404";
+        }
     }
     close $c;
 }
