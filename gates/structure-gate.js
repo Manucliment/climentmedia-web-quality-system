@@ -31,7 +31,8 @@
  *
  *  Parametros (todos opcionales), en `window.__GATE__`:
  *    tipo       home|servicio|ciudad|producto|hub|guia|comparativa|precios|
- *               contacto|gracias|legal|404      (si falta, se infiere de la ruta)
+ *               contacto|gracias|legal|404|landing|nosotros|empleo
+ *               (si falta, se lee `data-tipo`; y si tampoco, se infiere de la ruta)
  *    ruta       ruta a usar para inferir el tipo (para medir una copia local)
  *    origen     origen a considerar «interno» (para medir una copia local)
  *    ecommerce  true  -> el hero puede navegar al catalogo (excepcion 09 §3.1)
@@ -104,6 +105,12 @@ const PERFIL = {
   servicio:    { estructura:true,  minPrim:4, minEnlaces:3, cierre:true,  hero:true  },
   ciudad:      { estructura:true,  minPrim:4, minEnlaces:3, cierre:true,  hero:true  },
   producto:    { estructura:true,  minPrim:4, minEnlaces:3, cierre:true,  hero:true  },
+  // 🔴 26-sep-2026 · `ficha` es el tipo CANONICO (anatomy.tsv) y `producto` su
+  //    alias, pero aqui solo estaba el alias: una pagina con data-tipo="ficha"
+  //    caia en el `|| {...}` del final. Coincidia por casualidad con el de
+  //    producto; ahora es explicito, y anatomy.pl --gate (C2) exige que TODO
+  //    tipo y todo alias del TSV tenga su linea en esta tabla.
+  ficha:       { estructura:true,  minPrim:4, minEnlaces:3, cierre:true,  hero:true  },
   hub:         { estructura:true,  minPrim:3, minEnlaces:4, cierre:true,  hero:false },
   guia:        { estructura:true,  minPrim:4, minEnlaces:3, cierre:true,  hero:false },
   comparativa: { estructura:true,  minPrim:4, minEnlaces:3, cierre:true,  hero:false },
@@ -134,6 +141,23 @@ const PERFIL = {
   //    alli: esa regla garantiza >=2 CTAs en una pagina que se recorre. Una
   //    landing no se recorre.
   landing:     { estructura:true,  minPrim:2, minEnlaces:0, cierre:false, hero:true,  lectura:false },
+  // `quiz` es el alias aceptado de `landing` (anatomy.tsv). Sin esta linea, una
+  // pagina que se declarara `quiz` se media con el perfil de SERVICIO: justo lo
+  // que el comentario de arriba llama «activamente malo» para una landing.
+  quiz:        { estructura:true,  minPrim:2, minEnlaces:0, cierre:false, hero:true,  lectura:false },
+  // 🔴 26-sep-2026 · `nosotros` y `empleo` (09 §2.13 y §2.14). Sin estas dos
+  //    lineas caian en el `|| {...}` del final: el perfil de SERVICIO, en
+  //    silencio -- el mismo defecto que el comentario de `quiz` avisa arriba.
+  //    · nosotros: hero:false porque 0 de 4 referencias convierten en el hero (la
+  //      vuelta a la conversion es el cierre, que SI es obligatorio) · minPrim:4
+  //      son sus 4 roles OBL · minEnlaces:2 = la oferta y la conversion, que es
+  //      a donde una «a propos» tiene que devolver.
+  //    · empleo: como `contacto`. La accion es la candidatura o el catalogo, no
+  //      un cierre: cierre:false · minEnlaces:0 porque su trabajo es que el
+  //      candidato no se vaya · lectura:false: es un listado y un formulario.
+  //      hero:true porque 3 de 4 referencias ponen ahi la primera accion.
+  nosotros:    { estructura:true,  minPrim:4, minEnlaces:2, cierre:true,  hero:false, lectura:true  },
+  empleo:      { estructura:true,  minPrim:3, minEnlaces:0, cierre:false, hero:true,  lectura:false },
   gracias:     { estructura:false, minPrim:2, minEnlaces:0, cierre:true,  hero:false, lectura:false },
   legal:       { estructura:false, minPrim:0, minEnlaces:0, cierre:false, hero:false, lectura:true  },
   '404':       { estructura:false, minPrim:0, minEnlaces:3, cierre:false, hero:false, lectura:false },
@@ -738,6 +762,8 @@ const ANATOMIA = {
   contacto:     ['hero', 'prueba'],
   gracias:      ['hero', 'proceso', 'cierre'],
   landing:      ['hero', 'recurso'],
+  nosotros:     ['hero', 'contexto', 'prueba', 'cierre'],
+  empleo:       ['hero', 'catalogo', 'oferta'],
 };
 /* Sin anatomia, a proposito: 09 §2.11 */
 const ANATOMIA_SIN = ['legal', '404'];

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quienes somos | Fixture del tipo nosotros</title>
+<meta name="description" content="Fixture de la bateria: una pagina «sobre nosotros» que DECLARA su tipo con data-tipo=nosotros y lleva los cuatro roles obligatorios de 09 §2.13.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- 26-sep-2026 · 09 §2.13. La ruta es la raiz, asi que sin la declaracion el
+     gate la inferiria «home» y le pediria oferta y proceso. Con data-tipo tiene
+     que salir NOSOTROS en el resumen de tipos, y pasar con sus cuatro roles. -->
+<main data-tipo="nosotros">
+  <section data-sec="hero"><h1>Quienes somos</h1><p>Un taller de barrio desde hace veinte anos.</p></section>
+  <section data-sec="contexto"><h2>Quien hay detras</h2><p>Dos socios y un equipo de seis.</p></section>
+  <section data-sec="prueba"><h2>En cifras</h2><p>20 anos · 6 personas · 3 barrios.</p></section>
+  <section data-sec="cierre"><h2>Hablemos</h2><p><a href="/contacto/">Pide presupuesto</a>.</p></section>
+</main>
+</body>
+</html>

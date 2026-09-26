@@ -215,7 +215,7 @@ sources that already exist is not a second answer to the question — it is the 
 **The sheet does not contain the mould's markup, deliberately.** Copying it in would be the same
 mistake wearing different clothes, and worse: the day a mould gets fixed, the sheet would still be
 showing the defect. It assembles and points. Editing a sheet by hand does not survive one battery —
-`roles.pl --gate` re-derives all thirteen and fails on any difference. The test bank pins that both
+`roles.pl --gate` re-derives every one of them and fails on any difference. The test bank pins that both
 ways: a hand edit goes red, and regenerating brings it back to green.
 
 `roles.tsv` also closes an edge that did not exist before: `anatomy.pl` reconciles the table against
@@ -223,16 +223,20 @@ the document by **counting REQ markers**, so renaming a role on either side kept
 nobody saw it. The roles are now compared **by name and by default primitive**. Counting is weaker
 than comparing, and this is where it showed.
 
-⚠️ **Two roles are in the vocabulary and in no anatomy at all** — `evidence` and `context`. Found by
-that gate on the day it was written. They are marked `SOLO-VOCABULARIO` in `roles.tsv` with the
-reason, because putting a role into an anatomy changes what **every** site is obliged to carry: that
-is a decision for 09 §2, not for a gate. Declared, not silently dropped — and the gate fails if the
-declaration is removed.
+⚠️ **Two roles were in the vocabulary and in no anatomy at all** — `evidence` and `context`. Found by
+that gate on the day it was written, and marked `SOLO-VOCABULARIO` in `roles.tsv` with the reason,
+because putting a role into an anatomy changes what **every** site is obliged to carry: that is a
+decision for 09 §2, not for a gate. **It was taken on 2026-09-26**: `context` is required on an about
+page and `evidence` on a careers page with someone to quote (09 §2.13, §2.14). The gate now fails in
+**both** directions — a role no anatomy uses and nobody declared, and a role an anatomy uses that is
+still declared vocabulary-only.
 
 What still rules here: **§5** (loose paragraph to primitive) and **rule 3 of §2** (minimum 4 distinct
 primitives per page, maximum one feature grid). Plus the two constants of every page: **it starts
 with 01 hero and ends with 11 closing-cta** — that is what guarantees the ≥2 calls to action the
-density gate requires, and what avoids 32 of 39 blocks with no CTA.
+density gate requires, and what avoids 32 of 39 blocks with no CTA. **The exceptions are the pages
+whose own action is the thing itself**, and they are declared in their anatomy: a landing, where the
+resource is the call (09 §2.12), and a contact or careers page, where the form is (09 §2.9, §2.14).
 
 ### Known debt: three REQUIRED roles that still have no mould
 
@@ -243,7 +247,7 @@ three are required in some anatomy.
 |---|---|---|
 | `siblings` | service · city · product · guide · comparison (**5**) | a loose list, or a borrowed feature grid |
 | `map` | city · contact (if there is a location) | area chips + a static image by hand |
-| `form` | contact (if there is a form) | nothing |
+| `form` | contact (if there is a form) · careers (if applications are taken on the page) | nothing |
 
 They are registered **before** being extracted for the same reason the component index exists: **a
 component that exists and is not in the index gets rewritten from scratch on the next project.** And

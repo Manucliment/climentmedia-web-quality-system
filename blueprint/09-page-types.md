@@ -73,12 +73,16 @@ prose-page — **a page with headings and ZERO roles is prose by definition.**
 > [`10-layout-vocabulary.md §6.1`](10-layout-vocabulary.md) for why a *generated* sheet is allowed
 > where a hand-written composition table was deleted.
 >
-> ⚠️ `evidence` and `context` are in this vocabulary and **in no anatomy**: nothing requires them
-> today. Marked `SOLO-VOCABULARIO` in `roles.tsv` rather than quietly dropped — adding a role to an
-> anatomy changes what every site must carry, and that decision belongs in §2.
+> ⚠️ `evidence` and `context` were in this vocabulary and **in no anatomy** until 2026-09-26, marked
+> `SOLO-VOCABULARIO` in `roles.tsv` rather than quietly dropped — adding a role to an anatomy
+> changes what every site must carry, and that decision belongs in §2. It was taken there: `context`
+> is required on an about page (§2.13) and `evidence` on a careers page when there is someone to
+> quote (§2.14). Both marks came off in the same change, and `roles.pl` now goes red if a role an
+> anatomy uses is still declared vocabulary-only — the check used to run in one direction only.
 
 > **Three roles have no mould yet, and all three are mandatory in some anatomy** — `siblings`
-> (required in 5 of the 11), `map` (city and contact) and `form` (contact). They exist in
+> (required in 5 of the 13), `map` (city and contact) and `form` (contact and careers, in both only
+> where the form actually is). They exist in
 > production already, unextracted. They are registered here **before** being extracted, for the
 > same reason the mould index exists: **a component that exists and is not in the index gets
 > rewritten from scratch.** Meanwhile the role **is still required**: with no mould you lay it out
@@ -118,9 +122,9 @@ prose-page — **a page with headings and ZERO roles is prose by definition.**
 | Intent | Types | What the visitor is doing |
 |---|---|---|
 | **transactional** | `product` · `pricing` · `service` · `city` | deciding, or about to |
-| **capture** | `quiz` · `contact` | handing over their details, or not |
+| **capture** | `quiz` · `contact` · `careers` | handing over their details, or not — on a careers page, **as a candidate, not as a customer** |
 | **navigational** | `home` · `hub` | choosing where to go |
-| **informational** | `guide` · `comparison` | learning, and not buying yet |
+| **informational** | `guide` · `comparison` · `about` | learning, and not buying yet — on an about page, **whether to trust who is behind it** |
 | **utility** | `thanks` · `legal` · `404` | neither of the above |
 
 ### The rule that comes out of crossing them
@@ -163,7 +167,7 @@ without the `objective` field. What it does catch is the failure that comes free
 title written for the search result and an `<h1>` written for the visitor, drifting apart until they
 promise two different pages. Do not read it as the voice contract being live. It is not.
 
-## 2 · The twelve anatomies (13 types: legal and 404 share §2.11)
+## 2 · The fourteen anatomies (15 types: legal and 404 share §2.11)
 
 > **THE SINGLE SOURCE of "which sections each page type carries."** There is no other. Another
 > document once gave a second table, by primitive instead of by role, and **it disagreed with this
@@ -189,6 +193,19 @@ optional, with the condition that justifies it.
 > table touches every site and every gate: it is a DECISION, not a fix made in passing.** Until it
 > is decided, those pages stay undeclared — and **declaring them as "the nearest type" would be
 > worse**, because it would pass a check that was not actually performed.
+>
+> 🔴 **2026-09-26 · two of the three are now types: about (§2.13) and careers (§2.14).** The
+> decision was taken by the owner when a migrated site could not publish: its about and careers
+> pages carried their roles, had no type to be measured against, and the gate audited both **as
+> service pages** — demanding qualification and objections of a page about who runs the company.
+> Both anatomies were derived from **eight pages of other businesses** (four each, half of them in
+> home care, half in other trades), never from the page that needed them: reading a type off our
+> own example measures our habit, which is exactly what went wrong with the landing on 2026-09-01
+> (§2.12). **The partner page is still a hole**, and stays undeclared until someone measures it.
+>
+> ⚠️ And one site in our own fleet had already done the worse thing: its about page declared itself
+> a *product detail page*, and passed that anatomy. It is now a page with a wrong declaration and a
+> right type to move to.
 
 ### 2.1 · Home
 
@@ -421,6 +438,107 @@ catches on our own sites. They are conversion machines with no document undernea
 > evidence about what to put where and in what order. It is not evidence that the HTML underneath it
 > is sound, and these three are the clearest case of that split this system has measured — excellent
 > at the first question, indefensible on the second.
+
+### 2.13 · About — who is behind it, and the way back to the offer
+
+**An about page is not a biography.** It answers the question a visitor asks just before trusting a
+service — *who is behind this, and can they back it?* — and then hands them back to the page that
+converts. The four references agree on the first half and mostly fail the second.
+
+| # | Role | | If it is missing |
+|---|---|---|---|
+| 1 | `hero` = who you are, in one sentence | REQ | A page titled "About us" and nothing else, which is what one reference ships |
+| 2 | `context` = who is behind it: the company, the founders, the history, the values, the team | REQ | The page is called "about" and is about nothing. **Authority, not biography** |
+| 3 | `proof` = figures, years, volume, accreditations | REQ | Everything above is the company talking about itself; this is the part that can be checked |
+| 4 | `catalogue` | OPT — if the page is a hub over about sub-pages (history, values, team) | — |
+| 5 | `offer` | OPT — if the page also has to say what the company does | — |
+| 6 | `evidence` | OPT — if reviews are themselves an argument (their volume, a public rating) | — |
+| 7 | `process` | OPT — if the way of working is the difference | — |
+| 8 | `closing` = the way back to the site's conversion | REQ | The visitor who has just decided to trust you leaves by the menu |
+
+`context` and `proof` alternate, and **their order varies from reference to reference**: here the row
+order is not part of the rule. The hero and the closing are.
+
+**FORBIDDEN:** a hero that is only the word "About" · figures marked up as headings for their size
+(one reference has five `<h1>`: its three figures are three of them) · proof that exists only when
+JavaScript runs (a review carousel that is empty in the served HTML) · **someone else's figures
+presented as your own** — a sister company's numbers are proof *of the group*, and the sentence says
+so.
+
+> 🔴 **`closing` is required although only 2 of the 4 references carry it, and that is the point.**
+> Of six about pages read, **four end with no action in the body**: two are hubs whose only way
+> forward is a row of "read more", one ends on a blog feed placed after its closing, one on a link to
+> its staff page. That is not a composition to copy — it is §1-bis: an informational page that does
+> not route to the layer that converts is *someone else's page, published on your domain*. **The
+> composition comes from the references; the routing rule comes from this standard, and it wins.**
+
+#### What four about pages actually do — measured, 2026-09-26
+
+Served HTML, split into top-level blocks by a small extractor with its own self-test, each block
+mapped to a role by hand. All four serve their content server-side. **Above the fold was inferred
+from document order, not rendered.**
+
+| | home-nursing federation (BE) | national home-care provider (UK) | plumbing and maintenance firm (UK) | accountancy firm, 24 offices (BE) |
+|---|---|---|---|---|
+| Blocks, in order | hero · catalogue (quality pages) · catalogue (organisation pages) | hero · context · proof · offer · evidence · context (chief executive) · proof (regulator ratings) · context (history) · closing | hero with proof in it · context (history) · context (values) · charities · closing · blog feed | hero · catalogue · context · proof (a band of three figures) · context (team) |
+| Action in the hero | none | none | none | an in-page anchor |
+| Ends on an action | no | **yes** | no — the blog comes after the closing | no |
+
+Read with the same extractor and not counted: two more about pages (a home-care franchise, a
+home-installation firm) carry the same context-and-proof backbone, and **neither ends on an action**.
+
+### 2.14 · Careers — recruiting, without mixing it into the site's conversion
+
+**A careers page sells a job, not the service.** Its visitor is a candidate: they want to know what is
+open, what working there is like, and how to apply — and **their application is not a lead**.
+
+| # | Role | | If it is missing |
+|---|---|---|---|
+| 1 | `hero` with the first action (see the openings, apply) | REQ | Three of the four references put that action on the first screen |
+| 2 | `catalogue` = the openings, with their status (place, contract, open or closed) — **one opening is a catalogue** | REQ | The candidate cannot tell whether there is anything for them |
+| 3 | `offer` = what working here includes: pay, hours, support, growth | REQ | A vacancy with no reason to choose this employer over the next |
+| 4 | `evidence` = people who work there, in their own words | REQ if there are employees to quote | — |
+| 5 | `qualification` = who you are looking for, and who not | OPT — if the job needs credentials, or explicitly does not | — |
+| 6 | `process` = the recruitment steps | OPT — if there are checks: diplomas, registration, background | — |
+| 7 | `objections` | OPT — if pay or hours vary | — |
+| 8 | `form` = the application | REQ if applications are taken on this page | — |
+
+> 🔴 **`evidence` is the one role here that is not required outright, although all four references
+> carry it** — two with real quotes on the page, one with only a link to them, one with an award. All
+> four employ hundreds of people. **A business hiring its first staff has nobody to quote**, and a
+> rule that demands the impossible is a rule that gets switched off. It is written like the map on a
+> contact page — *required if the fact exists* — and so the gate cannot catch a large employer's
+> careers page with no evidence. **That hole is declared, not hidden.**
+
+> **One or two openings are a list, not a grid.** The catalogue's default mould is the feature grid,
+> and that mould is for 3, 4 or 6 items of the same kind: a single card in a three-column grid reads
+> as a page that failed to load. The catalogue is the role; with one opening, a short list with its
+> contract and its status does the job.
+
+> **`form` is conditional for the opposite reason:** none of the four references takes applications
+> on the page itself. All four have a system behind it — job pages, local offices, an external
+> applicant-tracking tool. A small business without one takes the application here, and then the
+> form is the page's action, like on a contact page.
+
+**FORBIDDEN:** an "apply today" with no link to apply · content aimed at customers on the candidate's
+page (one reference opens with a client video and closes with the client newsletter) · a job search
+built from a `<div>` with no role and a field with no label · job news two years old · **counting an
+application as a lead**: its form goes to its own thank-you page and its event is measured apart,
+or a wave of candidates will read as a good month.
+
+#### What four careers pages actually do — measured, 2026-09-26
+
+Same method as §2.13.
+
+| | home-nursing federation (BE) | senior home-care franchise (US) | plumbing firm (UK) | home-installation firm (NL) |
+|---|---|---|---|---|
+| Blocks, in order | hero · catalogue (openings by category, with counts) · offer · offer (video) · evidence (a link to it) · siblings (internships) · resource (quiz) · job news · events · newsletter | hero with a location search · offer · catalogue (by location) · proof (award) · qualification and process · offer (pay) · offer (support) · evidence (award) · objections · legal note | hero · qualification · offer · legal note · evidence (video) · offer (perks) · evidence (two quotes) · catalogue (one card) | hero · catalogue (search) · offer · catalogue (by department) · evidence (three quotes) · process · catalogue (highlights) · context · closing (job alerts) |
+| Application on the page | no — job pages | no — local offices | no — external system | no — external job board |
+
+**Defects not copied:** a location search whose field has no label and whose button is a `<div>`
+outside any form; a link with an empty `href`; headings that skip from `<h1>` to `<h3>`; the only
+opening in the catalogue pointing to an external system in a new tab while the copy recruits trades it
+never lists.
 
 ## 3 · The hard rule for the home: a hero that converts, not one that links
 
