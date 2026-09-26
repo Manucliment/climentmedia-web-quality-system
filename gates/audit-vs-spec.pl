@@ -127,7 +127,28 @@ my $SPEC = "$ROOT/_spec";
     exit 2;
 };
 
-my %SOLO = map { $_ => 1 } grep { $_ ne '' } split /,/, $opt{solo};
+# 🔴 26-sep-2026 · UN NOMBRE DE BLOQUE EN INGLES NO MEDIA NADA, Y SALIA PASA.
+#    `--only` se traducia a `--solo`, pero el VALOR no: `--only skeleton` no casaba
+#    con ningun bloque, no corria ninguno, y el resumen decia «PASA 0 · FALLO 0 ·
+#    AVISO 0 · NO VERIFICADO 0 · VEREDICTO: PASA» con exit 0. Es la orden que
+#    escribe paths/1-new-site.md en seis de sus pasos. Medido ese dia contra un
+#    repo real: `--only skeleton` 0 comprobaciones, `--solo esqueleto` 3.
+#    Ahora los nombres ingleses son alias, un bloque desconocido sale con 2, y una
+#    corrida que no produce NI UNA comprobacion sale NO MEDIDO (abajo, exit 2).
+my @BLOQUES = qw(intake esqueleto paginas anatomia enlazado medicion formularios imagenes legal inventado);
+my %BLOQUE_OK = map { $_ => 1 } @BLOQUES;
+my %BLOQUE_ALIAS = (skeleton => 'esqueleto', pages => 'paginas', anatomy => 'anatomia',
+                    linking => 'enlazado', measurement => 'medicion', forms => 'formularios',
+                    images => 'imagenes', invented => 'inventado');
+my %SOLO;
+for my $pedido (grep { $_ ne '' } split /\s*,\s*/, lc $opt{solo}) {
+    my $b = $BLOQUE_ALIAS{$pedido} // $pedido;
+    $BLOQUE_OK{$b} or do {
+        print STDERR "  Bloque desconocido: '$pedido'. Hay: ", join(', ', @BLOQUES), "\n",
+                     "  (en ingles: ", join(', ', sort keys %BLOQUE_ALIAS), ", legal, intake)\n";
+        exit 2 };
+    $SOLO{$b} = 1;
+}
 sub quiere { my $b = shift; return !%SOLO || $SOLO{$b} }
 
 # =============================================================================
@@ -966,6 +987,8 @@ my %fn = (intake=>\&bloque_intake, esqueleto=>\&bloque_esqueleto, paginas=>\&blo
           anatomia=>\&bloque_anatomia, enlazado=>\&bloque_enlazado, medicion=>\&bloque_medicion,
           formularios=>\&bloque_formularios, imagenes=>\&bloque_imagenes, legal=>\&bloque_legal,
           inventado=>\&bloque_inventado);
+# La lista que valida `--solo` y la que ejecuta tienen que ser la misma.
+for (keys %fn) { $BLOQUE_OK{$_} or die "bloque '$_' sin registrar en \@BLOQUES\n" }
 for my $b (@plan) {
     next unless quiere($b);
     printf "── %s %s\n", uc $b, '─' x (72 - length $b);
@@ -979,6 +1002,15 @@ my $nn = grep { $_->{estado} eq 'NV'    } @R;
 my $np = grep { $_->{estado} eq 'PASA'  } @R;
 
 print "-" x 78, "\n";
+if (!@R) {
+    # Cero comprobaciones no es un aprobado: es que no se ha mirado nada. Pasa si
+    # el bloque pedido no se aplica en este modo (en migracion no hay esqueleto).
+    print "  NADA MEDIDO: ningun bloque ha producido una sola comprobacion.\n";
+    printf "  Pedido: %s · en modo %s se aplican: %s\n", join(',', sort keys %SOLO), $opt{modo}, "@plan" if %SOLO;
+    print "  VEREDICTO: NO MEDIDO\n";
+    print "-" x 78, "\n";
+    exit 2;
+}
 printf "  PASA %d  ·  FALLO %d  ·  AVISO %d  ·  NO VERIFICADO %d\n", $np, $nf, $na, $nn;
 print  "  🔴 NO VERIFICADO no es un aprobado: es lo que nadie ha mirado.\n" if $nn;
 print  "  VEREDICTO: ", ($nf ? 'FALLA' : 'PASA'), "\n";
