@@ -62,6 +62,44 @@ caso('cita references/ que NO existe', 'D1',
 caso('cita references/ que SI existe', 'D1',
      { 'doc.md' => "Se corre con `references/real.pl`.\n", 'real.pl' => $PROG }, 'PASA');
 
+# 🔴 26-sep-2026 · LAS CARPETAS DE HOY. `references/` desaparecio el 26-ago y D1
+#    solo buscaba ese prefijo: un mes saliendo PASA sin comprobar ni una ruta
+#    actual. Los dos primeros casos son los que el gate anterior daba en VERDE.
+#    El tercero fija que se resuelve contra la raiz de la SKILL: un CLAUDE.md de
+#    cliente cita `gates/...` de la skill, y en su repo esa ruta no esta.
+caso('cita gates/ que NO existe (ni aqui ni en la skill)', 'D1',
+     { 'doc.md' => "Se corre con `gates/no-existe-en-ningun-sitio.pl`.\n", 'real.pl' => $PROG }, 'FALLO');
+caso('cita blueprint/ que NO existe', 'D1',
+     { 'doc.md' => "El metodo esta en `blueprint/99-no-existe.md`.\n", 'real.pl' => $PROG }, 'FALLO');
+caso('cita gates/ que existe en la SKILL aunque se mida otro arbol', 'D1',
+     { 'doc.md' => "La documentacion la mide `gates/doc-gate.pl`.\n", 'real.pl' => $PROG }, 'PASA');
+caso('cita gates/ que existe en el arbol mirado', 'D1',
+     { 'doc.md' => "Se corre con `gates/propio.pl`.\n", 'real.pl' => $PROG, 'gates/propio.pl' => $PROG }, 'PASA');
+caso('un nombre anterior entre parentesis, tambien con carpeta de hoy', 'D1',
+     { 'doc.md' => "Corre `gates/doc-gate.pl` *(entonces `gates/nombre-viejo.pl`)*.\n", 'real.pl' => $PROG }, 'PASA');
+# La copia por maquina de una plantilla: gitignored, asi que un clon limpio no la
+# tiene. Con su `.example` al lado es una instruccion, no una ruta muerta; sin el,
+# sigue cayendo (el control que impide que la exencion se coma lo bueno).
+caso('una copia por maquina con su .example al lado', 'D1',
+     { 'doc.md' => "Lee el host de `gates/config/host.local.conf` (copia el .example).\n",
+       'real.pl' => $PROG, 'gates/config/host.local.conf.example' => "HOST=x\n" }, 'PASA');
+caso('...y sin .example al lado sigue cayendo', 'D1',
+     { 'doc.md' => "Lee el host de `gates/config/host.local.conf`.\n", 'real.pl' => $PROG }, 'FALLO');
+
+# 🔴 26-sep-2026 · EL COMANDO QUE SE COPIA. En un CLAUDE.md de web los programas
+#    de la skill se citan con su ruta ENTERA y dentro de un bloque de codigo, y
+#    D1 solo leia rutas sueltas entre acentos: 14 comandos vivos apuntaban a
+#    programas renombrados el 26-ago y el gate decia PASA en los cinco repos.
+caso('un comando con la ruta de la skill a un programa que ya no existe', 'D1',
+     { 'doc.md' => "```bash\nperl ~/.claude/skills/client-site/references/no-existe.pl https://x --repo .\n```\n",
+       'real.pl' => $PROG }, 'FALLO');
+caso('...y a un programa que si existe en la skill', 'D1',
+     { 'doc.md' => "```bash\nperl ~/.claude/skills/client-site/gates/doc-gate.pl --dir .\n```\n",
+       'real.pl' => $PROG }, 'PASA');
+caso('...y en un RUN_LOG es historia', 'D1',
+     { 'RUN_LOG.md' => "- `bash ~/.claude/skills/client-site/references/no-existe.sh` -> EXIT 0\n",
+       'real.pl' => $PROG }, 'PASA');
+
 print "\n   -- y los que NO se pueden acusar (aqui murieron 29 falsos positivos)\n";
 caso('`index.html` es prosa sobre la web del cliente', 'D1',
      { 'doc.md' => "El generador escribe `index.html` en cada carpeta.\n", 'real.pl' => $PROG }, 'PASA');

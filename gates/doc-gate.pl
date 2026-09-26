@@ -133,9 +133,11 @@ sub corre { my $id = shift; return $SOLO eq '' || $SOLO eq $id }
 # ---------------------------------------------------------------------------
 #  D1 · RUTAS CITADAS QUE NO EXISTEN
 # ---------------------------------------------------------------------------
-#  🔴 SOLO SE MIRAN LAS RUTAS QUE EMPIEZAN POR `references/`. Es la unica forma
-#     de ruta que, escrita en un documento de esta skill, significa sin ninguna
-#     duda «un fichero de esta skill». Todo lo demas se salta A PROPOSITO:
+#  🔴 SOLO SE MIRAN LAS RUTAS QUE EMPIEZAN POR UNA CARPETA DE ESTA SKILL:
+#     `gates/`, `blueprint/`, `paths/`, `checklists/`, `docs/` -- y la vieja
+#     `references/`, que sigue apareciendo en documentos de antes del 26-ago. Son
+#     las unicas formas de ruta que, escritas en un documento, significan sin
+#     ninguna duda «un fichero de esta skill». Todo lo demas se salta A PROPOSITO:
 #       · `index.html`, `loja.html`, `404.html`, `CLAUDE.md`  -> prosa: hablan
 #         del arbol de una web de cliente, no de aqui
 #       · `gtag.js`, `fbevents.js`                            -> de terceros
@@ -151,6 +153,9 @@ sub corre { my $id = shift; return $SOLO eq '' || $SOLO eq $id }
 #     documento de `references/` cita `references/x.pl` desde la raiz de la
 #     skill, que es como se lee desde fuera.
 if (corre('D1')) {
+    # La raiz de la skill sale de donde vive ESTE programa (gates/..), no de --dir.
+    my ($SKILL) = (abs_path($0) // $0) =~ m{^(.*)[\\/][^\\/]+[\\/][^\\/]+$};
+    $SKILL = $DIR unless defined $SKILL && $SKILL ne '';
     my ($MADRE) = $DIR =~ m{^(.*)[\\/][^\\/]+$};
     $MADRE = $DIR unless defined $MADRE && $MADRE ne '';
     my %vistas;
@@ -190,6 +195,25 @@ if (corre('D1')) {
             my $en_cita = 0;
             while ($linea =~ /"([^"\n]{4,300})"/g) { $en_cita = 1 if $1 =~ /`/ }
             next if $en_cita;                               # la ruta va citada
+            # 🔴 26-sep-2026 · LA RUTA DE LA SKILL ESCRITA ENTERA, que es como se
+            #    escriben los COMANDOS que una sesion copia y pega. Va casi siempre
+            #    en un bloque de codigo y con espacios alrededor, asi que el bucle de
+            #    abajo -solo `rutas` sueltas entre acentos- no la veia nunca. Medido
+            #    el dia que se anadio, sobre ocho repos de web: 29 comandos con la
+            #    ruta de la skill y 15 a programas que ya no existian (el renombre
+            #    `references/` -> `gates/` del 26-ago), 14 de ellos en CLAUDE.md
+            #    vivos -- desplegar, medir, rastrear enlaces-- y 1 en un RUN_LOG.
+            #    Esta forma es inequivoca: nombra la skill, asi que se resuelve
+            #    contra la raiz de la skill y contra nada mas.
+            while ($linea =~ m{(?:~|\$HOME|/c/Users/[^/\s]+|[A-Za-z]:[\\/]Users[\\/][^\\/\s]+)[\\/]\.claude[\\/]skills[\\/]client-site[\\/]([\w./-]+\.(?:pl|sh|js|cjs|mjs|md|json|conf|tsv))}g) {
+                my $rel = $1;
+                my $antes = substr($linea, 0, $-[0]);
+                next if $antes =~ /\((?:entonces|antes|antano|formerly|then)\b[^)]{0,40}$/i;
+                next if -e "$SKILL/$rel" || -e "$SKILL/$rel.example";
+                next if $vistas{"skill:$doc:$rel"}++;
+                bad('D1', "comando con una ruta de la skill que ya no existe",
+                    "$doc:$n -> ~/.claude/skills/client-site/$rel");
+            }
             while ($linea =~ /`([^`\n]{2,120})`/g) {
                 my $t = $1;
                 my $antes = substr($linea, 0, $-[0]);
@@ -224,6 +248,31 @@ if (corre('D1')) {
                 #    Un programa no puede distinguir «una ruta de este arbol» de
                 #    «una ruta del arbol del que hablo». Se retira, y queda escrito
                 #    para que nadie la vuelva a anadir pensando que es facil.
+                # 🔴 26-sep-2026 · Y DESDE EL 26-ago ESTA LINEA NO MIRABA NADA.
+                #    `references/` se renombro ese dia a gates/ + blueprint/ + paths/ +
+                #    checklists/ + docs/, y la documentacion paso a citar las rutas
+                #    nuevas. D1 siguio buscando solo el prefijo viejo, asi que durante
+                #    un mes salio PASA «los programas citados existen» sin comprobar
+                #    UNA sola ruta de hoy. Medido al ampliarlo: 54 citas en la skill y
+                #    9 en ocho repos de web; muertas, 2 -- una en pasado sin marcar como
+                #    historia y otra con un nombre que no existio nunca.
+                #    Las carpetas nuevas son tan inequivocas como lo era `references/`:
+                #    ningun repo de web tiene un `gates/` ni un `blueprint/` propios.
+                #    ⚠️ Se resuelven TAMBIEN contra la raiz de la SKILL, no solo contra
+                #    la carpeta mirada: un CLAUDE.md de cliente cita `gates/deploy.sh`
+                #    de la skill, y medido con `--dir <repo>` esa ruta no esta en el repo.
+                if ($t =~ m{^(?:gates|blueprint|paths|checklists|docs)/[\w./-]+\.(?:pl|sh|js|cjs|mjs|md|json|conf|tsv)$}) {
+                    next if -e "$SKILL/$t" || -e "$MADRE/$t" || -e "$DIR/$t";
+                    # Una copia POR MAQUINA de una plantilla (`x.local.conf` junto a
+                    # `x.local.conf.example`) no existe en un clon limpio, y la
+                    # documentacion hace bien en nombrarla: dice «copia el .example».
+                    # Salio en la primera corrida sobre la skill: gates/README.md cita
+                    # `gates/config/nav-host.local.conf`, que esta en .gitignore.
+                    next if -e "$SKILL/$t.example" || -e "$MADRE/$t.example" || -e "$DIR/$t.example";
+                    next if $vistas{$t}++;
+                    bad('D1', "ruta citada que no existe", "$doc:$n -> $t");
+                    next;
+                }
                 next unless $t =~ m{^references/[\w./-]+\.(pl|sh|js|md|json|conf|tsv)$};
                 (my $rel = $t) =~ s{^references/}{};
                 next if -e "$DIR/$rel" || -e "$MADRE/$t" || -e "$DIR/$t";
