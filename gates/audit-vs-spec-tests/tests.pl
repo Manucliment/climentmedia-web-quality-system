@@ -552,6 +552,38 @@ caso('IMG-02 · con alt, pasa',
      { 'servicio/index.html' => '<html><body><main><h1>x</h1></main></body></html>',
        'assets/x.jpg' => 'JPEGdementira' });
 
+# 🔴 26-sep-2026 · EL NOMBRE DE BLOQUE EN INGLES Y LA CORRIDA VACIA.
+#    `--only skeleton` -la orden de paths/1-new-site.md- no casaba con ningun
+#    bloque y salia «PASA 0 · FALLO 0 · AVISO 0 · NO VERIFICADO 0 · VEREDICTO:
+#    PASA» con exit 0. El primero y los dos ultimos son los casos que el gate
+#    anterior daba en verde sin haber mirado nada.
+sub caso_cli {
+    my ($eti, $args, $rc_ok, $patron) = @_;
+    my $t = tempdir(CLEANUP => 1);
+    make_path("$t/_spec");
+    open my $h, '>:raw', "$t/_spec/site.json" or die $!; print $h "{$BASE}"; close $h;
+    for my $f ('index.html', '404.html') {
+        open my $p, '>:raw', "$t/$f" or die $!;
+        print $p "<!DOCTYPE html><html><head><title>t</title></head><body><main><h1>t</h1></main></body></html>";
+        close $p;
+    }
+    my $salida = `cd "$t" && perl "$GATE" $args 2>&1`;
+    my $rc = $? >> 8;
+    if ($rc_ok->{$rc} && $salida =~ $patron) { printf "  OK    %-54s rc=%d\n", $eti, $rc; $ok++ }
+    else {
+        printf "  MAL   %-54s rc=%d, esperaba %s y %s\n", $eti, $rc, join('|', sort keys %$rc_ok), $patron; $ko++;
+        print "        $_\n" for grep { /VEREDICTO|NADA|desconocido|PASA \d/ } split /\n/, $salida;
+    }
+}
+caso_cli('--only skeleton corre el bloque (antes: 0 comprobaciones y PASA)',
+         '--mode greenfield --only skeleton', { 0 => 1, 1 => 1 }, qr/ESQ-01/);
+caso_cli('--solo esqueleto, el nombre de siempre, igual',
+         '--modo greenfield --solo esqueleto', { 0 => 1, 1 => 1 }, qr/ESQ-01/);
+caso_cli('un bloque desconocido sale con 2',
+         '--modo greenfield --solo esqueletto', { 2 => 1 }, qr/Bloque desconocido/);
+caso_cli('un bloque que no aplica en el modo: NO MEDIDO, no PASA',
+         '--modo migracion --solo esqueleto', { 2 => 1 }, qr/VEREDICTO: NO MEDIDO/);
+
 printf "\n-----------------------------------------------------------------\n";
 printf "  OK %-3d  ·  MAL %d\n", $ok, $ko;
 print $ko ? "  🔴 HAY FALLOS.\n"
