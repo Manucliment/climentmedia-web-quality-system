@@ -155,9 +155,16 @@ const PERFIL = {
   //    · empleo: como `contacto`. La accion es la candidatura o el catalogo, no
   //      un cierre: cierre:false · minEnlaces:0 porque su trabajo es que el
   //      candidato no se vaya · lectura:false: es un listado y un formulario.
-  //      hero:true porque 3 de 4 referencias ponen ahi la primera accion.
+  //      🔴 hero:'accion', NO hero:true (corregido el mismo 26-sep). 3 de 4
+  //      referencias ponen la primera accion en la primera pantalla, pero
+  //      NINGUNA recibe la candidatura en la pagina: esa accion es un ENLACE a
+  //      las ofertas, a una oficina o a un sistema externo (09 §2.14). hero:true
+  //      exige un MECANISMO DE CONVERSION y suspendia a las cuatro referencias;
+  //      lo destapo la primera pagina de empleo real que se midio. 'accion'
+  //      exige lo que §2.14 pide -una accion en la primera pantalla, y como
+  //      mucho una primaria- sin exigir que convierta. Ver E7.
   nosotros:    { estructura:true,  minPrim:4, minEnlaces:2, cierre:true,  hero:false, lectura:true  },
-  empleo:      { estructura:true,  minPrim:3, minEnlaces:0, cierre:false, hero:true,  lectura:false },
+  empleo:      { estructura:true,  minPrim:3, minEnlaces:0, cierre:false, hero:'accion', lectura:false },
   gracias:     { estructura:false, minPrim:2, minEnlaces:0, cierre:true,  hero:false, lectura:false },
   legal:       { estructura:false, minPrim:0, minEnlaces:0, cierre:false, hero:false, lectura:true  },
   '404':       { estructura:false, minPrim:0, minEnlaces:3, cierre:false, hero:false, lectura:false },
@@ -920,6 +927,12 @@ if (PERFIL.cierre && ultimo && ultimo.ctas === 0)
               `falta el rol «cierre», obligatorio en ${N_CON_CIERRE} de las ${Object.keys(ANATOMIA).length} anatomias`);
 
 /* --- E7 · hero que convierte, no que enlaza ------------------------------ */
+//  hero:true     = 09 §3: >=1 accion, >=1 de conversion, <=1 primaria.
+//  hero:'accion' = 09 §2.14 (empleo): >=1 accion y <=1 primaria, SIN exigir que
+//                  convierta: la primera accion de una pagina de empleo es un
+//                  enlace a las ofertas, y en las cuatro referencias la
+//                  candidatura vive en otra pagina o en otro sistema.
+//  hero:false    = no se juzga el hero.
 if (PERFIL.hero) {
   if (!accHero.length) {
     fallos.push(`HERO · sin ninguna accion en la primera altura de viewport ` +
@@ -927,7 +940,7 @@ if (PERFIL.hero) {
   } else {
     const conv = accHero.filter(convierte);
     const prim = accHero.filter(primaria);
-    if (!conv.length && !CFG.ecommerce)
+    if (PERFIL.hero === true && !conv.length && !CFG.ecommerce)
       fallos.push(`HERO · ${accHero.length} accion(es) y ninguna es mecanismo de conversion: ` +
                   `es un hero que ENLACA, no que convierte`);
     if (prim.length >= 2)
@@ -1211,6 +1224,9 @@ return JSON.stringify({
  *  |          |                               | `ecommerce:true` exime, y         |
  *  |          |                               | entonces la obligacion la hereda  |
  *  |          |                               | el catalogo (09 §3, excepcion 1)  |
+ *  |          | empleo (hero:'accion'): >=1   | 09 §2.14: la primera accion de una|
+ *  |          | accion y <=1 primaria, SIN    | pagina de empleo ENLAZA a las     |
+ *  |          | exigir conversion             | ofertas (4 de 4 referencias)      |
  *  | ENLACES  | >=3 internos de cuerpo        | 🟡 PROVISIONAL, y DELIBERADAMENTE |
  *  |          |                               | POR DEBAJO del modelo. 12-enlazado|
  *  |          |                               | pide 1 al hub + 2-5 hermanos + 1  |

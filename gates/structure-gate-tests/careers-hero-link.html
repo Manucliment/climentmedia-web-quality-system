@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Travailler avec nous | Exemple</title>
+<!-- 26-sep-2026 · Una pagina de EMPLEO cuya unica accion del hero ENLAZA a la
+     oferta de la misma pagina, que es lo que hacen las cuatro referencias de
+     09 §2.14 (ninguna recibe la candidatura en la pagina). Con hero:true el
+     gate la suspendia por «ninguna es mecanismo de conversion». -->
+<style>
+body{margin:0;font:17px/1.6 system-ui,sans-serif;color:#1a1a1a;background:#fff}
+main{max-width:1120px;margin:0 auto;padding:0 24px}
+section{padding:64px 0}
+h1{font-size:44px;line-height:1.15;margin:0 0 16px}
+p,ul{max-width:60ch}
+.btn{display:inline-block;padding:14px 24px;border-radius:8px;text-decoration:none;font-weight:600}
+.btn-p{background:#0b6e4f;color:#fff}
+</style>
+</head>
+<body>
+<main data-tipo="empleo">
+  <section data-sec="hero">
+    <p>Recrutement</p>
+    <h1>Rejoignez notre équipe</h1>
+    <p>Nous recrutons des techniciennes et des techniciens pour nos interventions chez les particuliers.</p>
+    <p><a class="btn btn-p" href="#offres">Voir le poste ouvert</a></p>
+  </section>
+  <section data-sec="catalogo" id="offres">
+    <h2>Poste ouvert</h2>
+    <ul><li>Technicien·ne d’intervention, contrat à durée indéterminée</li><li>Candidatures : ouvertes</li></ul>
+  </section>
+  <section data-sec="oferta">
+    <h2>Pourquoi nous rejoindre</h2>
+    <p>Des horaires stables, une équipe qui se connaît et un planning prévu à l’avance.</p>
+  </section>
+</main>
+</body>
+</html>
