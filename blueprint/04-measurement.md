@@ -67,6 +67,14 @@ gtag('consent','default',{'ad_storage':'denied','ad_user_data':'denied',
 `wait_for_update: 500` gives half a second for the stored decision to arrive before the tags
 decide on their own.
 
+> **Stricter, and it is how our own sites do it: load the container only after "accept".** A
+> first-party `consent.js` sets the denied default, shows the banner, and injects `gtm.js` only
+> when the visitor accepts — so someone who declines keeps a site with **zero** third parties, which
+> is what a privacy notice can then say without a caveat. The container ID lives in that one file,
+> not in every page. The spec auditor follows the pages' own `<script src>` to find it (`MED-01`,
+> `MED-03`); `qa-master`'s measurement lens does not yet, and says "no measurement" on such a site —
+> check the flow in a browser (§7).
+
 ---
 
 ## 4 · The banner
@@ -109,6 +117,12 @@ window.dataLayer.push({ event: ev, page_location: location.href,
 > route changes tomorrow — **and it breaks silently**: the page looks perfect and the
 > conversion stops counting. A marker on the `<body>` is written by the generator and travels
 > with the page.
+
+**A site with no form has no thank-you page, and says so.** When the only conversion is a click —
+a `mailto:`, a phone link — the event fires on the click (`generate_lead`, from the same script
+that handles consent) and there is no submission to thank anyone after. The spec writes that down
+in `contact.noForm`, **with the reason**, and `MED-02` accepts it. A bare `true` does not count, and
+a `<form>` or an `<iframe>` on any page contradicts the declaration and brings the requirement back.
 
 ---
 
