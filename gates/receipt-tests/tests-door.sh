@@ -208,6 +208,20 @@ contiene "avisa de que no sube"               "NO se sube nada"
 contiene "ensena el comando exacto"           "subir.sh"
 
 echo
+echo "-- 7-bis · LA PLANTILLA EN INGLES: SITE y UPLOAD (26-sep-2026) --------------"
+#  config/deploy.conf.example escribe SITE y UPLOAD, y la puerta solo leia SITIO
+#  y SUBIDA: siguiendo la plantilla al pie de la letra salia «no define SITIO».
+cp "$T/repo/_deploy/deploy.conf" "$T/deploy.conf.es"
+cat > "$T/repo/_deploy/deploy.conf" <<CONF
+SITE=http://127.0.0.1:$PUERTO
+UPLOAD=_deploy/subir.sh
+SIN_NAVEGADOR=1
+CONF
+r "con SITE y UPLOAD ensaya igual"          0 bash "$REF/deploy.sh" "$T/repo"
+contiene "y ensena el comando de UPLOAD"      "subir.sh"
+cp "$T/deploy.conf.es" "$T/repo/_deploy/deploy.conf"
+
+echo
 echo "-- 8 · LA PUERTA: verde con cosas SIN MIRAR, sin --aun-asi --------------------"
 perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-nv.json" \
      --sitio "http://127.0.0.1:$PUERTO" >/dev/null

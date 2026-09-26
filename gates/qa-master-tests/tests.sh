@@ -344,6 +344,35 @@ espera "SEO-05 · base alineada: descriptions unicas"   PASA  SEO-02b \
 espera "SEO-05 · base alineada: description alineada"  PASA  SEO-05b \
        perl $QA $FU --repo "$FSEO05/alineado" $QA5
 
+# 🔴 26-sep-2026 · LENTES Y TIPOS CON EL NOMBRE EN INGLES. `--solo measurement`
+#    (la orden de paths/3 para la pagina legal) no casaba con ninguna lente
+#    -empieza por «mea», no por «med»- y no corria nada, callado. `--tipo service`
+#    no estaba en la tabla y la anatomia exigia cero roles. Los casos 2 y 4 son
+#    los que el programa anterior daba al reves.
+texto "--solo measurement no es una lente desconocida"  NO "Lente desconocida" \
+      perl $QA $FU --repo "$FSEO05/alineado" --candidato --solo measurement --sin-recibo
+texto "...y corre la lente: sale una comprobacion MED"  SI "MED-0" \
+      perl $QA $FU --repo "$FSEO05/alineado" --candidato --solo measurement --sin-recibo
+texto "una lente que no existe se nombra y sale"        SI "Lente desconocida" \
+      perl $QA $FU --repo "$FSEO05/alineado" --candidato --solo diseno --sin-recibo
+texto "--tipo service es servicio (alias ingles)"       NO "Tipo desconocido" \
+      perl $QA $FU --repo "$FSEO05/alineado" $QA5 --tipo service
+texto "un tipo que no esta en la tabla se nombra y sale" SI "Tipo desconocido" \
+      perl $QA $FU --repo "$FSEO05/alineado" $QA5 --tipo servicioo
+
+# 🔴 26-sep-2026 · SEO-15 NO PODIA SALTAR NUNCA. `!~ /Allow:/i` casaba dentro de
+#    «Disallow:», asi que un robots.txt de staging con `Disallow: /` salia «robots.txt
+#    correcto». No tenia ni un caso en este banco. El primero es el que el programa
+#    anterior daba en verde; el segundo, el control de que no acusa a un robots abierto.
+RB15="$(mktemp -d)"; cp -r "$FSEO05/alineado/." "$RB15/"
+printf 'User-agent: *\nDisallow: /\n' > "$RB15/robots.txt"
+espera "SEO-15 · robots.txt de staging (Disallow: /) FALLA" FALLO SEO-15 \
+       perl $QA $FU --repo "$RB15" $QA5
+printf 'User-agent: *\nAllow: /\n' > "$RB15/robots.txt"
+espera "SEO-15 · robots.txt abierto PASA"                  PASA  SEO-15 \
+       perl $QA $FU --repo "$RB15" $QA5
+rm -rf "$RB15"
+
 # --- el defecto documentado: el titular cayo en el nombre del rol ---
 espera "SEO-05 · <h1>hero</h1> contra su title: AVISA"  AVISO SEO-05 \
        perl $QA $FU --repo "$FSEO05/h1-hero" $QA5
@@ -1356,6 +1385,13 @@ if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" http://site-d.example
   espera "PROHIBIDO (politica en borrador) · no se puede" FALLO  MED-08 $BCQA -q
   espera "y la entrada legitima del mismo fichero SI"     ACEPTADO MED-07 $BCQA -q
   texto "y dice que no es aceptable, no que falte algo"   SI "NO ES ACEPTABLE" $BCQA -q
+
+  # 7-bis · 26-sep-2026 · EL NOMBRE EN INGLES. La documentacion publica manda
+  #     escribir `_deploy/accepted.conf`, y hasta hoy solo se leia `aceptado.conf`:
+  #     la aceptacion firmada no surtia efecto y el FALLO seguia contando.
+  conf "$H"; mv "$RA/_deploy/aceptado.conf" "$RA/_deploy/accepted.conf"
+  espera "accepted.conf (el nombre en ingles) tambien vale" ACEPTADO MED-07 $BCQA -q
+  rm -f "$RA/_deploy/accepted.conf"
 
   # 8 · el recibo lo lleva dentro, bajo el SELLO
   conf "$H"

@@ -348,17 +348,29 @@ $_ =~ s{/$}{} for @URLS;   # normaliza; la raiz queda como https://host
 # SALE del sitemap— la respuesta seria «si» siempre, y el check dejaria de
 # medir nada.
 my @URLS_PEDIDAS = @URLS;
+my %URL_PEDIDA   = map { $_ => 1 } @URLS_PEDIDAS;   # a estas, y solo a estas, se les aplica --tipo
 my $EXPANDIDO    = '';     # texto que explica de donde salio la lista
 
 my %LENTE_ON = map { $_ => 1 } qw(seo rendimiento a11y medicion estructura);
 if ($opt{solo} ne '') {
     %LENTE_ON = ();
-    for my $l (split /\s*,\s*/, lc $opt{solo}) {
+    # 🔴 26-sep-2026 · `--only measurement` NO CORRIA NINGUNA LENTE, Y CALLABA.
+    #    «measurement» empieza por «mea», no por «med»: no casaba con ninguna
+    #    lente, se guardaba tal cual, y ninguna lente se llama asi. Es la orden de
+    #    paths/3-add-page.md para la pagina legal. Ahora `mea` es medicion, y una
+    #    lente que no existe sale con 2 en vez de medir nada en silencio.
+    my %LENTE_EXISTE = map { $_ => 1 } qw(seo rendimiento a11y medicion estructura);
+    for my $pedida (split /\s*,\s*/, lc $opt{solo}) {
+        my $l = $pedida;
         $l = 'a11y'        if $l =~ /^(accesib|a11y)/;
         $l = 'rendimiento' if $l =~ /^(rend|perf)/;
-        $l = 'medicion'    if $l =~ /^(med|legal)/;
+        $l = 'medicion'    if $l =~ /^(med|mea|legal)/;
         $l = 'estructura'  if $l =~ /^(est|struct)/;
         $l = 'seo'         if $l =~ /^seo/;
+        $LENTE_EXISTE{$l} or do {
+            print STDERR "  Lente desconocida: '$pedida'. Hay: seo, rendimiento (perf),"
+                       . " a11y, medicion (measurement, legal), estructura (structure).\n";
+            exit 2 };
         $LENTE_ON{$l} = 1;
     }
 }
@@ -1407,9 +1419,28 @@ my %ANATOMIA = anatomia_cargar();
 my %TIPOS_OK   = map { $_ => 1 } keys %ANATOMIA;
 my %TIPO_DECL;              # url -> 1 si el tipo salio del MARCADO
 my @TIPO_RAROS;             # data-tipo con un valor que no esta en la lista
+# 🔴 26-sep-2026 · `--tipo` SE APLICABA A TODA LA CORRIDA, Y SIN VALIDAR.
+#    `qa-master.pl <url> --tipo legal` sin `--una-sola` amplia la corrida a las
+#    URLs del sitemap, y el tipo se les aplicaba A TODAS: la web entera quedaba
+#    exenta de EST-01 y de la anatomia, porque «legal» no exige roles. Y un tipo
+#    que no esta en la tabla (`--tipo service`, el ingles de paths/3) exigia cero
+#    roles: la anatomia aprobaba sin mirar. Ahora el tipo solo vale para las URLs
+#    que se pidieron, los nombres ingleses son alias, y uno desconocido sale con 2.
+my %ALIAS_TIPO = (producto => 'ficha', product => 'ficha', quiz => 'landing',
+                  service => 'servicio', city => 'ciudad', comparison => 'comparativa',
+                  guide => 'guia', contact => 'contacto', careers => 'empleo', jobs => 'empleo',
+                  thanks => 'gracias', about => 'nosotros', pricing => 'precios');
+if ($opt{tipo} ne '') {
+    my $t = lc $opt{tipo};
+    $t = $ALIAS_TIPO{$t} // $t;
+    $TIPOS_OK{$t} or do {
+        print STDERR "  Tipo desconocido: '$opt{tipo}'. Hay: ", join(', ', sort keys %TIPOS_OK), "\n";
+        exit 2 };
+    $opt{tipo} = $t;
+}
 sub tipo_de {
     my $u = shift;
-    return $opt{tipo} if $opt{tipo} ne '';
+    return $opt{tipo} if $opt{tipo} ne '' && ($URL_PEDIDA{$u} || @URLS == 1);
     my $cuerpo = fetch($u)->{body} // '';
     if ($cuerpo =~ /<(?:main|body)\b[^>]*\bdata-tipo\s*=\s*["']([^"']+)["']/i) {
         my $t = lc $1; $t =~ s/^\s+|\s+$//g;
@@ -1979,7 +2010,12 @@ sub lente_seo {
     if ($rb->{code} != 200) {
         fallo(lente=>'SEO', id=>'SEO-15', titulo=>'robots.txt no responde 200', dato=>"HTTP $rb->{code}",
               umbral=>'200', proc=>'qa-final.sh §1', hacer=>'publicar robots.txt con el sitemap declarado');
-    } elsif ($rb->{body} =~ /^\s*Disallow:\s*\/\s*$/mi && $rb->{body} !~ /Allow:/i) {
+    # 🔴 26-sep-2026 · ESTA RAMA ERA INALCANZABLE. `!~ /Allow:/i` casa tambien DENTRO de
+    #    «Disallow:» -sin distinguir mayusculas, «allow:» es parte de la palabra-, asi que
+    #    cuando la primera condicion era cierta la segunda era siempre falsa: un robots.txt
+    #    de staging con `Disallow: /` salia «robots.txt correcto». Medido con la expresion
+    #    exacta sobre ese fichero. `Allow:` va ahora anclado al principio de linea.
+    } elsif ($rb->{body} =~ /^\s*Disallow:\s*\/\s*$/mi && $rb->{body} !~ /^\s*Allow:/mi) {
         fallo(lente=>'SEO', id=>'SEO-15', titulo=>'robots.txt bloquea el sitio entero',
               umbral=>'sin Disallow: /', proc=>'qa-final.sh §1', hacer=>'quitar el Disallow: / (tipico resto de staging)');
     } else {
@@ -5095,6 +5131,10 @@ use constant ACEPT_AVISO  => 14;    # a partir de aqui el recibo avisa
 sub lee_aceptados {
     my ($repo) = @_;
     my $f = "$repo/_deploy/aceptado.conf";
+    # 26-sep-2026 · La documentacion publica (en ingles) manda escribir
+    # `_deploy/accepted.conf`, y hasta hoy solo se leia el nombre en castellano:
+    # la aceptacion firmada no surtia efecto y el FALLO seguia contando.
+    $f = "$repo/_deploy/accepted.conf" if !-f $f && -f "$repo/_deploy/accepted.conf";
     return ([], [], $f, 0) unless -f $f;
     open my $fh, '<:encoding(UTF-8)', $f or return ([], [], $f, 0);
     my (@buenas, @malas, %cur);
@@ -5236,7 +5276,7 @@ if ($CAND_ON) {
     print "               ⚠ NO dice nada de los cambios sin subir del repo. Para eso: --candidato\n"
         if $opt{repo} ne '';
 }
-print "  PAGINAS      " . scalar(@PAGES) . " · tipo: " . ($opt{tipo} ne '' ? $opt{tipo} : 'inferido por ruta (uno por pagina)')
+print "  PAGINAS      " . scalar(@PAGES) . " · tipo: " . ($opt{tipo} ne '' ? (@PAGES > 1 ? "$opt{tipo} en las URLs pedidas; el resto, el suyo" : $opt{tipo}) : 'inferido por ruta (uno por pagina)')
     . ($EXPANDIDO ne '' ? "\n               $EXPANDIDO" : '')
     . ($DOCS_NOTA ne '' ? "\n               $DOCS_NOTA" : '') . "\n";
 print "  LENTES       " . join(' ', grep { $LENTE_ON{$_} } qw(seo rendimiento a11y medicion estructura)) . "\n";

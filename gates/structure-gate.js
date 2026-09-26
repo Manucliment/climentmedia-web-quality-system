@@ -86,8 +86,13 @@ function tipoDeclarado () {
   return /^[a-z0-9]+$/.test(t) ? t : '';
 }
 const TIPO_DECL = tipoDeclarado();
-const TIPO = CFG.tipo || TIPO_DECL || inferirTipo();
-const TIPO_FUENTE = CFG.tipo ? 'dado' : (TIPO_DECL ? 'declarado en el marcado' : 'inferido de la ruta');
+// 26-sep-2026 · la documentacion publica escribe `window.__GATE__ = { type: ... }`
+// y aqui solo se leia `tipo`: la clave se ignoraba EN SILENCIO y el tipo se sacaba
+// de la ruta. Ahora vale cualquiera de las dos; un valor que no esta en la tabla
+// sigue cayendo en voz alta, mas abajo.
+const TIPO_DADO = CFG.tipo || CFG.type || '';
+const TIPO = TIPO_DADO || TIPO_DECL || inferirTipo();
+const TIPO_FUENTE = TIPO_DADO ? 'dado' : (TIPO_DECL ? 'declarado en el marcado' : 'inferido de la ruta');
 
 /* Perfil por tipo. `estructura:false` = la pagina puede ser prosa legitimamente.
  * minPrim / minEnlaces: ver la tabla de umbrales al final del fichero.       */
