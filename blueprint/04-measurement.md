@@ -141,3 +141,24 @@ document.getElementById('cookie-consent').hidden            // false on a new vi
 
 Gate: default denied → banner visible → accept → update granted + the event → banner closed.
 And the conversion event **once, and only on the thank-you page.**
+
+> 🔴 **A probe that clicks "accept" is a visitor in their analytics — and on the thank-you
+> page it is a conversion in their ad account.** Measured on one site: 44 of the 76 sessions of
+> a month were our own probes — all from the measuring server's country, one new user per
+> session, on the two days the checks ran. The funnel looked used; one real person had finished
+> it. A fake conversion does worse than dirty a report: automated bidding learns from it.
+>
+> - **Every browser probe intercepts the tags' beacons and aborts them**, recording them instead
+>   of letting them out: GA4 hits (`/g/collect`), Google Ads (`/pagead/`, `googleadservices`,
+>   `doubleclick`), consent-mode pings (`/ccm/`), the Meta pixel (`facebook.com/tr`). What this
+>   section verifies is that the hit was *built* — right event name, right parameters, right
+>   consent state. The request exists; it just never leaves.
+> - **If a test needs a hit to ARRIVE** (the 200 on the other side), do it once, write down the
+>   time, and tell whoever reads their analytics.
+> - **In each client's GA4, an internal-traffic filter for the measuring server's IP.**
+> - Before reading a funnel launched days ago, split it by country, day and source: our own
+>   traffic has a signature.
+>
+> Not measured yet: whether the gates that run on every deploy send cookieless pings while
+> they measure a first visit (they do not click "accept", so no session is created, but
+> consent mode can still ping). Until that is measured, treat it as open.
