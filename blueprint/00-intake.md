@@ -25,6 +25,14 @@ knows the opening hours or who approves copy.
 > submitting to a cancelled CRM for months — which is exactly what one site was doing. See
 > `05-forms.md`.
 
+> **"We do not publish it" is an answer — for the phone, the hours and the areas too, not only the
+> address.** A personal site or a page that says where a retired brand went has no opening hours
+> and no service area, and a personal phone is not published. The spec says so in writing, with
+> the reason: `nap.noTelephone`, `nap.noHours`, `nap.noAreaServed`, next to `nap.noAddress`
+> (`INT-01` accepts them, and names them in its PASS line). A bare `true` does **not** count: the
+> reason is the part someone needs in six months. What the block protects is unchanged — nobody
+> discovers halfway through that a fact is missing — because the decision is already written down.
+
 ## B · You can start without these, but you ask now
 
 - **Logo**, vector or a large PNG, and brand colours. With a site, it is in their

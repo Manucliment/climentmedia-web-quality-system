@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A page with a script and one policy link | Fixture EST-12b</title>
+<meta name="description" content="Battery fixture: no form, but an executable script that could load measurement, and a footer with a single legal link.">
+<link rel="canonical" href="https://fixture.test/">
+<script src="/consent.js" defer></script>
+</head>
+<body>
+<!-- CASO ROJO (26-sep-2026): el control de que el arreglo no abre la puerta.
+     No hay <form>, pero hay un <script src>: puede cargar medicion despues del
+     consentimiento con el identificador DENTRO del .js (climentmedia.com lo hace
+     asi, con consent.js), y el HTML no lo dejaria ver. Ante la duda, capta: se
+     siguen pidiendo 2 enlaces legales y este pie solo tiene 1. -->
+<main data-tipo="nosotros">
+  <section data-sec="hero"><h1>Fixture Person</h1><p>Who this is.</p></section>
+  <section data-sec="contexto"><h2>Why</h2><p>The story.</p></section>
+  <section data-sec="prueba"><h2>Facts</h2><p>Eight years.</p></section>
+  <section data-sec="cierre"><h2>Write</h2><p><a href="mailto:person@fixture.test">Email</a></p></section>
+</main>
+<footer>
+  <p>Fixture Person &middot; Madrid</p>
+  <ul><li><a href="/privacy/">Privacy</a></li></ul>
+  <p><a href="https://climentmedia.com/">Built with the web quality system</a></p>
+</footer>
+</body>
+</html>
