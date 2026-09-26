@@ -109,10 +109,10 @@ if [ ! -f "$CONF" ]; then
   echo
   echo "  Este repo no declara como se despliega, asi que no se despliega. Escribe"
   echo "  ese fichero con dos lineas (hay un ejemplo comentado en"
-  echo "  $REF/deploy.conf.ejemplo):"
+  echo "  $REF/config/deploy.conf.example):"
   echo
-  echo "      SITIO=https://dominio.tld"
-  echo "      SUBIDA=_deploy/subir.sh          # relativo al repo, o comando entero"
+  echo "      SITIO=https://dominio.tld         # o SITE="
+  echo "      SUBIDA=_deploy/subir.sh          # o UPLOAD= · relativo al repo, o comando entero"
   echo
   echo "  🔴 SUBIDA tiene que subir EL ARBOL ENTERO, no un fichero suelto. Si sube"
   echo "     solo el CSS, la verificacion de despues (G11) lo dira: comparara los"
@@ -121,8 +121,14 @@ if [ ! -f "$CONF" ]; then
 fi
 # shellcheck disable=SC1090
 . "$CONF"
-SITIO="${SITIO:-}"
-SUBIDA="${SUBIDA:-}"
+# 26-sep-2026 · La plantilla publica (config/deploy.conf.example) escribe SITE y
+# UPLOAD, y los cuatro caminos SPEC_MODE: aqui solo se leian los nombres en
+# castellano, asi que siguiendo la plantilla al pie de la letra la puerta salia con
+# «no define SITIO» y el paso 2-bis quedaba NO MEDIDO. Mismo patron que las claves
+# de navegador del 21-sep, mas abajo: los dos nombres valen.
+SITIO="${SITIO:-${SITE:-}}"
+SUBIDA="${SUBIDA:-${UPLOAD:-}}"
+MODO_SPEC="${MODO_SPEC:-${SPEC_MODE:-}}"
 [ -n "$SITIO" ] || { echo "  $CONF no define SITIO"; exit 2; }
 
 # ── modo «enseñame que subirias» ─────────────────────────────────────────────
