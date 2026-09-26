@@ -50,11 +50,12 @@ touched.
 gates/measure-screens.js   → paste into the console, or run it through the browser harness
 ```
 
-**VERDICT: FAIL = it does not close.** Four thresholds:
+**VERDICT: FAIL = it does not close.** Five thresholds, the five that `measure-screens.js` checks:
 
 | Threshold | Why that one |
 |---|---|
-| No block **> 1 screen** | If it does not fit in one glance, it does not get read: it gets skimmed |
+| No block runs **> 1 screen without a stop** | If it does not fit in one glance, it does not get read: it gets skimmed |
+| No block **> 3 screens** in total | The container's own ceiling: a section that long is a page inside the page |
 | The page within its **WORD budget** | 6 screens + 1 per 80 visible words past 400. **The fixed 6 failed the DENSEST page in the estate** |
 | **≤ 2.5 consecutive screens with no CTA** | Somebody convinced at the bottom has to be able to act there |
 | **≥ 2 CTAs** on the page | One at the top, one at the close, minimum |
@@ -113,8 +114,12 @@ window.__GATE__ = { tipo:'guia' };    // optional; inferred from the URL if abse
 
 ### A-ter.2 · The CPL gate — can it be read?
 
-Four thresholds: **0 paragraphs over 80 characters per line** · column **≤ 42 em** · **≤ 6** text steps
-between 11 and 28 px with no jumps below 1.08 · section padding ÷ inner gap **≥ 2**.
+One threshold fails on its own: **0 paragraphs over 80 characters per line**. Four more are
+warnings, and **two at once make a FAIL**: more than 12 font sizes between 11 and 28 px, more than 2
+jumps below 1.08×, more than 20 spacing values, and a median line length outside 45–90 CPL. The table
+with their sources is `blueprint/11-measurements.md §7`. The **42 em** column and **padding ÷ gap ≥ 2**
+are design targets that no gate measures: check them by hand. *(Until 26-sep-2026 this line promised
+four gate thresholds, and two of them had no gate.)*
 
 Tested with positive **and** negative cases before publishing, which is the house rule: two live pages
 **FAIL** (44 paragraphs, worst 116; and worst **182**) and two **PASS**. **A gate only ever seen green

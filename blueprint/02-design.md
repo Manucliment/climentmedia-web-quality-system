@@ -118,9 +118,14 @@ a folder**, and finding out what each one was meant opening it.
 
 ```bash
 curl -s -A "Mozilla/5.0 ... Chrome/126" "https://fonts.googleapis.com/css2?family=..." > gf.css
-# keep latin and latin-ext · they are VARIABLE fonts: 4 files, not 16
+# keep latin and latin-ext · they are VARIABLE fonts: fewer files than static cuts
 # @font-face with its unicode-range + font-display:swap + preload the latin subset
 ```
+
+> **How many files is enough is not decided here: it is the font budget of
+> `13-performance.md §1.3`** — ≤ 2 files and ≤ 60 KB for the first screen, fail over 4 or
+> 200 KB. This block used to say *"4 files, not 16"* as if 4 were the target; 4 already
+> warns, and our best site serves the same two families in 2 files.
 
 Check the licence and keep the licence file next to the fonts.
 

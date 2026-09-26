@@ -116,8 +116,8 @@ encode images" audit compares against WebP at quality 85.
 CALIBRATED, and this is the number that changes the conversation: **one site serves the SAME
 two families as another** in **2 files / 45 KB**, against **4 files / 254 KB.**
 
-> The design document celebrates *"they are VARIABLE fonts: 4 files, not 16"*. **Our own best
-> site runs on 2.** And a third loads none at all — a system stack, with the privacy reason
+> The design document celebrated *"they are VARIABLE fonts: 4 files, not 16"* (corrected on
+> 26-sep-2026: `02-design.md §4` now points here). **Our own best site runs on 2.** And a third loads none at all — a system stack, with the privacy reason
 > written into its CSS — and it was **the only one of the five that passed the density gate
 > first time.** Zero fonts cost it nothing in layout.
 

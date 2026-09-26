@@ -294,7 +294,9 @@ Other mobile decisions that are not obvious:
 
 ## 8 · What is verified and what is not
 
-**Verified.** All 19 moulds rendered in headless Chrome, at two widths, **with `innerWidth` printed
+**Verified.** All 19 moulds of the time (the 20th, `20-choice-cards`, came later; the
+`moldes-maqueta` battery walks `blueprint/moulds/[0-9]*.html`, so today it measures all 20)
+rendered in headless Chrome, at two widths, **with `innerWidth` printed
 and checked across all 38 measurements**: 1422 px on desktop and **exactly 390 px** on mobile.
 
 > The 390 px are real, not a crop. Headless Chrome on Windows **clamps the window to about 500 px**,

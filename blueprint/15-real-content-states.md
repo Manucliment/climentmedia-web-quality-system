@@ -1,6 +1,6 @@
 # 15 · States and real content
 
-> **The 19 moulds are drawn with ideal content: 3 rows, 6 cells, 4 figures, 3 plans. Real content
+> **The moulds are drawn with ideal content: 3 rows, 6 cells, 4 figures, 3 plans. Real content
 > almost never is.** This document covers the day the client has **5 services instead of 6**, a
 > 90-character title, a four-figure price, or no photographs at all.
 >

@@ -40,7 +40,7 @@ headings.
 | 1 | **Decide the TYPE** | `blueprint/09-page-types.md §2` (the fourteen anatomies, 15 types — an about page is `nosotros`, a careers page is `empleo`) | the type written into `data-tipo` and passed to both gates |
 | 2 | **Layout spine BEFORE the text** | **`blueprint/moulds/types/<type>.html`** — the generated reference sheet for that exact type: roles in order, the mould for each, and its "when / when not". Then `10-layout-vocabulary.md §5` for the prose that is left over | grep for `data-sec` (a manual step: **no gate fails on it**) |
 | 3 | Linking decided before writing | `blueprint/12-internal-linking.md §4` · `09 §4.3` | grep for the path inside other pages' `<main>` |
-| 4 | Head, schema, images, measurement | `blueprint/18-page-standard.md §1–§3` · `03` · `04` | `qa-master --only seo` |
+| 4 | Head, schema, images, measurement | `blueprint/18-page-standard.md` («The head», «The body», «Structured data») · `03` · `04` | `qa-master --only seo` |
 | 5 | Gates on the new page | `checklists/final-qa.md §A-bis and §A-ter` | all five, with `innerWidth` written next to each |
 | 6 | Ship the BATCH and back-propagate | `blueprint/06-publishing.md` · `12 §4.7` | verify in production, not in the repo |
 

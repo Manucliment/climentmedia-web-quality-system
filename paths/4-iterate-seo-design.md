@@ -23,9 +23,14 @@ about — the two missing ones were **the only station that publishes** and the 
 | **DECISION** | The page standard's "should this exist" step | nothing | no |
 | **PRODUCTION** | Writes one piece, ticks the backlog | one piece + `content-backlog.md [x]` | no |
 | **CATALOGUE** | Refreshes generated catalogue pages | the catalogue spec | no |
-| **PUBLICATION** | The deploy queue watcher | `_deploy-queue.md` → `live` | **yes, the only one** |
+| **PUBLICATION** | The door: `gates/deploy.sh <REPO> --upload` | the site, then its `_deploy-queue.md` row → `live` | **yes, the only one** |
 | **RETURN** | Monthly performance verdict per piece | `_seo/performance/PERF-<month>.md` | no |
 | **OFF-PAGE** | Distribution and reach | external | yes, outside the site |
+
+> Until 26-sep-2026 the PUBLICATION row named a deploy-queue watcher. Its upload step was a raw
+> `tar | ssh`, which the deploy hook blocks, so it had stopped publishing without saying so. The
+> only road to production is the door, once the candidate tree has been measured (step 6 below),
+> and the queue row is updated after it, not instead of it.
 
 **The loop, as it should run:**
 
@@ -226,7 +231,7 @@ ever overflows. There the structure gate rules, with its prose-page answer. **Bo
 | **1** | **Should this page exist?** The three questions: which lane · what justifies it (measured volume **or** a real catalogue entry) · who links to it from body copy (at least two; navigation does not count). | `blueprint/18-page-standard.md` |
 | **2** | **Classify the touch: A, B or C.** If it is **C** inside a measurement window → you stop, or you declare the exception **with a name and a reason** in the deploy queue row. | §3 above |
 | **3** | **Look at the mould before writing a component.** And the type's anatomy decides the fields, not the other way round. | `blueprint/10-layout-vocabulary.md` · `blueprint/09-page-types.md §2` |
-| **4** | **Write / edit.** Head, schema and the GEO layer. | `blueprint/18-page-standard.md §1–3` · `blueprint/03-content-and-seo.md` |
+| **4** | **Write / edit.** Head, schema and the GEO layer. | `blueprint/18-page-standard.md` («The head», «The body», «Structured data») · `blueprint/03-content-and-seo.md` |
 | **5** | **Gates per the table in §4.** The ones that do not apply are not run; the ones that apply and cannot be run are written `NOT MEASURED`. | §4 above |
 | **6** | **`qa-master.pl` — the single entry point.** 74 checks, 5 lenses, **EXIT 0 to deploy**. `--only <lens>` to avoid paying for all of it. `--repo <dir>` enables the repo-versus-production check. | `gates/qa-master.pl` |
 | **7** | **OPEN THE PAGE AND READ IT.** The auditor tells you WHERE to look, not whether what is there makes sense: it once passed a page carrying a sentence that did not parse as English, an `og:image` that 404'd, and another page's `<title>`. | `blueprint/16-step-by-step-review.md` |

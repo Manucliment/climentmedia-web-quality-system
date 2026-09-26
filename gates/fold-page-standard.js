@@ -2,8 +2,10 @@
 //  fold-page-standard.js · CONGELADO. Generaba el estandar de pagina desde el catalogo
 // =============================================================================
 //  19-ago-2026. Las 30 reglas WPS colgaban de `web-page-standard/SKILL.md`, una
-//  skill que YA NO EXISTE: 30 reglas del estandar apuntando a un documento
-//  borrado. Folded into the paths.
+//  skill que NO VIVE EN ESTE REPO (es el estandar de nuestra propia web, en
+//  otro repositorio): 30 reglas apuntando a un documento que quien clone esto
+//  no tiene. Folded into the paths. (26-sep-2026: aqui ponia que la skill ya
+//  no existia. Existe; lo que pasa es que esta fuera.)
 //
 //  SE GENERA, NO SE ESCRIBE. Si el documento se escribiera a mano habria dos
 //  sitios donde vive la misma regla -el catalogo y el .md- y divergirian, que

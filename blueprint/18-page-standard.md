@@ -23,8 +23,9 @@
 > What IS guarded meanwhile: `doc-gate D7` fails if any rule in the catalogue points at a
 > document that does not exist, or at one that exists but git does not track.
 
-These 30 rules used to live in a separate document **that no longer existed**: thirty rules
-pointing at a deleted file, which is exactly why nobody looked at them while building a page.
+These 30 rules used to live in a separate document **outside this repository** (the page
+standard of our own site): thirty rules pointing at a file that nobody building a client page
+had open, which is exactly why nobody looked at them while building a page.
 They are folded in here.
 
 | Mark | What it means |
@@ -97,7 +98,7 @@ They are folded in here.
   <br>`no instrument`
 - **WPS-26** · gate — `author`: the complete canonical block (name, jobTitle, worksFor, sameAs)
   <br>`no instrument`
-- **WPS-27** · gate — Do NOT use `SearchAction`, `Review`/`AggregateRating`, `LocalBusiness`, `Product`, `speakable` or `HowTo`
+- **WPS-27** · gate — Do NOT use `SearchAction`, `Review`/`AggregateRating`, `LocalBusiness`, `Product`, `speakable` or `HowTo` (a rule for YOUR site, not the client's: a client that is a local business marks itself up as `LocalBusiness` or its real subtype, `03-content-and-seo.md`; why the rule does not transfer, `docs/traps/1-19.md §6`)
   <br>`qa-final.sh (SearchAction with no search function)`
 
 ## Weight and delivery

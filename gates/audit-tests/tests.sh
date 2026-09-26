@@ -116,11 +116,27 @@ sitio_base "$T/c13" dir-barra
 muta "$T/c13/index.html" 's{<link rel="stylesheet"[^>]*>}{}' \
   && caso "pagina sin hoja de estilos"                  ROJO S5.1 "$T/c13"
 
+# 26-sep-2026 · S1.6 buscaba una LISTA CERRADA de entidades con nombre y no
+# veia la numerica que el propio blueprint pone de ejemplo (03 §5), que es la
+# que un sitio real ya sirvio: «d&#x27;un». Ahora casa cualquier entidad.
+sitio_base "$T/c14" dir-barra
+printf '# Marca\n\n> Besoin d&#x27;un rendez-vous.\n\n- [Portada](https://ejemplo.test/): la portada del sitio\n' > "$T/c14/llms.txt"
+caso "llms.txt con una entidad NUMERICA (&#x27;)"        ROJO S1.6 "$T/c14"
+
 echo
 echo "== los que tienen que salir VERDES (los que impiden acusar a un sitio correcto) =="
 
 sitio_base "$T/v1" plano
 caso "sitemap sin extension + ficheros .html"           VERDE - "$T/v1"
+
+# El otro lado de c14: un & suelto en texto plano NO es una entidad. Si el
+# patron nuevo casara con «Kine & osteo», «R&D» o «AT&T», acusaria a un
+# llms.txt correcto. (Un «&co;» SI casaria: un & pegado a letras y cerrado con
+# punto y coma no se distingue de una entidad, y ese falso positivo se acepta
+# porque en texto plano tambien sobra.)
+sitio_base "$T/v14" dir-barra
+printf '# Marca\n\n> Kine & osteo, R&D y AT&T, 3 & 4.\n\n- [Portada](https://ejemplo.test/): la portada del sitio\n' > "$T/v14/llms.txt"
+caso "llms.txt con & suelto (no es entidad)"            VERDE - "$T/v14"
 
 sitio_base "$T/v2" dir-barra
 muta "$T/v2/index.html" 's{<title>[^<]*</title>}{<title>Contacto | Marca</title>}' \

@@ -1019,7 +1019,7 @@
       "doc": "blueprint/18-page-standard.md",
       "linea": 82,
       "ref": "web-page-standard/SKILL.md:204",
-      "texto": "NO usar SearchAction, Review/AggregateRating, LocalBusiness, Product, speakable, HowTo",
+      "texto": "NO usar SearchAction, Review/AggregateRating, LocalBusiness, Product, speakable, HowTo (regla de NUESTRA web, no de la del cliente)",
       "tipo": "binaria",
       "comprobable_maquina": "si",
       "gate": "qa-final.sh (SearchAction sin buscador)",
@@ -1033,7 +1033,7 @@
         ],
         "site-a": [
           "no_aplica",
-          "07-trampas §6: la prohibicion de LocalBusiness lleva dentro un supuesto sobre NOSOTROS y no transfiere"
+          "docs/traps/1-19.md §6: la prohibicion de LocalBusiness lleva dentro un supuesto sobre NOSOTROS y no transfiere"
         ],
         "mob": [
           "no_aplica",

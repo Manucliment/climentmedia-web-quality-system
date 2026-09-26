@@ -43,6 +43,10 @@ perl gates/qa-master.pl <URL> --repo DIR --candidate
 bash gates/deploy.sh <REPO> --upload
 ```
 
+> Si el hook de despliegue que tengas instalado bloquea esta forma **relativa**, llama a la
+> puerta por su **ruta absoluta**. La copia de `gates/hooks/` la deja pasar (medido el
+> 26-sep-2026); una copia mas estricta puede no distinguirla de la puerta de otro repo.
+
 El primero mide **el arbol que vas a subir** y escribe el recibo. El segundo es la puerta:
 sin recibo valido no llega a la linea que sube, y despues comprueba que **lo servido es lo
 medido**. Ninguno sustituye al otro — sin `--candidate` mides *produccion*, y el recibo
