@@ -1,6 +1,6 @@
-# The trap log — 83 traps, read before debugging
+# The trap log — 84 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§83** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§85** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -12,6 +12,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §60–§76 | [`traps/60-76.md`](traps/60-76.md) |
 | §77–§81 | [`traps/77-81.md`](traps/77-81.md) |
 | §82–§83 | [`traps/82-83.md`](traps/82-83.md) |
+| §85 | [`traps/85.md`](traps/85.md) |
 
 ---
 
@@ -27,7 +28,7 @@ Not quoted — **derived by a program you can run**:
 perl gates/doc-gate.pl --lista D4
 ```
 
-Today it reports: **83 traps · all 83 declare what catches them · 31 say `nobody` on purpose.**
+Today it reports: **84 traps · all 84 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
 writing more prose** — which is the measured finding the whole repository rests on. The seven most
@@ -93,6 +94,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §59 | Two sites cannot be measured with a browser, and the gate was failing them |
 | §75 | `if (r.cssRules)` no longer distinguishes a group rule |
 | §83 | A page-type profile that failed its own four references |
+| §85 | Three checks written for sites that collect leads failed two sites that collect nothing |
 
 ### B · Green over nothing — it passed without looking
 
