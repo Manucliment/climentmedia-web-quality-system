@@ -92,7 +92,7 @@ close**, with the single declared exception below.
 ### A-ter.1 · The structure gate — is it laid out, or is it prose?
 
 ```js
-window.__GATE__ = { type:'guide' };   // optional; inferred from the URL if absent
+window.__GATE__ = { tipo:'guia' };    // optional; inferred from the URL if absent. The value is the Spanish key of gates/anatomy.tsv
 // ...then paste the whole file
 ```
 

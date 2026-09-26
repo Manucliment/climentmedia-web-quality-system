@@ -37,7 +37,7 @@ No file in this repository should ever contain a credential.
 
 - Configuration files (`*.conf`, `config.md`) are `.gitignore`d. Only `*.example` files
   are tracked.
-- The receipt (`.qa-receipt`) is `.gitignore`d. It carries the site's file hashes and its
+- The receipt (`.qa-recibo`) is `.gitignore`d. It carries the site's file hashes and its
   list of unmeasured items — nothing secret, but nothing anyone else needs either.
 - The holes file, which records what is owed by a client, is excluded from deployment on
   purpose. It contains internal notes about a client's project.

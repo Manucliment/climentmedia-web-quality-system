@@ -281,8 +281,10 @@ perl gates/qa-master.pl https://<domain> \
   --repo "$REPO" --thanks /thank-you --contact /contact \
   --json "$REPO/_qa/AFTER-$(date +%Y%m%d-%H%M).json"
 
-# 2 · the diff
-perl gates/qa-diff.pl "$REPO"/_qa/BEFORE-*.json "$REPO"/_qa/AFTER-*.json
+# 2 · the diff — the LATEST before against the LATEST after. From the second round on the
+#     glob returns three files or more, and qa-diff.pl takes exactly two.
+BEFORE=$(ls -t "$REPO"/_qa/BEFORE-*.json | head -1); AFTER=$(ls -t "$REPO"/_qa/AFTER-*.json | head -1)
+perl gates/qa-diff.pl "$BEFORE" "$AFTER"
 ```
 
 **What `qa-diff.pl` blocks, and why each one:**

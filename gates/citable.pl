@@ -2,9 +2,13 @@
 # =============================================================================
 #  citable.pl · ¿SOBREVIVE UN PARRAFO A QUE LO SAQUEN DE LA PAGINA?
 # =============================================================================
-#  26-ago-2026. Sale de `citation-ready-check` (Andre Guelmann, gtm-skills, MIT)
-#  y del tamano de bloque medido en el estudio GEO de Princeton
-#  (arXiv:2311.09735), via `seo-intel/references/ai-visibility.md`.
+#  26-ago-2026. Sale de `citation-ready-check` (Andre Guelmann, gtm-skills, MIT).
+#  🔴 26-sep-2026 · LA BANDA DE 134-167 PALABRAS NO SALE DEL ESTUDIO GEO, como
+#  decia esta cabecera (via una skill ajena que la atribuia a Princeton,
+#  arXiv:2311.09735). Rastreada ese dia: el estudio no midio longitudes -sus
+#  nueve metodos son reescrituras-, y el primer rastro es un «estudio» de un
+#  proveedor de SEO sin metodo ni datos publicados. Google (15-may-2026) dice
+#  que no hay longitud ideal. Se sigue contando, como AVISO orientativo.
 #
 #  EL PRINCIPIO, QUE ES TODO: un motor de respuestas no lee la pagina, extrae
 #  un trozo -uno o dos parrafos- y responde con el. Asi que cada parrafo hay
@@ -12,8 +16,9 @@
 #  parrafo de arriba desaparece en la recuperacion.
 #
 #  POR QUE NOS FALTABA. Nuestro estandar ya cubre la superficie del FRAGMENTO
-#  DESTACADO -`WPS-13`: capsula de 40-60 palabras bajo el H1- y NO cubre la de
-#  la CITA, que son 134-167 palabras autocontenidas. Es justo la superficie que
+#  DESTACADO -`WPS-13`: capsula de 40-60 palabras bajo el H1- y NO cubre la del
+#  pasaje que un motor puede citar entero (la banda de abajo es orientativa y
+#  sin fuente primaria, ver arriba). Es justo la superficie que
 #  perseguimos con `llms.txt`, con `/learn/` y con todo el eje de producto.
 #
 #  DOS DE LAS OCHO CATEGORIAS DE LA SKILL YA SON REGLAS NUESTRAS y no se
@@ -342,10 +347,10 @@ unless ($quiet) {
   print "\n";
 
   unless ($n_banda) {
-    print "AVISO: ni un pasaje entre 134 y 167 palabras. Esa es la longitud que\n";
-    print "extraen los motores para CITAR; la capsula de 40-60 cubre el fragmento\n";
-    print "destacado, que es otra superficie. No tumba el gate: es una prior de un\n";
-    print "solo estudio, no una regla nuestra medida.\n\n";
+    print "AVISO: ni un pasaje entre 134 y 167 palabras. ORIENTATIVO y sin fuente\n";
+    print "primaria: la cifra no sale del estudio GEO (que no midio longitudes) sino de\n";
+    print "un estudio de proveedor sin metodo publicado, y Google dice que no hay\n";
+    print "longitud ideal. No tumba el gate y no es un objetivo ni un criterio de exito.\n\n";
   }
 }
 

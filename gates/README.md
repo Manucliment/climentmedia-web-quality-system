@@ -296,7 +296,7 @@ perl gates/qa-master.pl <URL> --repo DIR --candidate
 bash gates/deploy.sh <REPO> --upload
 ```
 
-The first measures the tree you are about to publish and writes `<REPO>/.qa-receipt`. The
+The first measures the tree you are about to publish and writes `<REPO>/.qa-recibo`. The
 second is the door: it refuses to reach the upload line without a valid receipt, and after
 uploading it verifies that **what is served is what was measured**. Neither substitutes for
 the other — without `--candidate` you measure production, and the receipt then seals a tree
@@ -520,8 +520,14 @@ excluded.
   else failed. To close that gap, freeze a page **you own** (its README says how):
 
 ```bash
-perl gates/qa-master-tests/freeze-fixture.pl <URL> <name>
+# 1 · measure the page once, so it lands in qa-master's cache
+perl gates/qa-master.pl <URL> --una-sola --sin-recibo --cache <cache-dir>
+# 2 · copy that host's entries out of the cache into a fixture directory
+perl gates/qa-master-tests/freeze-fixture.pl <cache-dir> <fixture-dir> <host>
 ```
+
+(Until 2026-09-26 this block gave `freeze-fixture.pl <URL> <name>`, a signature the program
+never had: it copies from a cache, it does not download.)
 
 Everything else in both batteries is synthetic and ships intact. "Ships intact" is about the
 files; whether they **run** is the paragraph above, and for `qa-master` the answer used to be

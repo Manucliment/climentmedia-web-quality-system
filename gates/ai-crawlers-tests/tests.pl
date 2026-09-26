@@ -111,6 +111,14 @@ print "  " . '=' x 60 . "\n\n";
   check('T1d · dos User-agent seguidos comparten grupo', $rc, $out, 1,
         qr/FALLA.*(GPTBot.*ClaudeBot|ClaudeBot.*GPTBot)/);
 }
+{
+  # 26-sep-2026 · Claude-SearchBot no estaba en la lista: bloquear la BUSQUEDA de
+  # Claude salia en verde. Es el caso que el gate anterior aprobaba.
+  my ($rc, $out) = run('claude-searchbot-bloqueado',
+    "User-agent: *\nAllow: /\n\nUser-agent: Claude-SearchBot\nDisallow: /\n");
+  check('T1e · bloquear Claude-SearchBot (la busqueda de Claude) FALLA', $rc, $out, 1,
+        qr/FALLA.*Claude-SearchBot/);
+}
 
 # --- TRAMPA 2 · gana la ruta MAS LARGA ---------------------------------------
 {

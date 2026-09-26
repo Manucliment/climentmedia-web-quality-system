@@ -32,8 +32,15 @@ sections:
 > background is a decision about visual rhythm and **is not mixed in** with the role.
 
 ```html
-<section class="section" data-sec="qualification"> … </section>
+<section class="section" data-sec="calificacion"> … </section>
 ```
+
+⚠️ **`<role>` is the KEY in the first column of `gates/roles.tsv`, and the keys are Spanish**
+(`oferta`, `calificacion`, `proceso`, `objeciones`, `cierre`…; the page types too: `servicio`,
+`guia`, `ficha`…). The English word in the second column is for reading. The gates compare
+the key literally: `data-sec="qualification"` or `data-tipo="service"` in the markup fails
+the anatomy as a missing role or an unknown type. Until 2026-09-26 the examples in this
+repository used the English words, so following them literally failed.
 
 It costs one attribute and unlocks three things that are otherwise impossible: checking a type's
 anatomy, measuring conversion by section role instead of by button colour, and detecting the

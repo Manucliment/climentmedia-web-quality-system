@@ -4,7 +4,7 @@ config.md
 !*.conf.example
 
 # Receipts and QA artefacts are per-site, never committed
-.qa-receipt
+.qa-recibo
 _qa/
 *.bak-*
 

@@ -436,7 +436,7 @@ sub bloque_intake {
         fallo(id=>'INT-02', titulo=>'no consta a donde llegan los leads',
               umbral=>'un buzon real, y que sea uno que LEAN',
               proc=>'00-intake.md §A + §C',
-              hacer=>'en Site A a Domicile su formulario llevaba meses enviando a un CRM dado de baja. Un formulario que falla dando 200 no avisa a nadie');
+              hacer=>'en Site A su formulario llevaba meses enviando a un CRM dado de baja. Un formulario que falla dando 200 no avisa a nadie');
     }
 
     # Quien aprueba, con nombre

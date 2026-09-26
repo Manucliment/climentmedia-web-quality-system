@@ -7,9 +7,12 @@
 > Measured over **15 pages in production** (home + 2 interiors × 5 sites), with `curl` plus
 > headless Chrome plus Perl.
 >
-> **This document does not yet have a gate.** The measurement is written and was proven over
-> those 15 pages; what is missing is wiring it to an exit code. **Until then this is a
-> specification with no gate — which is exactly the defect this document describes.**
+> **Gated now — this header said otherwise until 2026-09-26, and had been stale for weeks.**
+> The performance lens of `gates/qa-master.pl` (`REN-01` … `REN-13`) implements the budgets
+> below and runs on every deploy: the receipt needs all five lenses, and a `FALLO` there
+> blocks the door. What no gate measures: **real** LCP, CLS and INP. `REN-11` reads LCP ≤ 2.5 s
+> and CLS ≤ 0.1 only with `--dom`, as lab values, and INP has no threshold anywhere. Those
+> three stay NOT MEASURED unless field data (CrUX) exists.
 
 ---
 

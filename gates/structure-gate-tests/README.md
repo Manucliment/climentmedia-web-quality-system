@@ -50,8 +50,12 @@ exit `3` if any were skipped and nothing else failed. They are neither passing n
 nobody asked them. To close the gap, freeze pages from a site you own:
 
 ```bash
-perl ../qa-master-tests/freeze-fixture.pl <URL> <name>.html
+perl ../qa-master.pl <URL> --una-sola --sin-recibo --cache <cache-dir>              # measure once
+perl ../qa-master-tests/freeze-fixture.pl <cache-dir> <fixture-dir> <host>           # copy it out
 ```
+
+(`freeze-fixture.pl` copies one host's entries from qa-master's cache; it does not download.
+The `<URL> <name>.html` form this README gave until 2026-09-26 stops at the usage line.)
 
 ## The two frozen fixtures
 

@@ -20,7 +20,7 @@
 // 🔴 18-ago-2026 · ESTOS VALORES NO PUEDEN PARECER BUENOS. Antes ponia
 // `contact@ejemplo.tld`, que es una direccion con forma de direccion: copiar
 // esta plantilla sin tocarla ponia en VERDE el check INT-02 de audit-vs-spec.pl
-// — el check que existe precisamente porque el formulario de Site A a Domicile
+// — el check que existe precisamente porque el formulario de Site A
 // llevaba meses enviando a un CRM dado de baja. La plantilla aprobaba el
 // examen que la plantilla venia a suspender.
 const MAIL_TO      = 'RELLENAR@ejemplo.tld';      // destino de los avisos

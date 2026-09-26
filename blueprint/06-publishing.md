@@ -89,6 +89,27 @@ means nothing.**
 forms end to end (email **and** the copy on disk) · the leads and secrets directories at 404 ·
 diagnostic scripts at 404 over the web · measurement firing in the browser.
 
+## 4-bis · Tell the search engines, the same day
+
+A site nobody submitted is found late. On one site this cost **16 days**: live on the 5th,
+no sitemap submitted, and 10 of its 16 URLs still *"URL is unknown to Google"* on the 21st.
+This step was not in the method until 2026-09-26.
+
+1. **Search Console:** the property exists and is verified (a Domain property if you control
+   the DNS, a URL-prefix one otherwise), **and the account that owns it is written down**.
+2. **Submit the sitemap** there, and request indexing for the pages that matter most.
+3. **Settings → "Search generative AI"**: the default for every property is to *include* the
+   site in AI Overviews, AI Mode and Discover's AI features. Check nobody switched it to
+   exclude — excluding removes the impressions *and* the grounding, and takes 1–2 days either
+   way ([Google](https://support.google.com/webmasters/answer/16908024)).
+4. **Bing Webmaster Tools**, with the same sitemap. Bing feeds Copilot, and its *AI
+   Performance* report (public preview since Feb-2026) shows citations there. Google does
+   **not** support IndexNow; Bing, Yandex, Seznam and Naver do.
+
+**Gate:** the sitemap shows as *Success* with its URL count in both consoles, and that count
+equals the `<loc>` in `sitemap.xml`. If a console cannot be read, the line says NOT MEASURED —
+it does not say done.
+
 ## 5 · What only the client can do
 
 It goes to them in **phone format**: one action per block, values in code blocks, zero

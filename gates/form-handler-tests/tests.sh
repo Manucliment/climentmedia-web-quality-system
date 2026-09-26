@@ -7,7 +7,7 @@
 #  hoy **no lo validaba ninguna herramienta**: no habia `php` ni en la maquina de
 #  Manuel ni en el servidor. Se leia a mano. Un error de sintaxis ahi es un 500
 #  en el formulario de un cliente vivo, y el fichero existe precisamente porque
-#  en Site A a Domicile el formulario contestaba 200 sin que llegara nada.
+#  en Site A el formulario contestaba 200 sin que llegara nada.
 #
 #  Manuel autorizo instalar `php-cli` en example-host ese dia. SOLO la CLI:
 #  ni `php-fpm` ni modulo de servidor web, asi que nada quedo accesible desde

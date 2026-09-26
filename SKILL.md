@@ -15,7 +15,7 @@ description: TODO el trabajo web nuestro y de cliente, en cuatro caminos. (1) HA
 
 ## 🔴 EMPIEZA AQUI: cuatro trabajos, cuatro caminos
 
-**No leas los 18 documentos de `blueprint/`.** Abre el camino de tu trabajo y el te dice
+**No leas los 19 documentos de `blueprint/`.** Abre el camino de tu trabajo y el te dice
 que abrir, cuando. Cada paso lleva: que se hace · el comando · el gate que lo cierra · que
 se rompe si te lo saltas.
 
@@ -53,8 +53,8 @@ sella entonces un arbol cuyo veredicto salio de medir otra cosa.
 | | |
 |---|---|
 | `paths/` | los cuatro caminos. **Se empieza aqui.** |
-| `blueprint/` | el metodo, 18 documentos de consulta |
-| `gates/` | 37 programas y sus bancos · empieza por [`gates/README.md`](gates/README.md) |
+| `blueprint/` | el metodo, 19 documentos de consulta |
+| `gates/` | 38 programas y sus bancos · empieza por [`gates/README.md`](gates/README.md) |
 | `docs/traps.md` | el registro de trampas · **leelo antes de depurar nada** |
 | `checklists/` | el QA que cierra un proyecto y el sprint de pagina |
 | `CLAUDE.md` | como conducir esto siendo un agente: las cinco reglas |

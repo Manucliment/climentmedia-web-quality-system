@@ -99,10 +99,14 @@ class in the HTML; nobody rewrites the wrapper:
 | class | width | for |
 |---|---|---|
 | `sec__in` | 1120px | default |
-| `sec__in--text` | 34em ≈ 544px | prose: FAQ, asides, index |
-| `sec__in--flow` | 48rem = 768px | chain, timeline, comparator |
+| `sec__in--texto` | 34em ≈ 544px | prose: FAQ, asides, index |
+| `sec__in--flujo` | 48rem = 768px | chain, timeline, comparator |
 | `sec__in--spec` | 58rem = 928px | specification table |
-| `sec__in--wide` | 1280px | grids and media. **Never prose** |
+| `sec__in--ancho` | 1280px | grids and media. **Never prose** |
+
+The class names are the ones `moulds/_base.css` defines, in Spanish. Until 2026-09-26 this table
+gave them in English (`--text`, `--flow`, `--wide`): a class the CSS does not know leaves prose at
+1120 px, over 80 characters per line, and the width gate fails.
 
 **Three things that are not obvious and cost one measurement each:**
 
@@ -309,8 +313,12 @@ all of them after fixing four missing `max-width` declarations.
 Everything above re-runs with **one command**, and it fails on its own:
 
 ```bash
-bash gates/tests/moulds.sh
+bash gates/structure-gate-tests/battery-layout.sh
 ```
+
+(Until 2026-09-26 this block named a script that never existed *(then `gates/tests/moulds.sh`)*. The battery
+that exists measures at 1280 and 390, not at the 1422 of the first measurement above, and there
+are 20 moulds now, not 19: `20-choice-cards` arrived after this section was written.)
 
 It includes a collision check — that no mould overrides another or the chassis — **with 6 negative
 controls, one per rule, all seen red as they should be.**

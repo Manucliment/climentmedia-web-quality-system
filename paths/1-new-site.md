@@ -59,9 +59,18 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
 
 ## Step 1a · MIGRATION — copy their code TODAY
 
-- **WHAT** · Copy their `src/` into `_migrate/source` **before** anybody touches DNS.
-- **HOW** · `bash gates/audit-source.sh`
-- **GATE** · `audit-source.sh` EXIT 0. Threshold: their inventory is captured.
+- **WHAT** · Copy their code into `_migrate/origen/` **before** anybody touches DNS — that
+  is the folder `audit-vs-source.sh` reads in step 10. And measure their live site while it
+  still exists.
+- **HOW** ·
+  ```bash
+  cp -r <their-repo>/. <site-repo>/_migrate/origen/        # their code, today
+  bash gates/audit-source.sh https://their-domain.tld      # their LIVE site, measured
+  ```
+  (`audit-source.sh` measures what the server serves; it copies nothing. Until 2026-09-26
+  this step named only that program, so following it literally captured no code at all.)
+- **GATE** · `_migrate/origen/` is not empty, and `audit-source.sh` EXIT 0. Threshold: their
+  inventory is captured.
 - **IF YOU SKIP IT** · The moment DNS moves, **their site stops existing.** Copying their
   code on day one is the only thing that makes an audit possible afterwards, and without
   it step 10 has nothing to compare against, permanently.
@@ -159,7 +168,8 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
 ## Step 4 · Anatomy — the generator emits the section role
 
 - **WHAT** · Every `<section>` in the body comes out of the generator carrying its **role**:
-  `<section class="section" data-sec="qualification">`.
+  `<section class="section" data-sec="calificacion">` — the Spanish key of `gates/roles.tsv`,
+  which is what the gates compare.
 - **FILE** · your generator.
 - **GATE** ·
   ```bash
@@ -189,7 +199,7 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
 - **HOW** · your generator, **then** the site auditor:
   ```bash
   <your generator>
-  bash gates/audit.sh
+  bash gates/audit.sh --root <site-repo>     # without --root it stops: it will not guess the tree
   ```
 - **WHICH generator language, with a criterion and not a preference.** The spec auditor
   accepts any of them, so none of them blinds a gate. The rule is one and it is
@@ -281,7 +291,7 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
 
 **MIGRATION — both, and they do not substitute for each other:**
 ```bash
-bash gates/audit-vs-source.sh                                   # against THEIR code
+AUDIT_ROOT=<site-repo> bash gates/audit-vs-source.sh <site-repo>/_migrate/origen   # against THEIR code
 perl gates/audit-vs-spec.pl --mode migration --repo <site-repo>
 ```
 - **GATE** · both EXIT 0. The first enumerates from **their** side (whole categories that
@@ -365,7 +375,7 @@ perl gates/audit-vs-spec.pl --mode greenfield --repo <site-repo>
 - **WHAT** · Put in writing what was measured, at what width, and **what was not looked at.**
 - **GATE** ·
   ```bash
-  perl gates/receipt.pl --repo <site-repo>     # written by the master gate
+  perl gates/receipt.pl --verify --repo <site-repo>   # the master gate wrote it: does it still match the tree?
   perl gates/history-gate.pl                   # and the log names the accuser
   ```
   The format is defined by `gates/receipt.pl`, in its own header, and verified by three

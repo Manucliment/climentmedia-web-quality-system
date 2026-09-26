@@ -7,8 +7,10 @@
 > Measured with a states probe over **27 live pages across 5 sites, at 1280 and 390**, with
 > `innerWidth` verified. Supporting structural census: 121 pages.
 >
-> **The probe exists and returns only anomalies; the verdict and the fixtures are missing. Until
-> then this is a specification without a gate.**
+> **Partly gated — this header said otherwise until 2026-09-26.** `EST-07` in the structure
+> lens of `gates/qa-master.pl` reports the lame row, the widow and unequal heights, on the page
+> measured with `--dom`. The other states in this document (1 item, 12 items, a 90-character
+> title, no image) still have no check: they are a specification without a gate.
 
 ---
 
