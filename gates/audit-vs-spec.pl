@@ -707,14 +707,45 @@ sub bloque_enlazado {
 # =============================================================================
 #  BLOQUE 6 · MEDICION — el fallo mas caro que hemos tenido, y es de greenfield
 # =============================================================================
+# Los scripts PROPIOS que carga cada pagina: los <script src> que no llevan
+# esquema ni `//` delante, sin su ?v= y solo si existen en el arbol.
+# 🔴 26-sep-2026 · SIN ESTO, EL PATRON DE LA CASA ERA INVISIBLE PARA MEDICION.
+#    climentmedia.com y sus dos webs hermanas cargan Tag Manager desde un
+#    `consent.js` propio, y SOLO tras aceptar: las paginas no llevan el ID, lo
+#    lleva el fichero. MED-01 buscaba el runtime por tres nombres fijos (y daba
+#    NO VERIFICADO «no se encontro runtime JS» con el runtime delante) y MED-03
+#    buscaba el contenedor en el HTML (y habria dado FALLO en todas las paginas
+#    de una web que lo carga en todas). Lo que la pagina carga ES su runtime.
+sub scripts_propios {
+    my %por;
+    for my $f (@HTML) {
+        my $h = sin_com(slurp("$ROOT/$f") // '', 'html');
+        (my $dir = $f) =~ s{[^/]*$}{};
+        my @src;
+        while ($h =~ /<script\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/gi) {
+            my $s = $1;
+            next if $s =~ m{^(?:[a-z][a-z0-9+.-]*:|//)}i;   # https://, data:, //cdn: no es nuestro
+            $s =~ s/[?#].*$//s;
+            my $rel = $s =~ m{^/} ? substr($s, 1) : "$dir$s";
+            push @src, $rel if $rel ne '' && -f "$ROOT/$rel";
+        }
+        $por{$f} = \@src;
+    }
+    return %por;
+}
+
 sub bloque_medicion {
+    my %SCR = scripts_propios();
     # ── MED-01 · todo data-* que ESCRIBE el generador tiene LECTOR en el runtime
     # 🔴 Este es el de site-d, verificado abriendo los dos ficheros:
     #    _gen.ps1:359 emite `data-thanks` y `grep -c data-thanks script.js` = 0.
     my $gen = '';
     $gen .= (slurp($_) // '') for grep { -f } map { "$ROOT/$_" } qw(_gen.ps1 _gen.js build.pl);
     my $run = '';
-    $run .= (slurp($_) // '') for grep { -f } map { "$ROOT/$_" } qw(script.js assets/script.js js/site.js);
+    my %leido;
+    $run .= (slurp("$ROOT/$_") // '')
+        for grep { -f "$ROOT/$_" && !$leido{$_}++ }
+            (qw(script.js assets/script.js js/site.js), map { @{ $SCR{$_} } } sort keys %SCR);
     # 🔴 18-ago-2026 · EL CSS TAMBIEN LEE ATRIBUTOS, y este check no lo sabia.
     #    En la prueba de site-f el molde 15 (tabla-especificacion) emite
     #    `data-col` y su mecanismo movil es `content: attr(data-col)` en el CSS:
@@ -788,17 +819,40 @@ sub bloque_medicion {
     #    mira con la misma cautela que EST-12b de qa-master: basta UNA de esas
     #    señales en UNA pagina para volver a exigirla (un formulario de terceros
     #    entra por <script> o <iframe> sin un solo <form> en el HTML).
-    my @capta;
+    my (@capta, @envio);
     for my $f (@HTML) {
         (my $h = sin_com(slurp("$ROOT/$f") // '', 'html'))
             =~ s{<script\b[^>]*type\s*=\s*["']application/ld\+json["'][^>]*>.*?</script>}{}gsi;
         push @capta, "$f (<" . lc($1) . ">)" if $h =~ /<(form|script|iframe)\b/i;
+        push @envio, "$f (<" . lc($1) . ">)" if $h =~ /<(form|iframe)\b/i;
     }
+    # 🔴 26-sep-2026 · UNA WEB QUE MIDE Y NO TIENE FORMULARIO TAMPOCO TIENE GRACIAS.
+    #    climentmedia.com y sus dos webs hermanas miden (consent.js + GTM) y su
+    #    unica conversion es un CLIC en un mailto: no hay envio, asi que no puede
+    #    haber pagina tras el. Con el <script> del consentimiento en cada pagina,
+    #    la regla de arriba ya no las eximia, y el unico verde posible era una
+    #    pagina de gracias a la que no llega nadie. La spec lo DECLARA en
+    #    `contact.noForm`, con su motivo, con la misma regla que `nap.noAddress`
+    #    en INT-01: un texto cuenta, un `true` o un «si» pelados no. Y la
+    #    declaracion no tapa lo que la contradice: un <form> o un <iframe> en
+    #    cualquier pagina vuelven a exigirla (un formulario de terceros entra
+    #    por <iframe>; por <script> tambien, y esa puerta la cierra el motivo
+    #    escrito: quien lo firma dice que no hay).
+    my $sin_form = $site->{contact}{noForm};
+    my $motivo_ok = defined $sin_form && !ref $sin_form && $sin_form =~ /\S/
+                    && $sin_form !~ /^\s*(?:1|true|si|yes|TODO|XXX|PENDIENTE|placeholder)\b\s*$/i;
     if (!defined $hg && @HTML && !@capta && ($site->{tracking}{gtm} // '') !~ /\S/) {
         pasa(id=>'MED-02', titulo=>'sin pagina de gracias, y no le hace falta',
              dato=>'ninguna de las '.scalar(@HTML).' paginas trae <form>, <script> ejecutable ni <iframe>, y la spec no declara contenedor: no hay conversion que marcar');
+    } elsif (!defined $hg && @HTML && $motivo_ok && !@envio) {
+        pasa(id=>'MED-02', titulo=>'sin pagina de gracias: la spec declara que no hay formulario',
+             dato=>'contact.noForm: «'.substr($sin_form, 0, 90).(length($sin_form) > 90 ? '…' : '').'» · ninguna de las '
+                   .scalar(@HTML).' paginas trae <form> ni <iframe>');
     } elsif (!defined $hg) {
         fallo(id=>'MED-02', titulo=>'no hay pagina de gracias',
+              (defined $sin_form ? (dato=>($motivo_ok
+                  ? 'contact.noForm esta declarado, pero lo contradice: '.join(' ', @envio[0..($#envio > 2 ? 2 : $#envio)])
+                  : 'contact.noForm sin motivo: un valor pelado no es una decision escrita')) : ()),
               umbral=>'una pagina de gracias, noindex, con el evento de conversion',
               proc=>'09 §2.10 + 04-medicion.md',
               hacer=>'sin pagina de gracias no hay donde disparar la conversion, y sin conversion la publicidad se optimiza a ciegas');
@@ -815,12 +869,20 @@ sub bloque_medicion {
     # ── MED-03 · el contenedor declarado en la spec esta en las paginas
     my $gtm = $site->{tracking}{gtm} // '';
     if ($gtm =~ /^GTM-[A-Z0-9]+$/) {
-        my @sin = grep { my $h = slurp("$ROOT/$_") // ''; $h !~ /\Q$gtm\E/ } @HTML;
+        # En el HTML, o en un script PROPIO que la pagina carga (el consent.js de
+        # la casa: ver scripts_propios). Se dice por cual de los dos caminos.
+        my (@sin, $por_js);
+        for my $f (@HTML) {
+            next if (slurp("$ROOT/$f") // '') =~ /\Q$gtm\E/;
+            if (grep { (slurp("$ROOT/$_") // '') =~ /\Q$gtm\E/ } @{ $SCR{$f} || [] }) { $por_js++; next }
+            push @sin, $f;
+        }
         @sin ? fallo(id=>'MED-03', titulo=>'paginas sin el contenedor que declara la spec',
                      dato=>scalar(@sin).' de '.scalar(@HTML).': '.join(' ', @sin[0..($#sin > 4 ? 4 : $#sin)]),
                      umbral=>'el contenedor en TODAS', proc=>'04-medicion.md',
                      hacer=>'una pagina sin contenedor no mide nada y no avisa: es un agujero con forma de pagina normal')
-             : pasa(id=>'MED-03', titulo=>'el contenedor esta en todas las paginas', dato=>"$gtm · ".scalar(@HTML));
+             : pasa(id=>'MED-03', titulo=>'el contenedor esta en todas las paginas',
+                    dato=>"$gtm · ".scalar(@HTML).($por_js ? " · en $por_js a traves de un script propio que la pagina carga" : ''));
     } else {
         aviso(id=>'MED-03', titulo=>'la spec no declara contenedor de medicion',
               proc=>'00-intake §C', hacer=>'si el cliente va a hacer publicidad, la medicion es obligatoria ANTES de lanzar campanas');

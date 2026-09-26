@@ -450,6 +450,46 @@ caso('MED-03 · GTM declarado y ausente del HTML, FALLA',
 caso('MED-03 · y presente, pasa',
      "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'ok:MED-03', 'migracion',
      { 'index.html' => '<html><head><script>(function(){})(GTM-ABC1234)</script></head><body><main><h1>x</h1></main></body></html>' });
+# 🔴 26-sep-2026 · EL CONTENEDOR PUEDE VIVIR EN UN SCRIPT PROPIO. Es el patron de
+#    la casa (consent.js de climentmedia.com): el ID no esta en las paginas, esta
+#    en el fichero que TODAS cargan, y solo se inyecta si el visitante acepta.
+#    Los rojos son los que impiden pasarse: una pagina que no carga el script, un
+#    script que no lleva el ID, y un script EXTERNO (no es nuestro: no se lee).
+my $CON_ID = 'var TAG = { type: "gtm", id: "GTM-ABC1234" };';
+caso('MED-03 · el ID en un script propio que la pagina carga, pasa',
+     "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'ok:MED-03', 'migracion',
+     { 'index.html' => '<html><head><script defer src="/consent.js?v=1a2b"></script></head><body><main><h1>x</h1></main></body></html>',
+       'consent.js' => $CON_ID });
+caso('MED-03 · ...pero una pagina que NO lo carga, FALLA',
+     "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'FALLO:MED-03', 'migracion',
+     { 'index.html' => '<html><head><script defer src="/consent.js?v=1a2b"></script></head><body><main><h1>x</h1></main></body></html>',
+       'otra/index.html' => '<html><head><title>o</title></head><body><main><h1>Otra</h1></main></body></html>',
+       'consent.js' => $CON_ID });
+caso('MED-03 · un script propio SIN el ID, FALLA',
+     "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'FALLO:MED-03', 'migracion',
+     { 'index.html' => '<html><head><script defer src="/consent.js"></script></head><body><main><h1>x</h1></main></body></html>',
+       'consent.js' => 'var TAG = { type: "gtm", id: "GTM-XXXXXXX" };' });
+caso('MED-03 · un script EXTERNO no cuenta como nuestro, FALLA',
+     "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'FALLO:MED-03', 'migracion',
+     { 'index.html' => '<html><head><script src="https://cdn.example/consent.js"></script></head><body><main><h1>x</h1></main></body></html>',
+       'consent.js' => $CON_ID });
+# MED-01 · y por la misma razon, el RUNTIME tambien es lo que la pagina carga.
+#    Buscaba tres nombres fijos (script.js, assets/script.js, js/site.js), y con
+#    el consent.js delante decia «no se encontro runtime JS».
+caso('MED-01 · el runtime es TAMBIEN lo que la pagina carga',
+     "{$BASE}", 'ok:MED-01', 'migracion',
+     { '_gen.js'    => "h += '<div data-foo=\"1\">';\n",
+       'index.html' => '<html><head><script defer src="/consent.js?v=9"></script></head><body><main><h1>x</h1></main></body></html>',
+       'consent.js' => "document.querySelectorAll('[data-foo]');\n" });
+caso('MED-01 · ...y si ese script no lee el atributo, FALLA',
+     "{$BASE}", 'FALLO:MED-01', 'migracion',
+     { '_gen.js'    => "h += '<div data-foo=\"1\">';\n",
+       'index.html' => '<html><head><script defer src="/consent.js?v=9"></script></head><body><main><h1>x</h1></main></body></html>',
+       'consent.js' => "console.log('nada');\n" });
+caso('MED-01 · un script externo no es runtime: sigue sin verificar',
+     "{$BASE}", 'NO VERIF:MED-01', 'migracion',
+     { '_gen.js'    => "h += '<div data-foo=\"1\">';\n",
+       'index.html' => '<html><head><script src="https://cdn.example/app.js"></script></head><body><main><h1>x</h1></main></body></html>' });
 
 print "\n== PASOS 3, 4 y 6 · ANATOMIA, ENLAZADO Y FICHEROS PARA MAQUINAS\n";
 # 🔴 ANA-02 · la anatomia por ROL. Es el check que estuvo en NO VERIFICADO sobre
@@ -548,6 +588,30 @@ caso('MED-02 · sin gracias y con un <script>, FALLA',
      "{$BASE}", 'FALLO:MED-02', 'greenfield',
      { 'contacto/index.html' => '<html><body><main><h1>Contacto</h1></main>'
        . '<script src="https://embed.example/form.js"></script></body></html>' });
+# 🔴 26-sep-2026 · UNA WEB QUE MIDE Y NO TIENE FORMULARIO TAMPOCO TIENE GRACIAS.
+#    Su unica conversion es un clic en un mailto. La spec lo declara en
+#    `contact.noForm` con su motivo, como `nap.noAddress` en INT-01. Rojos: un
+#    `true` pelado, un «si» pelado, y la declaracion CONTRADICHA por un <form> o
+#    un <iframe> en cualquier pagina.
+my $MIDE = '<html><head><script defer src="/consent.js?v=1"></script></head><body><main><h1>x</h1>'
+         . '<a href="mailto:a@b.test">Escribe</a></main></body></html>';
+caso('MED-02 · mide, sin formulario, y la spec lo declara con motivo, pasa',
+     "{$BASE,\"contact\":{\"noForm\":\"El contacto es un mailto: no hay envio tras el que dar las gracias.\"}}",
+     'ok:MED-02', 'greenfield', { 'index.html' => $MIDE });
+caso('MED-02 · ...con un `true` pelado, FALLA',
+     "{$BASE,\"contact\":{\"noForm\":true}}", 'FALLO:MED-02', 'greenfield', { 'index.html' => $MIDE });
+caso('MED-02 · ...con un «si» pelado, FALLA',
+     "{$BASE,\"contact\":{\"noForm\":\"si\"}}", 'FALLO:MED-02', 'greenfield', { 'index.html' => $MIDE });
+caso('MED-02 · ...y si una pagina trae un <form>, la declaracion no vale',
+     "{$BASE,\"contact\":{\"noForm\":\"El contacto es un mailto: no hay envio tras el que dar las gracias.\"}}",
+     'FALLO:MED-02', 'greenfield',
+     { 'index.html' => $MIDE,
+       'contacto/index.html' => '<html><body><main><h1>C</h1><form action="/c.php"><input name="e"></form></main></body></html>' });
+caso('MED-02 · ...ni si trae un <iframe> (un formulario de terceros)',
+     "{$BASE,\"contact\":{\"noForm\":\"El contacto es un mailto: no hay envio tras el que dar las gracias.\"}}",
+     'FALLO:MED-02', 'greenfield',
+     { 'index.html' => $MIDE,
+       'contacto/index.html' => '<html><body><main><h1>C</h1><iframe src="https://forms.example/x"></iframe></main></body></html>' });
 
 print "\n== BLOQUE 8 · IMAGENES: existen, y tienen alt\n";
 # 🔴 IMG-01 · una imagen declarada y ausente no rompe nada visible en el HTML:
