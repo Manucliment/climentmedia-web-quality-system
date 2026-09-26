@@ -4257,6 +4257,7 @@ sub lente_estructura {
     my (@sin_sec, @sin_datasec, @anat_mal, @heur, %tipos, $con_datasec, @no_leidas, @leidas_est);
     my (@drop_pobres, @drop_rotos, $drop_mirados);
     my (@sin_pie, @pie_sin_legal, @nap_discrepa, @sin_autoria, @autoria_marca, %anclas_autoria);
+    my (@legales_pagina, @capta_por);   # EST-12b: [pagina, n legales] y lo que delata que capta
     my @vocab_mal;
     for my $p (@vistas) {
         my $rp = fetch($p);
@@ -4290,7 +4291,9 @@ sub lente_estructura {
                 m{(aviso-?legal|privacidad|privacy|cookies|terminos|terms|
                     mentions-?legales|politique|confidentialit|protecao|privacidade)}xi
             } @hrefs_pie;
-            push @pie_sin_legal, "$p ($legales enlace(s) legal(es) en el pie)" if $legales < 2;
+            # El umbral se decide DESPUES del bucle, con el sitio entero leido:
+            # ver EST-12b mas abajo.
+            push @legales_pagina, [$p, $legales];
 
             # c · el telefono del pie contra el del schema. Solo se compara si
             #     la pagina emite uno: sin schema no hay dos listas que puedan
@@ -4322,6 +4325,26 @@ sub lente_estructura {
                 $anclas_autoria{$anc}++ if $anc ne '';
                 push @autoria_marca, "$p (ancla: «$anc»)"
                     if $anc =~ /^\s*climent\s*media\s*$/i;
+            }
+        }
+
+        # 🔴 26-sep-2026 · EST-12b PEDIA ≥2 LEGALES A UNA WEB QUE NO RECOGE NADA.
+        #    Una web personal estatica -sin formulario, sin un solo script, sin
+        #    medicion- con su politica de privacidad enlazada en el pie salia
+        #    FALLO: el motivo del check («un sitio que recoge datos y esconde su
+        #    politica») no aplica a quien no recoge nada, y la unica forma de
+        #    ponerla en verde era inventarse una segunda pagina legal.
+        #    El criterio es CONSERVADOR a proposito: basta UNA señal de que la
+        #    pagina puede captar -un <form>, un <script> ejecutable (el JSON-LD no
+        #    lo es), un <iframe> o un pixel conocido- para volver a exigir 2. Un
+        #    identificador escondido en un .js (climentmedia.com lo carga desde
+        #    consent.js) no se ve en el HTML, pero su <script src> SI: por eso se
+        #    mira el script y no el identificador. Ante la duda, capta.
+        {
+            (my $sin_ld = $hp) =~ s{<script\b[^>]*type\s*=\s*["']application/ld\+json["'][^>]*>.*?</script>}{}gsi;
+            if ($sin_ld =~ /<(form|script|iframe)\b/i) { push @capta_por, "$p (<" . lc($1) . ">)" }
+            elsif ($hp =~ m{(facebook\.com/tr|google-analytics\.com|googletagmanager\.com|doubleclick\.net|analytics\.tiktok\.com)}i) {
+                push @capta_por, "$p (pixel $1)";
             }
         }
 
@@ -4451,12 +4474,25 @@ sub lente_estructura {
             : pasa(lente=>'ESTRUCTURA', id=>'EST-12', titulo=>'todas las paginas llevan pie',
                    dato=>scalar(@vistas).' paginas');
 
+    # EST-12b · el umbral depende de si el sitio PUEDE captar (ver el bucle).
+    #    Sin ninguna señal en ninguna pagina leida, basta 1 enlace legal: la
+    #    politica de privacidad. Con una sola señal, 2, como siempre.
+    my $min_legales = (@capta_por || !@leidas_est) ? 2 : 1;
+    @pie_sin_legal = map { "$_->[0] ($_->[1] enlace(s) legal(es) en el pie)" }
+                     grep { $_->[1] < $min_legales } @legales_pagina;
     @pie_sin_legal and fallo(lente=>'ESTRUCTURA', id=>'EST-12b', titulo=>'el pie no enlaza los legales',
                      donde=>join("\n                 ", @pie_sin_legal[0..($#pie_sin_legal>3?3:$#pie_sin_legal)]),
                      ev=>[@pie_sin_legal], dato=>scalar(@pie_sin_legal).' de '.scalar(@vistas).' paginas',
-                     umbral=>'>=2 enlaces legales en el pie (aviso legal, privacidad, cookies...)',
+                     umbral=>($min_legales == 2
+                        ? '>=2 enlaces legales en el pie (aviso legal, privacidad, cookies...)'
+                        : '>=1 enlace legal en el pie: el sitio no tiene formularios, scripts ni pixeles, pero la privacidad se enlaza igual'),
                      proc=>'16-revision-paso-a-paso paso 2',
                      hacer=>'un sitio que recoge datos y esconde su politica no tiene un problema de SEO: el visitante no puede ejercer nada');
+    # Relajar un umbral en silencio es la forma de que nadie sepa por que paso:
+    # cuando se aplica el de 1, se dice, con el motivo medido.
+    !@pie_sin_legal && $min_legales == 1 && @legales_pagina
+        and pasa(lente=>'ESTRUCTURA', id=>'EST-12b', titulo=>'el pie enlaza la politica de privacidad',
+                 dato=>'umbral 1 y no 2: ninguna de las '.scalar(@leidas_est).' paginas leidas trae <form>, <script> ejecutable, <iframe> ni pixel · el sitio no recoge nada');
 
     # 🔴 El defecto de las DOS LISTAS para el mismo hecho, aplicado al telefono.
     @nap_discrepa ? fallo(lente=>'ESTRUCTURA', id=>'EST-12c', titulo=>'el telefono del pie NO es el del schema',

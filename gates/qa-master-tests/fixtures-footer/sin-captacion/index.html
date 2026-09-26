@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A personal page that collects nothing | Fixture EST-12b</title>
+<meta name="description" content="Battery fixture: a static personal page with no form, no script and no tracking, whose footer links its privacy notice once.">
+<link rel="canonical" href="https://fixture.test/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Fixture Person"}</script>
+</head>
+<body>
+<!-- CASO VERDE (26-sep-2026): una web que NO recoge nada. Sin <form>, sin un
+     <script> ejecutable (el JSON-LD de arriba no lo es), sin <iframe>, sin pixel.
+     Su pie enlaza UNA pagina legal, la de privacidad, y eso basta: el motivo de
+     EST-12b es «un sitio que recoge datos y esconde su politica», y este no
+     recoge. Antes salia FALLO y la unica salida era inventarse otra pagina. -->
+<main data-tipo="nosotros">
+  <section data-sec="hero"><h1>Fixture Person</h1><p>Who this is, in one sentence.</p></section>
+  <section data-sec="contexto"><h2>Why</h2><p>The story, briefly.</p></section>
+  <section data-sec="prueba"><h2>What you can check</h2><p>Eight years.</p></section>
+  <section data-sec="cierre"><h2>Write to me</h2><p><a href="mailto:person@fixture.test">person@fixture.test</a></p></section>
+</main>
+<footer>
+  <p>Fixture Person &middot; Madrid</p>
+  <ul><li><a href="/privacy/">Privacy</a></li></ul>
+  <p><a href="https://climentmedia.com/">Built with the web quality system</a></p>
+</footer>
+</body>
+</html>
