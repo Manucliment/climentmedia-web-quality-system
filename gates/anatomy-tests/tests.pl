@@ -105,6 +105,17 @@ caso('C · se borra el bloque marcado del .js', 'no tiene el bloque marcado', su
     return 1;
 });
 
+# C2 · 26-sep-2026 · la tabla de PERFILES de structure-gate.js no se genera, y un
+#      tipo sin linea en ella se mide en silencio como pagina de servicio. Se
+#      prueba con un tipo nuevo y con un alias, que son los dos que faltaban.
+caso('C2 · un tipo de la tabla sin PERFIL', 'el tipo o alias `empleo`', sub {
+    sust('structure-gate.js', '  empleo:      {', '  // empleo:      {', 1);
+});
+
+caso('C2 · un alias sin PERFIL', 'el tipo o alias `quiz`', sub {
+    sust('structure-gate.js', '  quiz:        {', '  // quiz:        {', 1);
+});
+
 caso('D · la tabla se queda sin tipos', 'tipos', sub {
     my $s = leer("$TMP/anatomy.tsv") // return 0;
     my $solo = join "\n", grep { /^\s*#/ } split /\n/, $s;

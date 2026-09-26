@@ -111,7 +111,10 @@
 #    DESPUES:         bash deploy.sh DIR --servido            (G11)
 #
 #    --tipo T           home|servicio|ciudad|ficha|hub|guia|comparativa|precios|
-#                       contacto|gracias|legal|404   (por defecto: se infiere)
+#                       contacto|gracias|legal|404|landing|nosotros|empleo
+#                       (por defecto: el `data-tipo` de cada pagina, y si no
+#                       declara ninguno, se infiere de la ruta). La lista buena
+#                       es la de anatomy.tsv: esta linea es un recordatorio.
 #    --solo L[,L...]    seo,rendimiento,a11y,medicion,estructura
 #    --gracias /ruta    ruta de la pagina de GRACIAS. 🔴 El fallo mas caro que
 #                       hemos tenido vive en la unica pagina que el gate no

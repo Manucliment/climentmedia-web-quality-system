@@ -1605,6 +1605,27 @@ texto  "data-tipo · y vuelve a inferir por la ruta"   SI "tipos: home x1" \
        perl $QA https://climentmedia.com --repo fixtures-type/basura --candidato --una-sola --solo estructura --sin-recibo
 
 echo
+echo "== LOS TIPOS nosotros Y empleo (09 §2.13 y §2.14) · 26-sep-2026"
+# 🔴 EL HUECO: una «a propos» y una pagina de empleo no tenian tipo. Sin
+#    declarar, el gate las inferia «servicio» por la ruta y les pedia
+#    calificacion, proceso y objeciones; declararlas como el tipo mas cercano
+#    habria aprobado un check que no se hizo. Los dos fixtures estan en la RAIZ,
+#    que se inferiria «home»: si sale su tipo, gano la declaracion.
+texto  "nosotros · lo declarado gana a la ruta"        SI "tipos: nosotros x1" \
+       perl $QA https://climentmedia.com --repo fixtures-type/nosotros --candidato --una-sola --solo estructura --sin-recibo
+espera "nosotros · con sus cuatro roles, PASA"         PASA EST-02c \
+       perl $QA https://climentmedia.com --repo fixtures-type/nosotros --candidato --una-sola --solo estructura --sin-recibo
+espera "empleo · sin catalogo de puestos, FALLA"       FALLO EST-02c \
+       perl $QA https://climentmedia.com --repo fixtures-type/empleo-incompleto --candidato --una-sola --solo estructura --sin-recibo
+texto  "empleo · y nombra el rol que falta"            SI "«empleo» faltan: catalogo" \
+       perl $QA https://climentmedia.com --repo fixtures-type/empleo-incompleto --candidato --una-sola --solo estructura --sin-recibo
+# 🔑 LA FRONTERA: `evidencia` es condicional (OBL solo si hay empleados a los
+#    que citar) y el fixture no la lleva. Si la echara de menos, el tipo pediria
+#    lo imposible a quien contrata a su primera persona.
+texto  "empleo · y NO echa de menos la condicional"    NO "catalogo evidencia" \
+       perl $QA https://climentmedia.com --repo fixtures-type/empleo-incompleto --candidato --una-sola --solo estructura --sin-recibo
+
+echo
 echo "== REN-05 · EL COCIENTE DE TERCEROS ES POR PAGINA · 11-ago-2026"
 # 🔴 EL DEFECTO: el % se calculaba sobre la UNION de recursos de las paginas
 #    muestreadas, asi que dependia de CUANTAS midieras. Medido en site-d con

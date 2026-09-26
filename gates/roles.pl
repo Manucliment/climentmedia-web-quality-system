@@ -124,11 +124,16 @@ sub gate {
     #     eran dos entradas del vocabulario que no aparecen en ninguna pagina.
     #     Meterlos en una anatomia cambia lo que TODOS los sitios estan
     #     obligados a llevar: es una decision de 09 §2, no de un gate.
+    #     🔴 26-sep-2026 · LA DECLARACION ES LA NOTA QUE EMPIEZA POR EL TERMINO, no
+    #     cualquier nota que lo mencione. Buscado en cualquier parte, una nota que
+    #     CONTARA la historia («fue SOLO-VOCABULARIO hasta...») eximia a un rol sin
+    #     uso, y B2 acusaba a uno con uso. Las dos direcciones, por la misma linea.
+    my $declara = sub { ($_[0] // '') =~ /^\s*SOLO-VOCABULARIO\b/ };
     for my $k (@ORDEN_ROL) {
         next if $usado{$k};
         mal("B · el rol `$k` no lo usa ninguna anatomia y no esta declarado "
             . "`SOLO-VOCABULARIO` en roles.tsv: o entra en un tipo, o se declara")
-            unless ($ROL{$k}{nota} // '') =~ /SOLO-VOCABULARIO/;
+            unless $declara->($ROL{$k}{nota});
     }
     # B2 · Y AL REVES: un rol que SI pide alguna anatomia y sigue declarado
     #     `SOLO-VOCABULARIO`. 🔴 26-sep-2026: esta comprobacion solo existia en
@@ -140,7 +145,7 @@ sub gate {
         next unless $usado{$k};
         mal("B · el rol `$k` lo pide al menos una anatomia y roles.tsv lo sigue "
             . "declarando `SOLO-VOCABULARIO`: esa declaracion ha envejecido, quitala")
-            if ($ROL{$k}{nota} // '') =~ /SOLO-VOCABULARIO/;
+            if $declara->($ROL{$k}{nota});
     }
     # C · el molde que se promete tiene que existir en el cajon.
     for my $k (@ORDEN_ROL) {

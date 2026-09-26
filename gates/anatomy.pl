@@ -153,6 +153,30 @@ sub gate {
               . "\n      tsv : " . (defined $b[$i] ? $b[$i] : '(no hay mas)'));
         }
     }
+    # C2 · TODO tipo y todo alias de la tabla tiene su PERFIL en structure-gate.js.
+    #      🔴 26-sep-2026: esa tabla de perfiles NO se genera, y termina en un
+    #      `|| {...}` que da el perfil de una pagina de SERVICIO a cualquier tipo
+    #      que no este escrito en ella. Al medirlo, `ficha` (el tipo canonico) no
+    #      tenia linea -solo su alias `producto`- y el alias `quiz` tampoco: una
+    #      pagina declarada `quiz` se media como servicio. El comentario del propio
+    #      fichero avisaba del riesgo; nada lo comprobaba. Ahora si.
+    if (defined $js) {
+        my ($perfil) = $js =~ /const PERFIL = \{(.*?)\}\[TIPO\] \|\|/s;
+        if (!defined $perfil) {
+            mal("C2 · no encuentro la tabla PERFIL de structure-gate.js: no puedo comprobar que cada tipo tenga perfil");
+        } else {
+            my %hay = map { $_ => 1 } ($perfil =~ /^\s*'?([a-z0-9]+)'?\s*:\s*\{/mg);
+            my @alias;
+            for my $tipo (@$ORDEN) {
+                push @alias, $1 if ($T->{$tipo}{nota} // '') =~ /alias\s+aceptado:\s*([a-z0-9_-]+)/i;
+            }
+            for my $k (@$ORDEN, @alias) {
+                mal("C2 · el tipo o alias `$k` no tiene linea en PERFIL de structure-gate.js: "
+                  . "se mediria EN SILENCIO con el perfil de una pagina de servicio")
+                    unless $hay{$k};
+            }
+        }
+    }
     # D · la tabla tiene sustancia
     my $con = grep { @{ $T->{$_}{roles} } } @$ORDEN;
     mal("D · solo $con tipos con roles. Se esperaban 10 (legal y 404 no llevan)") if $con < 10;

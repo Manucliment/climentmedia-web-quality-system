@@ -97,9 +97,33 @@ caso('A · un tipo usa un rol que el vocabulario no tiene',
 
 # B · vocabulario que no alcanza ninguna anatomia. No se borra ni se ignora:
 #     se declara. Quitar la declaracion tiene que doler.
+#     🔴 26-sep-2026 · este caso mutaba la declaracion de `evidencia`, que ya no
+#     existe: desde ese dia NINGUN rol del arbol es solo-vocabulario. Ahora se
+#     fabrica el rol sin uso quitando `mapa` de las dos anatomias que lo piden.
+sub mapa_sin_uso {
+    my $a = cambiar("$G/anatomy.tsv", 'ciudad|hero mapa oferta', 'ciudad|hero oferta');
+    my $b = cambiar("$G/anatomy.tsv", '|formulario mapa|', '|formulario|');
+    return ($a && $b) ? 2 : 0;
+}
 caso('B · rol sin anatomia y SIN declarar',
-     'no lo usa ninguna anatomia',
-     sub { cambiar("$G/roles.tsv", '|SOLO-VOCABULARIO: ninguna anatomia', '|ninguna anatomia') });
+     'el rol `mapa` no lo usa ninguna anatomia',
+     sub { mapa_sin_uso() });
+# 🔑 Y LA FRONTERA DEL MISMO DIA: una nota que MENCIONA el termino no es una
+#    declaracion. Si lo fuera, contar la historia de un rol lo eximiria.
+caso('B · una nota que solo MENCIONA el termino no exime',
+     'el rol `mapa` no lo usa ninguna anatomia',
+     sub { my $n = mapa_sin_uso() or return 0;
+           cambiar("$G/roles.tsv", "|Donde, que zonas cubre, como llegar\n",
+                                   "|Donde, que zonas cubre, como llegar|Fue SOLO-VOCABULARIO en otra version\n") });
+# (Se regeneran las plantillas dentro de la mutacion: quitar `mapa` cambia las
+#  de ciudad y contacto, y sin esto el rojo de F taparia si B callo o no.)
+caso('B · y una que EMPIEZA por el termino si lo declara',
+     'verde',
+     sub { my $n = mapa_sin_uso() or return 0;
+           my $d = cambiar("$G/roles.tsv", "|Donde, que zonas cubre, como llegar\n",
+                                           "|Donde, que zonas cubre, como llegar|SOLO-VOCABULARIO: fixture\n") or return 0;
+           generar_callando() or return 0;
+           return $n + $d });
 
 # B2 · y al reves (26-sep-2026): un rol que SI pide una anatomia y sigue
 #      declarado de solo vocabulario. `mapa` lo piden ciudad y contacto.

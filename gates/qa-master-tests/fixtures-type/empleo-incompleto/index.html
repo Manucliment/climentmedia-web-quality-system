@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trabaja con nosotros | Fixture del tipo empleo</title>
+<meta name="description" content="Fixture de la bateria: una pagina de empleo que DECLARA su tipo y NO lleva catalogo de puestos. Tiene que caer por eso, y solo por eso.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- 26-sep-2026 · 09 §2.14. Le falta `catalogo` (los puestos abiertos), que es
+     OBL. NO lleva `evidencia` a proposito: es OBL solo si hay empleados a los
+     que citar, y el gate no puede saberlo, asi que su ausencia NO puede salir en
+     la lista de lo que falta. Si saliera, el tipo pediria lo imposible a quien
+     contrata a su primera persona. -->
+<main data-tipo="empleo">
+  <section data-sec="hero"><h1>Trabaja con nosotros</h1><p><a href="#candidatura">Enviar candidatura</a></p></section>
+  <section data-sec="oferta"><h2>Por que con nosotros</h2><p>Horario de manana y formacion pagada.</p></section>
+  <section data-sec="formulario" id="candidatura"><h2>Candidatura</h2><form action="/contact.php" method="post"><label for="n">Nombre</label><input id="n" name="name" autocomplete="name"><button type="submit">Enviar</button></form></section>
+</main>
+</body>
+</html>
