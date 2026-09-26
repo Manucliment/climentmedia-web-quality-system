@@ -190,6 +190,38 @@ aviso_cpl(){
 aviso_cpl H1-testis   cpl-testimonial-grid.html  no
 aviso_cpl H2-estrecha cpl-narrow-prose.html       si
 
+echo
+echo "=========== FRONTERA 6 - el hero de EMPLEO enlaza, y no por eso esta mal ==="
+# 26-sep-2026. `empleo` (09 §2.14) tenia hero:true, que exige un MECANISMO DE
+# CONVERSION en la primera pantalla. Ninguna de las cuatro referencias recibe la
+# candidatura en la pagina: su primera accion ENLAZA a las ofertas. La primera
+# pagina de empleo real que se midio salio con «HERO · ninguna es mecanismo de
+# conversion». Ahora es hero:'accion': una accion en la primera pantalla y como
+# mucho una primaria, SIN exigir que convierta.
+# Cuatro casos, y los tres ultimos existen para que «ya no acusa» no pueda ser
+# «ya no mira»:
+#   E1 una accion que enlaza, tipo empleo          -> ninguna linea HERO
+#   E2 dos primarias iguales, tipo empleo          -> SIGUE contando primarias
+#   E3 ninguna accion en la primera pantalla       -> SIGUE exigiendo una accion
+#   E4 la de E1 medida como SERVICIO (hero:true)   -> SIGUE exigiendo conversion
+# `res` no sirve: se mira la regla concreta. Y un «no aparece» solo vale si el
+# gate ha corrido: sin innerWidth en la salida es REVISAR, no OK.
+hero_regla(){
+  local id="$1" f="$2" conf="$3" patron="$4" esp="$5"
+  local j; j=$("$D/run-gate.sh" "$id" "$D/$f" https://example.com/emplois/ "$conf" 2>/dev/null)
+  if ! printf '%s' "$j" | grep -q '"innerWidth"'; then
+    MAL=$((MAL+1)); printf "  REVISAR %-16s el gate no ha corrido (sin innerWidth)\n" "$id"; return
+  fi
+  local n; n=$(printf '%s' "$j" | grep -c "$patron")
+  local hay=no; [ "${n:-0}" -gt 0 ] && hay=si
+  if [ "$hay" = "$esp" ]; then OK=$((OK+1)); printf "  OK      %-16s «%s»=%s (esperado %s)\n" "$id" "$patron" "$hay" "$esp";
+  else MAL=$((MAL+1)); printf "  REVISAR %-16s «%s»=%s y se esperaba %s\n" "$id" "$patron" "$hay" "$esp"; fi
+}
+hero_regla E1-emp-enlaza careers-hero-link.html        '{}'                   'HERO ·'                             no
+hero_regla E2-emp-2prim  careers-hero-two-primary.html '{}'                   'acciones primarias del mismo peso'  si
+hero_regla E3-emp-nada   careers-hero-no-action.html   '{}'                   'sin ninguna accion en la primera'   si
+hero_regla E4-servicio   careers-hero-link.html        '{"tipo":"servicio"}'  'ninguna es mecanismo de conversion' si
+
 # --- el numero, que es lo que faltaba ---------------------------------------
 echo
 for c in $CONOCIDOS; do
