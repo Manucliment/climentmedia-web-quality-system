@@ -974,7 +974,7 @@ elif [ ! -f "$REF/run-gate.js" ]; then
   echo
   echo "  6 · navegador: falta $REF/run-gate.js. NO MEDIDO."
   echo "      Es el corredor de los tres gates de navegador y vive EN LA SKILL."
-  perl "$REF/receipt.pl" --anotar "NAVEGADOR no medido: falta references/run-gate.js" \
+  perl "$REF/receipt.pl" --anotar "NAVEGADOR no medido: falta gates/run-gate.js" \
        --repo "$REPO" >/dev/null 2>&1
 else
   linea; echo "  6 · maqueta, densidad y formularios de lo servido"; linea

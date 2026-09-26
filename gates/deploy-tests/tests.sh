@@ -104,4 +104,9 @@ espera "cuenta solo los vivos: 1 de 2" "1 de 2 SIGUEN SERVIDOS" ""
 rm -f "$TMP" "$VACIO" "$ANT" "$RET"
 echo
 printf '  %d bien · %d mal\n' "$ok" "$ko"
+# 26-sep-2026 · run-all.sh no sabia leer «bien · mal» y contaba este banco como
+# PASA con CERO casos («no he sabido leer su recuento»). En DOS lineas y con el
+# formato que lee: en una sola, `[0-9]+ +MAL` casaria con el recuento de verdes.
+printf '  OK %d\n' "$ok"
+printf '  MAL %d\n' "$ko"
 [ "$ko" = 0 ]
