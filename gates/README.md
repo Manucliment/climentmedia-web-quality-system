@@ -32,7 +32,7 @@ machine the fast run is **753 cases green, 0 red** — **751** on a clean instal
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1241 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1268 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1292**: 1241 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1319**: 1268 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,9 +101,16 @@ $ bash gates/run-all.sh --fast
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (14 of its cases WERE measured)
-  1241 casos en verde · 0 en rojo
+  1268 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **Why the full run moved on 2026-09-26 (1241 → 1268).** `qa-master`'s measurement lens
+> learned to read the scripts a page loads from its own host, so it finds a container that
+> lives in a first-party `consent.js` and checks the consent order by execution
+> ([trap §85](../docs/traps/85.md), third round). The bank gained 26 cases, and one old case
+> was rewritten into two because its `PASS` had been signed over zero pages. The fast run
+> did not move: this bank is one of the slow ones.
 
 > **Why the full run moved on 2026-09-22 (830 → 1139 on a clean install), and why
 > `qa-master` is no longer in the NOT MEASURED list.**
@@ -509,7 +516,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **327 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **371 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until

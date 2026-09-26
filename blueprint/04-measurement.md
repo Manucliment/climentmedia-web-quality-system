@@ -71,9 +71,13 @@ decide on their own.
 > first-party `consent.js` sets the denied default, shows the banner, and injects `gtm.js` only
 > when the visitor accepts — so someone who declines keeps a site with **zero** third parties, which
 > is what a privacy notice can then say without a caveat. The container ID lives in that one file,
-> not in every page. The spec auditor follows the pages' own `<script src>` to find it (`MED-01`,
-> `MED-03`); `qa-master`'s measurement lens does not yet, and says "no measurement" on such a site —
-> check the flow in a browser (§7).
+> not in every page. Both auditors follow the pages' own `<script src>` to find it: the spec
+> auditor (`MED-01`, `MED-03`) and, since 26-sep-2026, `qa-master`'s measurement lens, which also
+> checks that the default is declared inside `consent.js` **before** the code that injects `gtm.js`
+> and that no page loads `gtm.js` on its own before that script runs (`MED-02`, ordered by
+> execution: a `defer` script runs after every inline one). A `GTM-XXXXXXX` still in the file is
+> reported as a placeholder, not as "no measurement". What neither can do is click "accept":
+> check the flow in a browser (§7). Why, with the cases: [trap §85](../docs/traps/85.md).
 
 ---
 
