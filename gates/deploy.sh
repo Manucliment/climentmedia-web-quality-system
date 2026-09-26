@@ -676,26 +676,54 @@ fi
 # ── 4 · G11 · ¿lo servido es lo medido? ──────────────────────────────────────
 #    El paso que no existia. Sin el, «desplegado» es otra afirmacion de palabra.
 linea; echo "  4 · G11 · lo servido frente al recibo"; linea
-perl "$REF/receipt.pl" --servido --repo "$REPO" --sitio "$SITIO"
-G11=$?
+# La salida se guarda ademas de verse: el resumen de abajo dice que preguntas
+# ha CONTESTADO G11 leyendolo de lo que G11 ha dicho, no de una lista fija.
+# `tee` lee hasta el final, asi que no hay SIGPIPE; el codigo es el de perl.
+G11_LOG="${TEMP:-/tmp}/g11-puerta-$$.log"
+perl "$REF/receipt.pl" --servido --repo "$REPO" --sitio "$SITIO" | tee "$G11_LOG"
+G11=${PIPESTATUS[0]}
 if [ "$G11" != 0 ]; then
   echo
   echo "  🔴 HAS SUBIDO Y PRODUCCION NO SIRVE ESO."
   echo "     Causas ya vistas: cache (Cache-Control 86400 en css/js sin versionar),"
   echo "     ruta remota equivocada, o SUBIDA que solo sube parte del arbol."
+  echo "     Y si lo que falla es la 404 del host (EST-03), el arbol esta bien subido:"
+  echo "     lo que no sirve el 404.html es la configuracion del host (su .htaccess)."
   echo "     No lo des por hecho hasta que esto salga en verde."
+  rm -f "$G11_LOG"
   exit 1
 fi
 echo
 echo "  PASA · desplegado y verificado contra el recibo."
 if [ "$MEDIDO" = "CANDIDATO" ]; then
   echo "  Los dos momentos cerrados: el candidato se midio ANTES y lo servido AHORA."
+  # 🔴 26-sep-2026 · AQUI PONIA «Las N que el candidato no podia medir (...) ya
+  #    tienen respuesta», con EST-03 dentro de la lista, y G11 no pedia ninguna
+  #    URL inexistente: esa pregunta no la contestaba nadie, y una web salio con
+  #    la 404 GENERICA del servidor en cada URL rota y esta linea en verde. Ahora
+  #    se dice, id a id, que ha contestado G11 y que no — y se lee de LO QUE G11
+  #    HA DICHO en esta corrida: una lista fija volveria a afirmar EST-03 el dia
+  #    que el arbol no traiga 404.html y G11 conteste NO VERIFICADO.
+  #    EST-09 es G11 mismo · EST-03 si G11 da bien/mal de la 404 del host ·
+  #    MED-10 si G11 ha mirado receptores.
   if [ "$NVC" != 0 ]; then
-    echo "  Las $NVC que el candidato no podia medir ($NVC_LISTA) ya tienen respuesta"
-    echo "  para el md5 de cada fichero. Lo que G11 NO mira son las cabeceras: para"
-    echo "  compresion y cache, medir la URL real sin --candidato."
+    G11_CONTESTA=" EST-09 "
+    grep -q '404 del host (EST-03): [0-9]' "$G11_LOG" 2>/dev/null && G11_CONTESTA="${G11_CONTESTA}EST-03 "
+    grep -q '^  receptores: ' "$G11_LOG" 2>/dev/null && G11_CONTESTA="${G11_CONTESTA}MED-10 "
+    NVC_SI=""; NVC_NO=""
+    for id in $NVC_LISTA; do
+      case "$G11_CONTESTA" in *" $id "*) NVC_SI="$NVC_SI $id" ;; *) NVC_NO="$NVC_NO $id" ;; esac
+    done
+    [ -n "$NVC_SI" ] && echo "  De las $NVC que el candidato no podia medir, G11 acaba de contestar:$NVC_SI"
+    if [ -n "$NVC_NO" ]; then
+      echo "  Y NO ha contestado:$NVC_NO."
+      echo "  Compresion, cache y rutas internas son cabeceras y configuracion del host:"
+      echo "  se miden contra la URL real (qa-master.pl sin --candidato). Si EST-03 esta"
+      echo "  en esa lista, la linea «404 del host» de G11, arriba, dice por que."
+    fi
   fi
 fi
+rm -f "$G11_LOG"
 
 # ── 5 · EL ENLAZADO DE LO QUE ACABA DE QUEDAR SERVIDO ────────────────────────
 # 🔴 13-ago-2026 · POR QUE ESTE PASO EXISTE AHORA.
