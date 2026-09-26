@@ -383,30 +383,41 @@ my %ANATOMIA = anatomia_cargar();
 #  Solo en greenfield: con web, estos datos salen de su codigo y el gate del
 #  inventario es audit-vs-source.sh.
 sub bloque_intake {
-    my @falta;
+    my (@falta, @declarado_no);
     my $chk = sub {
         my ($etiqueta, @rutas) = @_;
         for my $r (@rutas) {
             my $v = $site; $v = ref $v eq 'HASH' ? $v->{$_} : undef for split /\./, $r;
-            return 1 if defined $v && !ref $v && $v =~ /\S/ && $v !~ /^(TODO|XXX|PENDIENTE|placeholder)/i;
+            if (defined $v && !ref $v && $v =~ /\S/ && $v !~ /^(TODO|XXX|PENDIENTE|placeholder)/i) {
+                push @declarado_no, $r if $r =~ /\.no[A-Z]/;   # una decision, no un dato: se dice
+                return 1;
+            }
             return 1 if ref $v eq 'ARRAY' && @$v;
         }
         push @falta, "$etiqueta (buscado en: " . join(' | ', @rutas) . ")";
         return 0;
     };
+    # 🔴 26-sep-2026 · TELEFONO, HORARIO Y ZONA SE PUEDEN DECLARAR «NO SE PUBLICA»,
+    #    igual que la direccion (`noAddress`). Una web personal o una pagina de
+    #    continuidad de marca no tienen horario ni zona, y un telefono personal no
+    #    se publica: sin esta via el unico verde posible era escribir un valor
+    #    falso. Lo que el check protege sigue intacto -que nadie descubra a mitad
+    #    que falta un dato-, porque la decision queda ESCRITA con su motivo: un
+    #    `true` pelado no cuenta (un booleano es una referencia y $chk lo descarta).
     $chk->('nombre comercial',  'brand.name');
     $chk->('nombre legal',      'brand.legalName', 'brand.name');
-    $chk->('telefono',          'nap.telephone', 'nap.mobile');
+    $chk->('telefono o «no lo publicamos»', 'nap.telephone', 'nap.mobile', 'nap.noTelephone');
     $chk->('email',             'nap.email');
-    $chk->('horario',           'nap.hoursDisplay', 'nap.hours');
+    $chk->('horario o «no hay horario»',    'nap.hoursDisplay', 'nap.hours', 'nap.noHours');
     $chk->('direccion o «no la publicamos»', 'nap.streetAddress', 'nap.noAddress');
-    $chk->('zonas que atiende', 'nap.areaServed');
+    $chk->('zonas que atiende o «no atiende por zona»', 'nap.areaServed', 'nap.noAreaServed');
 
     @falta ? fallo(id=>'INT-01', titulo=>'faltan datos BLOQUEANTES del intake',
                    dato=>join(' · ', @falta), umbral=>'los 8 del bloque A de 00-intake.md',
                    proc=>'00-intake.md §A',
                    hacer=>'estos proyectos no mueren en el diseno: mueren a mitad porque falta el horario o quien aprueba. Se piden ANTES de generar, en formato movil')
-          : pasa(id=>'INT-01', titulo=>'datos bloqueantes del intake presentes');
+          : pasa(id=>'INT-01', titulo=>'datos bloqueantes del intake presentes',
+                 (@declarado_no ? (dato=>'declarado que no se publica: '.join(' · ', @declarado_no)) : ()));
 
     # Donde llegan los leads · 00-intake §A: se pregunta AUNQUE haya web
     my $rec = $site->{form}{to} // $site->{contact}{to} // $site->{nap}{leadsTo} // '';
@@ -771,7 +782,22 @@ sub bloque_medicion {
             next unless -f "$ROOT/$c"; $rg = $c; $hg = slurp("$ROOT/$c"); last;
         }
     }
-    if (!defined $hg) {
+    # 🔴 26-sep-2026 · SIN NADA QUE CONVERTIR NO HAY GRACIAS QUE EXIGIR. Una web
+    #    personal estatica -sin <form>, sin un <script> ejecutable, sin <iframe>-
+    #    no tiene ningun envio tras el que dar las gracias, y esto salia FALLO. Se
+    #    mira con la misma cautela que EST-12b de qa-master: basta UNA de esas
+    #    señales en UNA pagina para volver a exigirla (un formulario de terceros
+    #    entra por <script> o <iframe> sin un solo <form> en el HTML).
+    my @capta;
+    for my $f (@HTML) {
+        (my $h = sin_com(slurp("$ROOT/$f") // '', 'html'))
+            =~ s{<script\b[^>]*type\s*=\s*["']application/ld\+json["'][^>]*>.*?</script>}{}gsi;
+        push @capta, "$f (<" . lc($1) . ">)" if $h =~ /<(form|script|iframe)\b/i;
+    }
+    if (!defined $hg && @HTML && !@capta && ($site->{tracking}{gtm} // '') !~ /\S/) {
+        pasa(id=>'MED-02', titulo=>'sin pagina de gracias, y no le hace falta',
+             dato=>'ninguna de las '.scalar(@HTML).' paginas trae <form>, <script> ejecutable ni <iframe>, y la spec no declara contenedor: no hay conversion que marcar');
+    } elsif (!defined $hg) {
         fallo(id=>'MED-02', titulo=>'no hay pagina de gracias',
               umbral=>'una pagina de gracias, noindex, con el evento de conversion',
               proc=>'09 §2.10 + 04-medicion.md',

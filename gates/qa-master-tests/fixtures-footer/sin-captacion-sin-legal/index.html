@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A page that collects nothing and links no policy | Fixture EST-12b</title>
+<meta name="description" content="Battery fixture: a static page with no form and no script, whose footer links no legal page at all.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- CASO ROJO (26-sep-2026): tampoco recoge nada, pero su pie no enlaza NINGUNA
+     pagina legal. Relajar el umbral a 1 no es quitarlo: el servidor guarda
+     registros de cada visita, y la politica que lo dice tiene que estar a un
+     clic. Si este caso se pone verde, el arreglo se ha pasado de largo. -->
+<main data-tipo="nosotros">
+  <section data-sec="hero"><h1>Fixture Person</h1><p>Who this is.</p></section>
+  <section data-sec="contexto"><h2>Why</h2><p>The story.</p></section>
+  <section data-sec="prueba"><h2>Facts</h2><p>Eight years.</p></section>
+  <section data-sec="cierre"><h2>Write</h2><p><a href="mailto:person@fixture.test">Email</a></p></section>
+</main>
+<footer>
+  <p>Fixture Person &middot; Madrid</p>
+  <p><a href="https://climentmedia.com/">Built with the web quality system</a></p>
+</footer>
+</body>
+</html>

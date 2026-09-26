@@ -1785,6 +1785,18 @@ espera "EST-12c · sin schema no acusa a nadie"        PASA  EST-12c \
        perl $QA https://climentmedia.com --repo fixtures-footer/sin-legales --candidato --una-sola --solo estructura --sin-recibo
 espera "EST-12b · un solo enlace legal FALLA"         FALLO EST-12b \
        perl $QA https://climentmedia.com --repo fixtures-footer/sin-legales --candidato --una-sola --solo estructura --sin-recibo
+# 🔴 26-sep-2026 · EL UMBRAL DEPENDE DE SI EL SITIO PUEDE CAPTAR. Una web personal
+#    estatica -sin <form>, sin <script> ejecutable, sin <iframe> ni pixel- con su
+#    privacidad enlazada salia FALLO por no tener una segunda pagina legal que
+#    no necesita. Tres casos, y los dos rojos son los que impiden pasarse:
+#    sin ninguna legal sigue fallando, y un <script> basta para volver a exigir 2
+#    (el identificador de medicion puede vivir dentro del .js, como en consent.js).
+espera "EST-12b · sin captacion, la privacidad basta"  PASA  EST-12b \
+       perl $QA https://climentmedia.com --repo fixtures-footer/sin-captacion --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-12b · sin captacion y sin legal, FALLA"   FALLO EST-12b \
+       perl $QA https://climentmedia.com --repo fixtures-footer/sin-captacion-sin-legal --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-12b · un <script> vuelve a exigir 2"      FALLO EST-12b \
+       perl $QA https://climentmedia.com --repo fixtures-footer/script-sin-form --candidato --una-sola --solo estructura --sin-recibo
 # 🔴 EL MATIZ DEL BACKLINK, que es la parte que se pierde si no esta escrita:
 #    el mismo enlace en el pie de las cinco webs es un patron que Google lee
 #    como RED DE ENLACES. Lo que aguanta es un enlace de autoria con texto

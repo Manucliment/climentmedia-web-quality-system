@@ -298,6 +298,23 @@ caso('INT-01 · ...pero un `true` pelado NO vale, y es a proposito',
      '"nap":{"telephone":"+34600000000","email":"hola@ejemplo.test",' .
      '"hoursDisplay":"L-V 9-18","noAddress":true,"areaServed":["Madrid"]}}',
      'FALLO:INT-01', "greenfield");
+# 🔴 26-sep-2026 · Y LO MISMO PARA TELEFONO, HORARIO Y ZONA. Una web personal no
+#    tiene horario ni zona, y un telefono personal no se publica: sin esta via el
+#    unico verde posible era escribir un valor falso. Misma regla que noAddress:
+#    la decision se escribe con su motivo, y un `true` pelado sigue sin valer.
+caso('INT-01 · telefono, horario y zona son declarables',
+     "{$BASE," .
+     '"brand":{"name":"Ejemplo","legalName":"Ejemplo"},' .
+     '"nap":{"email":"hola@ejemplo.test","noTelephone":"no se publica: web personal",' .
+     '"noHours":"no hay horario: no atiende al publico","noAddress":"no se publica: no es un local",' .
+     '"noAreaServed":"no atiende por zona: trabaja en remoto"}}',
+     'ok:INT-01', "greenfield");
+caso('INT-01 · ...y `noTelephone: true` pelado tampoco vale',
+     "{$BASE," .
+     '"brand":{"name":"Ejemplo","legalName":"Ejemplo"},' .
+     '"nap":{"email":"hola@ejemplo.test","noTelephone":true,' .
+     '"noHours":"no hay horario","noAddress":"no es un local","noAreaServed":"en remoto"}}',
+     'FALLO:INT-01', "greenfield");
 
 # 🔴 INT-02 · «a donde llegan los leads» es EL dato que mas caro sale olvidar:
 #    en site-a el formulario mostraba EXITO con el CRM de destino dado de baja.
@@ -514,6 +531,23 @@ caso('MED-02 · con noindex y marca de conversion, pasa',
      "{$BASE,\"cities\":[{\"slug\":\"gracias\"}]}", 'ok:MED-02', 'migracion',
      { 'gracias/index.html' => '<html><head><meta name="robots" content="noindex"></head>'
        . '<body data-thanks="pageview"><main><h1>Gracias</h1></main></body></html>' });
+# 🔴 26-sep-2026 · SIN NADA QUE CONVERTIR NO HAY GRACIAS QUE EXIGIR. Una web
+#    estatica sin <form>, sin <script> ejecutable y sin <iframe> no tiene envio
+#    tras el que dar las gracias. Los dos rojos son los que impiden pasarse: un
+#    <form> la vuelve a exigir, y un <script> tambien (un formulario de terceros
+#    entra por ahi sin un solo <form> en el HTML).
+caso('MED-02 · sin gracias y sin nada que convertir, no se exige',
+     "{$BASE}", 'ok:MED-02', 'greenfield',
+     { 'privacy/index.html' => '<html><head><script type="application/ld+json">{"@type":"WebPage"}</script></head>'
+       . '<body><main><h1>Privacy</h1></main></body></html>' });
+caso('MED-02 · sin gracias y con un <form>, FALLA',
+     "{$BASE}", 'FALLO:MED-02', 'greenfield',
+     { 'contacto/index.html' => '<html><body><main><h1>Contacto</h1>'
+       . '<form action="/contact.php" method="post"><input name="email"></form></main></body></html>' });
+caso('MED-02 · sin gracias y con un <script>, FALLA',
+     "{$BASE}", 'FALLO:MED-02', 'greenfield',
+     { 'contacto/index.html' => '<html><body><main><h1>Contacto</h1></main>'
+       . '<script src="https://embed.example/form.js"></script></body></html>' });
 
 print "\n== BLOQUE 8 · IMAGENES: existen, y tienen alt\n";
 # 🔴 IMG-01 · una imagen declarada y ausente no rompe nada visible en el HTML:

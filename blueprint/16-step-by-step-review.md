@@ -77,7 +77,7 @@ text per site, pointing at a page that genuinely explains who built the site. Th
 | | What it looks at | Why |
 |---|---|---|
 | **a** | Every page has a `<footer>` | with no footer there is nowhere to put any of the rest |
-| **b** | The footer links **≥2 legal pages.** Found **by path**, in all four languages of the estate | the link text changes with the brand; the path does not |
+| **b** | The footer links **≥2 legal pages.** Found **by path**, in all four languages of the estate. **≥1 — the privacy notice — when no page read can collect anything**: no `<form>`, no executable `<script>` (JSON-LD is not one), no `<iframe>`, no known pixel. One signal on one page brings back 2 | the link text changes with the brand; the path does not. And the reason for the check is a site that collects data and hides its policy: a static page that collects nothing needs its privacy notice, not a second page invented to reach a number (trap §85) |
 | **c** | **The footer's `tel:` is the schema's telephone** | |
 | **d** | The authorship link exists (**warning**, not failure, until the sites declare it) | a check that goes red on all five at once teaches people to ignore the gate |
 | **e** | The anchor is **not** the bare brand name | the same brand name repeated in five footers **is** the signature of a link network |
