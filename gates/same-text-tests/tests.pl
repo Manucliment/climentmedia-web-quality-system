@@ -158,6 +158,29 @@ print "  " . '=' x 62 . "\n\n";
   check('HIG2 · sin <main> se DICE, no se aprueba por defecto', $rc, $out, 0, qr/sin <main>/);
 }
 
+# --- LO QUE SE LEE -----------------------------------------------------------
+{
+  # 🔴 27-sep-2026 · EL SEPARADOR SALIA CODIFICADO DOS VECES. El gate escribe
+  #    su salida en UTF-8 pero no declaraba `use utf8`, asi que el `·` de su
+  #    propio codigo eran dos bytes leidos como dos letras y vueltos a codificar:
+  #    «así x1 Â· trabajo x1». Las palabras, que salen de las paginas ya
+  #    decodificadas, salian bien -- por eso nadie lo vio en el banco: ningun
+  #    caso miraba los BYTES de la salida. Se comparan aqui como bytes, sin
+  #    escribirlos en el fuente, y en las dos direcciones: el separador una vez
+  #    y la palabra con acento tambien una vez. El arreglo facil y malo -quitar
+  #    la capa de salida- rompe la segunda mitad.
+  my $PUNTO = chr(0xC2) . chr(0xB7);                      # «·» en UTF-8
+  my $DOBLE = chr(0xC3) . chr(0x82) . $PUNTO;             # «Â·»: el mismo, dos veces
+  my $ASI   = 'as' . chr(0xC3) . chr(0xAD);               # «así» en UTF-8
+  my ($a, $b) = par(
+    "<p>As\x{ED} trabajo hoy con la cuenta entera delante.</p>",
+    "<p>Hoy con la cuenta entera delante.</p>");
+  my ($rc, $out) = run($a, $b);
+  check('UTF8-1 · el separador y la palabra con acento salen UNA vez en UTF-8',
+        $rc, $out, 1,
+        qr/^(?!.*\Q$DOBLE\E)(?=.*FALTAN 2: \Q$ASI\E x1 \Q$PUNTO\E trabajo x1)(?=.*palabras \Q$PUNTO\E 1 con perdida)/s);
+}
+
 print "\n  " . '=' x 62 . "\n";
 printf "  %d casos en verde  ·  %d en rojo\n", $ok, $bad;
 # En DOS lineas a proposito: ver la nota del banco de bots-ia.

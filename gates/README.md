@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **786 cases green, 0 red** — **784** on a clean install, where the
+machine the fast run is **787 cases green, 0 red** — **785** on a clean install, where the
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1310 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1311 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1364**: 1310 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1365**: 1311 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -72,7 +72,7 @@ below.)
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-786, not 784, because that machine has deployed. `run-all.sh`
+787, not 785, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -94,16 +94,27 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  784 casos en verde · 0 en rojo
+  785 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1310 casos en verde · 0 en rojo
+  1311 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **And a fifth time, that night (1310 → 1311, and 784 → 785 on `--fast`).** The text-loss check
+> (`same-text.pl`, step 2-ter of the door) printed its own separator encoded twice: «así x1 Â·
+> trabajo x1». It writes UTF-8 but did not declare `use utf8`, so the `·` in its source was two
+> bytes read as two letters and encoded again. The words, which come decoded from the pages, were
+> fine — which is why no case saw it: none looked at the bytes of the output. One case now does,
+> both ways (the separator once, an accented word once; the easy wrong fix, dropping the output
+> layer, breaks the second half), seen red first. The fix changes nothing else: on two real pairs
+> of trees the new output is the old one with each `Â·` replaced, byte for byte. `blocks.pl` had
+> the same line and got the same fix; it has no bank, so it was compared before and after by hand.
+> The coverage figure quoted above had also gone stale on its own (123 of 138): no gate compares it.
 
 > **And a fourth time, later that evening (1297 → 1310, and 771 → 784 on `--fast`).** The Dutch run
 > left two Spanish twins in plain sight: «Así trabajo hoy: …» and «De ahí salió una regla: …» mirror
@@ -406,7 +417,7 @@ whose verdict came from measuring a different object.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist. |
-| `coverage.pl` | How many checks have a test case. Today: **123 of 138 (89%)**. |
+| `coverage.pl` | How many checks have a test case. Today: **126 of 140 (90%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **159 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
