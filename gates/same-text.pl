@@ -7,6 +7,10 @@
 # Se compara por PALABRAS, no por lineas: la maqueta cambia el orden de las
 # etiquetas y la sangria a proposito, y eso no es una diferencia de contenido.
 use strict; use warnings;
+# `use utf8` porque la salida va en UTF-8 (abajo) y el separador `·` esta escrito
+# en este fuente: sin el, eran dos bytes leidos como dos letras y salian
+# codificados otra vez («Â·»). Lo vigila UTF8-1 del banco (27-sep-2026).
+use utf8;
 my ($antes, $despues) = @ARGV;
 $antes && $despues or die "uso: same-text.pl <dir-antes> <dir-despues>\n";
 binmode STDOUT, ':encoding(UTF-8)';

@@ -4,6 +4,9 @@
 # comillas escapadas y acentos, y un barrido a mano ya rompio cuatro veces en
 # esta migracion (CLAUDE.md de site-e-web).
 use strict; use warnings; use JSON::PP;
+# `use utf8`: la salida va en UTF-8 y el `·` de la cabecera esta escrito en este
+# fuente; sin el salia «Â·». Mismo defecto que same-text.pl (27-sep-2026).
+use utf8;
 my ($fichero, $slug, $ancho) = (@ARGV);
 $ancho //= 120;
 # OJO: `decode_json` quiere BYTES. Con una capa `:encoding(UTF-8)` en el open,
