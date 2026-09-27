@@ -58,7 +58,7 @@ sella entonces un arbol cuyo veredicto salio de medir otra cosa.
 |---|---|
 | `paths/` | los cuatro caminos. **Se empieza aqui.** |
 | `blueprint/` | el metodo, 19 documentos de consulta |
-| `gates/` | 38 programas y sus bancos · empieza por [`gates/README.md`](gates/README.md) |
+| `gates/` | 36 programas y sus bancos · empieza por [`gates/README.md`](gates/README.md) |
 | `docs/traps.md` | el registro de trampas · **leelo antes de depurar nada** |
 | `checklists/` | el QA que cierra un proyecto y el sprint de pagina |
 | `CLAUDE.md` | como conducir esto siendo un agente: las cinco reglas |

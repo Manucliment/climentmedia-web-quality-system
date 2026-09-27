@@ -206,7 +206,34 @@ EOF
 
 echo
 echo "  cuantas comprobaciones tienen caso (regla 5 de la formula):"
-perl "$REF/coverage.pl" 2>/dev/null | grep -E '^  (qa-maestro|enlazado-gate|audit-vs-spec|doc-gate|TOTAL)' | sed 's/^/  /'
+# 🔴 27-sep-2026 · LA COBERTURA SE GUARDA, COMO LOS CASOS. Tres documentos
+#    publicaban cifras de coverage.pl que no comparaba nadie, y cinco de ocho
+#    estaban caducadas (lo cuenta D8 de doc-gate.pl). Se guarda lo que
+#    coverage.pl IMPRIME, no una cuenta hecha aqui: si las dos contaran
+#    distinto, D8 compararia dos opiniones.
+#    Y esta linea tenia otros dos defectos. `2>/dev/null` se tragaba el aviso de
+#    un coverage.pl roto, y entonces aqui no salia NADA, que se lee como «nada
+#    que contar». Y el filtro buscaba `qa-maestro` y `enlazado-gate`, nombres de
+#    antes del ingles: dos de las cuatro lineas llevaban semanas sin salir.
+#    Ahora se filtra por la FORMA de la linea, no por el nombre del programa.
+COB_SALIDA="$(perl "$REF/coverage.pl" 2>&1)"; COB_RC=$?
+grep -E '^  [A-Za-z0-9_.-]+\.(pl|sh|js) +[0-9]+ de +[0-9]+ con caso|^  TOTAL: ' <<< "$COB_SALIDA" | sed 's/^/  /'
+COB_CON=""; COB_TOT=""; COB_PCT=""; COB_MED=""; COB_PRG=""
+re_total='TOTAL: ([0-9]+) de ([0-9]+) comprobaciones tienen caso \(([0-9]+)%\)'
+re_alcance='ALCANCE: mide ([0-9]+) programas de ([0-9]+)'
+if [[ "$COB_SALIDA" =~ $re_total ]]; then
+  COB_CON="${BASH_REMATCH[1]}"; COB_TOT="${BASH_REMATCH[2]}"; COB_PCT="${BASH_REMATCH[3]}"
+fi
+if [[ "$COB_SALIDA" =~ $re_alcance ]]; then
+  COB_MED="${BASH_REMATCH[1]}"; COB_PRG="${BASH_REMATCH[2]}"
+fi
+COB_POR="$(sed -nE 's/^  ([A-Za-z0-9_.-]+\.(pl|sh|js)) +([0-9]+) de +([0-9]+) con caso.*/\1=\3\/\4/p' <<< "$COB_SALIDA" | tr '\n' ' ' | sed 's/ $//')"
+if [ "$COB_RC" != 0 ] || [ -z "$COB_CON" ] || [ -z "$COB_MED" ]; then
+  echo "  🔴 NO HE PODIDO LEER LA COBERTURA (coverage.pl salio $COB_RC): no se guarda, y D8 dira NO MEDIDO."
+  printf '%s\n' "$COB_SALIDA" | tail -3 | sed 's/^/     /'
+  COB_CON=""
+  ROTOS="$ROTOS cobertura(ilegible)"
+fi
 
 # 19-ago-2026 · EL NUMERO SE ESCRIBE, PARA QUE LA DOCUMENTACION NO PUEDA MENTIR.
 # SKILL.md publicaba «365 casos en verde» y «59 de 121 con caso» cuando eran 817
@@ -277,6 +304,17 @@ fi
     echo "otro-modo-verde: $OTRO_VERDE"
     echo "otro-modo-verde-instalacion-limpia: ${OTRO_LIMPIA:-$OTRO_VERDE}"
   fi
+  # 27-sep-2026 · la cobertura, para D8. No depende del modo: coverage.pl lee
+  #   los programas y sus bancos, no corre nada. Y solo si se ha podido leer:
+  #   sin ella D8 dice NO MEDIDO, que es la verdad, en vez de comparar con nada.
+  if [ -n "$COB_CON" ]; then
+    echo "cobertura-con-caso: $COB_CON"
+    echo "cobertura-comprobaciones: $COB_TOT"
+    echo "cobertura-pct: $COB_PCT"
+    echo "cobertura-programas-medidos: $COB_MED"
+    echo "cobertura-programas: $COB_PRG"
+    echo "cobertura-por-programa: $COB_POR"
+  fi
 } > "$REF/.ultima-bateria"
 
 echo
@@ -286,8 +324,15 @@ echo "  the documentation gate, on this repository AND on every site you configu
 #    corrida sobre ellos saco 3 hallazgos... y los 3 eran falsos positivos MIOS,
 #    que es lo que llevo a acotar D1. Ver 07-trampas.md §27.
 #    Si un repo no esta en esta maquina, se dice y se sigue: no se inventa un OK.
-if perl "$REF/doc-gate.pl" >/dev/null 2>&1; then
+# 27-sep-2026 · doc-gate sale 3 cuando algo quedo NO MEDIDO (hoy, D8 sin la
+#   cobertura guardada). No es un fallo, y tampoco un aprobado: se lista con los
+#   demas NO MEDIDOS. Antes cualquier codigo distinto de 0 se leia como FALLA.
+perl "$REF/doc-gate.pl" >/dev/null 2>&1; DG_RC=$?
+if [ "$DG_RC" = 0 ]; then
   printf "    %-24s PASA\n" "this repository"
+elif [ "$DG_RC" = 3 ]; then
+  printf "    %-24s NO MEDIDO · perl doc-gate.pl\n" "this repository"
+  NO_MEDIDOS="$NO_MEDIDOS doc-gate(skill)"
 else
   printf "    %-24s FALLA · perl doc-gate.pl\n" "this repository"
   ROTOS="$ROTOS doc-gate(skill)"
@@ -306,8 +351,12 @@ for ruta in $( [ -f "$SITEREPOS" ] && grep -v '^[[:space:]]*#' "$SITEREPOS" | gr
     printf "    %-24s NOT ON THIS MACHINE (configured, not found)\n" "$repo"
     continue
   fi
-  if perl "$REF/doc-gate.pl" --dir "$ruta" >/dev/null 2>&1; then
+  perl "$REF/doc-gate.pl" --dir "$ruta" >/dev/null 2>&1; DG_RC=$?
+  if [ "$DG_RC" = 0 ]; then
     printf "    %-24s PASA\n" "$repo"
+  elif [ "$DG_RC" = 3 ]; then
+    printf "    %-24s NO MEDIDO · perl doc-gate.pl --dir %s\n" "$repo" "$ruta"
+    NO_MEDIDOS="$NO_MEDIDOS doc-gate($repo)"
   else
     printf "    %-24s FALLA · perl doc-gate.pl --dir %s\n" "$repo" "$ruta"
     ROTOS="$ROTOS doc-gate($repo)"

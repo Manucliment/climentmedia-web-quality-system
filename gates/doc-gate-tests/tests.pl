@@ -28,9 +28,17 @@ die "no encuentro $GATE\n" unless -f $GATE;
 my ($ok, $ko) = (0, 0);
 
 # Monta una carpeta con los ficheros dados y corre una comprobacion del gate.
-#   $espera: 'PASA' o 'FALLO' para esa comprobacion
+#   $espera: 'PASA', 'FALLO', 'AVISO' o 'NO MEDIDO' para esa comprobacion
+#   $opc (opcional): { rc => el codigo de salida que tiene que dar el gate,
+#                      dice => qr/.../ que la linea del veredicto tiene que casar }
+#   🔴 27-sep-2026 · `dice` existe porque un FALLO no dice POR QUE. Un caso que
+#      espera el rojo de una cifra caducada pasaria igual si el gate cayera por
+#      OTRA cifra del mismo documento -- un rojo por el motivo equivocado es un
+#      verde disfrazado. Y `rc`, porque NO MEDIDO solo vale si sale 3: con un 0
+#      se lee como un aprobado en `run-all.sh`, que solo mira el codigo.
 sub caso {
-    my ($eti, $lista, $ficheros, $espera, $desde) = @_;
+    my ($eti, $lista, $ficheros, $espera, $desde, $opc) = @_;
+    $opc ||= {};
     my $t = tempdir(CLEANUP => 1);
     for my $f (sort keys %$ficheros) {
         my $ruta = "$t/$f";
@@ -45,12 +53,18 @@ sub caso {
     # `references/`. Sin esta opcion, el banco no podia reproducir el caso real.
     my $raiz = defined $desde ? "$t/$desde" : $t;
     my $salida = `perl "$GATE" --dir "$raiz" --lista $lista 2>&1`;
-    my ($linea) = $salida =~ /^(PASA|FALLO|AVISO)\s+\Q$lista\E\b.*$/m;
-    my $real = $linea // 'SIN LINEA';
-    $real =~ s/\s.*//;
-    if ($real eq $espera) { printf "  OK    %-56s %s=%s\n", $eti, $lista, $real; $ok++ }
-    else { printf "  MAL   %-56s esperaba %s y salio %s\n", $eti, $espera, $real; $ko++;
-           print "        $_\n" for grep { /^(PASA|FALLO|AVISO)/ } split /\n/, $salida }
+    my $rc = $? >> 8;
+    # «NO MEDIDO» son DOS palabras: se captura el estado entero, no la primera.
+    my ($linea) = $salida =~ /^((?:PASA|FALLO|AVISO|NO MEDIDO)\s+\Q$lista\E\b.*)$/m;
+    my ($real)  = defined $linea ? $linea =~ /^(PASA|FALLO|AVISO|NO MEDIDO)/ : ();
+    $real //= 'SIN LINEA';
+    my @mal;
+    push @mal, "esperaba $espera y salio $real" if $real ne $espera;
+    push @mal, "esperaba salir $opc->{rc} y salio $rc" if defined $opc->{rc} && $rc != $opc->{rc};
+    push @mal, "la linea no casa $opc->{dice}" if $opc->{dice} && !(defined $linea && $linea =~ $opc->{dice});
+    if (!@mal) { printf "  OK    %-56s %s=%s\n", $eti, $lista, $real; $ok++ }
+    else { printf "  MAL   %-56s %s\n", $eti, join(' · ', @mal); $ko++;
+           print "        $_\n" for grep { /^(PASA|FALLO|AVISO|NO MEDIDO)/ } split /\n/, $salida }
 }
 
 my $PROG = "#!/usr/bin/perl\n# de mentira\nif (\$x eq '--real') { }\nif (\$x eq '--otra') { }\n";
@@ -416,6 +430,83 @@ caso('...y la forma inglesa CORRECTA no se acusa', 'D6',
      { 'SKILL.md' => $ING_BIEN,
        'references/.ultima-bateria' => $BAT,
        'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
+
+print "\n== D8 . la cobertura publicada tiene que ser la medida\n";
+#  🔴 27-sep-2026 · D6 compara los CASOS de la bateria y nadie comparaba la
+#     COBERTURA. Medido ese dia: de ocho cifras de coverage.pl publicadas en tres
+#     documentos, CINCO estaban caducadas -- el total («123 of 138» con 126 de
+#     140 medidos), el alcance de gates/README.md («88% ... 4 programs of 28»),
+#     la fila de un programa («25 of 25» con 26) y el numero de programas en tres
+#     sitios («38», que nacio mal: ese dia habia 37 ficheros y 36 programas).
+#     Los textos de abajo son los de verdad, con su salto de linea y su cita.
+#  Cada rojo nombra SU cifra (`dice`): un rojo por otra cifra del mismo
+#  documento no prueba nada. Y NO MEDIDO tiene que salir 3 (`rc`).
+my $BAT8 = "medido: 2026-09-27\nmodo: rapido\nbancos: 32\nverde: 787\nrojo: 0\n"
+         . "cobertura-con-caso: 126\ncobertura-comprobaciones: 140\ncobertura-pct: 90\n"
+         . "cobertura-programas-medidos: 4\ncobertura-programas: 36\n"
+         . "cobertura-por-programa: qa-master.pl=84/96 linking-gate.pl=10/11 audit-vs-spec.pl=26/26 doc-gate.pl=6/7\n";
+my $BAT8_VIEJA = "medido: 2026-09-20\nmodo: rapido\nbancos: 32\nverde: 780\nrojo: 0\n";
+my $RAIZ8 = "# repo\n\n```\ngates/            The executable half. 36 programs and 32 test batteries.\n```\n\n"
+          . "| Number | Today | What it means |\n|---|---|---|\n"
+          . "| Checks **with a fixture** | **126 of 140 (90%)** | No check ships without a test |\n\n"
+          . "> **And the second number states its own scope, which is the honest half of it.** That 90% is\n"
+          . "> measured over **4 programs out of 36**. The coverage tool prints the 32 it does not measure,\n"
+          . "> by name, on every run.\n";
+my $GATES8 = "# gates\n\n36 programs and 32 test batteries. This file is the index.\n\n"
+           . "| Program | What it does |\n|---|---|\n"
+           . "| `coverage.pl` | How many checks have a test case. Today: **126 of 140 (90%)**. |\n"
+           . "| `audit-vs-spec.pl` | The spec against the tree. **26 of 26 checks have a case.** |\n\n"
+           . "The coverage figure has a scope you should know: **90% is measured over 4 programs of 36**,\n"
+           . "not over everything.\n";
+my $SKILL8 = "# skill\n\n| `gates/` | 36 programas y sus bancos |\n";
+sub arbol8 {   # el arbol de verdad, con los cambios que pida el caso
+    my (%cambia) = @_;
+    my %f = ( 'README.md' => $RAIZ8, 'SKILL.md' => $SKILL8, 'references/README.md' => $GATES8,
+              'references/.ultima-bateria' => $BAT8 );
+    for my $k (keys %cambia) { if (defined $cambia{$k}) { $f{$k} = $cambia{$k} } else { delete $f{$k} } }
+    return \%f;
+}
+# Cambia un trozo del texto de verdad, y AFIRMA que lo ha cambiado: un fixture
+# que no llega a mutar deja pasar el caso sin haber probado nada.
+sub con8 { my ($texto, $de, $por) = @_; my $n = ($texto =~ s/\Q$de\E/$por/g); die "arbol8: «$de» no esta\n" unless $n; $texto }
+
+caso('todas las cifras casan con la bateria -> PASA (y sale 0)', 'D8',
+     arbol8(), 'PASA', 'references', { rc => 0 });
+caso('el total CADUCADO, el caso real (123 of 138) -> FALLO', 'D8',
+     arbol8('README.md' => con8($RAIZ8, '**126 of 140 (90%)**', '**123 of 138 (89%)**')),
+     'FALLO', 'references', { rc => 1, dice => qr/README\.md dice 123 \(con caso\)/ });
+caso('sin bateria corrida -> NO MEDIDO, que sale 3 y no es un aprobado', 'D8',
+     arbol8('references/.ultima-bateria' => undef), 'NO MEDIDO', 'references', { rc => 3 });
+caso('con una bateria de ANTES de D8 (sin cobertura) -> NO MEDIDO', 'D8',
+     arbol8('references/.ultima-bateria' => $BAT8_VIEJA), 'NO MEDIDO', 'references', { rc => 3 });
+caso('documentos que no publican cobertura: nada que caducar, ni sin bateria', 'D8',
+     { 'README.md' => "# repo\n\nprosa sin cifras\n", 'references/relleno.md' => "# relleno\n" },
+     'PASA', 'references', { rc => 0 });
+caso('el % del alcance, CADUCADO al otro lado del salto de linea -> FALLO', 'D8',
+     arbol8('README.md' => con8($RAIZ8, 'That 90% is', 'That 89% is')),
+     'FALLO', 'references', { dice => qr/README\.md dice 89 \(% del alcance\)/ });
+caso('el alcance «4 programs of 28» de gates/README.md -> FALLO', 'D8',
+     arbol8('references/README.md' => con8($GATES8, '**90% is measured over 4 programs of 36**',
+                                                    '**88% is measured over 4 programs of 28**')),
+     'FALLO', 'references', { dice => qr/dice 28 \(programas del alcance\)/ });
+caso('«prints the 33 it does not measure» cuando son 36 - 4 -> FALLO', 'D8',
+     arbol8('README.md' => con8($RAIZ8, 'prints the 32 it', 'prints the 33 it')),
+     'FALLO', 'references', { dice => qr/dice 33 \(programas sin medir\)/ });
+caso('la fila de un programa, CADUCADA (25 of 25) -> FALLO', 'D8',
+     arbol8('references/README.md' => con8($GATES8, '**26 of 26 checks', '**25 of 25 checks')),
+     'FALLO', 'references', { dice => qr/dice 25 \(audit-vs-spec\.pl con caso\)/ });
+caso('la cobertura de un programa que la bateria NO mide -> FALLO', 'D8',
+     arbol8('references/README.md' => $GATES8 . "| `citable.pl` | Citability. **10 of 10 checks have a case.** |\n"),
+     'FALLO', 'references', { dice => qr/citable\.pl.*la bateria no mide eso/ });
+caso('«38 programs» cuando son 36 -> FALLO', 'D8',
+     arbol8('references/README.md' => con8($GATES8, '36 programs and 32', '38 programs and 32')),
+     'FALLO', 'references', { dice => qr/gates\/README\.md dice 38 \(programas\)/ });
+caso('...y en castellano, «38 programas» -> FALLO', 'D8',
+     arbol8('SKILL.md' => con8($SKILL8, '36 programas', '38 programas')),
+     'FALLO', 'references', { dice => qr/SKILL\.md dice 38 \(programas\)/ });
+caso('la forma castellana del total, CADUCADA -> FALLO', 'D8',
+     arbol8('SKILL.md' => $SKILL8 . "\nTOTAL: 123 de 138 comprobaciones tienen caso (89%)\n"),
+     'FALLO', 'references', { dice => qr/SKILL\.md dice 123 \(con caso\)/ });
 
 
 printf "\n-----------------------------------------------------------------\n";
