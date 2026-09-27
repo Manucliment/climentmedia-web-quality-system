@@ -34,12 +34,14 @@
 #  sabido leer es un cero con cara de aprobado, asi que se lee `<html lang>` y,
 #  si el idioma no esta cubierto, sale NO MEDIDO -- nunca 0.
 #
-#  CUBIERTOS HOY: en - es - fr - pt, o sea las SEIS webs del parque.
+#  CUBIERTOS HOY: en - es - fr - pt - nl (el neerlandes, desde el 27-sep-2026).
 #  Al anadir un idioma, el riesgo NO es que falten patrones: es que un patron
 #  valido en un idioma sea una palabra corriente en otro una vez sin acentos.
 #  Ya ha pasado dos veces y las dos estan anotadas al lado de su bloque:
 #    `il`/`elle` en frances -> impersonales (il faut, il y a): fuera
 #    `e` acentuado y `nos` en portugues -> la conjuncion y la contraccion: fuera
+#  Y el neerlandes trajo la tercera, dentro de su propio idioma: `het` es a la
+#  vez el pronombre y el articulo, asi que solo cuenta con un verbo detras.
 #
 #  SEVERIDAD (la de la skill, sin puntuaciones numericas: ella lo prohibe)
 #    BLOQUEA   el motor no puede usar el pasaje   -> rc 1
@@ -142,6 +144,43 @@ my %LANG = (
     hedge    => qr/\b(talvez|provavelmente|eventualmente|possivelmente|em principio|tende a|parece que|relativamente|bastante|geralmente|poderia|poderiam)\b/i,
     reldate  => qr/\b(recentemente|atualmente|actualmente|hoje em dia|ultimamente|o ano passado|este ano|nos ultimos (?:anos|meses)|de momento)\b/i,
     generic  => qr/\b(nossa|nosso|nossas|nossos|a (?:ferramenta|plataforma|empresa|loja|solucao))\b/i,
+  },
+  # 🆕 27-sep-2026 · NEERLANDES. Una web con cuatro paginas `nl/` salia con las
+  #    cuatro NO MEDIDAS, y dos de sus parrafos tenian justo el defecto que el
+  #    gate ya cazaba en la gemela inglesa («Hij leest…», «Zo werk ik nu: …»).
+  #
+  #    🔴 `het` ES EL ARTICULO DE LA MITAD DE LOS NOMBRES y tambien el pronombre
+  #       «it». Se trata como `this` en ingles: solo cuenta con un VERBO detras
+  #       («Het werkt…» si; «Het account…» no). Y como `it`, tiene un uso
+  #       impersonal -«het is belangrijk om», «het hangt ervan af», «het kan zijn
+  #       dat»- que no senala a nada porque no hay a que: su patron `expletive`.
+  #    🔴 `zo` solo cuenta con la inversion que delata que senala hacia atras
+  #       -«Zo werk ik», «Zo doe je dat»: `zo` + verbo + sujeto-, y NUNCA con
+  #       adverbio detras: «zo snel mogelijk», «zo lang je…» no apuntan a nada.
+  #    · `hij`, `zij` y `ze` son siempre pronombres, como `it`/`they`.
+  #    · Los adverbios pronominales causales -daarom, daardoor, hierdoor,
+  #      daarmee, hiermee- llevan el «eso» dentro: sacados de la pagina, «por
+  #      eso» no dice por que. `daarnaast` («ademas») y `daarna` («despues») se
+  #      quedan fuera: son conectores, como `additionally` o `then` en ingles,
+  #      que tampoco se acusan.
+  #    · Y `daar` SUELTO, que abre el adverbio partido: «Daar kwam een regel
+  #      uit» es «de ahi salio una regla». Lo encontro la primera corrida real
+  #      -los 69 parrafos `nl/` de la web que motivo esto, leidos uno por uno-,
+  #      y es el gemelo exacto de un «That is how…» que el ingles ya acusa.
+  #    ⚠️ Esa misma corrida dejo a la vista un hueco del ESPANOL: «Asi trabajo
+  #      hoy: …» y «De ahi salio una regla: …» son gemelos de dos BLOQUEA
+  #      ingleses y no saltan, porque el patron `es` no tiene `asi` ni `de ahi`.
+  #      No se toca aqui: anadirlo pide revisar a mano lo que salte en todas las
+  #      paginas en espanol, igual que se hizo con cada idioma nuevo.
+  #    · Ningun disparador lleva acento; e con dieresis y e aguda ya estaban en
+  #      %ACC, asi que solo se prueba que no fabriquen hallazgos (NL15).
+  nl => {
+    expletive => qr/^\s*het\s+(?:is|was)\s+(?:(?:heel|erg|zeer|echt|niet|wel|ook|dus|vaak|soms|altijd|nog|best)\s+)?(?:belangrijk|mogelijk|onmogelijk|essentieel|cruciaal|noodzakelijk|nodig|handig|verstandig|raadzaam|aan te raden|makkelijk|gemakkelijk|eenvoudig|moeilijk|lastig|verleidelijk|gebruikelijk|normaal|zeldzaam|duidelijk|logisch|vanzelfsprekend|waar|waarschijnlijk|onwaarschijnlijk|beter|het beste|nuttig|natuurlijk|de moeite waard|bekend|tijd|zaak)\b|^\s*het\s+(?:blijkt|loont|lijkt\s+(?:erop|alsof|dat)|hangt\s+(?:er)?van\s+af|valt\s+op|spreekt\s+vanzelf|wordt\s+tijd|gaat\s+erom|komt\s+erop\s+neer|helpt\s+om|kan\s+(?:zijn|gebeuren)\s+dat|zou\s+kunnen\s+dat|heeft\s+(?:geen\s+)?zin|maakt\s+(?:niet|weinig|niets)\s+uit)\b/i,
+    pronoun  => qr/^\s*(?:(?:hij|zij|ze)\s+\w|zo\s+(?!(?:lang|snel|vaak|veel|weinig|ver|goed|min|mogelijk|spoedig|gauw|even|nodig)\b)\w+\s+(?:ik|je|jij|u|we|wij|het|hij|zij|ze)\b|(?:daar|daarom|daardoor|hierdoor|daarmee|hiermee|hierom)\b|(?:dit|dat|deze|die|het)\s+(?:is|zijn|was|waren|wordt|worden|werd|werden|betekent|betekende|maakt|maakte|geeft|gaf|toont|laat|liet|werkt|werkte|kost|kostte|helpt|hielp|komt|kwam|gaat|ging|kan|kon|kunnen|konden|zal|zou|zullen|zouden|moet|moest|moeten|mag|mocht|heeft|had|hebben|hadden|doet|deed|lijkt|leek|klinkt|voelt|gebeurt|gebeurde|verklaart|telt|geldt|blijft|bleef|levert|zorgt|leest|verandert|past|loopt|hangt|ligt|staat|bepaalt|vereist|leidt|scheelt)\b)/i,
+    backref  => qr/\b(zoals (?:hierboven|eerder|al) (?:vermeld|genoemd|beschreven|uitgelegd|gezegd|besproken|aangegeven)|zie hierboven|hierboven|in de vorige (?:sectie|paragraaf|alinea)|zoals we (?:eerder|hierboven) (?:zagen|zeiden|lieten zien))\b/i,
+    hedge    => qr/\b(misschien|wellicht|waarschijnlijk|mogelijkerwijs|eventueel|in principe|lijkt erop|relatief|enigszins|zou kunnen|zouden kunnen|over het algemeen|doorgaans|in de regel)\b/i,
+    reldate  => qr/\b(onlangs|recentelijk|recent|tegenwoordig|momenteel|op dit moment|op het moment|vandaag de dag|de laatste tijd|vorig jaar|dit jaar|volgend jaar|in de afgelopen (?:jaren|maanden))\b/i,
+    generic  => qr/\b(we|wij|ons|onze|het (?:platform|product|bedrijf|team)|de (?:tool|oplossing|dienst))\b/i,
   },
 );
 
