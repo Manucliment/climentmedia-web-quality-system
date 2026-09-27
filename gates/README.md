@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **753 cases green, 0 red** — **751** on a clean install, where the
+machine the fast run is **756 cases green, 0 red** — **754** on a clean install, where the
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1277 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1280 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1331**: 1277 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1334**: 1280 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -72,7 +72,7 @@ below.)
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-753, not 751, because that machine has deployed. `run-all.sh`
+756, not 754, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -94,16 +94,23 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  751 casos en verde · 0 en rojo
+  754 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1277 casos en verde · 0 en rojo
+  1280 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **And again the same day (1277 → 1280).** A site with one home page per language (`/es/`,
+> `/nl/`, each declared `tipo: home`) had its language homes measured on the root `index.html`:
+> `audit-vs-spec` sent every `home` entity there, so a language home missing a section passed and
+> its real page showed up as undeclared (`INV-01`). The type says which anatomy a page has; the slug
+> says where it lives. Three cases in the `audit-vs-spec` battery, seen red first, and they count on
+> any machine.
 
 > **Why the full run moved on 2026-09-27 (1268 → 1277).** Two one-page sites failed four browser
 > checks, and three of the four were the gates' ([trap §86](../docs/traps/86.md)): `ENLACES` asked for

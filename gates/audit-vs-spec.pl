@@ -304,8 +304,14 @@ sub ruta_de {
     # 14-ago-2026 · TAMBIEN POR SLUG. En site-c.example la portada viene de
     # WordPress con `tipo: "page"` y `slug: "home"`, asi que este gate buscaba
     # `home/index.html`, no lo encontraba, y acusaba a la portada de no existir.
-    return ('index.html') if $e->{tipo} eq 'home' || ($e->{slug} // '') eq 'home';
-    my $s = $e->{slug};
+    # 🔴 27-sep-2026 · PERO SOLO LA PORTADA DE LA RAIZ. Esta linea mandaba a
+    #    `index.html` a toda entidad de `tipo: home`, y en una web con una
+    #    portada por idioma (`slug: "es"`, `"nl"`, todas `home`) el gate media la
+    #    portada inglesa tres veces, dejaba `es/index.html` fuera de la spec
+    #    (INV-01) y daba `ok` a una portada de idioma incompleta. El tipo dice
+    #    QUE anatomia tiene la pagina; DONDE esta lo dice el slug.
+    my $s = $e->{slug} // '';
+    return ('index.html') if $s eq '' || $s eq '/' || $s eq 'home';
     my $cat = $e->{rec}{category} // '';
     my @cand = ("$s/index.html", "$s.html");
     unshift @cand, "$cat/$s/index.html", "$cat/$s.html" if $cat ne '';
