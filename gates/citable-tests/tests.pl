@@ -14,6 +14,9 @@
 #  prueban no ha cambiado; cambio que idioma la ejemplifica. Si algun dia se
 #  anaden esos dos, hay que mover estos casos otra vez: el banco no puede
 #  quedarse sin ningun idioma descubierto o deja de probar la regla.
+#  27-sep: se anadio el NEERLANDES (una web con paginas `nl/` salia con cuatro
+#  paginas NO MEDIDAS), y LANG4 paso al ITALIANO por esa misma regla. La frase
+#  neerlandesa que usaba LANG4 se queda abajo como control negativo (NL12).
 #
 #    perl citable-tests/tests.pl
 # =============================================================================
@@ -75,8 +78,8 @@ print "  " . '=' x 62 . "\n\n";
   check('LANG3 · pagina en ALEMAN -> NO MEDIDO, nunca PASA', $rc, $out, 3, qr/NO MEDIDO/);
 }
 {
-  my ($rc, $out) = run(pageof('nl', "<p>De kinesitherapeut komt bij u thuis langs en een sessie duurt ongeveer dertig minuten per afspraak.</p>"));
-  check('LANG4 · pagina en NEERLANDES -> NO MEDIDO', $rc, $out, 3, qr/NO MEDIDO/);
+  my ($rc, $out) = run(pageof('it', "<p>Il fisioterapista viene a casa tua e una seduta dura circa trenta minuti per ogni appuntamento.</p>"));
+  check('LANG4 · pagina en ITALIANO -> NO MEDIDO', $rc, $out, 3, qr/NO MEDIDO/);
 }
 {
   $n++;
@@ -339,6 +342,98 @@ my $PT_LARGO = 'Nos espelhos sob medida a espessura do vidro decide o preco fina
   $con_nossa =~ s/A entrega chega/A nossa equipa entrega/ or die "el fixture de PT9 no caso\n";
   my ($rc, $out) = run(pageof('pt', "<p>$con_nossa</p>"), '--brand', 'Acme');
   check('PT9 · ...pero "nossa equipa" SI (el arreglo no apago el check)', $rc, $out, 0, qr/DEBILITA.*marca/s);
+}
+
+# --- NEERLANDES · anadido el 27-sep-2026 --------------------------------------
+#  Sale de una web con cuatro paginas `nl/` que el gate dejaba NO MEDIDAS, y dos
+#  de sus parrafos tenian justo el defecto que el gate ya cazaba en su gemela
+#  inglesa. NL1 y NL2 son esos dos parrafos, reescritos sin datos de nadie.
+#  El riesgo del neerlandes es `het`: es el ARTICULO de la mitad de los nombres
+#  y tambien el pronombre. Se trata como `this` en ingles -- solo cuenta con un
+#  VERBO detras --, y el `het` impersonal tiene su propia salida (NL8).
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Hij leest je Google Ads, Meta Ads, GA4 en Search Console elke dag en rapporteert erover.</p>"));
+  check('NL1 · abre con "Hij" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Zo werk ik nu: ik beheer zelf accounts in Google Ads en Meta Ads, en de software leest elk account elke dag.</p>"));
+  check('NL2 · abre con "Zo werk ik" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Dit is de duurste fout die een adverteerder kan maken bij een incrementaliteitstest op een live account.</p>"));
+  check('NL3 · abre con "Dit is" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Daarom stopt de campagne niet meer halverwege de maand, ook niet als het budget krap is.</p>"));
+  check('NL4 · abre con "Daarom" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Het account wordt elke nacht gelezen en het rapport staat 's ochtends klaar voor de klant.</p>"));
+  check('NL5 · "Het account wordt" es ARTICULO, NO pronombre huerfano', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>De software leest elk account elke dag en stelt pas een wijziging voor als de cijfers dat rechtvaardigen.</p>"));
+  check('NL6 · "De software leest" nombra el sujeto -> PASA', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Deze pagina legt uit hoe het venster van de wijzigingsgeschiedenis werkt en waarom het na dertig dagen sluit.</p>"));
+  check('NL7 · "Deze pagina legt uit" es determinante, NO pronombre huerfano', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # 🔴 EL CONTROL QUE JUSTIFICA LA LISTA DE `het` IMPERSONAL. «Het is belangrijk
+  #    om...» no apunta a nada porque no hay a que: es el `it is recommended`
+  #    del ingles y el `il faut` del frances.
+  my ($rc, $out) = run(pageof('nl', "<p>Het is belangrijk om een test minstens zes weken te laten lopen voordat je de resultaten leest.</p>"));
+  check('NL8 · "Het is belangrijk om" es impersonal y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # ...y el control de que la lista no apago el check: un `het` que SI senala.
+  my ($rc, $out) = run(pageof('nl', "<p>Het werkt uit wat het zou veranderen en laat je dat eerst zien, en er gebeurt niets tot je akkoord geeft.</p>"));
+  check('NL9 · un "het" con verbo que SI senala sigue saltando', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Zoals hierboven vermeld sluit het venster van de wijzigingsgeschiedenis na precies dertig dagen.</p>"));
+  check('NL10 · "zoals hierboven vermeld" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*anterior/s);
+}
+{
+  my ($rc, $out) = run(pageof('nl', "<p>Google heeft onlangs veranderd hoe campagnes met een beperkt budget zich gedragen onder doel-CPA.</p>"));
+  check('NL11 · "onlangs" -> DEBILITA', $rc, $out, 0, qr/DEBILITA.*fecha relativa/s);
+}
+{
+  # La frase que LANG4 usaba como «idioma sin patrones»: medida, y limpia.
+  my ($rc, $out) = run(pageof('nl', "<p>De kinesitherapeut komt bij u thuis langs en een sessie duurt ongeveer dertig minuten per afspraak.</p>"));
+  check('NL12 · la frase de LANG4 se MIDE y sale limpia', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # «Dat» abre tambien una subordinada -«Dat je marge...»-, y ahi no es pronombre.
+  my ($rc, $out) = run(pageof('nl', "<p>Dat je marge de ondergrens van je ROAS bepaalt, staat in geen enkele standaard rekenmachine.</p>"));
+  check('NL13 · "Dat je marge" es conjuncion, NO pronombre', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # «Zo» con adverbio -«zo lang», «zo snel»- no es el «zo» que senala hacia atras.
+  my ($rc, $out) = run(pageof('nl', "<p>Zo lang je marge boven de dertig procent blijft, betaalt elke euro aan advertenties zichzelf terug.</p>"));
+  check('NL14 · "Zo lang je" no es el "zo" que senala', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # Acentos neerlandeses -e con dieresis, e aguda- por todo el parrafo: no pueden
+  # FABRICAR hallazgos. Los bytes se fabrican, no se teclean.
+  my $E_DIER  = chr(0xC3) . chr(0xAB);   # e con dieresis
+  my $E_AGUDA = chr(0xC3) . chr(0xA9);   # e aguda
+  my $body = "De financi${E_DIER}le gegevens van ${E_AGUDA}${E_AGUDA}n account worden elke nacht gelezen en naast die van de vorige week gelegd.";
+  my ($rc, $out) = run(pageof('nl', "<p>$body</p>"));
+  check('NL15 · acentos neerlandeses NO fabrican hallazgos', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # 🔑 El que encontro la primera corrida real, y no el que yo habia pensado:
+  #    `daar` suelto abre el adverbio partido -«Daar kwam een regel uit», «de
+  #    ahi salio una regla»- y senala al parrafo anterior igual que `daarom`.
+  my ($rc, $out) = run(pageof('nl', "<p>Daar kwam een regel uit: alles wat ik probeer, probeer ik eerst op mezelf, nooit op een klant.</p>"));
+  check('NL16 · abre con "Daar ... uit" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  # ...y `daarnaast` («ademas») es un conector, como `additionally`: fuera.
+  my ($rc, $out) = run(pageof('nl', "<p>Daarnaast leest de software elke nacht de wijzigingsgeschiedenis van het account en bewaart die.</p>"));
+  check('NL17 · "Daarnaast" es un conector y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
 }
 
 # --- EL `it` IMPERSONAL Y LAS CONTRACCIONES · 26-ago-2026, tarde -------------
