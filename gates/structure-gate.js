@@ -36,6 +36,8 @@
  *    ruta       ruta a usar para inferir el tipo (para medir una copia local)
  *    origen     origen a considerar «interno» (para medir una copia local)
  *    ecommerce  true  -> el hero puede navegar al catalogo (excepcion 09 §3.1)
+ *    sitemap    lista de URLs del sitio, en lugar de leer <origen>/sitemap.xml
+ *               (para medir una copia local; ver ENLACES en la seccion 3)
  * ========================================================================== */
 (() => {
 'use strict';
@@ -58,11 +60,14 @@ const RUTA = (CFG.ruta || (() => { try { return new URL(BASE).pathname; }
                                    catch (e) { return location.pathname; } })()).toLowerCase();
 
 // El tipo decide QUE se exige. Un aviso legal es prosa a proposito; una guia no.
+// La ruta de una pagina LEGAL, en una sola expresion: la usan el tipo inferido y
+// el tope de ENLACES (seccion 3), y dos copias de una regla divergen (§60).
+const RE_RUTA_LEGAL = /legal|privac|cookie|terms|termino|condicion|mentions|rgpd|gdpr|impressum/;
 function inferirTipo () {
   const h1 = document.querySelector('h1');
   const rotulo = ((document.title || '') + ' ' + (h1 ? h1.innerText : '')).toLowerCase();
   if (/(^|\D)404(\D|$)|not found|no encontrad|introuvable|pagina no existe/.test(rotulo)) return '404';
-  if (/legal|privac|cookie|terms|termino|condicion|mentions|rgpd|gdpr|impressum/.test(RUTA)) return 'legal';
+  if (RE_RUTA_LEGAL.test(RUTA))                                  return 'legal';
   if (/gracias|thank|merci|obrigad|danke/.test(RUTA))            return 'gracias';
   if (/contact|contacto|kontakt/.test(RUTA))                     return 'contacto';
   if (/pricing|precio|tarif|planes|plans/.test(RUTA))            return 'precios';
@@ -154,9 +159,21 @@ const PERFIL = {
   //    lineas caian en el `|| {...}` del final: el perfil de SERVICIO, en
   //    silencio -- el mismo defecto que el comentario de `quiz` avisa arriba.
   //    · nosotros: hero:false porque 0 de 4 referencias convierten en el hero (la
-  //      vuelta a la conversion es el cierre, que SI es obligatorio) · minPrim:4
-  //      son sus 4 roles OBL · minEnlaces:2 = la oferta y la conversion, que es
-  //      a donde una «a propos» tiene que devolver.
+  //      vuelta a la conversion es el cierre, que SI es obligatorio) · minEnlaces:2
+  //      = la oferta y la conversion, que es a donde una «a propos» tiene que
+  //      devolver (acotado por el sitemap: ver ENLACES en la seccion 3).
+  //      🔴 minPrim:3, no 4 (27-sep-2026). El 4 decia «son sus 4 roles OBL», y un
+  //      ROL no es una CLASE de maqueta: el cierre canonico (molde 11) sale `otro`,
+  //      que VARIEDAD no cuenta, y los moldes que la casa da a los otros roles solo
+  //      producen tres clases -contexto: 02 par-alterno, y las dos salidas que el
+  //      propio 02 nombra, 07 rejilla y 12 prosa; prueba: 06, 09 y 16, rejilla las
+  //      tres-. Medido: la plantilla de la casa (01 + 02:contexto + 06 + 11, la de
+  //      moulds/types/nosotros.html) da [hero, par-alterno, rejilla] y SUSPENDIA su
+  //      propio tipo. Con 4, aprobar obligaba a anadir una seccion que la anatomia
+  //      no pide, y la plantilla lo prohibe por escrito («Los roles que no salen
+  //      aqui no se anaden porque quepan»). 3 = los roles que PUEDEN contar, la
+  //      misma cuenta que dio hub:3 y gracias:2 (roles menos el cierre). Caso NV1
+  //      y su rojo NV2 en el banco (07-trampas §86).
   //    · empleo: como `contacto`. La accion es la candidatura o el catalogo, no
   //      un cierre: cierre:false · minEnlaces:0 porque su trabajo es que el
   //      candidato no se vaya · lectura:false: es un listado y un formulario.
@@ -168,7 +185,7 @@ const PERFIL = {
   //      lo destapo la primera pagina de empleo real que se midio. 'accion'
   //      exige lo que §2.14 pide -una accion en la primera pantalla, y como
   //      mucho una primaria- sin exigir que convierta. Ver E7.
-  nosotros:    { estructura:true,  minPrim:4, minEnlaces:2, cierre:true,  hero:false, lectura:true  },
+  nosotros:    { estructura:true,  minPrim:3, minEnlaces:2, cierre:true,  hero:false, lectura:true  },
   empleo:      { estructura:true,  minPrim:3, minEnlaces:0, cierre:false, hero:'accion', lectura:false },
   gracias:     { estructura:false, minPrim:2, minEnlaces:0, cierre:true,  hero:false, lectura:false },
   legal:       { estructura:false, minPrim:0, minEnlaces:0, cierre:false, hero:false, lectura:true  },
@@ -440,6 +457,82 @@ const enlacesInternos = (() => {
   return [...vistos];
 })();
 
+/* ENLACES tiene un TOPE: no se pueden exigir mas destinos de los que existen.
+ * ---------------------------------------------------------------------------
+ * 🔴 27-sep-2026 · Dos webs de UNA sola pagina de contenido (mas privacidad y
+ *    cookies, a proposito) suspendian «ENLACES · 0 enlaces internos de cuerpo
+ *    (minimo 2)». No habia a donde enlazar: ningun diseno las aprobaba sin
+ *    inventar paginas. Y la razon del minimo de su tipo -«la oferta y la
+ *    conversion»- la cumplian: la oferta vive en otro dominio y la conversion es
+ *    un mailto, que este recuento no cuenta a proposito.
+ * Cuantos destinos hay lo dice el SITIO, no una declaracion que envejece: su
+ * sitemap, menos esta pagina y menos las legales (RE_RUTA_LEGAL, la misma del
+ * tipo). El minimo pasa a ser min(el del tipo, las OTRAS paginas de contenido).
+ * Con un sitemap de 3 URLs y 2 legales, 0; con una pagina hermana, 1. Si el
+ * sitio crece, el minimo vuelve solo.
+ * Tres cautelas, las tres a favor de la regla entera:
+ *   · sin sitemap legible (404, un indice de sitemaps, CORS en una copia local)
+ *     no hay tope: la regla se aplica como siempre, y la nota dice por que;
+ *   · si ESTA pagina enlaza -nav y pie incluidos- a una pagina de contenido que
+ *     el sitemap no lista, el sitemap esta incompleto y tampoco hay tope. Si no,
+ *     un sitemap que olvida paginas apagaria la regla en el sitio entero;
+ *   · solo cuentan los <url><loc> del espacio de nombres del sitemap: los
+ *     <image:loc> son imagenes, no paginas.
+ * La lectura es SINCRONA a proposito: el gate devuelve su JSON en la misma
+ * vuelta, y asi lo llaman el banco, la consola y run-gate.js. */
+const normRuta = p => (p || '/').replace(/\/index\.html?$/, '/');
+const RUTA_PROPIA = normRuta(RUTA);
+const esPagina = d => !/\.(?!html?$|php$)[a-z0-9]{2,5}$/i.test(d);   // un .pdf o un .webp no es una pagina
+const SITEMAP = (() => {
+  let locs = null, fuente = '', motivo = '';
+  if (Array.isArray(CFG.sitemap)) { locs = CFG.sitemap.map(String); fuente = '__GATE__.sitemap'; }
+  // Una copia local no puede leer el sitemap de su origen (CORS), y pedirlo
+  // saldria a la red en cada corrida del banco: se dice y no se pide.
+  else if (location.protocol === 'file:') motivo = 'copia local (file://): la lista va en __GATE__.sitemap';
+  else {
+    const url = ORIGEN + '/sitemap.xml';
+    try {
+      const x = new XMLHttpRequest();
+      x.open('GET', url, false);
+      x.send(null);
+      if (x.status !== 200) motivo = `${url} respondio ${x.status}`;
+      else {
+        const doc = new DOMParser().parseFromString(x.responseText || '', 'application/xml');
+        const r = doc.documentElement, nombre = r ? r.localName : '';
+        if (nombre === 'sitemapindex') motivo = `${url} es un indice de sitemaps`;
+        else if (nombre !== 'urlset') motivo = `${url} no es un sitemap (raiz «${nombre || 'ninguna'}»)`;
+        else {
+          locs = [...r.children].filter(u => u.localName === 'url')
+            .map(u => [...u.children].find(c => c.localName === 'loc' && c.namespaceURI === r.namespaceURI))
+            .filter(Boolean).map(l => l.textContent.trim());
+          fuente = url;
+        }
+      }
+    } catch (e) { motivo = `${url} no se pudo leer (${(e && e.name) || e})`; }
+  }
+  if (!locs) return { leido: false, motivo };
+  const rutas = new Set();
+  for (const l of locs) {
+    let u; try { u = new URL(l, ORIGEN + '/'); } catch (e) { continue; }
+    if (u.origin === ORIGEN) rutas.add(normRuta(u.pathname));
+  }
+  const otras = [...rutas].filter(d => d !== RUTA_PROPIA && !RE_RUTA_LEGAL.test(d));
+  return { leido: true, fuente, urls: rutas.size, otras };
+})();
+const faltanEnSitemap = !SITEMAP.leido ? [] : (() => {
+  const d = new Set();
+  document.querySelectorAll('a[href]').forEach(a => {
+    if (/^(#|javascript:|mailto:|tel:)/i.test(a.getAttribute('href') || '')) return;
+    let u; try { u = new URL(a.href, BASE); } catch (e) { return; }
+    if (u.origin !== ORIGEN) return;
+    const r = normRuta(u.pathname);
+    if (r !== RUTA_PROPIA && !RE_RUTA_LEGAL.test(r) && esPagina(r) && !SITEMAP.otras.includes(r)) d.add(r);
+  });
+  return [...d];
+})();
+const TOPE_ENLACES = (SITEMAP.leido && !faltanEnSitemap.length) ? SITEMAP.otras.length : Infinity;
+const MIN_ENLACES  = Math.min(PERFIL.minEnlaces, TOPE_ENLACES);
+
 /* ---------------------------------------------------------------------------
  * 4 · Medidas (H3 «lo del ancho») y escala
  * ------------------------------------------------------------------------- */
@@ -628,6 +721,44 @@ function contenedorDe (b) {
   return mejor ? { w: Math.round(w), sel: mote(mejor) } : null;
 }
 
+/* CELDA DE CIFRA — la banda de datos no es una rejilla de tarjetas.
+ * ---------------------------------------------------------------------------
+ * 🔴 27-sep-2026 · El suelo de 240px se midio sobre celdas de TARJETA (titular y
+ *    parrafo), y una banda de cifras entraba por la misma puerta: su etiqueta
+ *    pasa el filtro de 20 caracteres. Dos webs de una pagina salian acusadas con
+ *    celdas de 236 y 196px en las que TODAS las cifras cabian en una linea y las
+ *    etiquetas iban a 22-31 cpl. El molde 06 de la casa limita su etiqueta a 22ch
+ *    (196px a 14px) a cualquier ancho, y en movil vive en celdas de 167px por
+ *    diseno: lo que una cifra necesita no es 240px, es LEERSE DE UN VISTAZO. Por
+ *    eso su «que la rompe» es la cifra que deja de barrerse, no la celda estrecha.
+ * Celda de cifra = su texto MAYOR lleva un digito, mide <=12 caracteres y es
+ * >=2x la letra menor de la celda, y la celda NO lleva titular ni parrafo. Medido
+ * a 1422px sobre los 20 moldes, los fixtures de rejilla y las dos webs:
+ *   cifra:   06 (x4,0) · home rota «datos» (x3,38) · las dos webs (x2,27 y x2,4),
+ *            ninguna con <p> ni titular
+ *   tarjeta: 10-precios tiene cifra (x3,43) pero lleva titular y parrafo; 05, 03,
+ *            07, 09, 14 y 16 no tienen cifra, y sus letras van de x1,14 a x1,75
+ * Una celda de cifra no se mide contra 240px: se mide su cifra ENTERA, que tiene
+ * que ir en una linea y dentro de la celda. Y sigue contando como rejilla para el
+ * suelo del CONTENEDOR: una banda estrujada por una colision sigue saltando. */
+function cifraDe (c) {
+  if (c.querySelector('p,h1,h2,h3,h4,h5,h6')) return null;
+  const propio = e => [...e.childNodes].filter(n => n.nodeType === 3)
+                        .map(n => n.textContent).join('').replace(/\s+/g, ' ').trim();
+  const textos = [c, ...c.querySelectorAll('*')].filter(e => visible(e) && propio(e))
+                   .map(e => ({ e, px: parseFloat(getComputedStyle(e).fontSize), t: propio(e) }));
+  if (textos.length < 2) return null;
+  const mayor = textos.reduce((a, x) => (x.px > a.px ? x : a));
+  const menor = Math.min(...textos.filter(x => x !== mayor).map(x => x.px));
+  if (!/\d/.test(mayor.t) || mayor.t.length > 12 || mayor.px < 2 * menor) return null;
+  const r = document.createRange(); r.selectNodeContents(mayor.e);
+  const lineas = new Set([...r.getClientRects()].filter(x => x.height > 0)
+                           .map(x => Math.round(x.top))).size;
+  const cs = getComputedStyle(c);
+  const util = c.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+  return { texto: mayor.t, lineas, desborda: r.getBoundingClientRect().width > util + 1 };
+}
+
 // Celda de rejilla = hijo directo de un contenedor 2D de >=2 COLUMNAS que lleva
 // texto propio. Se exige texto (>=20 caracteres) a proposito: una tira de logos
 // o una fila de iconos son legitimamente estrechas y no son celdas de tarjeta.
@@ -660,17 +791,27 @@ function celdasDe (b) {
     if (hijos.length < 2) return;
     const xs = new Set(hijos.map(c => Math.round(c.getBoundingClientRect().left)));
     if (xs.size < 2) return;                    // 1 columna apilada: no es rejilla
-    hijos.forEach(c => out.push({ w: Math.round(c.getBoundingClientRect().width), sel: mote(c) }));
+    hijos.forEach(c => out.push({ w: Math.round(c.getBoundingClientRect().width), sel: mote(c),
+                                  cifra: cifraDe(c) }));
   }));
   return out;
 }
 
 const anchoBloques = bloques.map((b, i) => {
-  const c = contenedorDe(b), cel = celdasDe(b).sort((x, y) => x.w - y.w);
+  const c = contenedorDe(b), todas = celdasDe(b);
+  // Las celdas de CIFRA no entran en el suelo de 240px; SI cuentan como rejilla
+  // para el suelo del contenedor (ver cifraDe).
+  const cel = todas.filter(x => !x.cifra).sort((x, y) => x.w - y.w);
+  const cif = todas.filter(x => x.cifra);
   return { n:i + 1, contW: c ? c.w : null, contSel: c ? c.sel : null,
-           conRejilla: cel.length > 0,
+           conRejilla: todas.length > 0,
            celdaMin: cel.length ? cel[0].w : null,
-           celdaSel: cel.length ? cel[0].sel : null };
+           celdaSel: cel.length ? cel[0].sel : null,
+           cifras: cif.length,
+           cifraMin: cif.length ? Math.min(...cif.map(x => x.w)) : null,
+           partidas: cif.filter(x => x.cifra.lineas > 1 || x.cifra.desborda)
+                        .map(x => ({ w: x.w, sel: x.sel, cifra: x.cifra.texto,
+                                     lineas: x.cifra.lineas, desborda: x.cifra.desborda })) };
 });
 
 /* ---------------------------------------------------------------------------
@@ -908,6 +1049,15 @@ if (juzgaAncho) {
     fallos.push(`ANCHO-MIN · ${celdasMalas.length} rejilla(s) con celdas por debajo de ${CELDA_MIN}px ` +
                 `(peor: bloque ${celdasMalas[0].n}, ${celdasMalas[0].celdaSel} a ${celdasMalas[0].celdaMin}px). ` +
                 `La celda mas estrecha de los 19 moldes son 250px`);
+  // Las celdas de CIFRA (ver cifraDe): su regla es la cifra entera en una linea.
+  const conPartidas = anchoBloques.filter(a => a.partidas.length);
+  if (conPartidas.length) {
+    const p = conPartidas[0].partidas[0];
+    fallos.push(`ANCHO-MIN · ${conPartidas.reduce((s, a) => s + a.partidas.length, 0)} cifra(s) partida(s) ` +
+                `en su celda (peor: bloque ${conPartidas[0].n}, «${p.cifra}» en ${p.sel} a ${p.w}px: ` +
+                `${p.lineas} linea(s)${p.desborda ? ' y se sale de la celda' : ''}). Una cifra tiene que ` +
+                `leerse de un vistazo (molde 06, «que la rompe»)`);
+  }
 }
 
 /* --- E9 · CONTRASTE (AA) -------------------------------------------------- */
@@ -954,9 +1104,15 @@ if (PERFIL.hero) {
 }
 
 /* --- E8 · enlaces internos contextuales ---------------------------------- */
-if (enlacesInternos.length < PERFIL.minEnlaces)
+// El minimo es el del tipo ACOTADO por las otras paginas de contenido que lista
+// el sitemap (seccion 3). Si el tope no se aplico, el mensaje dice el minimo
+// entero y, en `notas`, por que no se acoto.
+if (enlacesInternos.length < MIN_ENLACES)
   fallos.push(`ENLACES · ${enlacesInternos.length} enlace(s) internos de CUERPO ` +
-              `(minimo ${PERFIL.minEnlaces} para «${TIPO}»). El nav no cuenta`);
+              `(minimo ${MIN_ENLACES} para «${TIPO}»` +
+              (MIN_ENLACES < PERFIL.minEnlaces
+                 ? `, acotado a las ${TOPE_ENLACES} otra(s) pagina(s) de contenido del sitemap` : '') +
+              `). El nav no cuenta`);
 
 /* --- AVISOS · 2 o mas hacen FALLA ---------------------------------------- */
 if (banda.length > 12)    avisos.push(`${banda.length} tamanos de fuente en la banda de texto 11-28px (aviso >12; el contrato son 6)`);
@@ -1013,9 +1169,28 @@ if (!juzgaAncho)
 else if (!WRAP)
   notas.push('ANCHO-MIN (contenedor) NO comprobado: el sitio no declara ningun token de ancho ' +
              '(--ancho/--wrap/--contenedor/...). La regla de CELDA si se ha comprobado');
+const nCifras = anchoBloques.reduce((s, a) => s + a.cifras, 0);
+if (juzgaAncho && nCifras)
+  notas.push(`ANCHO-MIN: ${nCifras} celda(s) de CIFRA (la mas estrecha a ` +
+             `${Math.min(...anchoBloques.filter(a => a.cifras).map(a => a.cifraMin))}px) se juzgan por su ` +
+             `cifra entera en una linea, no por el suelo de ${CELDA_MIN}px de las tarjetas`);
 if (contrasteSobreFoto)
   notas.push(`CONTRASTE: ${contrasteSobreFoto} elemento(s) sobre imagen o degradado, NO MEDIBLES sin ` +
              `leer el pixel (measure-contrast-on-photo.py). No medible NO es aprobado`);
+// ENLACES: un minimo acotado se DICE, con la lista que lo acoto; y si fallo sin
+// acotar, se dice por que no se acoto. Un tope que no deja rastro se lee como
+// una regla que aprueba.
+if (MIN_ENLACES < PERFIL.minEnlaces)
+  notas.push(`ENLACES acotado a ${MIN_ENLACES} de ${PERFIL.minEnlaces}: el sitemap (${SITEMAP.fuente}) lista ` +
+             `${SITEMAP.urls} URL(s) y ${SITEMAP.otras.length} otra(s) de contenido` +
+             (SITEMAP.otras.length ? ` [${SITEMAP.otras.slice(0, 5).join(', ')}]` : '') +
+             `. No se puede exigir enlazar paginas que no existen; si el sitio crece, el minimo vuelve solo`);
+else if (enlacesInternos.length < PERFIL.minEnlaces && PERFIL.minEnlaces > 0)
+  notas.push('ENLACES con el minimo entero: ' + (!SITEMAP.leido
+    ? `sitemap no leido (${SITEMAP.motivo})`
+    : faltanEnSitemap.length
+      ? `el sitemap no lista ${faltanEnSitemap.length} pagina(s) que esta enlaza [${faltanEnSitemap.slice(0, 5).join(', ')}], asi que no sirve de tope`
+      : `el sitemap lista ${SITEMAP.otras.length} otra(s) pagina(s) de contenido, no menos que el minimo`));
 
 /* ------------------------------------------------------------------------ */
 return JSON.stringify({
@@ -1054,6 +1229,8 @@ return JSON.stringify({
     contenedoresPorBloque: anchoBloques.map(a => a.contW),
     celdaMasEstrecha: anchoBloques.reduce((m, a) => a.celdaMin !== null &&
                                     (m === null || a.celdaMin < m) ? a.celdaMin : m, null),
+    celdasDeCifra: nCifras,
+    cifrasPartidas: anchoBloques.reduce((s, a) => s + a.partidas.length, 0),
     contrasteMedidos, contrasteSobreFoto,
     peoresContrastes: malContraste.slice(0, 3),
     tamanosDeFuenteEnBanda: banda.length, saltosCiegos, valoresDeEspaciado: espaciados.size,
@@ -1061,6 +1238,11 @@ return JSON.stringify({
     heroAcciones: accHero.length, accionesDelBloque1: accBloque1.length,
     heroConversion: accHero.filter(convierte).map(a => a.getAttribute('href') || a.tagName),
     enlacesInternosDeCuerpo: enlacesInternos.length,
+    enlacesMinimo: MIN_ENLACES,
+    sitemap: SITEMAP.leido
+      ? { fuente: SITEMAP.fuente, urls: SITEMAP.urls, otrasDeContenido: SITEMAP.otras.length,
+          noListadasQueEnlaza: faltanEnSitemap.length }
+      : { leido: false, motivo: SITEMAP.motivo },
     rolesDeclarados,
   },
   bloques: ficha,
@@ -1114,6 +1296,15 @@ return JSON.stringify({
  *  |          |                               | 6 primitivas y es la peor del     |
  *  |          |                               | lote. Por eso VARIEDAD no puede   |
  *  |          |                               | cancelar PROSA-1 ni PROSA-3       |
+ *  |          |                               | 🔴 27-sep: el suelo de un TIPO no |
+ *  |          |                               | puede pasar de los roles que      |
+ *  |          |                               | pueden contar: el cierre (11) es  |
+ *  |          |                               | `otro`. `nosotros` tenia 4 con 3  |
+ *  |          |                               | contables y su propia plantilla   |
+ *  |          |                               | suspendia: ahora 3 (ver PERFIL).  |
+ *  |          |                               | Y la clase es gruesa a proposito: |
+ *  |          |                               | 03, 05, 06, 07, 09, 10, 13, 14 y  |
+ *  |          |                               | 16 salen todos `rejilla`         |
  *  | ANCHO    | 0 parrafos >80 cpl,           | NORMA. WCAG 2.1 SC 1.4.8 (AAA):   |
  *  |          | midiendo la LINEA REAL        | «no more than 80 characters».     |
  *  |          | (biseccion sobre el salto de  | Butterick: 45-90. Mismo UMBRAL    |
@@ -1160,6 +1351,14 @@ return JSON.stringify({
  *  |          |                               | algun molde futuro baja de 250,   |
  *  |          |                               | hay que volver a medir, no subir  |
  *  |          |                               | el umbral a ojo                   |
+ *  | ANCHO-MIN| celda de CIFRA: la cifra      | 🔴 27-sep. El molde 06 dice lo    |
+ *  | (cifra)  |   entera en UNA linea y       | que rompe una banda de datos: la  |
+ *  |          |   dentro de su celda          | cifra que deja de barrerse. Limita|
+ *  |          |                               | su etiqueta a 22ch (196px) y en   |
+ *  |          |                               | movil vive a 167px: el 240 de las |
+ *  |          |                               | tarjetas no es su medida. Frontera|
+ *  |          |                               | medida en cifraDe (x2,27-x4 contra|
+ *  |          |                               | x1,14-x1,75 y sin titular/parrafo)|
  *  | ANCHO-MIN| contenedor >=75 % del ancho    | 🟡 PROVISIONAL EN EL RATIO.       |
  *  | (contene-|   que declara el propio sitio, | MEDIDO: la home rota da 568px de  |
  *  |  dor)    |   y SOLO en secciones con      | contenedor contra 1120 declarados  |
@@ -1244,6 +1443,11 @@ return JSON.stringify({
  *  |          |                               | sola pagina no sabe quien la      |
  *  |          |                               | enlaza. Eso lo mide               |
  *  |          |                               | `linking-gate.pl`                |
+ *  |          | ...ACOTADO por las otras      | 🔴 27-sep. ARITMETICA, no juicio: |
+ *  |          |   paginas de contenido del    | no se exigen mas destinos de los  |
+ *  |          |   sitemap (sin las legales)   | que existen. Sin sitemap legible, |
+ *  |          |                               | o si la pagina enlaza a una que el|
+ *  |          |                               | sitemap no lista, minimo entero   |
  *  | AVISOS   | 2 avisos = FALLA              | MEDIDO (marco del diagnostico).   |
  *  |          |                               | Ninguno basta solo: los seis son  |
  *  |          |                               | senales debiles y cualquiera da   |

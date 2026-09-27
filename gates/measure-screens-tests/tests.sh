@@ -103,10 +103,19 @@ espera f4-seccion-gigante.html FALLA "limite del contenedor"         "doce unida
 # visible: lo unico que cambia es si la pregunta es <p> o <h3>. Si alguien
 # mete <p> en la lista de PARADA, f8 se pone verde y este par lo canta.
 espera f8-faq-parrafos.html    FALLA "SIN UNA PARADA" "5 preguntas de FAQ en <p> son un muro"
+# 27-sep-2026 (07-trampas §86). `blockquote` pasa a ser PARADA, y estos dos
+# guardan lo que NO cambia: f11 lleva el mismo texto que f10 con la cita en un
+# <p> con el mismo estilo -sigue siendo muro-, y en f12 la cita ENVUELVE el muro:
+# su borde superior es una parada, lo de dentro sigue siendo un tramo.
+espera f11-cita-en-parrafo.html           FALLA "SIN UNA PARADA" "la cita en un <p> con estilo sigue siendo muro"
+espera f12-cita-que-envuelve-un-muro.html FALLA "SIN UNA PARADA" "una cita que envuelve un muro no lo tapa"
 echo
 echo "== LO QUE TIENE QUE PASAR"
 espera f5-lista-buena.html     PASA  ""                              "tres unidades, dos CTA"
 espera f9-faq-titulares.html   PASA  ""                              "el mismo texto con la pregunta en <h3>"
+# 27-sep-2026 · el gemelo de f11: una cita en <blockquote> parte el tramo (1074 ->
+# 575 px a 390). Visto en ROJO contra el gate anterior, que no la contaba.
+espera f10-cita-en-medio.html  PASA  ""                              "una cita en <blockquote> es una parada"
 
 # 19-ago-2026 - EL LIMITE DE ALTURA CUENTA PALABRAS. Antes era un 6 fijo anclado
 #   a una portada de 206 palabras, y por eso suspendia a la pagina MAS DENSA del

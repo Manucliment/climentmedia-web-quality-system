@@ -108,7 +108,21 @@
   //  un formulario no se hojea, se rellena, y se recorre por sus etiquetas
   //  exactamente igual que una lista por sus items.
   //  Un PARRAFO no es una parada. Ahi esta toda la regla.
-  const PARADA = 'h1,h2,h3,h4,h5,h6,li,img,picture,figure,svg,video,tr,dt,' +
+  //
+  //  🔴 27-sep-2026 · FALTABA `blockquote`, y por el principio de arriba es una
+  //     parada: una cita es un bloque APARTADO -sangrado o con filete, y el
+  //     navegador ya la sangra sin CSS-, de la misma familia que `figure`, que si
+  //     estaba. Se anade sin aflojar nada que ya se mida: la parada es el BORDE
+  //     SUPERIOR del elemento, asi que una cita que envuelve un muro de parrafos
+  //     sigue dando su tramo entero (caso f12 del banco).
+  //     Y lo que NO cambia, a proposito: un <p> con estilo de cita sigue sin ser
+  //     parada (caso f11, gemelo de f10). Es la misma linea que f8/f9: el ojo
+  //     aterriza donde la ESTRUCTURA lo dice, no donde la hoja de estilo lo
+  //     pinta, porque el estilo se le pone a cualquier cosa (07-trampas §66).
+  //     Medido en una web de una pagina (site-g) a 390x844: su «cita destacada»
+  //     era un <p class>, y con esta linea el tramo sigue en 856 px. Esta linea
+  //     no la aprueba; un <h3> que parta la historia, si (467 px).
+  const PARADA = 'h1,h2,h3,h4,h5,h6,li,img,picture,figure,blockquote,svg,video,tr,dt,' +
                  'button,summary,label,input,select,textarea';
   const tramoSinParada = (el) => {
     const r0 = el.getBoundingClientRect();
