@@ -102,7 +102,22 @@ my %LANG = (
     # esto/eso/ello/aquello son SIEMPRE pronombres. este/esta/estos/estas
     # pueden ser determinante -«esta pagina explica...»- y ahi solo cuentan
     # con un verbo detras. Misma correccion que en ingles, misma causa.
-    pronoun  => qr/^\s*(?:(?:esto|eso|ello|aquello)\s+\w|(?:este|esta|estos|estas|esos|esas)\s+(?:es|son|era|eran|fue|fueron|significa|hace|da|muestra|pasa|funciona|importa|explica|puede|podria|va|deja|tiene|supone|implica|cuesta|falla|ayuda)\b)/i,
+    # 🆕 27-sep-2026 · SEGUNDA RONDA, y sale de la corrida que anadio el
+    #    neerlandes: «Asi trabajo hoy: …» y «De ahi salio una regla: …» eran
+    #    gemelos de dos BLOQUEA ingleses y aqui pasaban. Leidos despues los 1417
+    #    parrafos en espanol de seis webs, salieron dos huecos mas del mismo tipo.
+    #    · `asi` + palabra senala hacia atras -«asi trabajo», «asi tu cuerpo
+    #      podra…»-, salvo los conectores: «asi que», «asi como», «asi pues»,
+    #      «asi mismo», «asi y todo». Con COMA detras es el «thus» ingles, que
+    #      tampoco se acusa, y `asimismo` es otra palabra.
+    #    · «de ahi» y «por eso / por ello / por esto» llevan el «eso» dentro,
+    #      como `daarom` en neerlandes. «Por lo tanto» es un conector: fuera.
+    #    · `ese` y `esa` faltaban en la lista de demostrativos con verbo (estaban
+    #      `esos` y `esas`), y un «no» entre el demostrativo y el verbo lo
+    #      escondia: «Este no es un articulo…» pasaba.
+    #    · ella/ellas/ellos, como `it`/`they`. «El» con tilde se queda FUERA:
+    #      sin acentos es el articulo «el», la colision de la `e` portuguesa.
+    pronoun  => qr/^\s*(?:(?:esto|eso|ello|aquello)\s+\w|(?:ella|ellas|ellos)\s+\w|(?:este|esta|estos|estas|ese|esa|esos|esas|aquel|aquella|aquellos|aquellas)\s+(?:no\s+)?(?:es|son|era|eran|fue|fueron|significa|hace|da|muestra|pasa|funciona|importa|explica|puede|podria|va|deja|tiene|supone|implica|cuesta|falla|ayuda)\b|asi\s+(?!(?:que|como|mismo|pues|y\s+todo)\b)\w|de\s+ahi\b|por\s+(?:eso|ello|esto)\b)/i,
     backref  => qr/\b(como (?:se )?(?:vio|dijimos|vimos|hemos visto|se explico) (?:arriba|antes|anteriormente)|mas arriba|ver arriba|en el apartado anterior|como decia(?:mos)?)\b/i,
     hedge    => qr/\b(podria|podrian|quizas|quiza|tal vez|posiblemente|en principio|suele|tiende a|parece que|mas o menos|relativamente|bastante)\b/i,
     reldate  => qr/\b(recientemente|actualmente|hoy en dia|ultimamente|el ano pasado|este ano|en los ultimos (?:anos|meses)|por ahora)\b/i,
@@ -168,10 +183,9 @@ my %LANG = (
   #      -los 69 parrafos `nl/` de la web que motivo esto, leidos uno por uno-,
   #      y es el gemelo exacto de un «That is how…» que el ingles ya acusa.
   #    ⚠️ Esa misma corrida dejo a la vista un hueco del ESPANOL: «Asi trabajo
-  #      hoy: …» y «De ahi salio una regla: …» son gemelos de dos BLOQUEA
-  #      ingleses y no saltan, porque el patron `es` no tiene `asi` ni `de ahi`.
-  #      No se toca aqui: anadirlo pide revisar a mano lo que salte en todas las
-  #      paginas en espanol, igual que se hizo con cada idioma nuevo.
+  #      hoy: …» y «De ahi salio una regla: …» eran gemelos de dos BLOQUEA
+  #      ingleses y no saltaban. Cerrado el mismo dia en el bloque `es`, despues
+  #      de leer a mano todo lo que saltaba en las paginas en espanol.
   #    · Ningun disparador lleva acento; e con dieresis y e aguda ya estaban en
   #      %ACC, asi que solo se prueba que no fabriquen hallazgos (NL15).
   nl => {

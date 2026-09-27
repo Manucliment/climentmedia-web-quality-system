@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **773 cases green, 0 red** — **771** on a clean install, where the
+machine the fast run is **786 cases green, 0 red** — **784** on a clean install, where the
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1297 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1310 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1351**: 1297 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1364**: 1310 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -72,7 +72,7 @@ below.)
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-773, not 771, because that machine has deployed. `run-all.sh`
+786, not 784, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -94,16 +94,27 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  771 casos en verde · 0 en rojo
+  784 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1297 casos en verde · 0 en rojo
+  1310 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **And a fourth time, later that evening (1297 → 1310, and 771 → 784 on `--fast`).** The Dutch run
+> left two Spanish twins in plain sight: «Así trabajo hoy: …» and «De ahí salió una regla: …» mirror
+> two paragraphs the gate blocks in English, and in Spanish they passed. Reading every Spanish
+> paragraph on six sites (1417 of them) turned up two more holes of the same kind: `ese`/`esa` were
+> missing from the demonstratives that count with a verb, and a `no` between the demonstrative and
+> the verb hid it («Este no es un artículo…»). `así` now counts followed by any word except its
+> connectors (`así que`, `así como`, `así pues`), and so do `de ahí` and `por eso`; the accented
+> pronoun «él» stays out, because without accents it is the article. Thirteen cases — the six that
+> must block seen red first, the seven that must not kept as guards — and the first real run, read
+> finding by finding: six new blocks, all six genuine, none lost.
 
 > **And a third time that evening (1280 → 1297, and 754 → 771 on `--fast`).** The citability
 > gate (`citable.pl`) had no Dutch patterns, so a site with four `nl/` pages got all four reported

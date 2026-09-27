@@ -436,6 +436,73 @@ my $PT_LARGO = 'Nos espelhos sob medida a espessura do vidro decide o preco fina
   check('NL17 · "Daarnaast" es un conector y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
 }
 
+# --- ESPANOL, SEGUNDA RONDA · 27-sep-2026 -------------------------------------
+#  Salio de la corrida que anadio el neerlandes: «Asi trabajo hoy: …» y «De ahi
+#  salio una regla: …» son gemelos de dos BLOQUEA ingleses y en espanol no
+#  saltaban. Leidos despues los 1417 parrafos en espanol de seis webs, aparecieron
+#  dos huecos mas del mismo tipo: «Por eso…» y «Este no es…» (el «no» entre el
+#  demostrativo y el verbo lo dejaba pasar). ES1-ES6 son los que tienen que
+#  saltar; ES7-ES13 son los controles que NO, y ya pasaban antes: guardan contra
+#  un patron demasiado ancho.
+{
+  my ($rc, $out) = run(pageof('es', "<p>Asi trabajo hoy: llevo yo mismo las cuentas de Google Ads y de Meta Ads, y el software las lee cada dia.</p>"));
+  check('ES1 · abre con "Asi trabajo" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>De ahi salio una regla: todo lo que pruebo, lo pruebo primero conmigo y nunca con un cliente.</p>"));
+  check('ES2 · abre con "De ahi" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Por eso la calculadora pide el margen antes que el gasto, y sin el no devuelve ningun numero.</p>"));
+  check('ES3 · abre con "Por eso" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  # `ese` y `esa` faltaban en la lista de demostrativos con verbo: estaban
+  # `esos` y `esas`, y el singular no.
+  my ($rc, $out) = run(pageof('es', "<p>Esa es la razon por la que un ROAS de tres puede estar perdiendo dinero con un margen del veinte por ciento.</p>"));
+  check('ES4 · abre con "Esa es" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Este no es un articulo para juzgarte, sino una explicacion de como se calcula el punto de equilibrio.</p>"));
+  check('ES5 · "Este no es" -> BLOQUEA (el "no" en medio ya no lo esconde)', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Ellos leen la cuenta cada noche y proponen el cambio, pero no lo aplican sin una firma.</p>"));
+  check('ES6 · abre con "Ellos" -> BLOQUEA', $rc, $out, 1, qr/BLOQUEA.*pronombre/s);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Asi que la calculadora pide el margen antes que el gasto y devuelve el ROAS minimo para no perder dinero.</p>"));
+  check('ES7 · "Asi que" es un conector y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Asi como el ROAS mide lo que vuelve por cada euro, el margen mide lo que queda despues de pagar el producto.</p>"));
+  check('ES8 · "Asi como" es comparativo y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # Con coma es el «thus» ingles, un conector: el ingles tampoco lo acusa.
+  my ($rc, $out) = run(pageof('es', "<p>Asi, el anunciante sabe desde el primer dia cuanto puede gastar sin perder dinero en cada venta.</p>"));
+  check('ES9 · "Asi," con coma es un conector y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Esa informacion llega cada noche desde las dos plataformas y se guarda junto a la de la semana anterior.</p>"));
+  check('ES10 · "Esa informacion" es determinante, NO pronombre huerfano', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  # 🔴 EL CONTROL QUE JUSTIFICA DEJAR «el» con tilde FUERA: sin acentos es el
+  #    articulo «el», que abre media prosa en espanol. Es la colision de la
+  #    `e` acentuada del portugues, otra vez.
+  my ($rc, $out) = run(pageof('es', "<p>El error mas caro de un anunciante es medir el ROAS sin mirar el margen de cada producto.</p>"));
+  check('ES11 · "El error" es el articulo y NO salta (por eso el pronombre esta fuera)', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Por lo tanto, el ROAS minimo depende del margen y no de lo que diga la plataforma de anuncios.</p>"));
+  check('ES12 · "Por lo tanto" es un conector y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+{
+  my ($rc, $out) = run(pageof('es', "<p>Asimismo, la calculadora devuelve el ROAS objetivo si le dices cuanto quieres ganar por cada venta.</p>"));
+  check('ES13 · "Asimismo" es un conector y NO salta', $rc, $out, 0, qr/VEREDICTO: PASA - 0 bloqueos/);
+}
+
 # --- EL `it` IMPERSONAL Y LAS CONTRACCIONES · 26-ago-2026, tarde -------------
 #  Los seis salen de UN solo hallazgo real en climentmedia (1 de 58), que
 #  resulto ser tres defectos apilados: la normalizacion partia `It&rsquo;s` en
