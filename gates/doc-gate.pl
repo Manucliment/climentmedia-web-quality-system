@@ -67,8 +67,9 @@ sub print_ayuda {
     print <<'AYUDA';
 doc-gate.pl · comprueba que la documentacion dice la verdad sobre el codigo.
   --dir RUTA     carpeta a mirar (por defecto, la del propio programa)
-  --lista ID     solo una: D1 D2 D3 D4
-Sale 1 si algo FALLA. Solo acusa lo que puede probar.
+  --lista ID     solo una: D1 a D8
+Sale 1 si algo FALLA; 3 si nada falla pero algo quedo NO MEDIDO; 0 si no.
+Solo acusa lo que puede probar.
 AYUDA
 }
 
@@ -123,11 +124,15 @@ if (@PROGS) {
 }
 @DOCS or die "no hay ningun .md en $DIR (ni en sus carpetas hermanas)\n";
 
-my ($FALLO, $AVISO, $PASA) = (0,0,0);
+my ($FALLO, $AVISO, $PASA, $NOMEDIDO) = (0,0,0,0);
 my @LINEAS;
 sub bad  { my ($id,$t,$d) = @_; $FALLO++; push @LINEAS, ['FALLO',$id,$t,$d] }
 sub avis { my ($id,$t,$d) = @_; $AVISO++; push @LINEAS, ['AVISO',$id,$t,$d] }
 sub ok   { my ($id,$t,$d) = @_; $PASA++;  push @LINEAS, ['PASA', $id,$t,$d] }
+# 27-sep-2026 · NO MEDIDO, que no es un AVISO: un aviso sale 0 y `run-all.sh`,
+# que solo mira el codigo, lo lee como un aprobado. Este sale 3 («no lo he
+# podido medir»), como el resto de la casa. Hoy solo lo usa D8.
+sub nv   { my ($id,$t,$d) = @_; $NOMEDIDO++; push @LINEAS, ['NO MEDIDO',$id,$t,$d] }
 sub corre { my $id = shift; return $SOLO eq '' || $SOLO eq $id }
 
 # ---------------------------------------------------------------------------
@@ -746,6 +751,117 @@ if (corre('D7')) {
 }
 
 # ---------------------------------------------------------------------------
+#  D8 · la COBERTURA publicada tiene que ser la medida
+# ---------------------------------------------------------------------------
+#  🔴 27-sep-2026. El README publicaba «123 of 138 (89%)» cuando coverage.pl
+#     imprimia 126 de 140, y nadie lo vio: D6 compara los CASOS de la bateria,
+#     no la cobertura. Al buscar todos los sitios salieron ocho cifras de
+#     coverage.pl en tres documentos, y CINCO estaban caducadas: el total, el
+#     alcance de gates/README.md («88% ... 4 programs of 28»), la fila de
+#     audit-vs-spec («25 of 25» con 26) y el numero de programas en tres sitios
+#     («38», que NACIO mal: el dia que se escribio habia 37 ficheros y 36
+#     programas). Cinco cifras a mano, de la misma herramienta, en un repo
+#     publico, y ninguna comparada.
+#
+#  `run-all.sh` deja en `.ultima-bateria` lo que coverage.pl IMPRIME -- no una
+#  cuenta propia: si las dos contaran distinto, esto compararia dos opiniones.
+#  Aqui se leen las formas que publican los documentos:
+#    · el total, «N of M (P%)» tras «with a fixture» o «have a test case.
+#      Today:», y en castellano «N de M comprobaciones tienen caso (P%)»
+#    · el alcance, «P% is measured over N programs (out) of M» -- con salto de
+#      linea y marca de cita por medio, como esta en el README -- y «prints the
+#      K it does not measure», que tiene que ser M - N
+#    · la fila de un programa: «`x.pl` ... N of M checks have a case». Si la
+#      bateria no mide ese programa, FALLO: una cobertura que nadie mide no se
+#      publica
+#    · el numero de programas, «N programs» / «N programas», cuando NO va
+#      seguido de «(out) of M» / «de M» (eso es el alcance, de arriba)
+#  ⚠️ Un patron mide la redaccion que su autor conocia (D6 lo pago el 16-sep con
+#     «0 red»). Si una frase nueva publica la cobertura de otra forma, esto no la
+#     ve: la linea de PASA dice CUANTAS cifras ha comparado, para que un numero
+#     que baja se note.
+#  Si ningun documento publica nada, PASA: nada que pueda caducar -- y asi una
+#  web de cliente mirada con --dir no sale NO MEDIDO por no tener bateria. Si
+#  publican y no hay registro con la cobertura, NO MEDIDO, que sale 3.
+if (corre('D8')) {
+    my ($MADRE8) = $DIR =~ m{^(.*)[\/][^\/]+$};
+    $MADRE8 //= $DIR;
+    my @docs = ( [ 'SKILL.md',        "$MADRE8/SKILL.md" ],
+                 [ 'gates/README.md', "$DIR/README.md"   ],
+                 [ 'README.md',       "$MADRE8/README.md" ] );
+    my @dichos;   # [documento, que es, cifra publicada, clave del registro]
+    for my $d (@docs) {
+        next unless -f $d->[1];
+        my ($doc, $t) = ($d->[0], slurp($d->[1]));
+        my @total;
+        push @total, [$1, $2, $3]
+            while $t =~ /(?:with a fixture|have a test case\.\s*Today:)[\s*|]*(\d+) of (\d+) \((\d+)%\)/g;
+        push @total, [$1, $2, $3]
+            while $t =~ /(\d+) de (\d+) comprobaciones tienen caso \((\d+)%\)/g;
+        for my $x (@total) {
+            push @dichos, [$doc, 'con caso',       $x->[0], 'cobertura-con-caso'],
+                          [$doc, 'comprobaciones', $x->[1], 'cobertura-comprobaciones'],
+                          [$doc, '%',              $x->[2], 'cobertura-pct'];
+        }
+        while ($t =~ /(\d+)% is[\s>*]*measured over[\s*]*(\d+) programs (?:out )?of (\d+)/g) {
+            push @dichos, [$doc, '% del alcance',         $1, 'cobertura-pct'],
+                          [$doc, 'programas medidos',     $2, 'cobertura-programas-medidos'],
+                          [$doc, 'programas del alcance', $3, 'cobertura-programas'];
+        }
+        push @dichos, [$doc, 'programas sin medir', $1, '_sin-medir']
+            while $t =~ /prints the (\d+) it does not measure/g;
+        while ($t =~ /`([\w.-]+\.(?:pl|sh|js))`[^\n]*?(\d+) of (\d+) checks have a case/g) {
+            push @dichos, [$doc, "$1 con caso",       $2, "_con:$1"],
+                          [$doc, "$1 comprobaciones", $3, "_de:$1"];
+        }
+        push @dichos, [$doc, 'programas', $1, 'cobertura-programas']
+            while $t =~ /(?<![\d.])(\d{1,4})\s+(?:programs|programas)\b(?!\s+(?:out\s+of|of|de)\s+\**\d)/g;
+    }
+    if (!@dichos) {
+        ok('D8', 'la documentacion no publica la cobertura', 'nada que pueda caducar');
+    } else {
+        my $f = "$DIR/.ultima-bateria";
+        my %m;
+        if (-f $f) {
+            open my $h, '<:raw', $f or die "no abro $f\n";
+            while (my $l = <$h>) { $m{$1} = $2 if $l =~ /^([\w-]+):\s*(.+?)\s*$/ }
+            close $h;
+        }
+        my @claves = qw(cobertura-con-caso cobertura-comprobaciones cobertura-pct
+                        cobertura-programas-medidos cobertura-programas);
+        my @faltan = grep { ($m{$_} // '') !~ /^\d+$/ } @claves;
+        if (@faltan) {
+            nv('D8', 'la cobertura publicada no tiene con que compararse',
+               scalar(@dichos).' cifras publicadas, y '
+               . (-f $f ? 'la ultima bateria no guardo la cobertura (' . join(' ', @faltan) . ')'
+                        : 'ninguna bateria corrida')
+               . ': corre run-all.sh');
+        } else {
+            $m{'_sin-medir'} = $m{'cobertura-programas'} - $m{'cobertura-programas-medidos'};
+            for my $par (split ' ', $m{'cobertura-por-programa'} // '') {
+                my ($p, $c, $de) = $par =~ m{^([^=]+)=(\d+)/(\d+)$} or next;
+                ($m{"_con:$p"}, $m{"_de:$p"}) = ($c, $de);
+            }
+            my @mal;
+            for my $x (@dichos) {
+                my ($doc, $que, $pub, $clave) = @$x;
+                if (!defined $m{$clave}) { push @mal, "$doc dice $pub ($que) y la bateria no mide eso" }
+                elsif ($pub ne $m{$clave}) { push @mal, "$doc dice $pub ($que), la bateria midio $m{$clave}" }
+            }
+            if (@mal) {
+                bad('D8', 'la documentacion publica una cobertura que ya no es cierta', join(' · ', @mal));
+            } else {
+                my %en = map { $_->[0] => 1 } @dichos;
+                ok('D8', 'la cobertura publicada coincide con la ultima bateria',
+                   "$m{'cobertura-con-caso'} de $m{'cobertura-comprobaciones'} ($m{'cobertura-pct'}%), "
+                   . "$m{'cobertura-programas-medidos'} de $m{'cobertura-programas'} programas · "
+                   . scalar(@dichos) . ' cifras en ' . scalar(keys %en) . ' documento(s)');
+            }
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 #  informe
 # ---------------------------------------------------------------------------
 print "===== GATE DE DOCUMENTACION · $DIR =====\n\n";
@@ -756,9 +872,12 @@ for my $l (@LINEAS) {
     printf "%-6s %-4s %-42s %s\n", $estado, $id, $tit, ($det // '');
 }
 print "\n";
-printf "  FALLO %d  ·  AVISO %d  ·  PASA %d\n", $FALLO, $AVISO, $PASA;
+printf "  FALLO %d  ·  AVISO %d  ·  PASA %d%s\n", $FALLO, $AVISO, $PASA,
+       ($NOMEDIDO ? "  ·  NO MEDIDO $NOMEDIDO" : '');
 print $FALLO ? "  🔴 la documentacion dice cosas que el codigo no dice.\n"
              : "  la documentacion casa con el codigo en lo que se puede comprobar.\n";
+print "  ⚠️ $NOMEDIDO comprobacion(es) NO MEDIDA(S): eso no es un aprobado, y sale 3.\n"
+    if $NOMEDIDO && !$FALLO;
 print "  ⚠️ Lo que este gate NO mira: si lo escrito es BUENO, si esta al dia en\n"
     . "     lo que no cita rutas ni IDs, y si sobra. Eso no lo sabe un programa.\n";
-exit($FALLO ? 1 : 0);
+exit($FALLO ? 1 : $NOMEDIDO ? 3 : 0);

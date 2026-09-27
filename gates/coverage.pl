@@ -104,13 +104,20 @@ printf "\n  TOTAL: %d de %d comprobaciones tienen caso (%d%%)\n",
 #  no bajo una bandera: lo que no se ve, no se corrige.
 {
     opendir(my $dh, $DIR) or last;
-    my @progs = grep { /\.(pl|sh|js)$/ && !/-pruebas|autoprueba|^pruebas-/ } readdir $dh;
+    # 🔴 27-sep-2026 · LOS NOMBRES DE PRUEBA ERAN LOS DE ANTES DEL INGLES. Este
+    #  filtro quitaba `-pruebas`, `autoprueba` y `pruebas-`; desde el renombrado
+    #  del 25-ago las pruebas se llaman `-tests` y `selftest`, y
+    #  `compliance-selftest.pl` -- que es el banco `conformidad` de run-all.sh --
+    #  empezo a contar como PROGRAMA. El alcance decia «de 37» cuando eran 36, y
+    #  tres documentos llegaron a publicar «38». Es el mismo renombrado que dejo
+    #  ciegos los globs del censo de run-all.sh. Se aceptan las dos formas.
+    my @progs = grep { /\.(pl|sh|js)$/ && !/-pruebas|autoprueba|^pruebas-|-tests|selftest|^tests-/ } readdir $dh;
     closedir $dh;
     my %medido = map { $_->[0] => 1 } @PARES;
     my @fuera = sort grep { !$medido{$_} } @progs;
     printf "  ALCANCE: mide %d programas de %d. NO mide: %s\n",
            scalar(@PARES), scalar(@progs), (@fuera ? join(' ', @fuera) : '(ninguno)');
-    print  "  Ese % es de los 4 medidos, NO del instrumento entero.\n" if @fuera;
+    printf "  Ese %% es de los %d medidos, NO del instrumento entero.\n", scalar(@PARES) if @fuera;
 }
 
 if ($CUALES) {

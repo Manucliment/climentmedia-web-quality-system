@@ -1,6 +1,6 @@
 # The gates
 
-38 programs and 32 test batteries. This file is the index: what each program is for,
+36 programs and 32 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **787 cases green, 0 red** — **785** on a clean install, where the
+machine the fast run is **800 cases green, 0 red** — **798** on a clean install, where the
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1311 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1324 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1365**: 1311 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1378**: 1324 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -72,7 +72,7 @@ below.)
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-787, not 785, because that machine has deployed. `run-all.sh`
+800, not 798, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -94,16 +94,30 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  785 casos en verde · 0 en rojo
+  798 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1311 casos en verde · 0 en rojo
+  1324 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **And a sixth time, the same night (1311 → 1324, and 785 → 798 on `--fast`).** The coverage
+> figure had gone stale with nothing to catch it, so the documentation gate now compares it:
+> `run-all.sh` records what `coverage.pl` prints — the total, its scope, each program's row — and
+> D8 checks every coverage figure the three documents publish against that record. Its first run
+> on the real documents found eight figures, five of them stale: besides the total, the scope
+> quoted below the program table («88% … 4 programs of 28»), one program's row («25 of 25» where
+> it measures 26) and the number of programs in three places («38», wrong the day it was written:
+> there were 37 files, and one of them is a test battery). That last one came from `coverage.pl`
+> itself, which still skipped test files by their names from before the rename to English. With
+> no record to compare against, D8 says `NO MEDIDO` and the gate exits `3` — a warning would exit
+> `0`, and `run-all.sh` reads only the exit code. Thirteen cases, seen red first, each red naming
+> its own figure. And the battery line that printed the coverage discarded `coverage.pl`'s errors
+> and filtered by two program names from before the rename: half of it had not printed for weeks.
 
 > **And a fifth time, that night (1310 → 1311, and 784 → 785 on `--fast`).** The text-loss check
 > (`same-text.pl`, step 2-ter of the door) printed its own separator encoded twice: «así x1 Â·
@@ -416,20 +430,20 @@ whose verdict came from measuring a different object.
 
 | Program | What it does |
 |---|---|
-| `doc-gate.pl` | Every program, flag and id the documentation cites must exist. |
-| `coverage.pl` | How many checks have a test case. Today: **126 of 140 (90%)**. |
+| `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6) and of the coverage (D8) must be the last one measured. |
+| `coverage.pl` | How many checks have a test case. Today: **127 of 141 (90%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **159 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
 | `history-gate.pl` | Every recorded failure must name the check that accused. |
 | `compliance.pl` | The compliance matrix, and how far it reaches. |
 | `compliance-selftest.pl` | Its own self-test. |
-| `audit-vs-spec.pl` | The spec against the tree. **25 of 25 checks have a case.** |
+| `audit-vs-spec.pl` | The spec against the tree. **26 of 26 checks have a case.** |
 | `audit.sh`, `qa-final.sh` | The site auditor, and the last look before publishing. |
 | `run-gate.js` | The harness the browser gates run inside. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the three host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **88% is measured over 4 programs of 28**,
+The coverage figure has a scope you should know: **90% is measured over 4 programs of 36**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
