@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tarjetas con cifra en un contenedor estrecho</title>
+<!--
+  27-sep-2026 (07-trampas §86). Caso K3 de battery.sh: lo que la excepcion de las
+  celdas de cifra NO puede tragarse. Cuatro TARJETAS -una cifra grande, un
+  titular y un parrafo- al mismo ancho que la banda de K1 (~196px). Un parrafo en
+  una columna de 196px es la rejilla estrujada que el suelo de 240 existe para
+  cazar: tiene que acusar «celdas por debajo de 240px» aunque lleven cifra.
+-->
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;color:#1d1d1f;background:#fff}
+.in{max-width:920px;margin:0 auto;padding:0 32px}
+section{padding:56px 0}
+h1{font-size:48px;line-height:1.05;margin:0 0 16px}
+h2{font-size:30px;margin:0 0 20px}
+h3{font-size:19px;margin:8px 0}
+p{margin:0 0 16px}
+.btn{display:inline-block;padding:12px 20px;background:#1b4d3e;color:#fff;text-decoration:none}
+.tarjetas{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;list-style:none;margin:0;padding:0}
+.tarjeta b{display:block;font:700 34px/1.1 system-ui,sans-serif}
+.tarjeta p{font-size:15px;color:#444}
+</style></head><body>
+<main>
+<section><div class="in">
+<h1>Una pagina con tarjetas estrechas</h1>
+<p>Una frase que dice que es esto y para quien, y una accion.</p>
+<p><a class="btn" href="/contacto/">Pedir presupuesto</a></p>
+</div></section>
+<section><div class="in">
+<h2>Como trabajamos</h2>
+<ul class="tarjetas">
+<li class="tarjeta"><b>01</b><h3>Leer la cuenta</h3><p>Se revisa la estructura, el seguimiento y lo que se ha gastado, antes de proponer ningun cambio.</p></li>
+<li class="tarjeta"><b>02</b><h3>Ordenar</h3><p>Se ordenan campañas y audiencias para que cada euro tenga una sola razon de estar donde esta.</p></li>
+<li class="tarjeta"><b>03</b><h3>Medir</h3><p>Se comprueba que cada conversion llega a la plataforma una vez, y solo una, con su valor.</p></li>
+<li class="tarjeta"><b>04</b><h3>Escalar</h3><p>Solo cuando lo anterior aguanta una semana entera sin sorpresas se sube el presupuesto.</p></li>
+</ul>
+</div></section>
+<section><div class="in">
+<h2>Siguiente paso</h2>
+<p>Una ultima llamada, con su accion.</p>
+<p><a class="btn" href="/contacto/">Escribir</a></p>
+</div></section>
+</main>
+</body></html>

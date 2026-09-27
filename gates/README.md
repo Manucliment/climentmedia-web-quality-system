@@ -32,7 +32,7 @@ machine the fast run is **753 cases green, 0 red** — **751** on a clean instal
 deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1268 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1277 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1319**: 1268 plus 49 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1331**: 1277 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -100,10 +100,20 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  NO MEDIDO structure-gate   layout: prose vs laid out             (14 of its cases WERE measured)
-  1268 casos en verde · 0 en rojo
+  NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
+  1277 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **Why the full run moved on 2026-09-27 (1268 → 1277).** Two one-page sites failed four browser
+> checks, and three of the four were the gates' ([trap §86](../docs/traps/86.md)): `ENLACES` asked for
+> links to pages that do not exist, the `nosotros` variety floor sat above what the type's own
+> template reaches, and `ANCHO-MIN` measured a band of figures as if it were cards. The structure
+> battery gained nine cases (frontiers 7–9), and they count on any machine. The density battery
+> gained three — a `<blockquote>` is now a stop, and two guards that it did not become an excuse —
+> which count only where the measurement host runs, so a host machine reads 1331. The same pass
+> fixed a defect a fresh clone would have hit: the structure battery composed its positive control
+> into a folder git does not carry, and truncated a tracked fixture to zero bytes.
 
 > **Why the full run moved on 2026-09-26 (1241 → 1268).** `qa-master`'s measurement lens
 > learned to read the scripts a page loads from its own host, so it finds a container that

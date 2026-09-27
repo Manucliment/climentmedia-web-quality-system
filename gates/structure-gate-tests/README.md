@@ -116,3 +116,20 @@ builds a page from the moulds in whatever order it is given.
 `fill-hrefs.awk` replaces the template's `href="#"` with real destinations. It uses
 `index()`/`substr()`, **not** `gsub()`: in awk an `&` on the replacement side also means
 "whatever matched", and these pages are full of HTML entities.
+
+## Frontiers 7–9: what a one-page site cannot be asked for
+
+Added 2026-09-27 ([trap §86](../../docs/traps/86.md)) after two one-page sites failed four checks
+and three of the four were the gate's. Each frontier has a case that must pass and the red cases
+that keep "stopped accusing" from being "stopped looking". All nine were run against the previous
+gate first: **18 OK · 5 MAL**, the five being exactly the new behaviour (EN1, EN2, NV1, K1, K2).
+
+| Frontier | Cases | What they hold |
+|---|---|---|
+| 7 · `ENLACES` | EN1–EN4 on `one-page-about.html` | The minimum is capped by the **other content pages the sitemap lists** (legal pages excluded). No readable sitemap, or a page linking a content page the sitemap omits (EN4, built from the same fixture with one nav link added), gets the full minimum |
+| 8 · `VARIEDAD` | NV1–NV2, composed from the moulds in `work/` | The house's own `nosotros` template (01 + 02 + 06 + 11) must reach its type's floor; the same page with its context in prose must not |
+| 9 · `ANCHO-MIN` | K1–K3 | A **figure** cell is judged by its figure on one line, not by the 240px card floor (`figure-band-narrow.html`, `figure-band-broken.html`); **cards** with a big number are still cards (`figure-cards-narrow.html`) |
+
+The sitemap never comes from the network here: a `file://` copy cannot read its origin's sitemap,
+so the gate says so and applies the full minimum, and the cases hand it the list in
+`__GATE__.sitemap`.

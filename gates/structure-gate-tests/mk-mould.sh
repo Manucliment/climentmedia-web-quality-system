@@ -62,4 +62,8 @@ fi
 # con cero enlaces internos de cuerpo. (Estaba escrito desde el principio y
 # `mk-mould.sh` no lo llamaba; cuando lo llame mal, tampoco hizo nada.)
 } | awk -f "$D/fill-hrefs.awk" > "$OUT"
+# 🔴 27-sep-2026 · Un `echo` al final hacia que este script saliera 0 aunque no
+#    hubiera podido escribir nada (carpeta de salida inexistente), y el `|| exit 1`
+#    de quien lo llama no servia. Ahora lo que no se ha escrito es un fallo.
+[ -s "$OUT" ] || { echo "ABORTA: no se ha escrito $OUT" >&2; exit 1; }
 echo "escrito $OUT  $(wc -c < "$OUT") bytes"

@@ -1,6 +1,6 @@
-# The trap log — 85 traps, read before debugging
+# The trap log — 86 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§85** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§86** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -13,6 +13,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §77–§81 | [`traps/77-81.md`](traps/77-81.md) |
 | §82–§84 | [`traps/82-84.md`](traps/82-84.md) |
 | §85 | [`traps/85.md`](traps/85.md) |
+| §86 | [`traps/86.md`](traps/86.md) |
 
 ---
 
@@ -28,11 +29,11 @@ Not quoted — **derived by a program you can run**:
 perl gates/doc-gate.pl --lista D4
 ```
 
-Today it reports: **85 traps · all 85 declare what catches them · 31 say `nobody` on purpose.**
+Today it reports: **86 traps · all 86 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
-writing more prose** — which is the measured finding the whole repository rests on. The nine most
-recent traps moved the total from 76 to 85 and left `nobody` at 31, because each shipped with the
+writing more prose** — which is the measured finding the whole repository rests on. The ten most
+recent traps moved the total from 76 to 86 and left `nobody` at 31, because each shipped with the
 check that catches it. That is what adding a trap is supposed to look like.
 
 > **Use the gate's number, not a hand count.** Counting the whole declaration paragraph by hand gives
@@ -96,6 +97,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §83 | A page-type profile that failed its own four references |
 | §84 | A probe forced a state and read it back in the same tick, so it measured the state it had just left |
 | §85 | Three checks written for sites that collect leads failed two sites that collect nothing |
+| §86 | Four browser checks failed two one-page sites, and the brief blamed the wrong things |
 
 ### B · Green over nothing — it passed without looking
 

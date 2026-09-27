@@ -63,6 +63,12 @@ res(){
 # El orden cubre la anatomia de `home` de 09 §2 (hero·prueba·oferta·proceso·
 # cierre) y mete 16-galeria para que la pagina tenga medios, como los tiene una
 # home de verdad. `fill-hrefs.awk` da destinos reales a los href="#".
+# 🔴 27-sep-2026 · `work/` no se versiona, y en un clon limpio NO EXISTE. Sin esta
+#    linea `mk-mould.sh` no podia escribir, salia 0 igualmente, y el `awk` de
+#    abajo TRUNCABA A CERO BYTES el `mould-home-fixed.html` versionado: P1 en rojo
+#    y un fichero del repo destrozado en cada clon nuevo. Medido extrayendo HEAD
+#    con `git archive` y corriendo este banco: exactamente eso.
+mkdir -p "$D/work" || exit 1
 "$D/mk-mould.sh" "$D/work/mh-arr-raw.html" 01 06 03 02 16 09 05 08 11 >/dev/null || exit 1
 awk -f "$D/fill-hrefs.awk" "$D/work/mh-arr-raw.html" > "$D/mould-home-fixed.html"
 
@@ -221,6 +227,72 @@ hero_regla E1-emp-enlaza careers-hero-link.html        '{}'                   'H
 hero_regla E2-emp-2prim  careers-hero-two-primary.html '{}'                   'acciones primarias del mismo peso'  si
 hero_regla E3-emp-nada   careers-hero-no-action.html   '{}'                   'sin ninguna accion en la primera'   si
 hero_regla E4-servicio   careers-hero-link.html        '{"tipo":"servicio"}'  'ninguna es mecanismo de conversion' si
+
+# `regla` es `hero_regla` sin la URL fija: <id> <fichero> <base|-> <conf> <texto> <si|no>.
+# Busca el TEXTO literal (grep -F) en la salida, y un «no aparece» solo vale si
+# el gate ha corrido.
+regla(){
+  local id="$1" f="$2" base="$3" conf="$4" patron="$5" esp="$6"
+  local j; j=$("$D/run-gate.sh" "$id" "$f" "$base" "$conf" 2>/dev/null)
+  if ! printf '%s' "$j" | grep -q '"innerWidth"'; then
+    MAL=$((MAL+1)); printf "  REVISAR %-16s el gate no ha corrido (sin innerWidth)\n" "$id"; return
+  fi
+  local n; n=$(printf '%s' "$j" | grep -F -c -- "$patron")
+  local hay=no; [ "${n:-0}" -gt 0 ] && hay=si
+  if [ "$hay" = "$esp" ]; then OK=$((OK+1)); printf "  OK      %-16s «%s»=%s (esperado %s)\n" "$id" "$patron" "$hay" "$esp";
+  else MAL=$((MAL+1)); printf "  REVISAR %-16s «%s»=%s y se esperaba %s\n" "$id" "$patron" "$hay" "$esp"; fi
+}
+
+echo
+echo "=========== FRONTERA 7 - ENLACES: no se exigen paginas que no existen ======"
+# 27-sep-2026 (07-trampas §86). Una web de UNA pagina de contenido, mas sus
+# legales, suspendia «ENLACES · 0 enlaces internos (minimo 2)»: no tenia a donde
+# enlazar. El minimo se acota con las OTRAS paginas de contenido del sitemap.
+# Los tres rojos existen para que «ya no acusa» no pueda ser «ya no mira»:
+#   EN1 sitemap: la portada y dos legales                  -> sin ENLACES
+#   EN2 el mismo con UNA pagina hermana                    -> ENLACES (minimo 1)
+#   EN3 sin sitemap (una copia local no lo lee)            -> ENLACES (minimo entero)
+#   EN4 sitemap de legales, y el nav enlaza /servicios/    -> ENLACES: el sitemap
+#       olvida una pagina que la propia pagina enlaza, y no sirve de tope
+# EN1 se vio en ROJO contra el gate anterior (el minimo no se acotaba).
+SM_LEGALES='["https://example.com/","https://example.com/privacidad/","https://example.com/cookies/"]'
+SM_HERMANA='["https://example.com/","https://example.com/servicios/","https://example.com/privacidad/"]'
+perl -pe 's{<nav>}{<nav><a href="/servicios/">Servicios</a> }' "$D/one-page-about.html" > "$D/work/one-page-about-nav.html"
+regla EN1-legales  "$D/one-page-about.html"          https://example.com/ "{\"tipo\":\"nosotros\",\"sitemap\":$SM_LEGALES}" 'ENLACES ·' no
+regla EN2-hermana  "$D/one-page-about.html"          https://example.com/ "{\"tipo\":\"nosotros\",\"sitemap\":$SM_HERMANA}" 'minimo 1 para «nosotros»' si
+regla EN3-sin-smap "$D/one-page-about.html"          https://example.com/ '{"tipo":"nosotros"}'                              'minimo 2 para «nosotros»' si
+regla EN4-nav-miente "$D/work/one-page-about-nav.html" https://example.com/ "{\"tipo\":\"nosotros\",\"sitemap\":$SM_LEGALES}" 'minimo 2 para «nosotros»' si
+
+echo
+echo "=========== FRONTERA 8 - VARIEDAD: el suelo de un tipo cabe en su plantilla ==="
+# 27-sep-2026 (07-trampas §86). «nosotros» pedia 4 primitivas «por sus 4 roles»,
+# y su propia plantilla (01 + 02:contexto + 06 + 11, moulds/types/nosotros.html)
+# da 3: el cierre sale `otro`, que no cuenta. Se compone AQUI, de los moldes, para
+# que un cambio en un molde o en el suelo se vea en la siguiente corrida.
+#   NV1 la plantilla de la casa                      -> sin VARIEDAD
+#   NV2 la misma con el contexto en prosa (12)       -> VARIEDAD: 2 clases no son 3
+# NV1 se vio en ROJO contra el gate anterior (minimo 4).
+"$D/mk-mould.sh" "$D/work/nos-plantilla.html" 01 02:contexto 06 11 >/dev/null || exit 1
+"$D/mk-mould.sh" "$D/work/nos-prosa.html"     01 12:contexto 06 11 >/dev/null || exit 1
+regla NV1-nos-plant "$D/work/nos-plantilla.html" - '{"tipo":"nosotros","ruta":"/nosotros/"}' 'VARIEDAD ·' no
+regla NV2-nos-prosa "$D/work/nos-prosa.html"     - '{"tipo":"nosotros","ruta":"/nosotros/"}' 'VARIEDAD ·' si
+
+echo
+echo "=========== FRONTERA 9 - ANCHO-MIN: una banda de cifras no es una rejilla de tarjetas ==="
+# 27-sep-2026 (07-trampas §86). El suelo de 240px se midio sobre TARJETAS. Una
+# banda de datos (molde 06) tiene otra regla: su cifra entera en una linea.
+#   K1 banda de 4 cifras a ~196px, todas en una linea    -> sin ANCHO-MIN
+#   K2 la misma clase de banda estrujada: cifras partidas -> ANCHO-MIN por la CIFRA
+#   K3 tarjetas con cifra, titular y parrafo a ~196px    -> ANCHO-MIN por el SUELO:
+#      la excepcion no se traga una tarjeta por llevar un numero grande
+# K1 se vio en ROJO contra el gate anterior; K2 tambien, porque el anterior no
+# sabia nombrar la cifra partida. G2 (arriba) sigue siendo la rejilla estrujada.
+# ⚠️ K1 busca «ANCHO-MIN ·», con el punto: las NOTAS tambien dicen «ANCHO-MIN»
+#    (el contenedor no comprobado, las celdas de cifra), y la primera version de
+#    este caso salio en rojo por ellas con el gate bien. Un fallo lleva el punto.
+regla K1-cifras-ok    "$D/figure-band-narrow.html"  - '{"tipo":"servicio","ruta":"/x/"}' 'ANCHO-MIN ·'                no
+regla K2-cifras-rotas "$D/figure-band-broken.html"  - '{"tipo":"servicio","ruta":"/x/"}' 'cifra(s) partida(s)'         si
+regla K3-tarjetas     "$D/figure-cards-narrow.html" - '{"tipo":"servicio","ruta":"/x/"}' 'celdas por debajo de 240px' si
 
 # --- el numero, que es lo que faltaba ---------------------------------------
 echo

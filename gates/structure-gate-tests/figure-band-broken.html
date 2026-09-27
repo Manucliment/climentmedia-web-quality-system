@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Banda de cifras estrujada</title>
+<!--
+  27-sep-2026 (07-trampas §86). Caso K2 de battery.sh, el ROJO de K1: la misma
+  clase de banda, pero seis cifras con su unidad en un contenedor de 920px. Las
+  celdas bajan a ~122px y las cifras se parten en dos lineas: es lo que el molde
+  06 llama «el numero deja de barrerse». Tiene que acusar ANCHO-MIN por la
+  CIFRA PARTIDA -no por el suelo de 240, que ya no se le aplica-: si este caso
+  se queda callado, la excepcion de las celdas de cifra dejo de mirar.
+-->
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;color:#1d1d1f;background:#fff}
+.in{max-width:920px;margin:0 auto;padding:0 32px}
+section{padding:56px 0}
+h1{font-size:48px;line-height:1.05;margin:0 0 16px}
+h2{font-size:30px;margin:0 0 20px}
+p{margin:0 0 16px}
+.btn{display:inline-block;padding:12px 20px;background:#1b4d3e;color:#fff;text-decoration:none}
+.datos{display:grid;grid-template-columns:repeat(6,1fr);gap:24px;margin:0}
+.dato dt{font:700 34px/1.1 system-ui,sans-serif}
+.dato dd{margin:8px 0 0;font-size:15px;color:#444}
+</style></head><body>
+<main>
+<section><div class="in">
+<h1>Una pagina con una banda estrujada</h1>
+<p>Una frase que dice que es esto y para quien, y una accion.</p>
+<p><a class="btn" href="/contacto/">Pedir presupuesto</a></p>
+</div></section>
+<section><div class="in">
+<h2>Lo que se puede comprobar</h2>
+<dl class="datos">
+<div class="dato"><dt>12.480 €</dt><dd>facturados el ultimo año</dd></div>
+<div class="dato"><dt>3,5 años</dt><dd>de media por cliente</dd></div>
+<div class="dato"><dt>1.200 m²</dt><dd>de nave propia en uso</dd></div>
+<div class="dato"><dt>98 %</dt><dd>de pedidos a tiempo</dd></div>
+<div class="dato"><dt>24 h</dt><dd>para contestar un correo</dd></div>
+<div class="dato"><dt>450 km</dt><dd>de radio de servicio</dd></div>
+</dl>
+</div></section>
+<section><div class="in">
+<h2>Siguiente paso</h2>
+<p>Una ultima llamada, con su accion.</p>
+<p><a class="btn" href="/contacto/">Escribir</a></p>
+</div></section>
+</main>
+</body></html>
