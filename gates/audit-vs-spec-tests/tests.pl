@@ -512,6 +512,30 @@ caso('ANA-02 · con los cuatro roles de `hub`, pasa',
        . '<section data-sec="calificacion"><h2>Cual te conviene</h2></section>'
        . '<section data-sec="cierre"><h2>Fin</h2></section></main></body></html>' });
 
+# 🔴 27-sep-2026 · UNA PORTADA DE IDIOMA SE MEDIA EN LA RAIZ, SIN DECIRLO.
+#    `ruta_de` mandaba a `index.html` a toda entidad de `tipo: home`. En una web
+#    con una portada por idioma (`/es/`, `/nl/`, todas `home`), el gate medía la
+#    anatomia de la portada inglesa tres veces y dejaba `es/index.html` fuera de
+#    la spec (INV-01). Una portada de idioma incompleta salia `ok`. Los tres
+#    casos: se mide en SU carpeta, su anatomia es la suya, y la raiz no cambia.
+my $PORTADA_ENTERA = sub {
+    my ($lang, $sin) = @_;
+    '<html lang="' . $lang . '"><body><main data-tipo="home">'
+    . join('', map { "<section data-sec=\"$_\"><h2>$_</h2></section>" }
+               grep { !$sin || $_ ne $sin } qw(hero prueba oferta proceso cierre))
+    . '</main></body></html>';
+};
+my $DOS_PORTADAS = "{$BASE,\"pages\":[{\"slug\":\"home\",\"tipo\":\"home\"},{\"slug\":\"es\",\"tipo\":\"home\"}]}";
+caso('portada de idioma (`es`, tipo home): su pagina es es/index.html',
+     $DOS_PORTADAS, '!AVISO:INV-01', 'greenfield',
+     { 'index.html' => $PORTADA_ENTERA->('en'), 'es/index.html' => $PORTADA_ENTERA->('es') });
+caso('...y se mide SU anatomia: sin `proceso`, FALLA',
+     $DOS_PORTADAS, 'FALLO:ANA-02', 'greenfield',
+     { 'index.html' => $PORTADA_ENTERA->('en'), 'es/index.html' => $PORTADA_ENTERA->('es', 'proceso') });
+caso('control: las dos enteras, pasa',
+     $DOS_PORTADAS, 'ok:ANA-02', 'greenfield',
+     { 'index.html' => $PORTADA_ENTERA->('en'), 'es/index.html' => $PORTADA_ENTERA->('es') });
+
 # 🔴 ANA-03 · 26-sep-2026 · UN TIPO QUE NO EXISTE SE SALTABA SIN DEJAR RASTRO.
 #    Dos paginas con `tipo: "pagina"` salian del bloque de anatomia sin una linea
 #    y el gate firmaba «FALLO 0». El caso de rojo es ese mismo; el de control
