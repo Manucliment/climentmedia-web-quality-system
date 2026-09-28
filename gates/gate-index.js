@@ -132,7 +132,11 @@ console.log('  Y AL REVES: CHECKS QUE SE EJECUTAN Y NINGUNA REGLA RECLAMA');
 console.log('    checks emitidos ......... ' + String(totalChecks).padStart(4));
 console.log('    sin regla que los pida .. ' + String(huerfanos.length).padStart(4) +
             '   (' + Math.round(huerfanos.length / totalChecks * 100) + '%)   <- `--huecos` los lista');
-console.log('    El 62% de arriba mide REGLAS con instrumento. Esto mide lo contrario, y');
+// 28-sep-2026 · este porcentaje estaba ESCRITO en la frase («El 62% de arriba»)
+// y se imprimia igual aunque la linea de arriba dijera otro. Ahora sale del mismo
+// calculo que esa linea: una cifra que el instrumento repite no puede ser de otro.
+console.log('    El ' + Math.round(con.length / reglas.length * 100) +
+            '% de arriba mide REGLAS con instrumento. Esto mide lo contrario, y');
 console.log('    hasta el 2-sep-2026 no lo medía nadie: por ahi se colo un gate que llevaba');
 console.log('    meses comprobando un fichero que el estandar no describia en ningun sitio.');
 console.log();

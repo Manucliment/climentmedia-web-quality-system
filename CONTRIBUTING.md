@@ -94,7 +94,7 @@ The ratio of *traps with a mechanism* to *traps total* is the number that should
 
 ## Changing documentation
 
-`gates/doc-gate.pl` checks eight things a program actually can know:
+`gates/doc-gate.pl` checks nine things a program actually can know:
 
 | | |
 |---|---|
@@ -106,9 +106,11 @@ The ratio of *traps with a mechanism* to *traps total* is the number that should
 | **D6** | Every count of the battery the documents publish is the last one `run-all.sh` measured |
 | **D7** | Every rule in the catalogue points at a document that exists and git tracks |
 | **D8** | Every coverage figure the documents publish — the total, its scope, a program's row, the number of programs — is the last one `coverage.pl` printed |
+| **D9** | Every figure of ONE instrument the documents publish — what the rule index prints, or the cases of one bank next to the file that bank runs — is the last one measured |
 
 It exits `1` when something fails and `3` when nothing fails but something could not be
-measured — D8 with no battery run to compare against. A `3` is not a pass.
+measured — D8 or D9 with no battery run to compare against, or D6 when this machine has made
+only one of the two runs and a document quotes the other. A `3` is not a pass.
 
 What it does not check: whether what you wrote is any good, whether it is current in the
 parts that cite no paths, and whether it is redundant. Those are still yours.

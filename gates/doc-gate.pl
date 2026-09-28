@@ -67,7 +67,7 @@ sub print_ayuda {
     print <<'AYUDA';
 doc-gate.pl · comprueba que la documentacion dice la verdad sobre el codigo.
   --dir RUTA     carpeta a mirar (por defecto, la del propio programa)
-  --lista ID     solo una: D1 a D8
+  --lista ID     solo una: D1 a D9
 Sale 1 si algo FALLA; 3 si nada falla pero algo quedo NO MEDIDO; 0 si no.
 Solo acusa lo que puede probar.
 AYUDA
@@ -626,7 +626,7 @@ if (corre('D6')) {
         my @docs = ( [ 'SKILL.md',        "$MADRE6/SKILL.md" ],
                      [ 'gates/README.md', "$DIR/README.md"   ],
                      [ 'README.md',       "$MADRE6/README.md" ] );
-        my (@dichos, @mal);
+        my (@dichos, @mal, @mal_bancos);
         for my $d (@docs) {
             next unless -f $d->[1];
             my $t = slurp($d->[1]);
@@ -655,16 +655,33 @@ if (corre('D6')) {
                 my @b = ($t =~ /(\d{1,4})\s+test batteries/g);
                 push @b, ($t =~ /(\d{1,4})\s+bancos de prueba/g);
                 push @dichos, @b;
-                push @mal, map { "$d->[0] dice $_ baterias" }
-                           grep { $_ ne $m{bancos} } @b;
+                push @mal_bancos, map { "$d->[0] dice $_ baterias" }
+                                  grep { $_ ne $m{bancos} } @b;
             }
         }
+        # 🔴 28-sep-2026 · CON UN SOLO MODO MEDIDO, UNA CIFRA QUE NO CASA NO ES UN
+        #    FALLO. Tras la primera corrida de un clon recien hecho el registro no
+        #    tiene la otra, y el README publica las dos: la de la otra corrida no
+        #    casaba con nada y se acusaba como caducada. Salia ROJO en la primera
+        #    `--fast` de cualquiera que clonara el repo, y el mantenedor no lo veia
+        #    porque su registro ya tiene las dos. Ahora es NO MEDIDO hasta que la
+        #    otra corrida exista; con las dos, FALLO como siempre.
+        #    ⚠️ Lo que se cede, dicho: con un solo modo, una cifra caducada del
+        #       MISMO modo tambien sale NO MEDIDO -- no hay forma de distinguirla
+        #       de la otra. Y el numero de BATERIAS no depende del modo: sigue
+        #       siendo FALLO. Un registro sin `modo:` (anterior al 28-ago) sigue
+        #       como estaba.
+        my $un_modo = length($m{modo} // '') && !length($otro);
         if (!@dichos) {
             ok('D6', 'la documentacion no publica un recuento de la bateria', 'nada que pueda caducar');
-        } elsif (@mal) {
+        } elsif (@mal_bancos || (@mal && !$un_modo)) {
             bad('D6', 'la documentacion publica un recuento que ya no es cierto',
-                join(' · ', @mal)." y la ultima bateria midio $real"
+                join(' · ', @mal, @mal_bancos)." y la ultima bateria midio $real"
                 . ($limpia ne $real ? " ($limpia en una instalacion limpia)" : ""));
+        } elsif (@mal) {
+            nv('D6', 'hay recuentos publicados que esta maquina aun no ha podido medir',
+               join(' · ', @mal) . ": solo se ha corrido la bateria en modo $m{modo}; "
+               . 'la otra corrida dira si son suyos o estan caducados');
         } else {
             ok('D6', 'el recuento de la documentacion coincide con la ultima bateria',
                "$real casos, en ".scalar(@docs)." documento(s)");
@@ -857,6 +874,133 @@ if (corre('D8')) {
                    . "$m{'cobertura-programas-medidos'} de $m{'cobertura-programas'} programas · "
                    . scalar(@dichos) . ' cifras en ' . scalar(keys %en) . ' documento(s)');
             }
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+#  D9 · lo que publica UN instrumento concreto tiene que ser lo medido
+# ---------------------------------------------------------------------------
+#  🔴 28-sep-2026. D6 vigila el TOTAL de la bateria y D8 la cobertura, pero
+#     gates/README.md publica ademas lo que imprime UN instrumento: el indice
+#     REGLA -> INSTRUMENTO («257 rules, 159 with an instrument (62%)», y su
+#     salida pegada: «checks emitted ... 157», «with no rule claiming it .. 89»)
+#     y los casos de UN banco («159 cases», «371 cases»). Medido ese dia: las
+#     dos cifras pegadas llevaban caducadas desde que se escribieron (eran 158
+#     y 90), y la prosa de debajo repetia el 89 por su cuenta.
+#
+#  `run-all.sh` guarda lo que imprime `gate-index.js` en esa misma corrida y el
+#  recuento de cada banco que PASA (los que la corrida se salta conservan el de
+#  la anterior). Aqui se compara:
+#    · la frase «N rules, M with an instrument (P%), the other K»
+#    · la salida pegada, en ingles o en castellano, con sus puntos de relleno
+#    · «**N cases**» en el mismo bloque -- una fila de tabla, o un parrafo entre
+#      lineas en blanco -- que el fichero que ejecuta UN banco. El banco sale de
+#      la lista BANCOS de run-all.sh, que es la que los ejecuta: una tabla
+#      escrita aqui envejeceria el dia que se renombre uno.
+#  Un «**N cases**» sin el fichero de ningun banco al lado (historia, o prosa
+#  que habla de otra cosa) no se puede atribuir y no se acusa -- pero se CUENTA
+#  en la linea de PASA, para que no sea un hueco callado.
+#  Si nadie publica nada, PASA. Si una cifra publicada no tiene medida (no hay
+#  bateria, o el banco no ha pasado nunca en esta maquina), NO MEDIDO: sale 3.
+if (corre('D9')) {
+    my ($MADRE9) = $DIR =~ m{^(.*)[\/][^\/]+$};
+    $MADRE9 //= $DIR;
+    my @docs = ( [ 'SKILL.md',        "$MADRE9/SKILL.md" ],
+                 [ 'gates/README.md', "$DIR/README.md"   ],
+                 [ 'README.md',       "$MADRE9/README.md" ] );
+    # fichero que ejecuta -> banco, de la lista que los ejecuta de verdad
+    my %banco_de;
+    if (slurp("$DIR/run-all.sh") =~ /^BANCOS="\n(.*?)^"/ms) {
+        for my $l (split /\n/, $1) {
+            my ($n, $orden) = $l =~ /^([a-z0-9-]+)\|([^|]+)\|[01]\|/ or next;
+            $banco_de{$_} = $n for grep { $_ ne '..' && m{[./]} } split ' ', $orden;
+        }
+    }
+    my @PUNTEADAS = (   # la salida de gate-index.js, pegada, en ingles o en castellano
+        [ qr/checks emit(?:ted|idos)\s*\.+\s*(\d+)/,                               'checks emitidos', 'indice-emitidos' ],
+        [ qr/(?:with no rule claiming it|sin regla que los pida)\s*\.+\s*(\d+)\s*\((\d+)%\)/,
+                                                     'sin regla', 'indice-sin-regla', '% sin regla', 'indice-sin-regla-pct' ],
+        [ qr/con instrumento\s*\.+\s*(\d+)\s*\((\d+)%\)/,
+                                 'con instrumento', 'indice-con-instrumento', '% con instrumento', 'indice-con-instrumento-pct' ],
+        [ qr/SIN instrumento\s*\.+\s*(\d+)/,                                       'sin instrumento', 'indice-sin-instrumento' ],
+        [ qr/medibles por maquina\s*\.+\s*(\d+)/,                                  'medibles', 'indice-medibles' ],
+        [ qr/parciales\s*\.+\s*(\d+)/,                                             'parciales', 'indice-parciales' ],
+        [ qr/juicio humano\s*\.+\s*(\d+)/,                                         'juicio humano', 'indice-juicio' ],
+        [ qr/TECHO ALCANZABLE\s*\.+\s*(\d+)\s*\((\d+)%\)/,                        'techo', 'indice-techo', '% del techo', 'indice-techo-pct' ],
+    );
+    my (@dichos, $sin_banco);
+    $sin_banco = 0;
+    for my $d (@docs) {
+        next unless -f $d->[1];
+        my ($doc, $t) = ($d->[0], slurp($d->[1]));
+        while ($t =~ /(\d+) rules,[\s*]*(\d+) with an instrument \((\d+)%\)[\s*,]*the other (\d+)/g) {
+            push @dichos, [$doc, 'reglas', $1, 'indice-reglas'], [$doc, 'con instrumento', $2, 'indice-con-instrumento'],
+                          [$doc, '% con instrumento', $3, 'indice-con-instrumento-pct'],
+                          [$doc, 'sin instrumento', $4, 'indice-sin-instrumento'];
+        }
+        for my $p (@PUNTEADAS) {
+            my ($re, @que) = @$p;
+            while ($t =~ /$re/g) {
+                my @v = ($1, $2);
+                for my $i (0 .. $#que / 2) {
+                    push @dichos, [$doc, $que[2*$i], $v[$i], $que[2*$i+1]] if defined $v[$i];
+                }
+            }
+        }
+        # una fila de tabla es un bloque; una viñeta de lista, tambien, con sus
+        # lineas de continuacion; lo demas, lo que queda entre lineas en blanco.
+        # 🔴 La primera version cortaba SOLO por lineas en blanco, y una lista es
+        #    un bloque entero: en gates/README.md la viñeta de qa-master («371
+        #    cases») y la de structure-gate van seguidas, D9 veia DOS bancos y no
+        #    atribuia el 371 a ninguno. Sus casos pasaban porque el fixture no
+        #    tenia la viñeta hermana; el README real, si.
+        my @bloques;
+        for my $b (split /\n[ \t]*\n/, $t) {
+            my @l = grep { /\S/ } split /\n/, $b;
+            if (@l && !grep { !/^\s*\|/ } @l) { push @bloques, @l; next }
+            push @bloques, split /\n(?=[ \t]{0,3}(?:[-*+]|\d+\.)[ \t])/, $b;
+        }
+        for my $b (@bloques) {
+            my @n = ($b =~ /\*\*(\d+) cases\.?\*\*/g) or next;
+            my %bancos;
+            for my $f ($b =~ /`([^`\s]+)`/g) { (my $g = $f) =~ s{^gates/}{}; $bancos{$banco_de{$g}} = 1 if exists $banco_de{$g} }
+            if (keys(%bancos) != 1) { $sin_banco += @n; next }
+            my ($banco) = keys %bancos;
+            push @dichos, [$doc, "casos de $banco", $_, "_casos:$banco"] for @n;
+        }
+    }
+    my $nota = $sin_banco ? " · $sin_banco «N cases» sin banco al que atribuirlos, no se comparan" : '';
+    if (!@dichos) {
+        ok('D9', 'la documentacion no publica cifras de un instrumento', 'nada que pueda caducar' . $nota);
+    } else {
+        my $f = "$DIR/.ultima-bateria";
+        my %m;
+        if (-f $f) {
+            open my $h, '<:raw', $f or die "no abro $f\n";
+            while (my $l = <$h>) { $m{$1} = $2 if $l =~ /^([\w-]+):\s*(.+?)\s*$/ }
+            close $h;
+        }
+        for my $par (split ' ', $m{'casos-por-banco'} // '') {
+            my ($b, $c) = $par =~ /^([^=]+)=(\d+)$/ or next;
+            $m{"_casos:$b"} = $c;
+        }
+        my (@mal, @sin_medir);
+        for my $x (@dichos) {
+            my ($doc, $que, $pub, $clave) = @$x;
+            if (($m{$clave} // '') !~ /^\d+$/) { push @sin_medir, "$que ($doc dice $pub)" }
+            elsif ($pub ne $m{$clave})         { push @mal, "$doc dice $pub ($que), la bateria midio $m{$clave}" }
+        }
+        if (@mal) {
+            bad('D9', 'la documentacion publica lo que un instrumento ya no dice',
+                join(' · ', @mal) . (@sin_medir ? ' · y sin medir: ' . join(' · ', @sin_medir) : ''));
+        } elsif (@sin_medir) {
+            nv('D9', 'hay cifras de un instrumento que ninguna bateria ha medido aqui',
+               join(' · ', @sin_medir) . ': corre run-all.sh -- la completa, si el banco es lento');
+        } else {
+            my %en = map { $_->[0] => 1 } @dichos;
+            ok('D9', 'lo que publica cada instrumento coincide con la ultima bateria',
+               scalar(@dichos) . ' cifras en ' . scalar(keys %en) . ' documento(s)' . $nota);
         }
     }
 }

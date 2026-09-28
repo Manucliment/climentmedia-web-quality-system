@@ -27,12 +27,12 @@ bash gates/run-all.sh
 bash gates/run-all.sh --fast
 ```
 
-`--fast` skips the ten batteries that need a browser, a host, or the network. On this
-machine the fast run is **800 cases green, 0 red** — **798** on a clean install, where the
-deploy-history bank reports `NOT MEASURED` because a fresh install has never deployed anything.
+`--fast` skips the ten batteries that need a browser, a host, or the network. On a clean
+install the fast run is **812 cases green, 0 red**, with the deploy-history bank reporting
+`NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1324 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1338 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1378**: 1324 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1392**: 1338 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -72,7 +72,7 @@ below.)
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-800, not 798, because that machine has deployed. `run-all.sh`
+814, not 812, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -94,16 +94,36 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  798 casos en verde · 0 en rojo
+  812 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1324 casos en verde · 0 en rojo
+  1338 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
+
+> **The very first run on a clean install also lists `doc-gate(skill)`**, whichever of the two
+> it is. The documents publish the figures of both runs, and the case count of a bank that
+> `--fast` skips; until both runs have happened on that machine, the documentation gate cannot
+> tell a stale number from one nothing has measured yet, and it says `NO MEDIDO` instead of
+> calling it stale. After the other run it drops off the list.
+
+> **And a seventh time, the next morning (1324 → 1338, and 798 → 812 on `--fast`).** The table
+> row of `gate-index.js` said «159 cases», and it was right; beside it, the same file quoted what
+> that instrument prints («checks emitted 157», «with no rule claiming it 89») and nothing
+> compared those — stale since the day they were written, at 158 and 90. D9 now compares what
+> one instrument prints, and any bold «N cases» that sits in the same table row or list item as
+> the file one bank runs, with the bank read from `run-all.sh`'s own list. Its first version cut
+> blocks at blank lines only, so two list items naming two banks made one ambiguous block and
+> the «371 cases» of `qa-master-tests/tests.sh` went unattributed: its fixture had no sibling
+> item, the real file did. The index also printed a «62%» written into its own source, whatever
+> the real figure was. And the documentation gate was **red on every fresh clone**: the documents
+> quoted one of this machine's totals as a claim, and a figure from a run a machine had not made
+> yet was called stale. Now every quoted total is a clean-install one, and a figure nothing has
+> measured yet is `NO MEDIDO`. Fourteen cases, seen red first.
 
 > **And a sixth time, the same night (1311 → 1324, and 785 → 798 on `--fast`).** The coverage
 > figure had gone stale with nothing to catch it, so the documentation gate now compares it:
@@ -321,18 +341,18 @@ rules no machine will ever measure.
 **It never asked the reverse: does this check that RUNS have a rule behind it?**
 
 ```
-  checks emitted .......... 157
-  with no rule claiming it .. 89   (57%)
+  checks emitted .......... 158
+  with no rule claiming it .. 90   (57%)
 ```
 
 **That is not a tidiness complaint.** A gate nobody's rule asked for is an opinion with
 permission to block, and the defect is invisible from the side that *was* being measured — the
-62% counts rules-with-gates, so a check with no rule cannot lower it. It is how `audit.sh` spent
+percentage above counts rules-with-gates, so a check with no rule cannot lower it. It is how `audit.sh` spent
 months checking `AGENTS.md` while the standard described that file nowhere (`03-content-and-seo
 §5.2`), and it is how three checks added this week arrived without anyone deciding they were
 rules.
 
-Most of the 89 are two whole instruments the catalogue never represented: the **~35 site-auditor
+Most of them are two whole instruments the catalogue never represented: the **~35 site-auditor
 checks** (`S1.x`–`S6.x`) and the **linking rules** (`R0`–`R9`).
 
 ⚠️ **An orphan is not automatically wrong.** `EST-12b…f` are sub-checks of `EST-12`, and naming
@@ -430,8 +450,8 @@ whose verdict came from measuring a different object.
 
 | Program | What it does |
 |---|---|
-| `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6) and of the coverage (D8) must be the last one measured. |
-| `coverage.pl` | How many checks have a test case. Today: **127 of 141 (90%)**. |
+| `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6), of the coverage (D8) and of one instrument or one bank (D9) must be the last one measured. |
+| `coverage.pl` | How many checks have a test case. Today: **128 of 142 (90%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **159 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |

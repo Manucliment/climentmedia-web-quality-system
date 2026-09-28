@@ -431,6 +431,24 @@ caso('...y la forma inglesa CORRECTA no se acusa', 'D6',
        'references/.ultima-bateria' => $BAT,
        'references/relleno.md' => "# relleno\n" }, 'PASA', 'references');
 
+#  🔴 28-sep-2026 · EN UN CLON RECIEN HECHO, D6 SALIA ROJO DESDE LA PRIMERA CORRIDA.
+#     Tras la primera `--fast` el registro no tiene la otra corrida, y el README
+#     publica las dos: la cifra de la completa no casaba con nada y se acusaba
+#     como CADUCADA, cuando lo unico cierto es que esta maquina no la ha medido.
+#     El mantenedor no lo veia porque su registro ya tiene las dos. Con un solo
+#     modo medido, una cifra que no casa es NO MEDIDO; con los dos, FALLO, como
+#     siempre. Un registro sin `modo:` (de antes del 28-ago) sigue como estaba.
+my $BAT_1MODO = "medido: 2026-09-28\nmodo: rapido\nbancos: 20\nverde: 828\nrojo: 0\n"
+              . "verde-instalacion-limpia: 826\ndepende-del-estado: 2\n";
+caso('un solo modo medido y la cifra de la OTRA corrida -> NO MEDIDO, sale 3', 'D6',
+     { 'SKILL.md' => "# skill\n\n| Casos en verde | **826 . 0 en rojo** en --fast, **1300 . 0 en rojo** en la completa |\n",
+       'references/.ultima-bateria' => $BAT_1MODO,
+       'references/relleno.md' => "# relleno\n" }, 'NO MEDIDO', 'references', { rc => 3, dice => qr/1300/ });
+caso('...pero el numero de BATERIAS no depende del modo: sigue en rojo', 'D6',
+     { 'SKILL.md' => "# skill\n\n| Casos en verde | **826 . 0 en rojo** |\n\n99 test batteries.\n",
+       'references/.ultima-bateria' => $BAT_1MODO,
+       'references/relleno.md' => "# relleno\n" }, 'FALLO', 'references', { rc => 1, dice => qr/99 baterias/ });
+
 print "\n== D8 . la cobertura publicada tiene que ser la medida\n";
 #  🔴 27-sep-2026 · D6 compara los CASOS de la bateria y nadie comparaba la
 #     COBERTURA. Medido ese dia: de ocho cifras de coverage.pl publicadas en tres
@@ -507,6 +525,82 @@ caso('...y en castellano, «38 programas» -> FALLO', 'D8',
 caso('la forma castellana del total, CADUCADA -> FALLO', 'D8',
      arbol8('SKILL.md' => $SKILL8 . "\nTOTAL: 123 de 138 comprobaciones tienen caso (89%)\n"),
      'FALLO', 'references', { dice => qr/SKILL\.md dice 123 \(con caso\)/ });
+
+print "\n== D9 . lo que publica UN instrumento tiene que ser lo medido\n";
+#  🔴 28-sep-2026 · D6 vigila el TOTAL de la bateria y D8 la cobertura, pero
+#     gates/README.md publica ademas lo que imprime UN instrumento: el indice
+#     REGLA -> INSTRUMENTO («257 rules, 159 with an instrument (62%)», y su
+#     salida pegada: «checks emitted ... 157», «with no rule claiming it .. 89»)
+#     y los casos de UN banco («159 cases», «371 cases»). Medido ese dia: dos de
+#     esas cifras llevaban caducadas desde que se escribieron (158 y 90), y una
+#     tercera en la prosa repetia el 89.
+#  El banco de cada «N cases» sale de la lista BANCOS de run-all.sh -- el mismo
+#  fichero que los ejecuta --, asi que el fixture trae la suya.
+my $RUNALL9 = "#!/usr/bin/env bash\nBANCOS=\"\n"
+            . "qa-maestro|bash qa-master-tests/tests.sh|1|las 5 lentes\n"
+            . "gate-estructura|bash structure-gate-tests/battery.sh|1|maqueta\n"
+            . "indice-gates|node gate-index.js|0|el indice\n\"\n";
+my $BAT9 = "medido: 2026-09-28\nmodo: completo\nbancos: 2\nverde: 530\nrojo: 0\n"
+         . "casos-por-banco: qa-maestro=371 indice-gates=159\n"
+         . "indice-reglas: 257\nindice-con-instrumento: 159\nindice-con-instrumento-pct: 62\n"
+         . "indice-sin-instrumento: 98\nindice-medibles: 42\nindice-parciales: 16\nindice-juicio: 40\n"
+         . "indice-techo: 217\nindice-techo-pct: 84\n"
+         . "indice-emitidos: 158\nindice-sin-regla: 90\nindice-sin-regla-pct: 57\n";
+my $GATES9 = "# gates\n\n| Program | What it does |\n|---|---|\n"
+           . "| `gate-index.js` | The RULE -> INSTRUMENT index. **159 cases.** See below. |\n"
+           . "| `coverage.pl` | How many checks have a test case. |\n\n"
+           . "`gate-index.js` has always answered one question -- 257 rules,\n"
+           . "**159 with an instrument (62%)**, the other 98 listed with `--huecos`.\n\n"
+           . "```\n  checks emitted .......... 158\n  with no rule claiming it .. 90   (57%)\n```\n\n"
+           . "- **`qa-master-tests/tests.sh` no longer needs its capture.** Every case runs against\n"
+           . "  a synthetic site. On a clean clone the bank runs\n  **371 cases** and exits **0**.\n"
+           # La viñeta HERMANA, sin linea en blanco por medio, como en el README real:
+           # el primer D9 cortaba por lineas en blanco, veia DOS bancos en el mismo
+           # bloque y no atribuia el 371 a nadie -- y este fixture, sin ella, no lo veia.
+           . "- `structure-gate-tests/battery.sh` marks the eight affected cases `NOT MEASURED`\n"
+           . "  individually, and exits **3** if any were skipped.\n";
+sub arbol9 {
+    my (%cambia) = @_;
+    my %f = ( 'references/README.md' => $GATES9, 'references/run-all.sh' => $RUNALL9,
+              'references/.ultima-bateria' => $BAT9 );
+    for my $k (keys %cambia) { if (defined $cambia{$k}) { $f{$k} = $cambia{$k} } else { delete $f{$k} } }
+    return \%f;
+}
+sub con9 { my ($texto, $de, $por) = @_; my $n = ($texto =~ s/\Q$de\E/$por/g); die "arbol9: «$de» no esta\n" unless $n; $texto }
+
+caso('todas las cifras del instrumento casan -> PASA (y sale 0)', 'D9',
+     arbol9(), 'PASA', 'references', { rc => 0 });
+caso('«checks emitted 157» cuando son 158 (el caso real) -> FALLO', 'D9',
+     arbol9('references/README.md' => con9($GATES9, 'checks emitted .......... 158', 'checks emitted .......... 157')),
+     'FALLO', 'references', { rc => 1, dice => qr/dice 157 \(checks emitidos\)/ });
+caso('«with no rule claiming it 89» cuando son 90 (el caso real) -> FALLO', 'D9',
+     arbol9('references/README.md' => con9($GATES9, 'claiming it .. 90', 'claiming it .. 89')),
+     'FALLO', 'references', { dice => qr/dice 89 \(sin regla\)/ });
+caso('«159 with an instrument» CADUCADO en la frase -> FALLO', 'D9',
+     arbol9('references/README.md' => con9($GATES9, '**159 with an instrument (62%)**', '**158 with an instrument (61%)**')),
+     'FALLO', 'references', { dice => qr/dice 158 \(con instrumento\)/ });
+caso('los casos de UN banco, CADUCADOS en su fila (159 cases) -> FALLO', 'D9',
+     arbol9('references/README.md' => con9($GATES9, '**159 cases.**', '**150 cases.**')),
+     'FALLO', 'references', { dice => qr/dice 150 \(casos de indice-gates\)/ });
+caso('...y en una viñeta con OTRA al lado, cada una con su banco (371) -> FALLO', 'D9',
+     arbol9('references/README.md' => con9($GATES9, '**371 cases**', '**131 cases**')),
+     'FALLO', 'references', { dice => qr/dice 131 \(casos de qa-maestro\)/ });
+caso('sin bateria corrida -> NO MEDIDO, que sale 3', 'D9',
+     arbol9('references/.ultima-bateria' => undef), 'NO MEDIDO', 'references', { rc => 3 });
+caso('con una bateria de ANTES de D9 (sin indice ni casos) -> NO MEDIDO', 'D9',
+     arbol9('references/.ultima-bateria' => $BAT8_VIEJA), 'NO MEDIDO', 'references', { rc => 3 });
+caso('un banco que ninguna corrida ha medido -> NO MEDIDO, y lo nombra', 'D9',
+     arbol9('references/.ultima-bateria' => con9($BAT9, 'qa-maestro=371 ', '')),
+     'NO MEDIDO', 'references', { rc => 3, dice => qr/qa-maestro/ });
+caso('documentos que no publican nada de un instrumento: PASA sin bateria', 'D9',
+     { 'README.md' => "# repo\n\nprosa sin cifras\n", 'references/relleno.md' => "# relleno\n" },
+     'PASA', 'references', { rc => 0 });
+caso('«**N cases**» sin el fichero de ningun banco al lado no se atribuye', 'D9',
+     arbol9('references/README.md' => $GATES9 . "\nThe old run stopped at **85 cases.** before the rename.\n"),
+     'PASA', 'references', { rc => 0 });
+caso('la salida castellana pegada, CADUCADA -> FALLO', 'D9',
+     arbol9('references/README.md' => $GATES9 . "\n```\n    con instrumento .........  158   (61%)\n```\n"),
+     'FALLO', 'references', { dice => qr/dice 158 \(con instrumento\)/ });
 
 
 printf "\n-----------------------------------------------------------------\n";
