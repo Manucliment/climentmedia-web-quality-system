@@ -32,7 +32,7 @@ install the fast run is **812 cases green, 0 red**, with the deploy-history bank
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1351 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1366 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1405**: 1351 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1420**: 1366 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,7 +101,7 @@ $ bash gates/run-all.sh --fast
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1351 casos en verde · 0 en rojo
+  1366 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
@@ -110,6 +110,19 @@ $ bash gates/run-all.sh
 > `--fast` skips; until both runs have happened on that machine, the documentation gate cannot
 > tell a stale number from one nothing has measured yet, and it says `NO MEDIDO` instead of
 > calling it stale. After the other run it drops off the list.
+
+> **And a ninth time, the same day (1351 → 1366 on a full run; `--fast` still does not run
+> the door's bank).** Step 2-ter of the door compares every page's words with what
+> production serves, and until now it printed the losses and uploaded anyway. That day, on a
+> site several sessions deploy, an upload from a branch cut *before* another session merged
+> and uploaded its work put four of that session's pages, its sitemap and its `llms.txt` back
+> to their previous version; the step said «5 con perdida» where the change touched one page,
+> and G11 was green because it compares what is served with the receipt, not with what was
+> there before. The history had 205 runs of the step since 26-aug: 58 with a loss (28%). So it
+> is not a wall: a loss now **stops the upload before the line that uploads** unless it is
+> declared with `--loses-text "the reason"`, which writes the pages, how many words and the
+> reason into the history, like `--anyway`. Fifteen cases, ten of them seen red against the
+> old door.
 
 > **And an eighth time, the same day (1338 → 1351 on a full run; `--fast` does not run the
 > door's bank, so it stays at 812).** Step 2-bis of the door said «La spec y el arbol NO
@@ -434,7 +447,7 @@ whose verdict came from measuring a different object.
 |---|---|
 | `crawl-links.pl` | Crawls the tree: orphans, breadcrumbs, dead ends. |
 | `linking-gate.pl` | Internal linking, judged against what the site actually contains. |
-| `same-text.pl` | Whether re-laying-out a page lost any of the client's words. Compares the *visible text* of two trees, page by page, by words rather than lines — the layout is meant to change, the content is not. Takes two directories: `same-text.pl <tree-before> <tree-after>`. |
+| `same-text.pl` | Whether re-laying-out a page lost any of the client's words. Compares the *visible text* of two trees, page by page, by words rather than lines — the layout is meant to change, the content is not. Takes two directories: `same-text.pl <tree-before> <tree-after>`. The door runs it against what production serves, and since 2026-09-28 a page that loses words **stops the upload** unless it is declared with `deploy.sh --loses-text "the reason"`. |
 | `qa-diff.pl` | What changed between two runs, by rule. |
 | `ai-crawlers.pl` | Whether AI answer engines are allowed to crawl at all. Parses robots.txt properly: own-agent groups do not inherit `*`, longest path wins, empty `Disallow` allows. |
 | `cannibalization.pl` | Two pages fighting over one term. `--audit` finds existing exact H1/title collisions; `--keyword` gives NEW / UPDATE / CANNIBALIZES before a piece is written. |
@@ -531,6 +544,7 @@ and neither can break an existing invocation.
 | `--served` | `--servido` |
 | `--show-upload` | `--ver-subida` |
 | `--anyway` | `--aun-asi` |
+| `--loses-text` | `--pierde-texto` |
 | `--hours` | `--horas` |
 
 **The rest**

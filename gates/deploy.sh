@@ -15,6 +15,10 @@
 #    deploy.sh REPO --servido       solo la verificacion de despues (G11)
 #    deploy.sh REPO --aun-asi "..." permite subir con cosas SIN MIRAR,
 #                                      dejando el motivo escrito en el historial
+#    deploy.sh REPO --pierde-texto "..."  permite subir aunque alguna pagina
+#                                      pierda palabras frente a lo que sirve
+#                                      produccion (paso 2-ter), dejando en el
+#                                      historial las paginas, cuantas y el motivo
 #
 #  🔴 EL FLUJO, Y SON DOS MOMENTOS (11-ago-2026)
 #  ---------------------------------------------
@@ -64,7 +68,7 @@
 set -u
 
 REF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; HORAS=12; VER_SUBIDA=0
+REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0
 
 while [ $# -gt 0 ]; do
   # English aliases. Additive: they cannot break an existing invocation.
@@ -74,6 +78,7 @@ while [ $# -gt 0 ]; do
     --served)      set -- "--servido" "${@:2}" ;;
     --show-upload) set -- "--ver-subida" "${@:2}" ;;
     --anyway)      set -- "--aun-asi" "${@:2}" ;;
+    --loses-text)  set -- "--pierde-texto" "${@:2}" ;;
     --hours)       set -- "--horas" "${@:2}" ;;
   esac
   case "$1" in
@@ -81,8 +86,9 @@ while [ $# -gt 0 ]; do
     --servido)  SOLO_SERVIDO=1 ;;
     --ver-subida) VER_SUBIDA=1 ;;
     --aun-asi)  shift; AUN_ASI="${1:-}" ;;
+    --pierde-texto) shift; PIERDE_TEXTO="${1:-}" ;;
     --horas)    shift; HORAS="${1:-12}" ;;
-    -h|--help)  sed -n '2,66p' "${BASH_SOURCE[0]}"; exit 2 ;;
+    -h|--help)  sed -n '2,/^set -u$/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 2 ;;
     -*)         echo "opcion desconocida: $1"; exit 2 ;;
     *)          REPO="$1" ;;
   esac
@@ -428,10 +434,26 @@ fi
 #    MAQUETA**. Es material de cliente; comerse un parrafo suyo no es un bug de
 #    maqueta, es entregar menos de lo que habia.
 #
-#    NO BLOQUEA todavia, y por el mismo motivo que 2-bis: quitar una seccion a
+#    NO BLOQUEABA, y por el mismo motivo que 2-bis: quitar una seccion a
 #    proposito tambien sale como «perdida», y un gate que impide desplegar el
 #    primer dia que da un falso positivo ensena a saltarse la puerta. Se ve, se
 #    anota, se mira unas corridas, y entonces se sube el liston.
+#
+# 🔴 28-sep-2026 · SE SUBE EL LISTON, y lo decidieron las corridas. El
+#    historial tenia 205 pasos 2-ter anotados desde el 26-ago: 58 con perdida
+#    (28 %), 146 sin ella. Ese dia, en un sitio que suben varias sesiones, una
+#    subida hecha desde una rama sacada ANTES de que otra sesion fusionara y
+#    subiera lo suyo devolvio a su version anterior cuatro paginas de esa otra
+#    sesion, su sitemap y su llms.txt. Este paso lo dijo («5 con perdida» donde
+#    el cambio tocaba una pagina) y la puerta subio igual; G11 dio verde, porque
+#    compara lo servido con el recibo, no con lo que habia antes.
+#    Lo que sigue vigente del motivo de arriba: quitar texto a proposito es
+#    legitimo, y en una de cada cuatro subidas pasa. Por eso NO es un muro: una
+#    perdida PARA la subida (exit 1, sin subir nada) salvo que se declare con
+#    --pierde-texto "motivo", como --aun-asi, y el historial se lleva las
+#    paginas, cuantas palabras y el motivo. En ensayo sigue sin descargarse nada
+#    y no para: la parada de --subir ocurre antes de la linea que sube, asi que
+#    hace de ensayo de este paso.
 if [ "$SUBIR" != 1 ]; then
   :   # en ensayo no se descarga nada
 elif [ ! -f "$REF/same-text.pl" ]; then
@@ -488,19 +510,60 @@ else
   else
     TXT_SALIDA="$(perl "$REF/same-text.pl" "$ANT" "$REPO" 2>&1)"
     TXT_RC=$?
+    rm -rf "$ANT"
     printf '%s\n' "$TXT_SALIDA" | grep -E '^\s*MAL|conservan todas' | head -12 | sed 's/^/  /'
     echo "  ($BAJADAS paginas comparadas, $NUEVAS nuevas que no existian antes)"
     TXT_RES="$(printf '%s\n' "$TXT_SALIDA" | grep -o '[0-9]* con perdida' | tail -1)"
-    perl "$REF/receipt.pl" \
-         --anotar "TEXTO $BAJADAS comparadas · ${TXT_RES:-sin recuento} (exit $TXT_RC)" \
-         --repo "$REPO" >/dev/null 2>&1
-    if [ "$TXT_RC" != 0 ]; then
-      echo
-      echo "  🔴 Hay paginas que pierden palabras del cliente. NO se para la subida"
-      echo "     -- todavia --, pero esto no es un detalle de maqueta: es entregar"
-      echo "     menos texto suyo del que habia. Mirarlo ANTES de dar por buena la"
-      echo "     tanda, porque despues de subir ya no existe con que comparar."
-    fi
+    # Las paginas que pierden y cuantas palabras, de TODAS las lineas MAL (la
+    # vista de arriba se corta en 12): «es/index.html -26, learn/index.html -8».
+    TXT_PAGS="$(printf '%s\n' "$TXT_SALIDA" \
+      | sed -nE 's/^[[:space:]]*MAL[[:space:]]+([^[:space:]]+)[[:space:]]+FALTAN ([0-9]+).*/\1 -\2/p' \
+      | paste -sd',' - | sed 's/,/, /g')"
+    case "$TXT_RC" in
+      0)
+        perl "$REF/receipt.pl" \
+             --anotar "TEXTO $BAJADAS comparadas · ${TXT_RES:-sin recuento} (exit $TXT_RC)" \
+             --repo "$REPO" >/dev/null 2>&1
+        ;;
+      1)
+        if [ -z "$PIERDE_TEXTO" ]; then
+          echo
+          echo "  🔴 NO SUBO: hay paginas que pierden palabras frente a lo que sirve"
+          echo "     produccion, y nadie lo ha declarado. No se ha subido nada."
+          echo "     Pierden: ${TXT_PAGS:-(no he podido leer cuales)}"
+          echo
+          echo "     · Si lo has quitado tu, a proposito: repite con"
+          echo "           --pierde-texto \"el motivo\""
+          echo "       y queda en el historial con las paginas y el motivo al lado."
+          echo "     · Si pierde palabras una pagina que tu cambio NO toca, casi siempre"
+          echo "       es otra sesion que subio DESPUES de tu base, y esta subida se la"
+          echo "       devolveria a la version de antes. Antes de nada: git fetch, y el"
+          echo "       ultimo SERVIDO del historial contra el hash de tu base:"
+          echo "           perl \"$REF/receipt.pl\" --historial --sitio ${SITIO:-<url>}"
+          echo "           perl \"$REF/receipt.pl\" --arbol --repo <arbol de tu base>"
+          echo "       Si no coinciden, rehaz el cambio sobre lo nuevo y vuelve a medir."
+          exit 1
+        fi
+        echo
+        echo "  se sube igualmente, declarado. Motivo: $PIERDE_TEXTO"
+        perl "$REF/receipt.pl" \
+             --anotar "TEXTO $BAJADAS comparadas · ${TXT_RES:-sin recuento} (exit $TXT_RC)" \
+             --repo "$REPO" >/dev/null 2>&1
+        if perl "$REF/receipt.pl" --anotar "PIERDE-TEXTO [${TXT_PAGS:-sin detalle}] $PIERDE_TEXTO" \
+                --repo "$REPO" >/dev/null 2>&1; then
+          echo "  anotado en el historial: ${TXT_RES:-la perdida}, con las paginas y el motivo."
+        else
+          echo "  NO he podido anotarlo en el historial. Esta declaracion NO consta."
+        fi
+        ;;
+      *)
+        # Un comparador que revienta no ha medido nada: ni aprueba ni acusa.
+        echo "  same-text.pl ha salido con $TXT_RC: no ha podido comparar. NO MEDIDO, y no para."
+        printf '%s\n' "$TXT_SALIDA" | grep -v '^[[:space:]]*$' | head -3 | sed 's/^/    /'
+        perl "$REF/receipt.pl" --anotar "TEXTO no medido: same-text.pl salio con $TXT_RC" \
+             --repo "$REPO" >/dev/null 2>&1
+        ;;
+    esac
   fi
   rm -rf "$ANT"
 fi
