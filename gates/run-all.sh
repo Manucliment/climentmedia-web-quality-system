@@ -81,6 +81,9 @@ echo "==========================================================================
 DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil form-handler"
 TOT_ESTADO=0
 TOT_OK=0; TOT_MAL=0; ROTOS=""; NO_MEDIDOS=""
+# 28-sep-2026 · para D9: el recuento de cada banco que PASA, los que esta
+# corrida se salta, y la salida del indice REGLA -> INSTRUMENTO tal cual.
+CASOS_BANCO=""; SALTADOS=""; INDICE_SALIDA=""
 # Cuantos bancos DEBERIAN correr. Se cuenta ANTES para poder comparar despues:
 # un banco que desaparece no falla, y sin este numero su ausencia se lee como
 # «no habia nada que contar» (07-trampas §40).
@@ -119,6 +122,7 @@ while IFS='|' read -r nombre orden lento cubre; do
   CORRIDOS=$((CORRIDOS+1))
   if [ "$RAPIDO" = 1 ] && [ "$lento" = 1 ]; then
     printf "  SALTADO  %-18s %s\n" "$nombre" "(lento)"
+    SALTADOS="$SALTADOS $nombre"
     continue
   fi
   # El primer token de la orden es el interprete; el segundo, el fichero.
@@ -139,6 +143,7 @@ while IFS='|' read -r nombre orden lento cubre; do
   #    diciendo «Todos los bancos en verde».
   salida="$( cd "$REF" && eval "$orden" </dev/null 2>&1 )"
   rc=$?
+  [ "$nombre" = "indice-gates" ] && INDICE_SALIDA="$salida"
   # exit 3 = «no lo he podido medir», distinto de 1 = «lo he medido y esta mal».
   # Es la misma distincion que hace la puerta entre NO CORRIDA y NO VERIFICADA,
   # y existe por el mismo motivo: mandar a alguien a buscar un defecto que no
@@ -195,6 +200,7 @@ while IFS='|' read -r nombre orden lento cubre; do
   case " $DEPENDE_DEL_ESTADO " in *" $nombre "*) TOT_ESTADO=$((TOT_ESTADO + n_ok)) ;; esac
   if [ "$rc" = 0 ] && [ "$n_mal" = 0 ]; then
     printf "  PASA     %-18s %3d casos   %s\n" "$nombre" "$n_ok" "$cubre"
+    CASOS_BANCO="$CASOS_BANCO $nombre=$n_ok"
   else
     printf "  FALLA    %-18s %3d ok / %d mal   %s\n" "$nombre" "$n_ok" "$n_mal" "$cubre"
     ROTOS="$ROTOS $nombre"
@@ -233,6 +239,38 @@ if [ "$COB_RC" != 0 ] || [ -z "$COB_CON" ] || [ -z "$COB_MED" ]; then
   printf '%s\n' "$COB_SALIDA" | tail -3 | sed 's/^/     /'
   COB_CON=""
   ROTOS="$ROTOS cobertura(ilegible)"
+fi
+
+# 28-sep-2026 · LO QUE IMPRIME EL INDICE REGLA -> INSTRUMENTO, PARA D9. Se lee de
+#   la salida del banco `indice-gates` de ESTA corrida -- no se vuelve a correr:
+#   es la misma medida que el total ya ha contado. Si el banco no ha dado salida,
+#   no se guarda nada y D9 dira NO MEDIDO. Si la ha dado y no se entiende, el
+#   instrumento ha cambiado de forma, y eso es un rojo, no un hueco.
+IDX_LINEAS=""; IDX_FALTA=""
+idx() {   # idx <clave> <regex> [<clave del segundo grupo>]
+  if [[ "$INDICE_SALIDA" =~ $2 ]]; then
+    IDX_LINEAS="${IDX_LINEAS}indice-$1: ${BASH_REMATCH[1]}"$'\n'
+    [ -n "${3:-}" ] && IDX_LINEAS="${IDX_LINEAS}indice-$3: ${BASH_REMATCH[2]}"$'\n'
+  else
+    IDX_FALTA="$IDX_FALTA $1"
+  fi
+  return 0
+}
+if [ -n "$INDICE_SALIDA" ]; then
+  idx reglas          'INDICE REGLA -> INSTRUMENTO[^0-9]*([0-9]+) reglas'
+  idx con-instrumento 'con instrumento \.+ +([0-9]+) +\(([0-9]+)%\)' con-instrumento-pct
+  idx sin-instrumento 'SIN instrumento \.+ +([0-9]+)'
+  idx medibles        'medibles por maquina \.+ +([0-9]+)'
+  idx parciales       'parciales \.+ +([0-9]+)'
+  idx juicio          'juicio humano \.+ +([0-9]+)'
+  idx techo           'TECHO ALCANZABLE \.+ +([0-9]+) +\(([0-9]+)%\)' techo-pct
+  idx emitidos        'checks emitidos \.+ +([0-9]+)'
+  idx sin-regla       'sin regla que los pida \.+ +([0-9]+) +\(([0-9]+)%\)' sin-regla-pct
+  if [ -n "$IDX_FALTA" ]; then
+    echo "  🔴 LA SALIDA DEL INDICE NO SE ENTIENDE (falta:$IDX_FALTA): no se guarda, y D9 dira NO MEDIDO."
+    IDX_LINEAS=""
+    ROTOS="$ROTOS indice(ilegible)"
+  fi
 fi
 
 # 19-ago-2026 · EL NUMERO SE ESCRIBE, PARA QUE LA DOCUMENTACION NO PUEDA MENTIR.
@@ -282,6 +320,17 @@ if [ -f "$REF/.ultima-bateria" ]; then
   fi
 fi
 
+# 28-sep-2026 · el recuento de CADA banco, para D9. Los que esta corrida se ha
+#   saltado conservan el de la anterior -- `--fast` no los mide y la
+#   documentacion puede citar uno lento --; los que han corrido y NO han pasado
+#   no conservan nada: un recuento viejo no puede tapar un banco que hoy falla.
+CASOS_TODOS="${CASOS_BANCO# }"
+if [ -f "$REF/.ultima-bateria" ]; then
+  for tok in $(grep -m1 '^casos-por-banco:' "$REF/.ultima-bateria" | sed 's/^casos-por-banco:[[:space:]]*//'); do
+    case " $SALTADOS " in *" ${tok%%=*} "*) CASOS_TODOS="$CASOS_TODOS $tok" ;; esac
+  done
+fi
+
 {
   echo "medido: $(date +%Y-%m-%d)"
   # 🔴 28-ago-2026 · EL MODO, y faltaba. `--fast` se salta los 10 bancos lentos,
@@ -315,6 +364,9 @@ fi
     echo "cobertura-programas: $COB_PRG"
     echo "cobertura-por-programa: $COB_POR"
   fi
+  # 28-sep-2026 · para D9: los casos de cada banco y lo que imprime el indice.
+  [ -n "$CASOS_TODOS" ] && echo "casos-por-banco: ${CASOS_TODOS# }"
+  [ -n "$IDX_LINEAS" ] && printf '%s' "$IDX_LINEAS"
 } > "$REF/.ultima-bateria"
 
 echo

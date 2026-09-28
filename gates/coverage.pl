@@ -74,7 +74,10 @@ for my $par (@PARES) {
     #  regla que no habia mirado. Un contador anclado a su propio grep se cree a
     #  si mismo -- la misma enfermedad del §14 y del §44.
     $ids{$1} = 1 while $src =~ /\b(?:ok|bad|avis|nv)\(['"](R[0-9]{1,2})\b/g;
-    $ids{$1} = 1 while $src =~ /\b(?:ok|bad|avis|nv)\(['"](D[0-9])['"]/g;
+    # 28-sep-2026 · y los de doc-gate, con UN digito hasta hoy: con D9 no queda
+    #  libre mas que D0, y un D10 no habria contado como comprobacion -- ni en el
+    #  denominador ni sin caso --, en silencio.
+    $ids{$1} = 1 while $src =~ /\b(?:ok|bad|avis|nv)\(['"](D[0-9]+)['"]/g;
 
     my @ids = sort keys %ids;
     unless (@ids) { printf "  %-20s no emite IDs que sepa leer\n", $prog; next }
