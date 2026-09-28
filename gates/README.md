@@ -32,7 +32,7 @@ install the fast run is **812 cases green, 0 red**, with the deploy-history bank
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1338 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1351 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1392**: 1338 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1405**: 1351 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,7 +101,7 @@ $ bash gates/run-all.sh --fast
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1338 casos en verde · 0 en rojo
+  1351 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
@@ -110,6 +110,17 @@ $ bash gates/run-all.sh
 > `--fast` skips; until both runs have happened on that machine, the documentation gate cannot
 > tell a stale number from one nothing has measured yet, and it says `NO MEDIDO` instead of
 > calling it stale. After the other run it drops off the list.
+
+> **And an eighth time, the same day (1338 → 1351 on a full run; `--fast` does not run the
+> door's bank, so it stays at 812).** Step 2-bis of the door said «La spec y el arbol NO
+> cuadran» whenever the spec auditor did not exit `0` — and it exits `2` when it could not
+> compare at all. Deploying a real site with no `_spec/`, the door said spec and tree
+> disagreed, printed no detail (its filter ate the reason), and nothing had been compared. The
+> receipt had it right (`SPEC sin veredicto (exit 2)`); the console did not. Now exit `2` reads
+> `NO MEDIDO` with the auditor's own first line, any other code is named as such, and a site
+> with no spec on purpose declares `SPEC_MODE=none` instead of asking every time for a
+> comparison that cannot happen. Thirteen cases in the door's bank, eight of them seen red
+> against the old door.
 
 > **And a seventh time, the next morning (1324 → 1338, and 798 → 812 on `--fast`).** The table
 > row of `gate-index.js` said «159 cases», and it was right; beside it, the same file quoted what
