@@ -34,6 +34,11 @@ r() { local nombre="$1" esp="$2"; shift 2
 contiene() { if printf '%s' "$ULTIMA" | grep -qF -- "$2"; then OK=$((OK+1)); printf '  PASA  %-52s\n' "$1"
   else MAL=$((MAL+1)); printf '  FALLA %-52s (no dice: %s)\n' "$1" "$2"
        printf '%s\n' "$ULTIMA" | sed 's/^/          /'; fi; }
+# El espejo (28-sep-2026): lo que la salida NO puede decir. Si lo dice, ensena la
+# linea que lo dice, que es lo que hay que leer para saber por que cayo.
+no_contiene() { if printf '%s' "$ULTIMA" | grep -qF -- "$2"; then MAL=$((MAL+1)); printf '  FALLA %-52s (y lo dice: %s)\n' "$1" "$2"
+       printf '%s\n' "$ULTIMA" | grep -F -- "$2" | sed 's/^/          /'
+  else OK=$((OK+1)); printf '  PASA  %-52s\n' "$1"; fi; }
 
 rm -rf "$T"; mkdir -p "$T/repo/_deploy" "$T/repo/sub" "$T/servido"
 printf 'portada v1\n'   > "$T/repo/index.html"
@@ -319,6 +324,37 @@ DESPUES3="$(nnota)"; DESPUES3="${DESPUES3:-0}"
 if [ "$DESPUES3" = "$ANTES3" ]; then
   OK=$((OK+1)); printf '  PASA  %-52s\n' "el ensayo de la spec tampoco ensucia el historial"
 else MAL=$((MAL+1)); printf '  FALLA %-52s (%s -> %s)\n' "el ensayo de la spec tampoco ensucia el historial" "$ANTES3" "$DESPUES3"; fi
+
+# 🔴 28-sep-2026 · «NO CUADRAN» Y «NO HE PODIDO COMPARAR» SALIAN CON LA MISMA FRASE.
+#    La spec minima de arriba no cuadra: audit-vs-spec sale con 1, y la puerta
+#    tiene que seguir diciendolo. Sin `_spec/` sale con 2, y la puerta decia
+#    igual «NO cuadran», sin una linea de detalle: su filtro se comia el motivo.
+#    Medido ese dia desplegando un sitio real sin spec. Y el sitio que no tiene
+#    spec a proposito lo declara (MODO_SPEC=ninguna) en vez de mandar a comparar.
+contiene    "una spec que no cuadra sigue diciendolo"    "NO cuadran"
+no_contiene "y no la confunde con un NO MEDIDO"          "spec contra arbol: NO MEDIDO"
+cp "$T/repo/_deploy/deploy.conf" "$T/deploy.conf.antes-spec"
+mv "$T/repo/_spec" "$T/_spec.aparte"
+r "sin _spec: el ensayo sigue, no bloquea"           0 bash "$REF/deploy.sh" "$T/repo"
+contiene    "sin _spec dice NO MEDIDO"                   "spec contra arbol: NO MEDIDO"
+contiene    "y ensena el motivo de audit-vs-spec"        "No hay "
+contiene    "y como declararlo si es a proposito"        "MODO_SPEC=ninguna"
+no_contiene "y no lo cuenta como un descuadre"           "NO cuadran"
+echo "MODO_SPEC=ninguna" >> "$T/repo/_deploy/deploy.conf"
+r "declarado sin spec: el ensayo sigue"              0 bash "$REF/deploy.sh" "$T/repo"
+contiene    "lo dice como decidido"                      "NO MEDIDO, y a proposito"
+no_contiene "no la manda a comparar"                     "(modo ninguna)"
+no_contiene "y no lo llama descuadre"                    "NO cuadran"
+# Con --subir, el hueco decidido queda anotado con su nombre, no como un exit 2.
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "declarado sin spec: sube"                         0 bash "$REF/deploy.sh" "$T/repo" --subir
+if grep -q 'el repo declara que no tiene spec' "$HIST" 2>/dev/null; then
+  OK=$((OK+1)); printf '  PASA  %-52s\n' "el hueco decidido queda anotado"
+else MAL=$((MAL+1)); printf '  FALLA %-52s\n' "el hueco decidido queda anotado"
+     grep 'SPEC' "$HIST" 2>/dev/null | tail -3 | sed 's/^/          /'; fi
+cp "$T/deploy.conf.antes-spec" "$T/repo/_deploy/deploy.conf"
+mv "$T/_spec.aparte" "$T/repo/_spec"
 
 echo
 echo "-- 10 · NEGATIVO: la subida no sube lo que dice (SUBIDA parcial) --------------"

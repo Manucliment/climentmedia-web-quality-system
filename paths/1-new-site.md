@@ -438,7 +438,7 @@ bash gates/deploy.sh DIR --upload
 | **`--candidate` is not optional** | without it you measure PRODUCTION while the receipt seals the repository tree: two different artefacts wearing one face |
 | **The receipt expires in 12 hours** | and is valid only for the exact tree it measured. Touch a file and it is measured again |
 | **`NOT VERIFIED` is not a pass** | to ship with holes you sign them: `--anyway "the reason"`, which **gets written** into the history with the exact list of what was not measured |
-| **There is another gate before uploading** | step 2-bis runs the spec auditor against the tree: is everything the spec says exists actually on disk? **It does not block yet** — it was wired in and produced three false positives the same day, since corrected — but its verdict **is recorded**. The mode is declared by the repo: `SPEC_MODE=migration\|greenfield` in `deploy.conf` |
+| **There is another gate before uploading** | step 2-bis runs the spec auditor against the tree: is everything the spec says exists actually on disk? **It does not block yet** — it was wired in and produced three false positives the same day, since corrected — but its verdict **is recorded**. The mode is declared by the repo: `SPEC_MODE=migration\|greenfield` in `deploy.conf`, or `none` when the site has no spec on purpose. When the auditor cannot compare (no `_spec/`, for one), the step says NOT MEASURED with the auditor's own reason, never that spec and tree disagree |
 | **After uploading, the door continues** | the served-equals-measured check compares md5 file by file, then it crawls the served site and runs the linking gate |
 
 **If any of this fails, the deploy has not finished** — even though the files are already

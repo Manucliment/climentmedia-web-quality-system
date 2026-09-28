@@ -347,8 +347,21 @@ fi
 #  cablea para que se vea, se mira unas cuantas corridas, y entonces se sube el
 #  liston. Lo que NO se hace es dejarlo sin correr, que es donde estaba.
 #
-#  El modo lo declara el repo (`MODO_SPEC=migracion|greenfield` en deploy.conf).
-#  Sin declaracion no se adivina: se dice que no se ha medido y por que.
+#  El modo lo declara el repo (`MODO_SPEC=migracion|greenfield` en deploy.conf,
+#  o `=ninguna` si el sitio no tiene spec a proposito). Sin declaracion no se
+#  adivina: se dice que no se ha medido y por que.
+#
+#  🔴 28-sep-2026 · UN «NO HE PODIDO MEDIR» SALIA COMO «NO CUADRAN».
+#  audit-vs-spec.pl sale con 0 (PASA), 1 (FALLA: comparo y no cuadra) o 2 (NO
+#  MEDIDO: sin `_spec/`, sin repo, un modo que no conoce, o ni una comprobacion).
+#  Este paso trataba cualquier distinto de 0 como descuadre, y su filtro se comia
+#  el motivo: desplegando un sitio sin `_spec/` con MODO_SPEC=greenfield, la
+#  puerta dijo «La spec y el arbol NO cuadran» sin una sola linea de detalle, y
+#  no se habia comparado nada. El recibo lo anotaba bien («SPEC sin veredicto
+#  (exit 2)»); lo que mentia era la consola. Ahora cada codigo dice lo suyo, el 2
+#  con la primera linea del motivo tal cual, y el sitio que no tiene spec a
+#  proposito lo declara (`MODO_SPEC=ninguna`) en vez de pedir cada vez una
+#  comparacion que no se puede hacer. Sigue sin bloquear.
 if [ ! -f "$REF/audit-vs-spec.pl" ]; then
   echo
   echo "  2-bis · spec contra arbol: no encuentro audit-vs-spec.pl. NO MEDIDO."
@@ -356,22 +369,49 @@ if [ ! -f "$REF/audit-vs-spec.pl" ]; then
 elif [ -z "${MODO_SPEC:-}" ]; then
   echo
   echo "  2-bis · spec contra arbol: $CONF no declara MODO_SPEC. NO MEDIDO."
-  echo "          ponle MODO_SPEC=migracion (venia de una web) o =greenfield (no la habia)."
+  echo "          ponle MODO_SPEC=migracion (venia de una web), =greenfield (no la habia)"
+  echo "          o =ninguna (este sitio no tiene spec, a proposito)."
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "SPEC no medida: sin MODO_SPEC en deploy.conf" --repo "$REPO" >/dev/null 2>&1
+elif [ "$MODO_SPEC" = ninguna ] || [ "$MODO_SPEC" = none ]; then
+  echo
+  echo "  2-bis · spec contra arbol: $CONF declara MODO_SPEC=$MODO_SPEC. NO MEDIDO, y a proposito:"
+  echo "          el repo dice que este sitio no tiene spec contra la que comparar."
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "SPEC no medida: el repo declara que no tiene spec (MODO_SPEC=$MODO_SPEC)" --repo "$REPO" >/dev/null 2>&1
 else
   linea; echo "  2-bis · la spec contra el arbol (modo $MODO_SPEC)"; linea
   SPEC_SALIDA="$(perl "$REF/audit-vs-spec.pl" --modo "$MODO_SPEC" --repo "$REPO" -q 2>&1)"
   SPEC_RC=$?
-  printf '%s\n' "$SPEC_SALIDA" | grep -E 'FALLO|AVISO|NO VERIF|VEREDICTO|PASA [0-9]' | sed 's/^/  /'
+  if [ "$SPEC_RC" = 0 ] || [ "$SPEC_RC" = 1 ]; then
+    printf '%s\n' "$SPEC_SALIDA" | grep -E 'FALLO|AVISO|NO VERIF|VEREDICTO|PASA [0-9]' | sed 's/^/  /'
+  fi
   SPEC_VER="$(printf '%s\n' "$SPEC_SALIDA" | grep -m1 'VEREDICTO' | sed 's/.*VEREDICTO:[[:space:]]*//')"
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "SPEC ${SPEC_VER:-sin veredicto} (exit $SPEC_RC)" --repo "$REPO" >/dev/null 2>&1
-  if [ "$SPEC_RC" != 0 ]; then
-    echo
-    echo "  La spec y el arbol NO cuadran. Queda anotado y NO bloquea todavia"
-    echo "  (ver el motivo con fecha arriba, en el comentario de este bloque)."
-    echo "  Si lo de arriba es un falso positivo, se arregla EL GATE con su caso"
-    echo "  rojo, no se calla: audit-vs-spec-tests/tests.pl."
-  fi
+  case "$SPEC_RC" in
+    0) ;;
+    1)
+      echo
+      echo "  La spec y el arbol NO cuadran. Queda anotado y NO bloquea todavia"
+      echo "  (ver el motivo con fecha arriba, en el comentario de este bloque)."
+      echo "  Si lo de arriba es un falso positivo, se arregla EL GATE con su caso"
+      echo "  rojo, no se calla: audit-vs-spec-tests/tests.pl."
+      ;;
+    2)
+      # El motivo: si la corrida entera no midio nada, su linea «NADA MEDIDO»;
+      # si no, la primera linea con texto (en los cortes tempranos va primero).
+      SPEC_MOTIVO="$(printf '%s\n' "$SPEC_SALIDA" | grep -m1 'NADA MEDIDO')"
+      [ -n "$SPEC_MOTIVO" ] || SPEC_MOTIVO="$(printf '%s\n' "$SPEC_SALIDA" | grep -m1 -v -E '^[[:space:]]*$|^[[:space:]]*(──|---)')"
+      echo "  spec contra arbol: NO MEDIDO. audit-vs-spec no ha podido comparar (exit 2):"
+      echo "  no es un aprobado y tampoco un descuadre. Lo que dice:"
+      echo "    $(printf '%s' "$SPEC_MOTIVO" | sed 's/^[[:space:]]*//')"
+      echo "  Si este sitio no tiene spec a proposito, declaralo en $CONF"
+      echo "  con MODO_SPEC=ninguna: el hueco sigue constando, pero como decidido."
+      ;;
+    *)
+      echo "  spec contra arbol: audit-vs-spec ha salido con $SPEC_RC, que no es PASA (0),"
+      echo "  FALLA (1) ni NO MEDIDO (2). No se da por medido. Lo primero que dice:"
+      printf '%s\n' "$SPEC_SALIDA" | grep -v '^[[:space:]]*$' | head -3 | sed 's/^/    /'
+      ;;
+  esac
 fi
 
 # ── 2-ter · ¿SE PIERDE TEXTO DEL CLIENTE AL SUBIR ESTO? ──────────────────────
