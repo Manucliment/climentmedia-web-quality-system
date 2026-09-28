@@ -529,9 +529,30 @@ cat > "$T/repo/index.html" <<'H'
 H
 perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
      --sitio "http://127.0.0.1:$PUERTO" >/dev/null
-r "caza que la remaqueta se come un parrafo"  0 bash "$REF/deploy.sh" "$T/repo" --subir
+# En ensayo no se descarga nada y no para, igual que antes del 28-sep.
+r "en ensayo no para"                          0 bash "$REF/deploy.sh" "$T/repo"
+no_contiene "ni dice que no sube"               "NO SUBO"
+# 🔴 28-sep-2026 · Y DESDE ESE DIA LA PERDIDA PARA LA SUBIDA. Hasta entonces
+#    este caso esperaba exit 0: fijaba como contrato que la puerta subiera
+#    igual. Ese dia una subida desde una rama anterior a lo que otra sesion
+#    acababa de subir le devolvio cuatro paginas, su sitemap y su llms.txt a
+#    la version de antes; este paso lo vio y no paro nada. Ahora sin declarar
+#    sale 1 ANTES de subir: lo servido no cambia y el historial no anota nada,
+#    porque no se ha publicado nada.
+TEXTO_ANTES="$(grep -c 'TEXTO ' "$QA_RECIBOS_DIR/history.tsv" 2>/dev/null | head -1 | tr -dc '0-9')"
+r "caza que la remaqueta se come un parrafo"  1 bash "$REF/deploy.sh" "$T/repo" --subir
 contiene "dice cuantas palabras faltan"        "FALTAN"
 contiene "y las nombra"                        "noventa"
+contiene "y PARA: no sube"                     "NO SUBO"
+contiene "dice como declararlo"                "--pierde-texto"
+contiene "y la otra causa: otra sesion"        "otra sesion que subio DESPUES"
+if grep -q 'noventa' "$T/servido/index.html" 2>/dev/null; then
+  OK=$((OK+1)); printf '  PASA  %-52s\n' "lo servido NO ha cambiado"
+else MAL=$((MAL+1)); printf '  FALLA %-52s\n' "lo servido NO ha cambiado"; fi
+TEXTO_DESPUES="$(grep -c 'TEXTO ' "$QA_RECIBOS_DIR/history.tsv" 2>/dev/null | head -1 | tr -dc '0-9')"
+if [ "${TEXTO_DESPUES:-0}" = "${TEXTO_ANTES:-0}" ]; then
+  OK=$((OK+1)); printf '  PASA  %-52s\n' "sin subir, el historial no anota nada"
+else MAL=$((MAL+1)); printf '  FALLA %-52s (TEXTO: %s -> %s)\n' "sin subir, el historial no anota nada" "$TEXTO_ANTES" "$TEXTO_DESPUES"; fi
 # 🔴 EL CONTROL DE QUE NO COMPARA DE MENOS, y no es teorico: en el primer
 #    despliegue real (17-ago) este paso comparo **1 pagina de 19** en site-a
 #    -sus URLs van SIN barra final- y reporto «0 con perdida». Un check que no
@@ -539,9 +560,14 @@ contiene "y las nombra"                        "noventa"
 #    lee como un aprobado. El arreglo prueba las dos formas de URL; esta linea
 #    vigila el sintoma, que es el numero.
 contiene "y compara TODAS las paginas, no una"  "2 paginas comparadas"
-# NO bloquea todavia, a proposito e igual que 2-bis: quitar una seccion aposta
-# tambien sale como perdida, y un gate que impide desplegar el primer dia que da
-# un falso positivo ensena a saltarse la puerta. Pero queda ESCRITO.
+# Quitar texto A PROPOSITO sigue siendo legitimo (el motivo de no bloquear del
+# 17-ago, que sigue en pie en esa parte): se declara, sube, y queda ESCRITO.
+r "declarada, sube"                            0 bash "$REF/deploy.sh" "$T/repo" --subir \
+    --pierde-texto "quito el segundo parrafo a proposito"
+contiene "dice que sube por la declaracion"    "se sube igualmente, declarado"
+if grep -q 'noventa' "$T/servido/index.html" 2>/dev/null; then
+  MAL=$((MAL+1)); printf '  FALLA %-52s\n' "lo servido ya no lleva el parrafo"
+else OK=$((OK+1)); printf '  PASA  %-52s\n' "lo servido ya no lleva el parrafo"; fi
 # ⚠️ Se busca solo «1 con perdida», no la linea entera: el numero de paginas
 #    comparadas depende del fixture (aqui son 2, con `sub/index.html`), y el
 #    `·` lo normaliza `solo_ascii` a `--` al escribir el historial. Mi primera
@@ -550,6 +576,17 @@ grep -q "TEXTO .* 1 con perdida" "$QA_RECIBOS_DIR/history.tsv" \
   && { OK=$((OK+1)); echo "  PASA  la perdida queda ANOTADA en el historial"; } \
   || { MAL=$((MAL+1)); echo "  FALLA la perdida NO se anota"
        grep TEXTO "$QA_RECIBOS_DIR/history.tsv" | tail -2 | sed 's/^/          /'; }
+if grep -q 'PIERDE-TEXTO \[index.html -[0-9]' "$QA_RECIBOS_DIR/history.tsv" 2>/dev/null \
+   && grep -q 'quito el segundo parrafo a proposito' "$QA_RECIBOS_DIR/history.tsv" 2>/dev/null; then
+  OK=$((OK+1)); printf '  PASA  %-52s\n' "la declaracion lleva pagina, cuantas y motivo"
+else MAL=$((MAL+1)); printf '  FALLA %-52s\n' "la declaracion lleva pagina, cuantas y motivo"
+     grep 'NOTA' "$QA_RECIBOS_DIR/history.tsv" 2>/dev/null | tail -2 | sed 's/^/          /'; fi
+# Sin perdida no cambia nada: sube y no pide ninguna declaracion.
+r "sin perdida, sube como siempre"             0 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "y lo dice"                           "conservan todas"
+no_contiene "sin pedir nada"                    "NO SUBO"
+# El alias en ingles, como el resto de banderas de la puerta.
+r "--loses-text se acepta"                     0 bash "$REF/deploy.sh" "$T/repo" --loses-text "x"
 
 echo
 echo "==============================================================================="

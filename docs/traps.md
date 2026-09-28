@@ -1,6 +1,6 @@
-# The trap log — 86 traps, read before debugging
+# The trap log — 87 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§86** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§87** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -14,6 +14,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §82–§84 | [`traps/82-84.md`](traps/82-84.md) |
 | §85 | [`traps/85.md`](traps/85.md) |
 | §86 | [`traps/86.md`](traps/86.md) |
+| §87 | [`traps/87.md`](traps/87.md) |
 
 ---
 
@@ -29,7 +30,7 @@ Not quoted — **derived by a program you can run**:
 perl gates/doc-gate.pl --lista D4
 ```
 
-Today it reports: **86 traps · all 86 declare what catches them · 31 say `nobody` on purpose.**
+Today it reports: **87 traps · all 87 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
 writing more prose** — which is the measured finding the whole repository rests on. The ten most
@@ -144,6 +145,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §31 | The layout primitive was eating content, silently |
 | §33 | An undeclared variable deleted what it came to change |
 | §38 | The migration gate counted images and called that "media" |
+| §87 | An upload from an older base put another session's pages back, and the step that saw it did not stop |
 
 ### D · Two copies of one truth
 
