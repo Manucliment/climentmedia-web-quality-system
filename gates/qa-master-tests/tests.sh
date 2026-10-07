@@ -1717,10 +1717,108 @@ for k in "$COLK" "$COLK2"; do
 done
 printf '200\t118\ttext/html; charset=utf-8\t%s\t0.001' "$COLURL"      > "$COL/$COLK.meta"
 printf '200\t118\ttext/html; charset=utf-8\t%s\t0.001' "${COLURL%/}"  > "$COL/$COLK2.meta"
+# 🔴 7-oct-2026 · Y AHORA LLEVA FECHA Y PIDE LA REUTILIZACION. Desde ese dia una
+#     descarga de otra corrida solo se reutiliza si dice CUANDO se bajo (el
+#     `.when`) y si se pide con --cache-horas: el bloque siguiente cuenta por que.
+#     Este caso sigue probando lo mismo -que una semilla PROPIA se lee-, ahora
+#     con las dos condiciones puestas.
+date +%s > "$COL/$COLK.when"; date +%s > "$COL/$COLK2.when"
 espera "cache PROPIA (\\t de qa-maestro) SIGUE valiendo"  AUSENTE SEO-00 \
-       perl $QA "$COLURL" --solo seo --cache "$COL" --sin-recibo
+       perl $QA "$COLURL" --solo seo --cache "$COL" --cache-horas 1 --sin-recibo
 texto  "cache PROPIA · y la pagina se LEYO de ella"      SI "DATO   1 documentos distintos" \
-       perl $QA "$COLURL" --solo seo --cache "$COL" --sin-recibo
+       perl $QA "$COLURL" --solo seo --cache "$COL" --cache-horas 1 --sin-recibo
+
+echo
+echo "== LA CACHE NO MIDE EL PASADO · 7-oct-2026"
+# 🔴 EL DEFECTO: `fetch` reutilizaba CUALQUIER descarga propia que encontrara en
+#    --cache, sin mirar de cuando era. Una web de cliente llevaba su carpeta de
+#    cache DENTRO del repo, y commiteada: siete semanas de antiguedad. Una
+#    medida «de produccion» con esa cache dio cuatro FALLOS a la vez -«28 de 28
+#    ficheros distintos» entre ellos- sobre un sitio que servia, byte a byte, lo
+#    del repo. Era la web de siete semanas antes, impresa como la de hoy.
+#    ⚠️ Y la fecha del FICHERO no sirve para saberlo: lo que sale de git, de un
+#       `cp` o de un `tar` lleva la fecha de HOY. Por eso la fecha de cada
+#       descarga va DENTRO de un `.when` que escribe este programa al bajarla.
+#    LA REGLA: se reutiliza lo bajado EN ESTA CORRIDA. Lo de otra corrida, solo
+#    si lleva fecha y si se pide con --cache-horas N (y entonces se declara);
+#    sin fecha, nunca. Cada caso usa el puerto muerto del bloque anterior: si la
+#    semilla NO se reutiliza, la descarga falla al instante y la lente se queda
+#    sin paginas (SEO-00); si se reutiliza, la pagina se lee de ella.
+CAD="$CACHE/caducidad"
+CADURL="http://127.0.0.1:1/"
+CADK="$(perl -MDigest::MD5=md5_hex -e 'print md5_hex($ARGV[0])' "$CADURL")"
+CADK2="$(perl -MDigest::MD5=md5_hex -e 'print md5_hex($ARGV[0])' "${CADURL%/}")"
+# siembra <fecha epoch | -> : la misma semilla PROPIA de siempre, con o sin `.when`
+siembra() {
+  local k
+  rm -rf "$CAD"; mkdir -p "$CAD"
+  for k in "$CADK" "$CADK2"; do
+    printf '<!doctype html><html lang="es"><head><title>Semilla</title></head><body><main><h1>Semilla</h1></main></body></html>' > "$CAD/$k.body"
+  done
+  printf '200\t118\ttext/html; charset=utf-8\t%s\t0.001' "$CADURL"      > "$CAD/$CADK.meta"
+  printf '200\t118\ttext/html; charset=utf-8\t%s\t0.001' "${CADURL%/}"  > "$CAD/$CADK2.meta"
+  if [ "$1" != "-" ]; then printf '%s\n' "$1" > "$CAD/$CADK.when"; printf '%s\n' "$1" > "$CAD/$CADK2.when"; fi
+}
+HACE_1MIN=$(( $(date +%s) - 60 ))
+HACE_30D=$(( $(date +%s) - 30*86400 ))
+# (1) SIN FECHA -la forma de una cache commiteada o de una de antes del 7-oct-:
+#     no vale, ni por defecto ni pidiendo horas. Es EL caso del defecto.
+siembra -
+espera "sin fecha (cache commiteada) NO vale"            NOVERIF SEO-00 \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --sin-recibo
+siembra -
+espera "sin fecha NO vale ni con --cache-horas 24"       NOVERIF SEO-00 \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --cache-horas 24 --sin-recibo
+siembra -
+texto  "y se DECLARA que se volvio a bajar"              SI "una descarga sin fecha" \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --sin-recibo
+# (2) DE OTRA CORRIDA, con fecha: por defecto tampoco. Bajar a las 13:10, subir a
+#     las 13:51 y volver a medir a las 14:00 con la misma --cache es el flujo
+#     normal de mejorar una web, y el «despues» saldria identico al «antes».
+siembra "$HACE_1MIN"
+espera "de hace 1 min NO vale por defecto"               NOVERIF SEO-00 \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --sin-recibo
+# (3) PEDIDA: con --cache-horas la de hace 1 min SI vale... (sin este caso,
+#     «no reutilizar nunca» pasaria por arreglo y --cache-horas no haria nada)
+siembra "$HACE_1MIN"
+espera "de hace 1 min SI vale con --cache-horas 1"       AUSENTE SEO-00 \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --cache-horas 1 --sin-recibo
+siembra "$HACE_1MIN"
+texto  "· y la pagina se LEYO de ella"                   SI "DATO   1 documentos distintos" \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --cache-horas 1 --sin-recibo
+siembra "$HACE_1MIN"
+texto  "· y lo reutilizado se DECLARA"                   SI "LO REUTILIZADO NO ES DE HOY" \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --cache-horas 1 --sin-recibo
+# (4) ...pero no la de hace 30 dias: las horas son un tope, no un permiso general
+siembra "$HACE_30D"
+espera "de hace 30 dias NO vale con --cache-horas 24"    NOVERIF SEO-00 \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --cache-horas 24 --sin-recibo
+# (5) Lo que se baja en una corrida lleva su fecha, para que la siguiente pueda decidir
+siembra -
+perl $QA "$CADURL" --solo seo --cache "$CAD" --sin-recibo >/dev/null 2>&1
+if [ -s "$CAD/$CADK.when" ] && grep -qE '^[0-9]{9,}$' "$CAD/$CADK.when"; then
+  printf '  OK    %-46s %s\n' "lo bajado sale con su fecha (.when)" "$(cat "$CAD/$CADK.when")"; ok=$((ok+1))
+else
+  printf '  MAL   %-46s no hay .when, o no es una fecha\n' "lo bajado sale con su fecha (.when)"; ko=$((ko+1))
+fi
+# (6) Un numero de horas que no es un numero PARA y dice por que: ignorarlo en
+#     silencio seria reutilizar o no reutilizar sin que nadie lo haya decidido.
+texto  "--cache-horas que no es un numero PARA"          SI "--cache-horas tiene que ser un numero de horas" \
+       perl $QA "$CADURL" --solo seo --cache "$CAD" --cache-horas mucho --sin-recibo
+# (7) qa-diff lo dice ARRIBA cuando un lado reutilizo: un diff contra una cache vieja
+#     sale «NADA HA CAMBIADO» sobre un despliegue que si cambio cosas. Y no lo dice
+#     cuando nadie reutilizo (sin este negativo, «avisar siempre» pasaria por arreglo).
+siembra -
+perl $QA "$CADURL" --solo seo --cache "$CAD" --sin-recibo --json "$CACHE/cad-a.json" >/dev/null 2>&1
+siembra "$HACE_1MIN"
+perl $QA "$CADURL" --solo seo --cache "$CAD" --cache-horas 1 --sin-recibo --json "$CACHE/cad-b.json" >/dev/null 2>&1
+texto  "qa-diff avisa si un lado reutilizo"              SI "DESPUES reutiliza" \
+       perl ../qa-diff.pl "$CACHE/cad-a.json" "$CACHE/cad-b.json"
+texto  "· y calla si ninguno reutilizo"                  NO "de una corrida anterior" \
+       perl ../qa-diff.pl "$CACHE/cad-a.json" "$CACHE/cad-a.json"
+# el NO de arriba sale verde tambien si el diff no llega a correr: se exige que corrio
+texto  "· (y ese diff de control SI corrio)"            SI "NADA HA CAMBIADO" \
+       perl ../qa-diff.pl "$CACHE/cad-a.json" "$CACHE/cad-a.json"
 
 echo
 echo "== MED-05 · EL VOCABULARIO DEL GATE NO ES UN HUERFANO · 11-ago-2026"

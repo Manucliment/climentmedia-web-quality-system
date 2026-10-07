@@ -88,12 +88,20 @@ REPO="/path/to/<site>-web"
 mkdir -p "$REPO/_qa"
 perl gates/qa-master.pl https://<domain> \
   --repo "$REPO" --thanks /thank-you --contact /contact \
-  --cache "$REPO/_qa/cache" \
   --json "$REPO/_qa/BEFORE-$(date +%Y%m%d-%H%M).json"
 ```
 
 - **The JSON lives in the repo (`_qa/`), not in a scratch directory**: scratch dies with
   the session, and then next month there is no BEFORE to compare against.
+- **The download cache does NOT.** Until 2026-10-07 this command passed
+  `--cache "$REPO/_qa/cache"`. The cache got committed along with the JSON, and
+  `qa-master.pl` reused any download it found there, however old. Seven weeks later a
+  "production" measurement of one site read the pages as they had been on the day of the
+  commit. It reported four FAILs at once, including *28 of 28 files differ*, while the
+  site was serving the repository byte for byte. Since then the gate only reuses what it
+  downloaded **in the same run**. Reusing an earlier run takes `--cache-hours N`, needs a
+  download that carries its own date, and is printed in the header and the JSON. If you
+  pass `--cache` at all, point it at a scratch directory, never inside the repo.
   **`_qa/` goes on the deployment deny-list**, like `*.md` and `_spec/` — one live site
   ended up serving its own internal notes file with a 200.
 - **`--thanks` is not decorative.** The most expensive defect on record lived on the one

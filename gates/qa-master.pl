@@ -136,7 +136,13 @@
 #                       otro instrumento.
 #    --snippet          imprime el snippet y sale (no toca la red)
 #    --json FICHERO     vuelca el resultado completo en JSON
-#    --cache DIR        directorio de cache de descargas
+#    --cache DIR        directorio de cache de descargas. NUNCA dentro del repo
+#                       de la web: acaba commiteado y viaja con sus bytes viejos.
+#                       Cada descarga deja un `.when` con su fecha.
+#    --cache-horas N    (--cache-hours) cuantas horas puede tener una descarga de
+#                       OTRA corrida para reutilizarla. Por defecto 0: solo vale
+#                       lo bajado en esta. Lo reutilizado sale en la cabecera
+#                       (CACHE) y en el JSON. Sin fecha, nunca se reutiliza.
 #    --max-urls N       tope de URLs a recorrer (por defecto 25)
 #    --una-sola         NO expandir por sitemap: auditar solo la URL tecleada
 #                       (el comportamiento de antes del 10-ago-2026)
@@ -264,6 +270,10 @@ my %opt = (
     contenedor => '',      # gtm.js desde un fichero, para poder probar MED-03/05/07 sin red
     json      => '',
     cache     => '',
+    # 🔴 7-oct-2026 · cuantas horas puede tener una descarga de OTRA corrida para
+    #    reutilizarla. 0 = solo vale lo bajado en esta. Ver «LA CACHE NO MIDE EL
+    #    PASADO», junto a $CACHE.
+    'cache-horas' => 0,
     'max-urls'=> 25,
     muestra   => 3,         # paginas que recorre la lente cara (RENDIMIENTO)
     snippet   => 0,
@@ -300,13 +310,13 @@ my @targets;
         '--hours'      => '--horas',     '--candidate' => '--candidato',
         '--no-network' => '--sin-red',   '--no-receipt'=> '--sin-recibo',
         '--single'     => '--una-sola',  '--evidence'  => '--evidencia',
-        '--container'  => '--contenedor',
+        '--container'  => '--contenedor', '--cache-hours' => '--cache-horas',
     );
     @a = map { $ALIAS{$_} // $_ } @a;
 
     while (@a) {
         my $x = shift @a;
-        if ($x =~ /^--(tipo|solo|gracias|contacto|repo|css|dom|contenedor|json|cache|max-urls|muestra|recibo|horas)$/) {
+        if ($x =~ /^--(tipo|solo|gracias|contacto|repo|css|dom|contenedor|json|cache|cache-horas|max-urls|muestra|recibo|horas)$/) {
             $opt{$1} = shift(@a) // '';
         } elsif ($x =~ /^--(snippet|sin-red|sin-recibo|una-sola|candidato|evidencia)$/) {
             $opt{$1} = 1;
@@ -419,6 +429,56 @@ my $CACHE = ($CAND_ON ? tempdir(CLEANUP => 1) : ($opt{cache} || tempdir(CLEANUP 
 make_path($CACHE) unless -d $CACHE;
 my $CACHE_NOTA = ($CAND_ON && $opt{cache} ne '')
     ? 'cache ignorada a proposito en modo candidato (la misma URL sirve otros bytes)' : '';
+
+# 🔴 7-oct-2026 · LA CACHE NO MIDE EL PASADO.
+#    `fetch` reutilizaba CUALQUIER descarga propia que encontrara en --cache, sin
+#    mirar de cuando era. Una web de cliente llevaba su cache DENTRO del repo, y
+#    commiteada: siete semanas. Medida «de produccion» con ella, dio cuatro FALLOS
+#    a la vez -«28 de 28 ficheros distintos» entre ellos- sobre un sitio que
+#    servia byte a byte lo del repo. Era la web de siete semanas antes, impresa
+#    como la de hoy y sin una sola senal.
+#    LA REGLA: se reutiliza lo bajado EN ESTA CORRIDA. Lo de otra corrida, solo
+#    si dice cuando se bajo y si es mas joven que --cache-horas N (0 por
+#    defecto); y entonces se DECLARA en la cabecera y en el JSON. Sin fecha,
+#    nunca: es la forma exacta de una cache commiteada o de una de antes de hoy.
+#    ⚠️ La fecha va DENTRO de un `.when` que escribe este programa al bajar. La
+#       del fichero no vale: lo que sale de git, de un `cp` o de un `tar` lleva
+#       la de HOY, y una cache de hace siete semanas pareceria recien bajada.
+#       (crawl-links.pl caduca por la fecha del fichero desde el 18-ago: para
+#       una cache commiteada esa defensa no salta.)
+#    ⚠️ Y por que 0 y no las 12 h del recibo: el flujo normal de mejorar una web
+#       es medir antes, subir y medir despues, a menudo en la misma hora. Con la
+#       misma --cache y 12 h, el «despues» seria el «antes» -y qa-diff diria
+#       «NADA HA CAMBIADO» sobre un despliegue que si cambio cosas-.
+if ($opt{'cache-horas'} !~ /^\d+(?:[.,]\d+)?$/) {
+    print STDERR "--cache-horas tiene que ser un numero de horas (0 = solo vale lo bajado en esta corrida); llego '$opt{'cache-horas'}'\n";
+    exit 2;
+}
+(my $cache_horas_num = $opt{'cache-horas'}) =~ tr/,/./;
+my $INICIO_CORRIDA = time();
+my $CACHE_MAX_SEG  = $cache_horas_num * 3600;
+my %CACHE_USO = (pedidas => 0, reutilizadas => 0, mas_vieja => 0, viejas => 0, sin_fecha => 0);
+# _cache_reutilizable: 1 si la descarga de ese `.when` se puede usar como medida
+# de esta corrida; 0 = MISS, vuelve a bajarla. Solo se llama con un `.meta` que
+# ya es nuestro (`_meta_qam`), asi que lo que cuenta son descargas de verdad.
+sub _cache_reutilizable {
+    my ($whenf) = @_;
+    my $cuando;
+    if (open my $w, '<', $whenf) { my $l = <$w> // ''; close $w; ($cuando) = $l =~ /^(\d{9,})\s*$/ }
+    unless (defined $cuando) { $CACHE_USO{sin_fecha}++; return 0 }
+    return 1 if $cuando >= $INICIO_CORRIDA;           # bajada en ESTA corrida
+    my $edad = time() - $cuando;
+    if ($edad > $CACHE_MAX_SEG) { $CACHE_USO{viejas}++; return 0 }
+    $CACHE_USO{reutilizadas}++;
+    $CACHE_USO{mas_vieja} = $edad if $edad > $CACHE_USO{mas_vieja};
+    return 1;
+}
+sub _edad_legible {
+    my ($s) = @_;
+    return sprintf('%d min', int($s / 60 + 0.5)) if $s < 5400;
+    return sprintf('%.1f h', $s / 3600)          if $s < 172800;
+    return sprintf('%.0f dias', $s / 86400);
+}
 
 # =============================================================================
 #  1 · INFRAESTRUCTURA: red, cache, resultados
@@ -616,7 +676,10 @@ sub fetch {
     my $bodyf = "$CACHE/$key.body";
     my $hdrf  = "$CACHE/$key.hdr";
     my $metaf = "$CACHE/$key.meta";
-    unless (defined _meta_qam($metaf)) {
+    my $whenf = "$CACHE/$key.when";
+    # Nuestra Y de esta corrida (o pedida con --cache-horas): ver «LA CACHE NO
+    # MIDE EL PASADO», junto a $CACHE.
+    unless (defined(_meta_qam($metaf)) && _cache_reutilizable($whenf)) {
         my @cmd = ('curl', '-sSL', '--compressed', '--max-time', '30',
                    '-A', $UA, '-e', ($CAND_ON ? "http://127.0.0.1:$CAND_PORT/" : "$ROOT/"),
                    '-o', $bodyf, '-D', $hdrf,
@@ -625,6 +688,8 @@ sub fetch {
         my $out = '';
         if (open my $ph, '-|', @cmd) { local $/; $out = <$ph> // ''; close $ph }
         if (open my $mf, '>', $metaf) { print $mf $out; close $mf }
+        if (open my $wf, '>', $whenf) { print $wf time(), "\n"; close $wf }
+        $CACHE_USO{pedidas}++;
     }
     # Se valida OTRA VEZ despues de descargar. Si sigue sin ser nuestro formato,
     # o curl no llego a escribir o el fichero es de otro programa y no se pudo
@@ -5527,9 +5592,28 @@ if ($CAND_ON) {
         if $CAND_FUERA > 0;
     print "               $CACHE_NOTA\n" if $CACHE_NOTA ne '';
 } else {
-    print "  MEDIDO       PRODUCCION · $ROOT (lo que ve el visitante hoy)\n";
+    # 7-oct-2026: «hoy» solo si no se ha reutilizado nada de otra corrida.
+    print "  MEDIDO       PRODUCCION · $ROOT "
+        . ($CACHE_USO{reutilizadas} ? "(con descargas de una corrida ANTERIOR: ver CACHE)\n" : "(lo que ve el visitante hoy)\n");
     print "               ⚠ NO dice nada de los cambios sin subir del repo. Para eso: --candidato\n"
         if $opt{repo} ne '';
+    # 🔴 7-oct-2026 · DE DONDE SALEN LOS BYTES. Sin esta linea, una medida sobre
+    #    una cache vieja se lee exactamente igual que una medida de hoy.
+    if ($opt{cache} ne '') {
+        printf "  CACHE        %s · %s\n", $opt{cache},
+            ($CACHE_MAX_SEG > 0 ? "vale lo bajado hace menos de $cache_horas_num h (--cache-horas)"
+                                : 'solo vale lo bajado en esta corrida (--cache-horas 0, el defecto)');
+        printf "               pedidas ahora %d · reutilizadas %d%s · viejas %d · sin fecha %d\n",
+            $CACHE_USO{pedidas}, $CACHE_USO{reutilizadas},
+            ($CACHE_USO{reutilizadas} ? ' (la mas vieja de hace ' . _edad_legible($CACHE_USO{mas_vieja}) . ')' : ''),
+            $CACHE_USO{viejas}, $CACHE_USO{sin_fecha};
+        print "               ⚠ LO REUTILIZADO NO ES DE HOY: es la pagina de cuando se bajo. Si el sitio\n"
+            . "                 ha cambiado desde entonces, esta medida habla del de antes.\n"
+            if $CACHE_USO{reutilizadas};
+        print "               (las viejas y las sin fecha se han vuelto a bajar: una descarga sin fecha\n"
+            . "                es la forma de una cache commiteada, y no se usa como medida)\n"
+            if $CACHE_USO{viejas} || $CACHE_USO{sin_fecha};
+    }
 }
 print "  PAGINAS      " . scalar(@PAGES) . " · tipo: " . ($opt{tipo} ne '' ? (@PAGES > 1 ? "$opt{tipo} en las URLs pedidas; el resto, el suyo" : $opt{tipo}) : 'inferido por ruta (uno por pagina)')
     . ($EXPANDIDO ne '' ? "\n               $EXPANDIDO" : '')
@@ -5772,7 +5856,15 @@ if ($opt{json} ne '') {
         aceptados_rechazados => [ map { { check => ($_->{CHECK} // ''), linea => ($_->{_linea} // 0),
                                           por => $_->{_por} } } @ACEPT_RECHAZADAS ],
         instrumento => { perl => "$]", dom => ($opt{dom} ne '' ? $opt{dom} : undef),
-                         innerWidth => $DOM{innerWidth}, innerHeight => $DOM{innerHeight} },
+                         innerWidth => $DOM{innerWidth}, innerHeight => $DOM{innerHeight},
+                         # 7-oct-2026 · de donde salen los bytes (ver «LA CACHE NO
+                         # MIDE EL PASADO»). qa-diff.pl lo lee para avisar.
+                         cache => (($opt{cache} ne '' && !$CAND_ON)
+                                   ? { dir => $opt{cache}, horas => $cache_horas_num + 0,
+                                       pedidas => $CACHE_USO{pedidas}, reutilizadas => $CACHE_USO{reutilizadas},
+                                       mas_vieja_seg => $CACHE_USO{mas_vieja}, viejas => $CACHE_USO{viejas},
+                                       sin_fecha => $CACHE_USO{sin_fecha} }
+                                   : undef) },
         # 🔴 ARREGLO P5 · el alcance tambien en el JSON, con la misma forma que
         #    se le pasa a receipt.pl: quien consuma el JSON no tiene que adivinar
         #    sobre cuantas paginas se midio ni cuales.

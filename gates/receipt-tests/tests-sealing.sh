@@ -35,10 +35,10 @@ r() { local nombre="$1" esp="$2"; shift 2
   else MAL=$((MAL+1)); printf '  FALLA %-52s (exit %s, esperaba %s)\n' "$nombre" "$rc" "$esp"
        printf '%s\n' "$out" | sed 's/^/          /'; fi
   ULTIMA="$out"; }
-contiene() { if printf '%s' "$ULTIMA" | grep -qF "$2"; then OK=$((OK+1)); printf '  PASA  %-52s\n' "$1"
+contiene() { if printf '%s' "$ULTIMA" | grep -qF -- "$2"; then OK=$((OK+1)); printf '  PASA  %-52s\n' "$1"
   else MAL=$((MAL+1)); printf '  FALLA %-52s (no dice: %s)\n' "$1" "$2"
        printf '%s\n' "$ULTIMA" | sed 's/^/          /'; fi; }
-no_contiene() { if printf '%s' "$ULTIMA" | grep -qF "$2"; then MAL=$((MAL+1)); printf '  FALLA %-52s (NO deberia decir: %s)\n' "$1" "$2"
+no_contiene() { if printf '%s' "$ULTIMA" | grep -qF -- "$2"; then MAL=$((MAL+1)); printf '  FALLA %-52s (NO deberia decir: %s)\n' "$1" "$2"
        printf '%s\n' "$ULTIMA" | sed 's/^/          /'
   else OK=$((OK+1)); printf '  PASA  %-52s\n' "$1"; fi; }
 

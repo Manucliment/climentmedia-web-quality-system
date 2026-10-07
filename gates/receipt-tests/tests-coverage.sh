@@ -36,7 +36,11 @@ r() { local nombre="$1" esp="$2"; shift 2
   else MAL=$((MAL+1)); printf '  FALLA %-52s (exit %s, esperaba %s)\n' "$nombre" "$rc" "$esp"
        printf '%s\n' "$out" | sed 's/^/          /'; fi
   ULTIMA="$out"; }
-contiene() { if printf '%s' "$ULTIMA" | grep -qF "$2"; then OK=$((OK+1)); printf '  PASA  %-52s\n' "$1"
+# ⚠️ 7-oct-2026 · el `--` antes del patron NO es decoracion: sin el, un literal que
+#    empieza por guion («--cache-horas ...») lo lee grep como una OPCION, sale con
+#    error y el caso dice «no dice» sobre una salida que si lo dice. Igual en los
+#    otros tres bancos que copian este ayudante.
+contiene() { if printf '%s' "$ULTIMA" | grep -qF -- "$2"; then OK=$((OK+1)); printf '  PASA  %-52s\n' "$1"
   else MAL=$((MAL+1)); printf '  FALLA %-52s (no dice: %s)\n' "$1" "$2"
        printf '%s\n' "$ULTIMA" | sed 's/^/          /'; fi; }
 
@@ -167,6 +171,47 @@ r "segunda corrida: ni un DISTINTO inventado" 0 perl "$REF/receipt.pl" --servido
                                                  --sitio "http://127.0.0.1:$MUERTO" --cache "$T/cache"
 contiene "0 distintos"                        "distintos 0"
 printf '  (la cache guardo %s ficheros: solo los 200)\n' "$NCACHE"
+
+echo
+echo "-- 8 · la cache NO compara contra lo servido AYER (7-oct-2026) ------------------
+     (\`baja\` devolvia cualquier fichero de --cache sin mirar su fecha: G11 con la
+      cache de la subida anterior comparaba el recibo de hoy con lo de entonces)"
+# Lo servido ES el arbol del recibo. En la cache se pone la version VIEJA de la
+# portada, como la dejaria una subida anterior: si se reutiliza, sale un DISTINTO
+# que hoy no existe. El fichero se busca por su CONTENIDO, no por una clave
+# calculada aqui.
+# ⚠️ ES LA PORTADA Y NO a.html A PROPOSITO: G11 pide a.html por DOS URLs (/a y
+#    /a.html) y le basta con que una case. La primera version envejecio la de /a,
+#    G11 probo /a.html -que no estaba en la cache-, la bajo fresca y salio verde
+#    sin DISTINTO: el caso, no el gate. La portada solo tiene una URL, «/».
+CVIEJOS="$(grep -lF 'contenido de index' "$T/cache"/*.bin 2>/dev/null)"
+envejece() {   # <fecha epoch | -> : la copia de la portada, a la version vieja
+  local f
+  for f in $CVIEJOS; do
+    printf 'contenido VIEJO de index\n' > "$f"
+    if [ "$1" = "-" ]; then rm -f "$f.when"; else echo "$1" > "$f.when"; fi
+  done
+}
+if [ -z "$CVIEJOS" ]; then
+  MAL=$((MAL+1)); printf '  FALLA %-52s (la corrida 7 no dejo la portada en la cache)\n' "hay una entrada que envejecer"
+else
+  printf '  (copias de la portada en la cache: %s)\n' "$(printf '%s\n' $CVIEJOS | wc -l | tr -d ' ')"
+  envejece -
+  r "sin fecha (cache de antes del 7-oct): se vuelve a bajar" 0 perl "$REF/receipt.pl" --servido --repo "$T/repo" \
+                                                   --sitio "http://127.0.0.1:$MUERTO" --cache "$T/cache"
+  contiene "y sale 0 distintos"               "distintos 0"
+  envejece $(( $(date +%s) - 60 ))
+  r "de hace 1 min, por defecto: se vuelve a bajar"       0 perl "$REF/receipt.pl" --servido --repo "$T/repo" \
+                                                   --sitio "http://127.0.0.1:$MUERTO" --cache "$T/cache"
+  envejece $(( $(date +%s) - 60 ))
+  r "pedida con --cache-horas 1: se reutiliza..."         1 perl "$REF/receipt.pl" --servido --repo "$T/repo" \
+                                                   --sitio "http://127.0.0.1:$MUERTO" --cache "$T/cache" --cache-horas 1
+  contiene "...y dice que NO es lo servido ahora" "NO son lo servido ahora"
+  r "--cache-horas que no es un numero: no se corre"      2 perl "$REF/receipt.pl" --servido --repo "$T/repo" \
+                                                   --sitio "http://127.0.0.1:$MUERTO" --cache "$T/cache" --cache-horas mucho
+  # el exit 2 solo no basta: una opcion DESCONOCIDA tambien sale con 2
+  contiene "...y dice por que"                "--cache-horas tiene que ser un numero"
+fi
 
 echo
 echo "-- UNA LENTE QUE CORRIO Y NO MIDIO NADA NO ES «PASA» (§18, 13-ago-2026) ------"

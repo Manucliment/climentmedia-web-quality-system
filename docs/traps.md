@@ -1,6 +1,6 @@
-# The trap log — 87 traps, read before debugging
+# The trap log — 88 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§87** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§88** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -15,6 +15,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §85 | [`traps/85.md`](traps/85.md) |
 | §86 | [`traps/86.md`](traps/86.md) |
 | §87 | [`traps/87.md`](traps/87.md) |
+| §88 | [`traps/88.md`](traps/88.md) |
 
 ---
 
@@ -30,11 +31,11 @@ Not quoted — **derived by a program you can run**:
 perl gates/doc-gate.pl --lista D4
 ```
 
-Today it reports: **87 traps · all 87 declare what catches them · 31 say `nobody` on purpose.**
+Today it reports: **88 traps · all 88 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
-writing more prose** — which is the measured finding the whole repository rests on. The ten most
-recent traps moved the total from 76 to 86 and left `nobody` at 31, because each shipped with the
+writing more prose** — which is the measured finding the whole repository rests on. The twelve most
+recent traps moved the total from 76 to 88 and left `nobody` at 31, because each shipped with the
 check that catches it. That is what adding a trap is supposed to look like.
 
 > **Use the gate's number, not a hand count.** Counting the whole declaration paragraph by hand gives
@@ -170,6 +171,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §13 | Bypassing certificate checks hides what breaks the site on switch day |
 | §15 | Half-applied cache-busting is worse than none |
 | §73 | A CDN that rewrites images turns the served check into 12 false reds |
+| §88 | A download cache committed next to the BEFORE file measured the site as it was seven weeks earlier |
 
 ### F · Method — shell, regex, encoding, exit codes
 

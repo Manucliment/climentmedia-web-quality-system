@@ -60,7 +60,7 @@
 #  ---
 #    perl receipt.pl --escribir  --repo DIR --sitio URL --json QA.json [--salida F]
 #    perl receipt.pl --verificar --repo DIR [--horas N] [--para-desplegar]
-#    perl receipt.pl --servido   --repo DIR [--max N] [--cache DIR]
+#    perl receipt.pl --servido   --repo DIR [--max N] [--cache DIR [--cache-horas N]]
 #    perl receipt.pl --arbol     --repo DIR [--listar]
 #    perl receipt.pl --historial [--sitio URL]
 #
@@ -72,6 +72,10 @@
 #    --arbol           imprime el hash del arbol desplegable (y con --listar, el
 #                      manifiesto). Sirve para ver QUE se considera desplegable
 #    --horas N         ventana de frescura (por defecto 12)
+#    --cache-horas N   con --servido y --cache: cuantas horas puede tener un
+#                      fichero bajado en OTRA corrida para reutilizarlo. Por
+#                      defecto 0 (solo lo de esta corrida); lo reutilizado se
+#                      declara, porque NO es lo servido ahora
 #    --anotar TEXTO    apunta una linea en el historial (lo usa deploy.sh)
 #
 #  EXIT
@@ -104,6 +108,29 @@ $MIDIR = '.' if !defined $MIDIR || $MIDIR eq '';
 #  unico que sirve, que es mirar de un vistazo como van las cinco webs.
 our $CENTRAL = $ENV{QA_RECIBOS_DIR}
             || (($ENV{HOME} || $ENV{USERPROFILE} || '.') . '/.qa-receipts');
+
+# 🔴 7-oct-2026 · LA CACHE DE --servido NO MIDE EL PASADO (hermana de la regla de
+#    qa-master.pl). `baja` devolvia cualquier fichero que encontrara en --cache, sin
+#    mirar de cuando era: G11 con la cache de la subida ANTERIOR comparaba el recibo
+#    de hoy contra lo servido ayer. Ahora vale lo bajado en ESTA corrida; lo de otra,
+#    solo si lleva su fecha (`.when`, que escribe este programa) y es mas joven que
+#    --cache-horas N (0 por defecto), y entonces se DECLARA. La fecha del fichero no
+#    sirve: lo que sale de git o de un `cp` lleva la de hoy.
+our $BAJA_INICIO  = time();
+our $BAJA_MAX_SEG = 0;
+our %BAJA_USO = (reutilizadas => 0, mas_vieja => 0);
+sub _baja_vale {
+    my ($whenf) = @_;
+    my $cuando;
+    if (open my $w, '<', $whenf) { my $l = <$w> // ''; close $w; ($cuando) = $l =~ /^(\d{9,})\s*$/ }
+    return 0 unless defined $cuando;
+    return 1 if $cuando >= $BAJA_INICIO;          # bajado en ESTA corrida
+    my $edad = time() - $cuando;
+    return 0 if $edad > $BAJA_MAX_SEG;
+    $BAJA_USO{reutilizadas}++;
+    $BAJA_USO{mas_vieja} = $edad if $edad > $BAJA_USO{mas_vieja};
+    return 1;
+}
 
 # =============================================================================
 #  1 · QUE ES «EL ARBOL DESPLEGABLE»
@@ -1478,7 +1505,7 @@ sub baja {
     if ($cache) {
         make_path($cache) unless -d $cache;
         $tmp = "$cache/" . md5_hex($url) . '.bin';
-        if (-f $tmp) {
+        if (-f $tmp && _baja_vale("$tmp.when")) {
             open my $fh, '<:raw', $tmp or return (undef, 0);
             local $/; my $b = <$fh>; close $fh;
             return ($b, 200, lee_cabeceras("$tmp.hdr"));
@@ -1497,11 +1524,12 @@ sub baja {
     #    —un DISTINTO inventado, que es la peor salida posible de un gate—.
     #    Sin --cache no se notaba porque el fichero se borraba cada vez.
     my $hdr = lee_cabeceras("$tmp.hdr");
-    if ($code != 200) { unlink $tmp if -f $tmp; unlink "$tmp.hdr" if -f "$tmp.hdr"; return (undef, $code, $hdr) }
+    if ($code != 200) { unlink $tmp if -f $tmp; unlink "$tmp.hdr" if -f "$tmp.hdr"; unlink "$tmp.when" if -f "$tmp.when"; return (undef, $code, $hdr) }
     return (undef, $code, $hdr) unless -f $tmp;
     open my $fh, '<:raw', $tmp or return (undef, $code, $hdr);
     local $/; my $b = <$fh>; close $fh;
-    unless ($cache) { unlink $tmp; unlink "$tmp.hdr" if -f "$tmp.hdr" }
+    if ($cache) { if (open my $wf, '>', "$tmp.when") { print $wf time(), "\n"; close $wf } }
+    else        { unlink $tmp; unlink "$tmp.hdr" if -f "$tmp.hdr" }
     return ($b, $code, $hdr);
 }
 
@@ -1932,6 +1960,7 @@ sub main {
         '--list'  => '--listar',   '--site'    => '--sitio',
         '--out'   => '--salida',   '--receipt' => '--recibo',
         '--hours' => '--horas',    '--instrument' => '--instrumento',
+        '--cache-hours' => '--cache-horas',
     );
     @a = map { $ALIAS{$_} // $_ } @a;
 
@@ -1941,11 +1970,19 @@ sub main {
         elsif ($x eq '--anotar') { $modo = 'anotar'; $opt{anotar} = shift @a }
         elsif ($x eq '--para-desplegar') { $opt{para_desplegar} = 1 }
         elsif ($x eq '--listar')         { $opt{listar} = 1 }
-        elsif ($x =~ /^--(repo|sitio|json|salida|recibo|cache|horas|max|anotar|instrumento)$/) {
+        elsif ($x =~ /^--(repo|sitio|json|salida|recibo|cache|cache-horas|horas|max|anotar|instrumento)$/) {
             $opt{$1} = shift @a;
         }
         elsif ($x eq '-h' || $x eq '--help') { $modo = 'ayuda' }
         else { print "opcion no reconocida: $x\n"; return 2 }
+    }
+    if (defined $opt{'cache-horas'}) {
+        unless ($opt{'cache-horas'} =~ /^\d+(?:[.,]\d+)?$/) {
+            print "--cache-horas tiene que ser un numero de horas (0 = solo vale lo bajado en esta corrida); llego '$opt{'cache-horas'}'\n";
+            return 2;
+        }
+        (my $h = $opt{'cache-horas'}) =~ tr/,/./;
+        $BAJA_MAX_SEG = $h * 3600;
     }
 
     if (!$modo || $modo eq 'ayuda') {
@@ -2099,6 +2136,11 @@ sub main {
                if @{ $D->{transformadas} || [] };
         printf "  identicos %d · distintos %d · no hallados %d (negados %d · ausentes %d)\n",
                scalar @$ok, scalar @$mal, scalar @$nohay, $D->{bloqueados}, $D->{ausentes};
+        # 7-oct-2026 · lo que no se ha bajado en esta corrida se dice: si no, una
+        # comparacion contra lo servido AYER se lee como la de hoy.
+        printf "  ⚠ CACHE: %d fichero(s) de una corrida ANTERIOR (el mas viejo de hace %d min, --cache-horas):\n"
+             . "    NO son lo servido ahora\n", $BAJA_USO{reutilizadas}, int($BAJA_USO{mas_vieja} / 60 + 0.5)
+               if $BAJA_USO{reutilizadas};
         printf "  codigos de lo no hallado: %s\n", $cods if $cods ne '';
         print "  DISTINTO  $_\n" for @$mal;
         print "  IGUAL-SALVO-FECHA  $_\n" for @{ $D->{solo_fecha} };

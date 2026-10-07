@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On a clean
-install the fast run is **812 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **819 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1366 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1386 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
@@ -42,7 +42,7 @@ below.)
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1420**: 1366 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1440**: 1386 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -72,7 +72,7 @@ below.)
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-814, not 812, because that machine has deployed. `run-all.sh`
+821, not 819, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -94,14 +94,14 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  812 casos en verde · 0 en rojo
+  819 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1366 casos en verde · 0 en rojo
+  1386 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
 
@@ -110,6 +110,18 @@ $ bash gates/run-all.sh
 > `--fast` skips; until both runs have happened on that machine, the documentation gate cannot
 > tell a stale number from one nothing has measured yet, and it says `NO MEDIDO` instead of
 > calling it stale. After the other run it drops off the list.
+
+> **And a tenth time, on 2026-10-07 (1366 → 1386 on a full run, and 812 → 819 on `--fast`).**
+> The quality gate, `qa-master.pl`, reused any download of its own it found in `--cache`,
+> however old, and the improve-site path put that cache inside the repository, next to the
+> BEFORE file. On one site it had been committed: a "production" measurement reported four FAILs at
+> once, all of them about the site as it was seven weeks earlier. A download now carries its
+> own date in a `.when` file and is reused only within the same run, or within
+> `--cache-hours N`. Whatever is reused is declared in the header, in the JSON and by
+> `qa-diff.pl`, and G11 in `receipt.pl` follows the same rule. Thirteen cases in
+> `qa-master-tests/tests.sh` (371 → 384) and seven in `receipt-tests/tests-coverage.sh`; only
+> the second bank runs on `--fast`. Which cases fail against the old programs, and why the
+> rest do not, is in trap §88.
 
 > **And a ninth time, the same day (1351 → 1366 on a full run; `--fast` still does not run
 > the door's bank).** Step 2-ter of the door compares every page's words with what
@@ -517,6 +529,8 @@ and neither can break an existing invocation.
 | `--no-receipt` | `--sin-recibo` |
 | `--single` | `--una-sola` |
 | `--evidence` | `--evidencia` |
+| `--container` | `--contenedor` |
+| `--cache-hours` | `--cache-horas` |
 
 **`receipt.pl`**
 
@@ -535,6 +549,7 @@ and neither can break an existing invocation.
 | `--receipt` | `--recibo` |
 | `--hours` | `--horas` |
 | `--instrument` | `--instrumento` |
+| `--cache-hours` | `--cache-horas` |
 
 **`deploy.sh`**
 
@@ -624,7 +639,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **371 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **384 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until

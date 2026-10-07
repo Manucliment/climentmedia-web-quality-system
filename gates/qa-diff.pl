@@ -300,6 +300,19 @@ if (!$mismo_instrumento) {
     }
     print "  --forzar: se sigue, pero este diff NO es evidencia.\n";
 }
+# 🔴 7-oct-2026 · UN LADO MEDIDO CON DESCARGAS DE OTRA CORRIDA (ver «LA CACHE NO MIDE
+#    EL PASADO» en qa-master.pl). En esas paginas se compara contra el sitio de cuando
+#    se bajaron, y el diff puede salir «NADA HA CAMBIADO» sobre un despliegue que
+#    cambio cosas. No se para -reutilizar se pide a proposito con --cache-horas-,
+#    pero se dice arriba, que es donde se lee antes de creerse lo de abajo.
+for my $par (['ANTES', $A], ['DESPUES', $B]) {
+    my ($nom, $j) = @$par;
+    my $c = ($j->{instrumento} || {})->{cache};
+    next unless ref $c eq 'HASH' && ($c->{reutilizadas} // 0) > 0;
+    printf "  ⚠ %s reutiliza %d descarga(s) de una corrida anterior (la mas vieja de hace %d min):\n"
+         . "    en esas paginas mide el sitio de entonces, no el de ese momento\n",
+           $nom, $c->{reutilizadas}, int(($c->{mas_vieja_seg} // 0) / 60 + 0.5);
+}
 
 my %ids = map { $_ => 1 } (keys %{ $A->{_by} }, keys %{ $B->{_by} });
 my (@arreglado, @medido, @regresion, @desaparecido, @nuevo, @igual, @otro);
