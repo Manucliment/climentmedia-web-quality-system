@@ -75,6 +75,11 @@ sella entonces un arbol cuyo veredicto salio de medir otra cosa.
    **41 eran del instrumento**. Si un barrido dice que varias cosas estan rotas a la vez,
    el sospechoso es el barrido.
 
+**Y antes de escribir cualquier texto de una web, su voz:** `_seo/VOZ.md` en el repo de esa
+web (quien habla, a quien, con que trato, que la hace unica y que palabras nunca). Si no
+existe, se escribe pegado al texto que ya esta publicado y se dice al cerrar. Una web que
+suena como todas no se distingue de ninguna.
+
 ## Correr los gates
 
 ```bash
