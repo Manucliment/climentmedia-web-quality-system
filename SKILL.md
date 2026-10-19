@@ -75,10 +75,17 @@ sella entonces un arbol cuyo veredicto salio de medir otra cosa.
    **41 eran del instrumento**. Si un barrido dice que varias cosas estan rotas a la vez,
    el sospechoso es el barrido.
 
-**Y antes de escribir cualquier texto de una web, su voz:** `_seo/VOZ.md` en el repo de esa
-web (quien habla, a quien, con que trato, que la hace unica y que palabras nunca). Si no
-existe, se escribe pegado al texto que ya esta publicado y se dice al cerrar. Una web que
-suena como todas no se distingue de ninguna.
+**Y antes de escribir o editar cualquier texto de una web, dos cosas:**
+
+1. **Su voz:** `_seo/VOZ.md` en el repo de esa web (quien habla, a quien, con que trato, que
+   la hace unica y que palabras nunca). **Sin ella no se escribe:** si falta, lo primero es
+   crearla con el texto ya publicado y el material del cliente. Una web que suena como todas
+   no se distingue de ninguna, y el tono generico es justo lo que delata que no lo escribio
+   quien lleva el negocio.
+2. **Material real del tema:** si la web aun no ha tratado ese tema y no hay experiencia
+   propia del duenio o del cliente sobre el, **antes de escribir se le mandan preguntas
+   concretas** (respondibles en cuatro lineas o una nota de voz) y se espera la respuesta.
+   La experiencia no se inventa; sin ella la pagina es relleno.
 
 ## Correr los gates
 
