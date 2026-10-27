@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!-- Sintética (27-oct-2026): sustituye a la copia congelada de una página de contacto de un cliente, que no se publica.
+     Es la forma de un contacto de verdad: h1, una frase y el botón de llamar, el formulario, al lado la vía directa y el
+     horario, y una reseña
+     (la anatomía de «contacto» pide prueba y dos primitivas). Ningún
+     párrafo de lectura: un contacto legítimo no los tiene y no debe tenerlos (G3 PASA; forzado a guía, G3b FALLA). -->
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contacto · Ejemplo</title>
+<meta name="description" content="Escríbenos o llámanos: contestamos el mismo día laborable.">
+<link rel="canonical" href="https://example.test/contacto/">
+<style>
+ :root{--tinta:#16181d;--papel:#fff;--acento:#1d4ed8;--tenue:#4b5563;--linea:#e5e7eb;--caja:#f6f7f9}
+ *{box-sizing:border-box} body{margin:0;font:1.0625rem/1.6 system-ui,sans-serif;color:var(--tinta);background:var(--papel)}
+ header,footer{padding:1rem 1.5rem;border-bottom:1px solid var(--linea)} footer{border-top:1px solid var(--linea);border-bottom:0}
+ main{max-width:1120px;margin:0 auto;padding:3rem 1.5rem}
+ h1{font-size:2.5rem;line-height:1.15;margin:0 0 .75rem} .entradilla{color:var(--tenue);max-width:36em;margin:0 0 2rem}
+ .rejilla{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:2.5rem;align-items:start}
+ form{display:grid;gap:1rem;background:var(--caja);padding:1.5rem;border-radius:10px}
+ label{display:grid;gap:.35rem;font-weight:600;font-size:.9375rem}
+ input,textarea{font:inherit;padding:.7rem .8rem;border:1px solid #9ca3af;border-radius:8px;background:#fff}
+ textarea{min-height:7rem} .btn{justify-self:start;background:var(--acento);color:#fff;border:0;border-radius:8px;padding:.85rem 1.4rem;font:inherit;font-weight:600;cursor:pointer}
+ aside{display:grid;gap:1.25rem} aside h2{font-size:1.375rem;margin:0 0 .4rem} aside p{margin:0}
+ a{color:var(--acento)}
+ @media (max-width:760px){.rejilla{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><a href="/">Ejemplo</a></header>
+<main data-tipo="contacto">
+ <section data-sec="hero">
+  <h1>Contacto</h1>
+  <p class="entradilla">Cuéntanos qué necesitas y te contestamos el mismo día laborable.</p>
+  <a class="btn" href="tel:+34910000000">Llamar ahora</a>
+ </section>
+ <section data-sec="formulario" class="rejilla">
+  <form action="/contact.php" method="post">
+   <label>Nombre<input name="nombre" autocomplete="name" required></label>
+   <label>Correo<input type="email" name="correo" autocomplete="email" required></label>
+   <label>Teléfono<input type="tel" name="telefono" autocomplete="tel"></label>
+   <label>Mensaje<textarea name="mensaje" required></textarea></label>
+   <button class="btn" type="submit">Enviar el mensaje</button>
+  </form>
+  <aside>
+   <div><h2>Llámanos</h2><p><a href="tel:+34910000000">910 000 000</a></p></div>
+   <div><h2>Horario</h2><p>De lunes a viernes, de 9:00 a 18:00.</p></div>
+   <div><h2>Dónde estamos</h2><p>Calle de Ejemplo 1, 28001 Madrid</p></div>
+  </aside>
+ </section>
+ <section data-sec="prueba">
+  <h2>Lo que dicen quienes ya nos escribieron</h2>
+  <blockquote><p>«Me contestaron esa misma tarde y vinieron el jueves.»</p><footer>— Carmen, cliente desde 2024</footer></blockquote>
+ </section>
+</main>
+<footer><a href="/aviso-legal/">Aviso legal</a> · <a href="/privacidad/">Privacidad</a></footer>
+</body></html>

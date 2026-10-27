@@ -15,7 +15,9 @@ D="$(cd "$(dirname "$0")" && pwd)"
 #  que sean cero, es que **no aparezca uno nuevo** -- y que no desaparezca
 #  ninguno, porque un REVISAR que se cura solo suele significar que el gate ha
 #  dejado de mirar.
-CONOCIDOS=" P2-site-d-page P3-site-d-home F3-privaci "
+# 27-oct-2026 · vacio: los tres REVISAR conocidos (P2, P3 y F3) eran de copias congeladas de webs de clientes, que no se
+#    publican y salian NO MEDIDOS. Los sustituyen copias de las webs propias de Manuel Climent, medidas el 27-oct.
+CONOCIDOS=" "
 OK=0; MAL=0; NM=0; VISTOS=""; NM_IDS=""
 
 res(){
@@ -89,13 +91,20 @@ res P1-molde     mould-home-fixed.html -                                        
 #    habia medido nunca: el boton primario `a.btn` de site-d.example esta a
 #    4,02:1 (AA exige 4,5:1) — texto oklch(0.99 0.005 210) sobre fondo
 #    oklch(0.58 0.09 210). Se arregla bajando la L del fondo, no el gate.
-res P2-site-d-page   site-d-implantes.html    https://site-d.example/odontologia/implantes-dentales    '{}'                         PASA
-res P3-site-d-home    site-d-home.html         https://site-d.example/                                  '{}'                         PASA
+# 🔴 27-oct-2026 · P2 y P3 ya NO son las copias de site-d (no se publican: salian NO MEDIDOS). Son copias CONGELADAS de
+#    paginas propias de Manuel Climent, con su CSS dentro (un cambio del CSS vivo no mueve el banco), que PASAN hoy.
+#    Lo de arriba queda como historia de por que los REVISAR de entonces no eran del gate.
+res P2-propia-pag  own-page.html         https://manucliment.com/about/                             '{}'                         PASA
+res P3-propia-home own-home.html         https://manucliment.com/                                   '{}'                         PASA
 echo
 echo "=========== CONTROLES NEGATIVOS (deben FALLAR) =========="
 res N1-cm-learn   cm-learn.html        https://climentmedia.com/learn/what-is-a-good-roas/           '{}'                         FALLA
-res N2-site-a      site-a-services.html   https://site-a.example/services.html                        '{}'                         FALLA
-res N3-site-c      site-c-home.html       https://site-c.example/                                   '{}'                         FALLA
+# 27-oct-2026 · N1 es la misma pagina de entonces, congelada de nuevo con su CSS dentro (sigue fallando: AVISOS). N2 y N3
+#    sustituyen a las copias de site-a y site-c (no se publican) por dos paginas propias que fallan HOY por un defecto real:
+#    lineas de mas de 80 caracteres (ANCHO) y avisos simultaneos. Congeladas con su CSS: el dia que la web se arregle, el
+#    banco sigue probando que el gate cae sobre esto.
+res N2-propia-serv own-service-wide.html https://manucliment.com/google-ads-freelancer/             '{}'                         FALLA
+res N3-propia-audi own-audit.html        https://climentmedia.com/ad-account-audit/                 '{}'                         FALLA
 res N4-fabric    prose-fabricated.html https://climentmedia.com/learn/guia-roas/                     '{}'                         FALLA
 echo
 echo "=========== ANCHO-MIN · la home rota que APROBABA EN VACIO ======"
@@ -112,8 +121,9 @@ echo "=========== CONTRASTE · control positivo Y negativo en la misma pagina ==
 res C1-contraste contrast-control.html https://climentmedia.com/control-contraste/                 '{"tipo":"guia"}'            FALLA
 echo
 echo "=========== FRONTERA (textual legitima: NO acusar) ======"
-res F1-legal     site-d-legal.html        https://site-d.example/aviso-legal                       '{}'                         PASA
-res F1b-forzad   site-d-legal.html        https://site-d.example/aviso-legal                       '{"tipo":"servicio"}'        FALLA
+# 27-oct-2026 · la legal es la privacidad de una web propia (la de site-d no se publica), congelada con su CSS.
+res F1-legal     own-legal.html           https://manucliment.com/privacy/                          '{}'                         PASA
+res F1b-forzad   own-legal.html           https://manucliment.com/privacy/                          '{"tipo":"servicio"}'        FALLA
 res F2-guialar   guide-laid-out.html  https://climentmedia.com/learn/guia-roas-maquetada/           '{}'                         PASA
 # 🔴 20-ago-2026 · El MISMO fichero de arriba con las primeras palabras de cada
 # parrafo envueltas en <strong>: mismo texto visible, mismo ancho, misma
@@ -125,8 +135,9 @@ res F2-guialar   guide-laid-out.html  https://climentmedia.com/learn/guia-roas-m
 res F4-strong    cpl-leading-strong.html https://climentmedia.com/learn/guia-roas-maquetada/        '{}'                         PASA
 echo
 echo "=========== FRONTERA 2 · politica de privacidad REAL y larga ============"
-res F3-privaci   site-c-privacidad.html https://site-c.example/politica-privacidad/               '{}'                         PASA
-res F3b-forzad   site-c-privacidad.html https://site-c.example/politica-privacidad/               '{"tipo":"guia"}'            FALLA
+# 27-oct-2026 · la de site-c no se publica: la politica de cookies de una web propia, congelada con su CSS.
+res F3-cookies   own-cookies.html       https://manucliment.com/cookies/                            '{}'                         PASA
+res F3b-forzad   own-cookies.html       https://manucliment.com/cookies/                            '{"tipo":"guia"}'            FALLA
 
 echo
 echo "=========== FRONTERA 3 - ANCHO-MIN: rejilla SI, fila de botones NO ======="

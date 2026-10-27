@@ -39,15 +39,24 @@ headless Chrome on Windows **clamps `--window-size` to about 500px**, so asking 
 returns a crop dressed up as a phone. **Always check the `innerWidth` in the output** before
 believing any number that came out of it.
 
-## Cases that are NOT MEASURED here
+## Cases that used to be NOT MEASURED here (closed 2026-10-27)
 
-Eight cases were written against live client pages, fetched with `curl` and measured with a
+Eleven cases were written against live client pages, fetched with `curl` and measured with a
 `<base href>` so they resolve their CSS and the gate sees the real path and origin. Those
-captures are **not published** — they are somebody else's website.
+captures are **not published** — they are somebody else's website — so the eleven reported
+`NOT MEASURED` and the battery exited `3`.
 
-Those cases report `NOT MEASURED` individually, are counted separately, and make the battery
-exit `3` if any were skipped and nothing else failed. They are neither passing nor failing:
-nobody asked them. To close the gap, freeze pages from a site you own:
+Since 2026-10-27 they run against **frozen copies of the maintainer's own sites**
+(`own-*.html`, `cm-learn.html`) with their stylesheets **inlined and comments stripped**, so a
+CSS change on the live site cannot move the bench, and one synthetic contact page
+(`contact-real.html`). Each was measured before it replaced the old case: the good pages pass,
+the pages kept as negatives fail today for a real defect (lines over 80 characters, stacked
+warnings), and the forced-type controls fail as they must. Result: **34 OK · 0 failed · 0 not
+measured**. Before committing a frozen page, run `node ../leak-sweep.js` on it: inlined CSS
+can carry internal notes.
+
+A case whose fixture is missing still reports `NOT MEASURED` individually and makes the battery
+exit `3` — it is neither passing nor failing. To freeze pages from a site you own:
 
 ```bash
 perl ../qa-master.pl <URL> --una-sola --sin-recibo --cache <cache-dir>              # measure once

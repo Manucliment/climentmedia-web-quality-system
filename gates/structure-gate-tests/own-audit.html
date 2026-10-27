@@ -1,0 +1,1944 @@
+<!-- Congelada de https://climentmedia.com/ad-account-audit/ el 2026-10-27, con 2 hoja(s) de estilo dentro. Web propia de Manuel Climent. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Ads audit, run inside the software - Climent Media</title>
+  <meta name="description" content="A Google Ads audit that runs inside Climent Ads Assistant: spend split by line of business, ten blocks of analysis, numbers the software computes. Meta is read.">
+  <link rel="canonical" href="https://climentmedia.com/ad-account-audit/">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Climent Media">
+  <meta property="og:title" content="The Google Ads audit that runs inside the software">
+  <meta property="og:description" content="Spend split by line of business, ten blocks of analysis, and numbers the software computes. Meta is read, not scored yet.">
+  <meta property="og:url" content="https://climentmedia.com/ad-account-audit/">
+  <meta property="og:image" content="https://climentmedia.com/assets/og-ad-account-audit.png">
+  <meta property="og:image:alt" content="Climent Media share card on a dark background with an orange accent, headed: The audit that runs inside the software">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Google Ads audit that runs inside the software">
+  <meta name="twitter:description" content="Spend split by line of business, ten blocks of analysis, and numbers the software computes. Meta is read, not scored yet.">
+  <meta name="twitter:image" content="https://climentmedia.com/assets/og-ad-account-audit.png">
+  <meta name="twitter:image:alt" content="Climent Media share card on a dark background with an orange accent, headed: The audit that runs inside the software">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23000'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='26' font-weight='800' fill='%23fff' text-anchor='middle'%3ECM%3C/text%3E%3C/svg%3E">
+  <style data-congelado="/styles.css">
+
+
+
+@font-face {
+  font-family: "Inter"; font-style: normal; font-weight: 100 900;
+  font-display: swap; src: url("https://climentmedia.com/assets/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  
+  --bg-rgb: 7, 7, 8;
+  --text-rgb: 244, 244, 242;
+  --accent-rgb: 255, 92, 0;
+  --white-rgb: 255, 255, 255;
+  
+  --warn-rgb: 255, 176, 32;   
+  --ok-rgb: 53, 208, 127;     
+
+  
+  --bg: rgb(var(--bg-rgb));
+  --bg-alt: #0c0c0e;
+  --surface: rgba(var(--white-rgb), 0.035);
+  --border: rgba(var(--white-rgb), 0.09);
+  --text: rgb(var(--text-rgb));
+  --muted: #a2a29c;
+  --warn: rgb(var(--warn-rgb));
+  --ok: rgb(var(--ok-rgb));
+  
+  --accent: rgb(var(--accent-rgb));
+  --accent-bright: #ff7a26;
+  --accent-glow: rgba(var(--accent-rgb), 0.35);
+
+  
+  --radius-sm: 11px;
+  --radius: 18px;
+  --radius-lg: 26px;
+  --radius-pill: 999px;
+
+  --font: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  
+  --fs-display: clamp(2.6rem, 7vw, 5rem);      
+  --fs-title:   clamp(1.9rem, 4.2vw, 3rem);    
+  --fs-section: clamp(1.4rem, 2.4vw, 1.75rem); 
+  --fs-lead:    1.2rem;                        
+  --fs-body:    1rem;                          
+  --fs-small:   0.875rem;                      
+  --fs-micro:   0.75rem;                       
+
+  
+  --fw-body: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --fw-black: 800;
+  --tracking-eyebrow: 0.22em;
+  --tracking-tight: -0.02em;
+
+  
+  --space-xs: 0.5rem;
+  --space-sm: 0.9rem;
+  --space-md: 1.2rem;
+  --space-lg: 1.8rem;
+  --space-xl: 2.6rem;
+
+  
+  --shadow-glow: 0 4px 28px var(--accent-glow);
+  --shadow-glow-lg: 0 8px 40px var(--accent-glow);
+
+  
+  --dur-short: 120ms;
+  --dur: 220ms;
+  --dur-long: 400ms;
+
+  
+  --focus-ring: 2px;
+  --focus-offset: 3px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+
+
+:focus { outline: 0; }                    
+:focus-visible {                          
+  outline: var(--focus-ring) solid rgba(var(--accent-rgb), 0.9);
+  outline-offset: var(--focus-offset);
+  box-shadow: 0 0 0 var(--focus-offset) rgb(var(--bg-rgb));
+  border-radius: 4px;
+}
+
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;                 
+  z-index: 1000;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #0a0a0b;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-small);
+  text-decoration: none;
+  transition: top var(--dur-short) ease-in-out;
+}
+.skip-link:focus { top: 0.5rem; }
+@media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
+
+
+.visually-hidden {
+  position: absolute !important;
+  overflow: hidden;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--accent); color: #000; }
+
+h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; font-weight: 800; }
+
+h1 { font-size: var(--fs-display); }
+h2 { font-size: var(--fs-title); }
+h3 { font-size: var(--fs-section); letter-spacing: -0.01em; }
+
+a { color: inherit; text-decoration: none; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+
+
+.nav-brand { display: inline-flex; align-items: center; gap: 0.65rem; }
+
+.brand-mark {
+  display: grid; place-items: center;
+  width: 42px; height: 42px;
+  background: #000;
+  border: 1px solid rgba(var(--white-rgb), 0.16);
+  border-radius: 11px;
+  font-weight: 800; font-size: 0.95rem; letter-spacing: 0.02em;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.brand-word {
+  font-weight: 800; font-size: 0.72rem; line-height: 1.22;
+  letter-spacing: 0.14em;
+}
+
+
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem clamp(1.2rem, 4vw, 3rem);
+  background: rgba(var(--bg-rgb), 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.nav.scrolled { border-bottom-color: var(--border); background: rgba(var(--bg-rgb), 0.82); }
+
+.nav-links { display: flex; align-items: center; gap: clamp(1.2rem, 2.5vw, 2.2rem); }
+
+.nav-links a {
+  font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--muted);
+  transition: color 0.2s ease;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  color: #000 !important;
+  background: var(--accent);
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  font-weight: 700 !important;
+  box-shadow: 0 0 18px var(--accent-glow);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.nav-cta:hover { box-shadow: 0 0 30px var(--accent-glow); transform: translateY(-1px); }
+
+.nav-toggle { display: none; }
+
+
+
+.btn-primary, .btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0.85rem 1.7rem;
+  border-radius: 999px;
+  font-weight: var(--fw-bold); font-size: var(--fs-body);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent));
+  color: #000;
+  box-shadow: 0 4px 28px var(--accent-glow);
+}
+
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 40px var(--accent-glow); }
+
+.btn-ghost {
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.btn-ghost:hover { border-color: rgba(var(--accent-rgb), 0.5); transform: translateY(-2px); }
+
+
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 7rem clamp(1.2rem, 5vw, 3rem) 5rem;
+  overflow: hidden;
+}
+
+#neural {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0.85;
+}
+
+.hero-glow {
+  position: absolute;
+  width: 900px; height: 900px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.14) 0%, transparent 60%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hero-inner { position: relative; z-index: 2; max-width: 900px; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font-size: var(--fs-micro); font-weight: var(--fw-medium); letter-spacing: 0.06em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: rgba(var(--bg-rgb), 0.6);
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 1.8rem;
+}
+
+.pulse-dot {
+  position: relative;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+
+.pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.5);
+  animation: pulse 2.2s infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(0.31); opacity: 1; }
+  70%  { transform: scale(1); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.accent-word { position: relative; color: var(--accent); white-space: nowrap; }
+
+.accent-underline {
+  position: absolute; left: 0; right: 0; bottom: 0.02em;
+  height: 0.12em;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 999px;
+  opacity: 0.6;
+}
+
+.hero-sub {
+  margin: 1.6rem auto 0;
+  max-width: 620px;
+  font-size: var(--fs-lead);
+  color: var(--muted);
+}
+
+.hero-actions {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+  margin-top: 2.4rem;
+}
+
+.hero-scroll {
+  position: absolute; bottom: 2rem; left: 50%;
+  transform: translateX(-50%);
+  width: 24px; height: 38px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  z-index: 2;
+}
+
+.hero-scroll span {
+  position: absolute; top: 7px; left: 50%;
+  width: 4px; height: 8px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: scrollhint 1.8s ease-in-out infinite;
+}
+
+@keyframes scrollhint {
+  0% { transform: translateY(0); opacity: 1; }
+  70% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+
+
+.section { padding: clamp(4.5rem, 9vw, 7.5rem) clamp(1.2rem, 5vw, 3rem); max-width: 1200px; margin: 0 auto; }
+
+.section-alt {
+  max-width: none;
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.section-alt .steps, .section-alt .section-head { max-width: 1200px; margin-left: auto; margin-right: auto; }
+
+.section-head { max-width: 640px; margin-bottom: 3.2rem; }
+
+.eyebrow {
+  font-size: var(--fs-micro); font-weight: var(--fw-black);
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--accent-bright);
+  margin-bottom: 0.9rem;
+}
+
+.section-sub { color: var(--muted); margin-top: 1rem; font-size: var(--fs-body); }
+
+
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.1rem;
+}
+
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.8rem 1.6rem;
+  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(var(--accent-rgb), 0.09), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.card:hover { transform: translateY(-4px); border-color: rgba(var(--accent-rgb), 0.35); }
+.card:hover::before { opacity: 1; }
+
+
+.card p { color: var(--muted); font-size: var(--fs-body); margin-top: 0.6rem; }
+
+
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.1rem;
+}
+
+.step {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.7rem 1.5rem;
+  background: rgba(var(--bg-rgb), 0.5);
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.step:hover { border-color: rgba(var(--accent-rgb), 0.35); transform: translateY(-4px); }
+
+
+.step p { color: var(--muted); font-size: var(--fs-body); margin-top: 0.55rem; }
+
+
+
+.about-frame {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  aspect-ratio: 4 / 5;
+  background: var(--bg-alt);
+}
+
+.about-frame img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: saturate(0.92);
+}
+
+.about-frame::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(200deg, transparent 55%, rgba(var(--accent-rgb), 0.18));
+  pointer-events: none;
+}
+
+.about-fallback {
+  display: none;
+  position: absolute; inset: 0;
+  place-items: center;
+}
+
+
+.about-fallback span {
+  font-size: 4rem; font-weight: 800; color: rgba(var(--white-rgb), 0.38);
+  letter-spacing: 0.04em;
+}
+
+.about-frame.img-missing img { display: none; }
+.about-frame.img-missing .about-fallback { display: grid; }
+
+
+
+.section-contact { padding-bottom: clamp(5rem, 10vw, 8rem); }
+
+.contact-box {
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 8px);
+  padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 5vw, 4rem);
+  background:
+    radial-gradient(600px circle at 50% -10%, rgba(var(--accent-rgb), 0.13), transparent 60%),
+    var(--surface);
+}
+
+.contact-box .section-sub { max-width: 460px; margin-left: auto; margin-right: auto; }
+
+.contact-lines {
+  margin-top: 2.4rem;
+  display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;
+}
+
+.contact-line {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  padding: 1.1rem 1.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(var(--bg-rgb), 0.6);
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  min-width: 260px;
+}
+
+.contact-line:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 34px rgba(var(--accent-rgb), 0.18);
+}
+
+.contact-label {
+  font-size: var(--fs-micro); font-weight: var(--fw-black);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent-bright);
+}
+
+.contact-value { font-weight: var(--fw-medium); font-size: var(--fs-body); }
+
+
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 2.6rem clamp(1.2rem, 5vw, 3rem) 2rem;
+  background: var(--bg-alt);
+}
+
+.footer-top {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1.4rem;
+  max-width: 1200px; margin: 0 auto;
+}
+
+.footer-links { display: flex; gap: 1.6rem; flex-wrap: wrap; }
+
+.footer-links a { color: var(--muted); font-size: var(--fs-small); transition: color 0.2s ease; }
+.footer-links a:hover { color: var(--accent-bright); }
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 1.8rem auto 0;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;
+  color: var(--muted); font-size: var(--fs-small);
+}
+
+.footer-privacy { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+
+
+
+.crumbs { margin-bottom: 2rem; font-size: 0.88rem; }
+.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.crumbs li { color: var(--muted); }
+.crumbs li + li::before { content: "/"; margin-right: 0.35rem; color: var(--border); }
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--accent-bright); }
+.crumbs [aria-current="page"] { color: var(--text); }
+
+.legal {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 9rem clamp(1.2rem, 5vw, 2rem) 5rem;
+}
+
+.legal h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 0.6rem; }
+.legal .legal-updated { color: var(--muted); font-size: var(--fs-small); margin-bottom: 2.6rem; }
+.legal h2 { font-size: var(--fs-section); margin: 2.6rem 0 0.8rem; }
+.legal h3 { font-size: var(--fs-lead); margin: 1.8rem 0 0.5rem; }
+
+.legal p, .legal li:not(.crumbs li) { color: var(--muted); font-size: var(--fs-body); }
+.legal p { margin-bottom: 0.9rem; }
+.legal ul { margin: 0.4rem 0 1.1rem 1.3rem; display: grid; gap: 0.45rem; }
+.legal a:not(.crumbs a) { color: var(--accent-bright); }
+.legal a:not(.crumbs a):hover { text-decoration: underline; }
+.legal strong { color: var(--text); }
+
+.legal-callout {
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: var(--radius);
+  background: rgba(var(--accent-rgb), 0.06);
+  padding: 1.2rem 1.4rem;
+  margin: 1.4rem 0;
+}
+
+.legal-callout p { margin: 0; }
+
+
+
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible { opacity: 1; transform: none; }
+
+
+.rise { animation: rise 0.7s ease both; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: none; }
+}
+
+
+.delay-1 { transition-delay: 0.12s; animation-delay: 0.12s; }
+.delay-2 { transition-delay: 0.24s; animation-delay: 0.24s; }
+.delay-3 { transition-delay: 0.36s; animation-delay: 0.36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .rise { animation: none; }
+  
+  .pulse-dot::after { display: none; }
+  .hero-scroll span { animation: none; }
+  #neural { display: none; }
+}
+
+
+
+@media (max-width: 760px) {
+  .nav-toggle {
+    display: flex; flex-direction: column; gap: 6px;
+    background: none; border: none; cursor: pointer; padding: 8px;
+  }
+
+  .nav-toggle span {
+    display: block; width: 24px; height: 2px;
+    background: var(--text);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .nav-toggle[aria-expanded="true"] span:first-child { transform: translateY(4px) rotate(45deg); }
+  .nav-toggle[aria-expanded="true"] span:last-child { transform: translateY(-4px) rotate(-45deg); }
+
+  .nav-links {
+    position: fixed;
+    top: 61px; left: 0; right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    
+    text-align: left;
+    
+    background: rgb(var(--bg-rgb));
+    border-bottom: 1px solid var(--border);
+    padding: 1.4rem 1.5rem 1.8rem;
+    gap: 1.3rem;
+    transform: translateY(-130%);
+    transition: transform 0.35s ease;
+    }
+
+    
+    .nav-links .nav-cta { text-align: center; }
+
+  .nav-links.open { transform: translateY(0); }
+  .nav-links a { font-size: var(--fs-body); }
+
+  
+  
+
+  .about-media { max-width: 340px; }
+  .footer-bottom { flex-direction: column; }
+}
+
+
+
+.logo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.logo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1.6rem 1rem;
+  background: var(--bg);
+  transition: background 0.3s ease;
+}
+
+.logo-item:hover { background: var(--bg-alt); }
+
+.logo-item svg {
+  width: 30px; height: 30px;
+  fill: var(--muted);
+  transition: fill 0.3s ease, transform 0.3s ease;
+}
+
+.logo-item:hover svg { fill: var(--text); transform: translateY(-2px); }
+
+.logo-item span {
+  font-size: var(--fs-small); font-weight: var(--fw-medium);
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.tech-note {
+  margin-top: 1.6rem;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  max-width: 760px;
+}
+.tech-note strong { color: var(--text); font-weight: 600; }
+
+.tech-oss {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  margin-top: 1.6rem;
+  padding: 0.7rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-small); font-weight: var(--fw-medium);
+  text-decoration: none;
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+.tech-oss:hover { border-color: rgba(var(--accent-rgb), 0.5); transform: translateY(-2px); }
+.tech-oss svg { width: 18px; height: 18px; fill: currentColor; }
+
+
+
+.offer-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.4rem; }
+
+.btn-github {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--fw-bold); font-size: var(--fs-body);
+  text-decoration: none;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+.btn-github:hover { transform: translateY(-2px); border-color: rgba(var(--white-rgb), 0.35); }
+.btn-github svg { width: 20px; height: 20px; fill: currentColor; }
+
+
+
+.paperclip-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.paperclip-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: var(--fs-micro); font-weight: var(--fw-black); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--st-build, var(--warn));
+  border: 1px solid rgba(var(--warn-rgb), 0.35);
+  background: rgba(var(--warn-rgb), 0.1);
+  padding: 0.3rem 0.8rem; border-radius: 999px;
+}
+.paperclip-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+
+
+
+.btn-download, .btn-gh {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  font-weight: var(--fw-bold); font-size: var(--fs-body);
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.btn-download {
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent));
+  color: #000; border: 1px solid transparent;
+  box-shadow: 0 4px 28px var(--accent-glow);
+}
+.btn-download:hover { transform: translateY(-2px); box-shadow: 0 6px 40px var(--accent-glow); }
+.btn-gh {
+  border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+}
+.btn-gh:hover { transform: translateY(-2px); border-color: rgba(var(--white-rgb), 0.35); }
+.btn-download svg, .btn-gh svg { width: 20px; height: 20px; fill: currentColor; }
+
+
+
+
+.droplink { display: inline-flex; align-items: center; gap: 0.1rem; }
+.droplink > a { font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--muted); transition: color 0.2s ease; }
+.droplink > a:hover { color: var(--text); }
+
+.dropbtn {
+  display: grid; place-items: center;
+  width: 1.4rem; height: 1.6rem; padding: 0;
+  background: none; border: 0; cursor: pointer;
+  color: var(--muted); border-radius: var(--radius-sm);
+  transition: color 0.2s ease;
+}
+.dropbtn:hover { color: var(--text); }
+.dropbtn svg { width: 10px; height: 6px; transition: transform var(--dur) ease; }
+.dropbtn[aria-expanded="true"] { color: var(--accent-bright); }
+.dropbtn[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+
+.megapanel[hidden] { display: none; }
+.megapanel {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: calc(100% + 0.5rem);
+  width: min(860px, calc(100vw - 3rem));
+  display: grid; grid-template-columns: 1fr 1px 1.1fr; gap: 2rem;
+  padding: 1.75rem;
+  
+  background: linear-gradient(rgba(var(--white-rgb), 0.035), rgba(var(--white-rgb), 0.035)), var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+}
+
+.megapanel--split { grid-template-columns: 1fr 1px 1fr; }
+
+.mp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.1rem; align-content: start; }
+.mp-list a { display: block; padding: 0.5rem 0.6rem; font-size: var(--fs-small); color: var(--text); border-radius: var(--radius-sm); transition: background 0.2s ease, color 0.2s ease; }
+.mp-list a:hover { background: rgba(var(--white-rgb), 0.06); color: var(--accent-bright); }
+.mp-list a[aria-current] { color: var(--accent-bright); font-weight: var(--fw-bold); }
+.mp-rule { background: var(--border); }
+
+.mp-promo { display: grid; gap: 0.7rem; align-content: start; }
+.mp-promo h2 { font-size: var(--fs-section); margin: 0; line-height: 1.25; }
+.mp-promo p { font-size: var(--fs-small); color: var(--muted); margin: 0; }
+.mp-cta { color: var(--accent-bright); font-weight: var(--fw-bold); font-size: var(--fs-small); }
+.mp-cta:hover { text-decoration: underline; }
+.mp-visual {
+  width: 100%; max-width: 190px; aspect-ratio: 190 / 118;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.22), rgba(var(--accent-rgb), 0.04));
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+
+.nav-scrim { position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, 0.5); }
+.nav-scrim[hidden] { display: none; }
+
+@media (max-width: 760px) {
+  
+  .droplink { width: 100%; justify-content: space-between; }
+  .droplink > a { font-size: var(--fs-body); }
+  .dropbtn { width: 44px; height: 44px; }          
+  .dropbtn svg { width: 14px; height: 9px; }
+
+  .megapanel,
+  .megapanel--split {
+    position: static; transform: none; width: auto;
+    grid-template-columns: 1fr; gap: 1rem;
+    
+    text-align: left;
+    padding: 0.25rem 0 0.75rem 1rem;
+    margin-left: 0.4rem;
+    background: none; border: 0; box-shadow: none;
+    border-left: 2px solid rgba(var(--accent-rgb), 0.35);
+  }
+  .mp-rule { display: none; }
+  .nav-scrim { display: none; }   
+  .mp-visual { max-width: 160px; }
+}
+
+
+
+.tpl-grid {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: 1fr;
+  margin: var(--space-lg) 0 var(--space-xl);
+}
+
+@media (min-width: 620px)  { .tpl-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.625rem), 1fr)); } }
+
+.tpl-grid:has(> :last-child:nth-child(-n+3)) { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+.tpl-card {
+  position: relative;
+  display: block;
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  text-decoration: none;
+  transition: border-color var(--dur) ease, transform var(--dur) ease, background var(--dur) ease;
+}
+a.tpl-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.42);
+  background: rgba(var(--white-rgb), 0.055);
+  transform: translateY(-2px);
+}
+
+a.tpl-card::before, a.tpl-card::after {
+  content: "";
+  position: absolute;
+  width: 7px; height: 7px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur) ease;
+  background:
+    linear-gradient(rgba(var(--accent-rgb), .8), rgba(var(--accent-rgb), .8)) center / 7px 1px no-repeat,
+    linear-gradient(rgba(var(--accent-rgb), .8), rgba(var(--accent-rgb), .8)) center / 1px 7px no-repeat;
+}
+a.tpl-card::before { top: 7px; left: 7px; }
+a.tpl-card::after  { bottom: 7px; right: 7px; }
+a.tpl-card:hover::before, a.tpl-card:hover::after { opacity: 1; }
+
+.tpl-card img { width: 26px; height: 26px; margin-bottom: var(--space-sm); }
+.tpl-card h3 {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-black);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+}
+.tpl-card p { font-size: var(--fs-small); color: rgba(var(--text-rgb), 0.68); line-height: 1.55; }
+.tpl-kicker {
+  font-size: var(--fs-micro) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-bright) !important;
+  margin-bottom: 0.5rem;
+}
+
+
+.tpl-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-sm);
+}
+.st-live  { background: rgba(var(--ok-rgb), 0.16);    color: var(--ok); }
+.st-beta  { background: rgba(var(--warn-rgb), 0.16);  color: var(--warn); }
+.st-build { background: rgba(var(--white-rgb), 0.08); color: var(--muted); }
+
+
+.tpl-steps { display: grid; gap: var(--space-lg); margin: var(--space-lg) 0 var(--space-xl); }
+
+@media (min-width: 760px) { .tpl-steps { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.625rem), 1fr)); gap: var(--space-xl); } }
+
+.tpl-n {
+  display: block;
+  font-size: 2.6rem; font-weight: var(--fw-black);
+  letter-spacing: -0.03em; line-height: 1;
+  color: rgba(var(--white-rgb), 0.38);
+}
+.tpl-step h3 { font-size: var(--fs-lead); font-weight: var(--fw-black); margin: var(--space-sm) 0 0.35rem; }
+
+.tpl-step p  { font-size: var(--fs-small); color: rgba(var(--text-rgb), 0.66); line-height: 1.6; }
+
+.tpl-list { list-style: none; padding: 0; margin: var(--space-md) 0 var(--space-lg); }
+.tpl-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.7rem;
+  font-size: var(--fs-body);
+  color: rgba(var(--text-rgb), 0.78);
+}
+.tpl-list li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.62em;
+  width: 9px; height: 1px;
+  background: var(--accent-bright);
+}
+
+.tpl-related { margin-top: var(--space-lg); font-size: var(--fs-small); }
+.tpl-stamp   { margin-top: var(--space-xl); opacity: 0.7; }
+
+
+
+
+.shot { max-width: 720px; margin: 2rem auto 0; }
+.shot img {
+  width: 100%; height: auto; aspect-ratio: 1200 / 950;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); display: block;
+}
+.shot figcaption { color: var(--muted); font-size: var(--fs-small); margin-top: 0.7rem; }
+
+.hero-note { max-width: 34em; margin-left: auto; margin-right: auto; }
+.section-sub { max-width: 34em; }
+
+
+.wrap-narrow { max-width: 760px; margin: 0 auto; }
+.testi-col { display: flex; flex-direction: column; gap: 1.1rem; margin-top: 2rem; }
+
+
+.faq-acc { display: grid; gap: 0.7rem; margin-top: 2rem; }
+.faq-acc details { border: 1px solid var(--border); border-radius: var(--radius-sm);
+                   background: var(--surface); padding: 0 1.2rem; }
+.faq-acc summary { cursor: pointer; padding: 1.05rem 0; font-weight: 700; list-style: none;
+                   display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.faq-acc summary::-webkit-details-marker { display: none; }
+.faq-acc summary::after { content: "+"; font-size: 1.4rem; color: var(--accent-bright);
+                          line-height: 1; transition: transform 0.2s ease; }
+.faq-acc details[open] summary::after { transform: rotate(45deg); }
+.faq-acc details > p { color: var(--muted); margin: 0 0 1.1rem; max-width: 34em;
+                       font-size: 0.97rem; line-height: 1.6; }
+.faq-cierre { margin-top: 1.8rem; }
+
+
+h1, h2, h3, .lp-tagline, .hero h1 { text-wrap: balance; }
+
+
+.lp-hero-cta { margin: 1.4rem 0 0; }
+
+
+.cookie-bar {
+  position: fixed;
+  z-index: 200;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.4rem;
+  padding: 1.1rem 1.3rem;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+.cookie-bar__text {
+  margin: 0;
+  flex: 1 1 22rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.cookie-bar__text a { color: var(--accent-bright); }
+.cookie-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cookie-bar__btn {
+  min-width: 7.5rem;
+  padding: 0.62rem 1.1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.cookie-bar__btn:hover { border-color: rgba(var(--white-rgb), 0.28); }
+.cookie-bar__btn--yes { color: var(--accent-bright); border-color: var(--accent); }
+.cookie-bar__btn--yes:hover { border-color: var(--accent-bright); }
+
+
+@media (max-width: 560px) {
+  .cookie-bar {
+    left: 0.55rem;
+    right: 0.55rem;
+    bottom: 0.55rem;
+    padding: 0.55rem 0.7rem;
+    gap: 0.5rem 0.7rem;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .cookie-bar__text { flex: 1 1 auto; font-size: 0.78rem; line-height: 1.4; }
+  .cookie-bar__actions { flex: 0 0 auto; gap: 0.4rem; }
+  .cookie-bar__btn { min-width: 0; padding: 0.45rem 0.6rem; font-size: 0.8rem; }
+}
+
+
+.legal-table-wrap { margin: 0.6rem 0 1.4rem; }
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.legal-table th,
+.legal-table td {
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+.legal-table th {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.legal-table code {
+  font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+  font-size: 0.92em;
+  color: var(--accent-bright);
+}
+.legal-table strong { color: var(--text); }
+.legal-note { color: var(--muted); font-size: 0.9em; }
+
+@media (max-width: 640px) {
+  .legal-table thead { position: absolute; width: 1px; height: 1px;
+                       overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .legal-table,
+  .legal-table tbody,
+  .legal-table tr,
+  .legal-table td { display: block; width: 100%; }
+  .legal-table tr {
+    margin-bottom: 1rem;
+    padding: 0.3rem 0 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .legal-table td { border-bottom: 0; padding: 0.45rem 0.9rem; }
+  .legal-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--text);
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+}
+
+</style>
+  <style data-congelado="/ad-account-audit/ad-account-audit.css">
+
+
+.aud {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 96px 24px 96px;
+}
+
+
+.aud-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 26px;
+  padding: 7px 15px 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.aud-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(255, 92, 0, 0.16);
+}
+
+.aud-hero h1 {
+  font-size: clamp(2.4rem, 7vw, 3.9rem);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+  margin: 0 0 22px;
+}
+
+.aud-h1-accent { color: var(--accent); }
+
+
+.aud-hero__logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 24px;
+}
+
+.aud-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.aud-logo svg { flex: 0 0 auto; }
+.aud-logo--more { color: var(--muted); font-weight: 500; border-style: dashed; }
+
+.aud-lead {
+  color: var(--muted);
+  font-size: clamp(1.02rem, 2.2vw, 1.15rem);
+  line-height: 1.6;
+  max-width: 34em;
+  margin: 36px 0 0;
+}
+
+
+.aud-viz {
+  margin: 0;
+  padding: 26px 22px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.aud-viz svg { display: block; width: 100%; height: auto; }
+
+
+.aud-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 28px 0 14px;
+}
+
+.aud-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0 32px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #0b0b0c;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.aud-cta:hover {
+  background: var(--accent-bright);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 34px -14px var(--accent-glow);
+}
+
+.aud-cta--alt {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.aud-cta--alt:hover { background: var(--surface); border-color: var(--accent); box-shadow: none; }
+
+.aud-cta:focus-visible,
+.aud-faq summary:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; }
+
+.aud-microcopy { color: var(--muted); font-size: 0.86rem; margin: 0; }
+.aud-microcopy a { color: var(--accent-bright); }
+
+.aud-lead em { color: var(--text); font-style: italic; }
+
+
+.aud-cred {
+  margin: 18px 0 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+.aud-cred strong { color: var(--text); font-weight: 700; }
+
+
+.aud-tax__lead {
+  color: var(--muted);
+  font-size: clamp(1rem, 2.1vw, 1.12rem);
+  line-height: 1.6;
+  max-width: 40em;
+  margin: -8px 0 0;
+}
+
+.aud-tax__viz {
+  margin: 34px 0 0;
+  padding: 28px 22px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.aud-tax__sources {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.aud-src {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.aud-src--sheet { opacity: 0.7; }
+
+.dot--ga4 { background: #e8710a; }
+.dot--gsc { background: #458cf5; }
+.dot--sheet { background: #34a853; }
+
+.aud-tax__arrow {
+  font-size: 1.8rem;
+  color: var(--accent);
+  line-height: 1;
+  margin: 14px 0;
+}
+
+.aud-tax__one {
+  display: inline-block;
+  padding: 12px 22px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: rgba(255, 92, 0, 0.08);
+  color: var(--text);
+  font-weight: 700;
+  font-size: clamp(0.95rem, 2vw, 1.08rem);
+}
+
+
+.aud-hero--compact { text-align: center; }
+.aud-hero--compact .aud-eyebrow { margin-left: auto; margin-right: auto; }
+.aud-hero--compact h1 {
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  margin-bottom: 16px;
+}
+.aud-hero--compact .aud-lead { margin: 0 auto; max-width: 32em; }
+
+.aud-cal { margin-top: 36px; }
+
+.aud-cal__frame {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-alt);
+}
+
+
+.aud-cal__frame iframe {
+  display: block;
+  width: 100%;
+  height: 720px;
+  border: 0;
+}
+@media (max-width: 640px) {
+  .aud-cal__frame iframe { height: 960px; }
+}
+
+.aud-cal .aud-microcopy { text-align: center; margin-top: 16px; }
+
+
+.aud-close__sub {
+  color: var(--muted);
+  font-size: 1rem;
+  margin: 0 0 4px;
+}
+
+
+.aud-stats {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+  margin-top: 84px;
+  padding: 34px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 720px) { .aud-stats { grid-template-columns: repeat(3, 1fr); gap: 34px; } }
+
+.aud-stat__n {
+  display: block;
+  font-size: clamp(2.6rem, 7vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+}
+
+.aud-stat__n small {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-left: 5px;
+  color: var(--muted);
+}
+
+.aud-stat p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 12px 0 0;
+  max-width: 15em;
+}
+
+
+.aud-block { margin-top: 84px; }
+
+.aud-block > h2,
+.aud-close h2 {
+  font-size: clamp(1.4rem, 3.2vw, 1.85rem);
+  letter-spacing: -0.025em;
+  margin: 0 0 24px;
+}
+
+
+.aud-preview {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.aud-prev__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.aud-prev__q { font-weight: 700; font-size: 0.98rem; }
+
+.aud-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.aud-pill--warn { background: rgba(255, 176, 32, 0.14); color: #ffc35c; }
+
+.aud-prev__table { margin-top: 16px; font-size: 0.88rem; }
+
+.aud-prev__head,
+.aud-prev__line {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.8fr 1fr;
+  gap: 10px;
+  padding: 9px 0;
+  align-items: center;
+}
+
+.aud-prev__head {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.aud-prev__line { border-top: 1px solid var(--border); }
+.aud-prev__line span:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.aud-prev__line span:first-child { display: inline-flex; align-items: center; gap: 9px; }
+
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+.dot--meta { background: #0866ff; }
+.dot--google { background: #4285f4; }
+
+.aud-prev__fixes {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 12px;
+}
+
+.aud-prev__fixes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 11px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.aud-tag {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.aud-tag--red { background: rgba(248, 113, 113, 0.14); color: #fca5a5; }
+.aud-tag--amber { background: rgba(255, 176, 32, 0.14); color: #ffc35c; }
+
+.aud-cap { color: var(--muted); font-size: 0.84rem; margin: 14px 0 0; }
+
+
+.aud-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.aud-steps li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+}
+
+.aud-steps b { flex: 1 1 auto; font-weight: 600; min-width: 0; }
+
+.aud-step__n {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 92, 0, 0.14);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 0.88rem;
+}
+
+.aud-step__time {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+
+@media (max-width: 559px) {
+  .aud-step__time { flex: 0 0 100%; margin-left: 46px; }
+}
+
+
+.aud-trust__cols {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) { .aud-trust__cols { grid-template-columns: 1fr 1fr; gap: 20px; } }
+
+.aud-yes,
+.aud-no {
+  list-style: none;
+  margin: 0;
+  padding: 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: grid;
+  gap: 13px;
+  align-content: start;
+}
+
+.aud-yes { background: rgba(74, 222, 128, 0.05); border-color: rgba(74, 222, 128, 0.22); }
+.aud-no { background: var(--surface); }
+
+.aud-yes li,
+.aud-no li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 0.94rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.aud-yes li::before,
+.aud-no li::before {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin-top: 1px;
+}
+
+.aud-yes li::before { content: "\2713"; background: rgba(74, 222, 128, 0.16); color: #4ade80; }
+.aud-no li::before { content: "\00d7"; background: rgba(255, 92, 0, 0.14); color: var(--accent-bright); }
+.aud-no li { color: var(--muted); }
+
+.aud-note {
+  margin: 22px 0 0;
+  padding: 16px 18px;
+  border-left: 2px solid var(--accent);
+  background: rgba(255, 92, 0, 0.05);
+  border-radius: 0 10px 10px 0;
+  color: var(--muted);
+  font-size: 0.87rem;
+  line-height: 1.6;
+}
+
+.aud-note strong { color: var(--text); }
+
+
+.aud-who {
+  margin-top: 84px;
+  padding: 26px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.aud-who p {
+  color: var(--muted);
+  font-size: 0.97rem;
+  line-height: 1.62;
+  max-width: 40em;
+  margin: 0;
+}
+
+.aud-who b { color: var(--text); }
+.aud-who__why { margin-top: 10px !important; font-size: 0.87rem !important; }
+
+
+.aud-faq { border-bottom: 1px solid var(--border); }
+
+.aud-faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 17px 34px 17px 0;
+  font-weight: 600;
+  font-size: 0.97rem;
+  position: relative;
+}
+
+.aud-faq summary::-webkit-details-marker { display: none; }
+
+.aud-faq summary::after {
+  content: "+";
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.aud-faq[open] summary::after { content: "\2212"; }
+
+.aud-faq p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0 0 18px;
+  max-width: 44em;
+}
+
+.aud-faq a { color: var(--accent-bright); }
+
+
+.aud-close {
+  margin-top: 90px;
+  padding-top: 52px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.aud-close .aud-cta-row { justify-content: center; }
+.aud-close p { color: var(--muted); margin: 0; }
+
+
+
+.aud-done[hidden],
+.aud-hero[hidden] { display: none !important; }
+
+.aud-done {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  background: rgba(74, 222, 128, 0.07);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  margin-bottom: 20px;
+}
+
+.aud-done__tick {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #4ade80;
+  color: #06280f;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.aud-done h2 { font-size: 1.3rem; margin: 2px 0 10px; letter-spacing: -0.02em; }
+.aud-done p { color: var(--muted); font-size: 0.96rem; line-height: 1.6; margin: 0; max-width: 40em; }
+.aud-done__cta { margin-top: 20px !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .aud-cta { transition: none; }
+  .aud-cta:hover { transform: none; }
+}
+
+
+
+.aud--thanks .aud-hero h1 { margin-bottom: 24px; }
+.aud--thanks .aud-lead { margin-top: 0; }
+.aud--thanks .aud-block { margin-top: 64px; }
+
+
+.aud-block > p,
+.aud-block > .aud-yes,
+.aud-block > .aud-no,
+.aud-block > .aud-note,
+.aud-faq p,
+.aud-microcopy { max-width: 36em; }
+.aud-close__sub { max-width: 36em; margin-left: auto; margin-right: auto; }
+
+</style>
+  <script defer src="../consent.js?v=63f7879748"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://climentmedia.com/"},{"@type":"ListItem","position":2,"name":"Google Ads audit","item":"https://climentmedia.com/ad-account-audit/"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which ad platforms does it audit?","acceptedAnswer":{"@type":"Answer","text":"Google Ads. Climent Ads Assistant also reads Meta, but the audit engine does not score it yet."}},{"@type":"Question","name":"Does it change anything in the account?","acceptedAnswer":{"@type":"Answer","text":"The audit reads and reports. A change it points to, a negative keyword for example, becomes a proposal that a person has to sign before anything is sent."}},{"@type":"Question","name":"Can I run it on my account today?","acceptedAnswer":{"@type":"Answer","text":"Not from this page. It runs inside Climent Ads Assistant, which is in testing. The Paid Media Capacity Check is being built to put a first answer on your screen, for one account. Email me and you get the link when it opens."}},{"@type":"Question","name":"I connected an account for the old audit.","acceptedAnswer":{"@type":"Answer","text":"Email manuel@climentmedia.com and I’ll tell you what we still hold from it and delete it."}}]}</script>
+
+    <header class="nav nav-simple scrolled" id="nav">
+      <a class="nav-brand" href="../" aria-label="Climent Media - home">
+        <span class="brand-mark">CM</span>
+        <span class="brand-word">CLIMENT<br>MEDIA</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <span class="droplink">
+          <a href="../ads-assistant/">Ads Assistant</a>
+          <button class="dropbtn" aria-expanded="false" aria-controls="mm-p1">
+            <span class="visually-hidden">Open the Ads Assistant menu</span>
+            <svg viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </span>
+        <div class="megapanel megapanel--split" id="mm-p1" hidden>
+          <ul class="mp-list mp-list--logos">
+            <li><a href="../ads-assistant/meta-ads/"><img src="../assets/logos/meta.svg" alt="" width="18" height="18">Meta Ads</a></li>
+            <li><a href="../ads-assistant/google-ads/"><img src="../assets/logos/googleads.svg" alt="" width="18" height="18">Google Ads</a></li>
+            <li><a href="../ads-assistant/google-analytics/"><img src="../assets/logos/ga4.svg" alt="" width="18" height="18">Google Analytics</a></li>
+            <li><a href="../ads-assistant/search-console/"><img src="../assets/logos/searchconsole.svg" alt="" width="18" height="18">Search Console</a></li>
+          </ul>
+          <div class="mp-rule" aria-hidden="true"></div>
+          <ul class="mp-list">
+            <li><a href="../ads-assistant/how-it-works/">How it works</a></li>
+            <li><a href="../ads-assistant/open-source/">Open source</a></li>
+            <li><a href="../ads-assistant/pricing/">Pricing</a></li>
+            <li><a href="../ad-account-audit/">Google Ads audit</a></li>
+            <li><a href="../ads-assistant/">Everything it reads</a></li>
+          </ul>
+        </div>
+        <a href="../agents/">Agents</a>
+        <span class="droplink">
+          <a href="../agency/">Agency</a>
+          <button class="dropbtn" aria-expanded="false" aria-controls="mm-p3">
+            <span class="visually-hidden">Open the Agency menu</span>
+            <svg viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </span>
+        <div class="megapanel" id="mm-p3" hidden>
+          <ul class="mp-list">
+            <li><a href="../agency/">AI PPC management</a></li>
+            <li><a href="../es/" hreflang="es" lang="es">Agencia Meta Ads (espa&ntilde;ol)</a></li>
+            <li><a href="../ad-account-audit/">Google Ads audit</a></li>
+          </ul>
+          <div class="mp-rule" aria-hidden="true"></div>
+          <div class="mp-promo">
+            <div class="mp-visual" aria-hidden="true"></div>
+            <h2>Paid Media Capacity Check</h2>
+            <p>Being built now. You&rsquo;ll connect one ad account and see what your team should look at first, and why.</p>
+            <a class="mp-cta" href="../ad-account-audit/">Get the link when it opens &rarr;</a>
+          </div>
+        </div>
+        <a href="../learn/">Learn</a>
+        <a href="../about/">About</a>
+        <a href="../#contact" class="nav-cta">Contact</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span>
+      </button>
+    </header>
+
+      <main class="aud" id="main" tabindex="-1" data-tipo="servicio">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="../">Home</a></li>
+          <li aria-current="page">Google Ads audit</li>
+        </ol>
+      </nav>
+
+      <!-- 26-sep-2026 - Manuel: la pagina deja de ser solo el aviso del Capacity Check y
+           pasa a ser la de la auditoria que corre dentro del producto: Google auditado,
+           Meta leido. El boton sigue siendo el del Capacity Check (mailto, sin calendario).
+           Lo que dice de la auditoria sale de la herramienta audit_run del MCP (solo audita
+           Google, diez bloques, cifras calculadas por el software, columnas que no pudo
+           leer). Las tres frases condicionadas de la v2 siguen fuera. Y en la Fase 3 esta
+           pagina ya NO se redirige: se queda como pagina de producto. -->
+      <section class="aud-hero" id="aud-hero" data-sec="hero">
+        <p class="aud-eyebrow"><span class="aud-dot" aria-hidden="true"></span>Climent Ads Assistant &middot; in testing</p>
+        <h1>The Google Ads audit that runs <span class="aud-h1-accent">inside the software.</span></h1>
+        <p class="aud-lead">The audit reads one Google Ads account, splits the spend by line of business and runs ten
+          blocks of analysis on it. Every number in the report is computed by the software, not written by a model.</p>
+        <div class="aud-cta-row">
+          <a class="aud-cta" href="mailto:manuel@climentmedia.com?subject=Capacity%20Check%20link">Want to see it on one account? Email me</a>
+        </div>
+        <p class="aud-microcopy">The Paid Media Capacity Check is being built as the way in. One email with the link when it opens. No calendar, no sales call.</p>
+      </section>
+
+      <section class="aud-block" data-sec="oferta">
+        <h2>What the audit reads, and what it hands back</h2>
+        <ul class="aud-yes">
+          <li>Spend split into lines of business, so a brand campaign and a prospecting campaign are not judged against the same number.</li>
+          <li>Ten blocks of analysis, and the places where they interfere with each other.</li>
+          <li>Search terms, keywords with their Quality Score, landing pages, ad groups and ads.</li>
+          <li>Findings as data: the block, the status and the line of business each one belongs to.</li>
+          <li>The columns it could not read, named. A blank is never passed off as a clean result.</li>
+        </ul>
+      </section>
+
+      <section class="aud-block" data-sec="proceso">
+        <h2>What you tell it first, because Google does not know</h2>
+        <ol class="aud-steps">
+          <li><span class="aud-step__n">1</span><b>What the account is for: conversions, or spending a budget on relevant traffic</b></li>
+          <li><span class="aud-step__n">2</span><b>The monthly budget, because Google only stores a daily one per campaign</b></li>
+          <li><span class="aud-step__n">3</span><b>Your brand terms, so search terms split into brand and generic</b></li>
+          <li><span class="aud-step__n">4</span><b>The margin per line, if the client gave it to you</b></li>
+        </ol>
+        <p class="aud-note"><strong>The margin is what turns ROAS into money.</strong> With a 40% margin, anything under
+          2.5x loses money. No ad platform holds that number, so the audit never guesses it.</p>
+      </section>
+
+      <section class="aud-block" data-sec="limites">
+        <h2>Meta: read, not scored yet</h2>
+        <p>Climent Ads Assistant reads Meta: the ads with their creative and results, the breakdowns, and the
+          settings. The audit engine does not score Meta yet.</p>
+        <p>So a Meta problem is not missing from the report because the account is clean. It is missing because
+          nothing has checked it yet.</p>
+      </section>
+
+      <section class="aud-block" data-sec="calificacion">
+        <h2>Who it is for, and who it is not</h2>
+        <p><strong>The audit is built for</strong> paid media agencies that are hiring media buyers, where the owner still
+          reviews accounts and decides what each one needs first.</p>
+        <p><strong>The audit is not for</strong> freelancers looking for more clients, agencies without a delivery team,
+          or anyone after another reporting dashboard.</p>
+        <div class="aud-cta-row">
+          <a class="aud-cta aud-cta--alt" href="mailto:manuel@climentmedia.com?subject=Capacity%20Check%20link">Sounds like your agency? Email me for the link</a>
+        </div>
+      </section>
+
+      <section class="aud-block" data-sec="hermanos">
+        <h2>The connections it reads through</h2>
+        <ul class="aud-yes">
+          <li><span><a href="../ads-assistant/google-ads/">Google Ads MCP</a>: the account the audit scores.</span></li>
+          <li><span><a href="../ads-assistant/meta-ads/">Meta Ads MCP</a>: read next to it, not scored yet.</span></li>
+          <li><span><a href="../ads-assistant/google-analytics/">Google Analytics MCP</a>: what the site recorded, against what the platforms claim.</span></li>
+          <li><span><a href="../ads-assistant/search-console/">Search Console MCP</a>: the organic side of the same question.</span></li>
+          <li><span><a href="../ads-assistant/google-tag-manager/">Google Tag Manager MCP</a>: which tag fires each conversion the audit counts.</span></li>
+        </ul>
+        <p class="aud-rel"><strong>If you would rather do it yourself today:</strong> <a href="../learn/the-ad-account-leak-check/">The Ad Account Leak Check</a> walks you through reading your own account step by step, free, no email. <a href="../learn/weekly-ads-decision-system/">The Weekly Ads Decision System</a> is the routine it belongs to, and <a href="../ads-assistant/">Climent Ads Assistant</a> is the console that runs it every week.</p>
+      </section>
+
+      <section class="aud-block" data-sec="objeciones">
+        <h2>Before you ask</h2>
+        <details class="aud-faq">
+          <summary>Which ad platforms does it audit?</summary>
+          <p>Google Ads. Climent Ads Assistant also reads Meta, but the audit engine does not score it yet.</p>
+        </details>
+        <details class="aud-faq">
+          <summary>Does it change anything in the account?</summary>
+          <p>The audit reads and reports. A change it points to, a negative keyword for example, becomes a proposal that a person has to sign before anything is sent.</p>
+        </details>
+        <details class="aud-faq">
+          <summary>Can I run it on my account today?</summary>
+          <p>Not from this page. It runs inside Climent Ads Assistant, which is in testing. The Paid Media Capacity Check is being built to put a first answer on your screen, for one account. Email me and you get the link when it opens.</p>
+        </details>
+        <details class="aud-faq">
+          <summary>I connected an account for the old audit.</summary>
+          <p>Email <a href="mailto:manuel@climentmedia.com">manuel@climentmedia.com</a> and I&rsquo;ll tell you
+            what we still hold from it and delete it.</p>
+        </details>
+      </section>
+
+      <section class="aud-close" data-sec="cierre">
+        <h2>Want to see it <span class="aud-h1-accent">on one account?</span></h2>
+        <p class="aud-close__sub">One email with the link when the Paid Media Capacity Check is ready.</p>
+        <div class="aud-cta-row">
+          <a class="aud-cta" href="mailto:manuel@climentmedia.com?subject=Capacity%20Check%20link">Email me for the link</a>
+        </div>
+      </section>
+    </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">
+      <p>(c) 2026 Climent Media &middot; KVK 96588012 &middot; Utrecht, The Netherlands</p>
+      <nav class="footer-links" aria-label="Legal">
+        <a href="../privacy.html">Privacy Policy</a>
+        <a href="../terms.html">Terms of Service</a>
+        <a href="../data-deletion.html">Data Deletion</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../script.js?v=26c54c28cb" defer></script>
+</body>
+</html>

@@ -1,0 +1,1897 @@
+<!-- Congelada de https://climentmedia.com/learn/what-is-a-good-roas/ el 2026-10-27, con 2 hoja(s) de estilo dentro. Web propia de Manuel Climent. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What is a good ROAS? Two numbers decide it - Climent Media</title>
+  <meta name="description" content="A good ROAS is 1 divided by your gross margin. The number nobody publishes: under 50 conversions a period, most ROAS swings are noise, not performance.">
+  <link rel="canonical" href="https://climentmedia.com/learn/what-is-a-good-roas/">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Climent Media">
+  <meta property="og:title" content="What is a good ROAS? The two numbers that decide it">
+  <meta property="og:description" content="Your margin sets the number. Your conversion volume decides whether you can read it. Break-even ROAS is 1 divided by gross margin, and most weekly swings are noise.">
+  <meta property="og:url" content="https://climentmedia.com/learn/what-is-a-good-roas/">
+  <meta property="og:image" content="https://climentmedia.com/assets/og-what-is-a-good-roas.jpg">
+  <meta property="og:image:alt" content="Climent Media share card on a dark background with an orange accent, headed: What is a good ROAS? The two numbers that decide it">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://climentmedia.com/assets/og-what-is-a-good-roas.jpg">
+  <meta name="twitter:image:alt" content="Climent Media share card on a dark background with an orange accent, headed: What is a good ROAS? The two numbers that decide it">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23000'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='26' font-weight='800' fill='%23fff' text-anchor='middle'%3ECM%3C/text%3E%3C/svg%3E">
+  <style data-congelado="/styles.css">
+
+
+
+@font-face {
+  font-family: "Inter"; font-style: normal; font-weight: 100 900;
+  font-display: swap; src: url("https://climentmedia.com/assets/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  
+  --bg-rgb: 7, 7, 8;
+  --text-rgb: 244, 244, 242;
+  --accent-rgb: 255, 92, 0;
+  --white-rgb: 255, 255, 255;
+  
+  --warn-rgb: 255, 176, 32;   
+  --ok-rgb: 53, 208, 127;     
+
+  
+  --bg: rgb(var(--bg-rgb));
+  --bg-alt: #0c0c0e;
+  --surface: rgba(var(--white-rgb), 0.035);
+  --border: rgba(var(--white-rgb), 0.09);
+  --text: rgb(var(--text-rgb));
+  --muted: #a2a29c;
+  --warn: rgb(var(--warn-rgb));
+  --ok: rgb(var(--ok-rgb));
+  
+  --accent: rgb(var(--accent-rgb));
+  --accent-bright: #ff7a26;
+  --accent-glow: rgba(var(--accent-rgb), 0.35);
+
+  
+  --radius-sm: 11px;
+  --radius: 18px;
+  --radius-lg: 26px;
+  --radius-pill: 999px;
+
+  --font: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  
+  --fs-display: clamp(2.6rem, 7vw, 5rem);      
+  --fs-title:   clamp(1.9rem, 4.2vw, 3rem);    
+  --fs-section: clamp(1.4rem, 2.4vw, 1.75rem); 
+  --fs-lead:    1.2rem;                        
+  --fs-body:    1rem;                          
+  --fs-small:   0.875rem;                      
+  --fs-micro:   0.75rem;                       
+
+  
+  --fw-body: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --fw-black: 800;
+  --tracking-eyebrow: 0.22em;
+  --tracking-tight: -0.02em;
+
+  
+  --space-xs: 0.5rem;
+  --space-sm: 0.9rem;
+  --space-md: 1.2rem;
+  --space-lg: 1.8rem;
+  --space-xl: 2.6rem;
+
+  
+  --shadow-glow: 0 4px 28px var(--accent-glow);
+  --shadow-glow-lg: 0 8px 40px var(--accent-glow);
+
+  
+  --dur-short: 120ms;
+  --dur: 220ms;
+  --dur-long: 400ms;
+
+  
+  --focus-ring: 2px;
+  --focus-offset: 3px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+
+
+:focus { outline: 0; }                    
+:focus-visible {                          
+  outline: var(--focus-ring) solid rgba(var(--accent-rgb), 0.9);
+  outline-offset: var(--focus-offset);
+  box-shadow: 0 0 0 var(--focus-offset) rgb(var(--bg-rgb));
+  border-radius: 4px;
+}
+
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;                 
+  z-index: 1000;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #0a0a0b;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-small);
+  text-decoration: none;
+  transition: top var(--dur-short) ease-in-out;
+}
+.skip-link:focus { top: 0.5rem; }
+@media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
+
+
+.visually-hidden {
+  position: absolute !important;
+  overflow: hidden;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--accent); color: #000; }
+
+h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; font-weight: 800; }
+
+h1 { font-size: var(--fs-display); }
+h2 { font-size: var(--fs-title); }
+h3 { font-size: var(--fs-section); letter-spacing: -0.01em; }
+
+a { color: inherit; text-decoration: none; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+
+
+.nav-brand { display: inline-flex; align-items: center; gap: 0.65rem; }
+
+.brand-mark {
+  display: grid; place-items: center;
+  width: 42px; height: 42px;
+  background: #000;
+  border: 1px solid rgba(var(--white-rgb), 0.16);
+  border-radius: 11px;
+  font-weight: 800; font-size: 0.95rem; letter-spacing: 0.02em;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.brand-word {
+  font-weight: 800; font-size: 0.72rem; line-height: 1.22;
+  letter-spacing: 0.14em;
+}
+
+
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem clamp(1.2rem, 4vw, 3rem);
+  background: rgba(var(--bg-rgb), 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.nav.scrolled { border-bottom-color: var(--border); background: rgba(var(--bg-rgb), 0.82); }
+
+.nav-links { display: flex; align-items: center; gap: clamp(1.2rem, 2.5vw, 2.2rem); }
+
+.nav-links a {
+  font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--muted);
+  transition: color 0.2s ease;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  color: #000 !important;
+  background: var(--accent);
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  font-weight: 700 !important;
+  box-shadow: 0 0 18px var(--accent-glow);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.nav-cta:hover { box-shadow: 0 0 30px var(--accent-glow); transform: translateY(-1px); }
+
+.nav-toggle { display: none; }
+
+
+
+.btn-primary, .btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0.85rem 1.7rem;
+  border-radius: 999px;
+  font-weight: var(--fw-bold); font-size: var(--fs-body);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent));
+  color: #000;
+  box-shadow: 0 4px 28px var(--accent-glow);
+}
+
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 40px var(--accent-glow); }
+
+.btn-ghost {
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.btn-ghost:hover { border-color: rgba(var(--accent-rgb), 0.5); transform: translateY(-2px); }
+
+
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 7rem clamp(1.2rem, 5vw, 3rem) 5rem;
+  overflow: hidden;
+}
+
+#neural {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0.85;
+}
+
+.hero-glow {
+  position: absolute;
+  width: 900px; height: 900px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.14) 0%, transparent 60%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hero-inner { position: relative; z-index: 2; max-width: 900px; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font-size: var(--fs-micro); font-weight: var(--fw-medium); letter-spacing: 0.06em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: rgba(var(--bg-rgb), 0.6);
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 1.8rem;
+}
+
+.pulse-dot {
+  position: relative;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+
+.pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.5);
+  animation: pulse 2.2s infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(0.31); opacity: 1; }
+  70%  { transform: scale(1); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.accent-word { position: relative; color: var(--accent); white-space: nowrap; }
+
+.accent-underline {
+  position: absolute; left: 0; right: 0; bottom: 0.02em;
+  height: 0.12em;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 999px;
+  opacity: 0.6;
+}
+
+.hero-sub {
+  margin: 1.6rem auto 0;
+  max-width: 620px;
+  font-size: var(--fs-lead);
+  color: var(--muted);
+}
+
+.hero-actions {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+  margin-top: 2.4rem;
+}
+
+.hero-scroll {
+  position: absolute; bottom: 2rem; left: 50%;
+  transform: translateX(-50%);
+  width: 24px; height: 38px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  z-index: 2;
+}
+
+.hero-scroll span {
+  position: absolute; top: 7px; left: 50%;
+  width: 4px; height: 8px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: scrollhint 1.8s ease-in-out infinite;
+}
+
+@keyframes scrollhint {
+  0% { transform: translateY(0); opacity: 1; }
+  70% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+
+
+.section { padding: clamp(4.5rem, 9vw, 7.5rem) clamp(1.2rem, 5vw, 3rem); max-width: 1200px; margin: 0 auto; }
+
+.section-alt {
+  max-width: none;
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.section-alt .steps, .section-alt .section-head { max-width: 1200px; margin-left: auto; margin-right: auto; }
+
+.section-head { max-width: 640px; margin-bottom: 3.2rem; }
+
+.eyebrow {
+  font-size: var(--fs-micro); font-weight: var(--fw-black);
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--accent-bright);
+  margin-bottom: 0.9rem;
+}
+
+.section-sub { color: var(--muted); margin-top: 1rem; font-size: var(--fs-body); }
+
+
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.1rem;
+}
+
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.8rem 1.6rem;
+  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(var(--accent-rgb), 0.09), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.card:hover { transform: translateY(-4px); border-color: rgba(var(--accent-rgb), 0.35); }
+.card:hover::before { opacity: 1; }
+
+
+.card p { color: var(--muted); font-size: var(--fs-body); margin-top: 0.6rem; }
+
+
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.1rem;
+}
+
+.step {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.7rem 1.5rem;
+  background: rgba(var(--bg-rgb), 0.5);
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.step:hover { border-color: rgba(var(--accent-rgb), 0.35); transform: translateY(-4px); }
+
+
+.step p { color: var(--muted); font-size: var(--fs-body); margin-top: 0.55rem; }
+
+
+
+.about-frame {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  aspect-ratio: 4 / 5;
+  background: var(--bg-alt);
+}
+
+.about-frame img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: saturate(0.92);
+}
+
+.about-frame::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(200deg, transparent 55%, rgba(var(--accent-rgb), 0.18));
+  pointer-events: none;
+}
+
+.about-fallback {
+  display: none;
+  position: absolute; inset: 0;
+  place-items: center;
+}
+
+
+.about-fallback span {
+  font-size: 4rem; font-weight: 800; color: rgba(var(--white-rgb), 0.38);
+  letter-spacing: 0.04em;
+}
+
+.about-frame.img-missing img { display: none; }
+.about-frame.img-missing .about-fallback { display: grid; }
+
+
+
+.section-contact { padding-bottom: clamp(5rem, 10vw, 8rem); }
+
+.contact-box {
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 8px);
+  padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 5vw, 4rem);
+  background:
+    radial-gradient(600px circle at 50% -10%, rgba(var(--accent-rgb), 0.13), transparent 60%),
+    var(--surface);
+}
+
+.contact-box .section-sub { max-width: 460px; margin-left: auto; margin-right: auto; }
+
+.contact-lines {
+  margin-top: 2.4rem;
+  display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;
+}
+
+.contact-line {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  padding: 1.1rem 1.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(var(--bg-rgb), 0.6);
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  min-width: 260px;
+}
+
+.contact-line:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 34px rgba(var(--accent-rgb), 0.18);
+}
+
+.contact-label {
+  font-size: var(--fs-micro); font-weight: var(--fw-black);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent-bright);
+}
+
+.contact-value { font-weight: var(--fw-medium); font-size: var(--fs-body); }
+
+
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 2.6rem clamp(1.2rem, 5vw, 3rem) 2rem;
+  background: var(--bg-alt);
+}
+
+.footer-top {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1.4rem;
+  max-width: 1200px; margin: 0 auto;
+}
+
+.footer-links { display: flex; gap: 1.6rem; flex-wrap: wrap; }
+
+.footer-links a { color: var(--muted); font-size: var(--fs-small); transition: color 0.2s ease; }
+.footer-links a:hover { color: var(--accent-bright); }
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 1.8rem auto 0;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;
+  color: var(--muted); font-size: var(--fs-small);
+}
+
+.footer-privacy { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+
+
+
+.crumbs { margin-bottom: 2rem; font-size: 0.88rem; }
+.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.crumbs li { color: var(--muted); }
+.crumbs li + li::before { content: "/"; margin-right: 0.35rem; color: var(--border); }
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--accent-bright); }
+.crumbs [aria-current="page"] { color: var(--text); }
+
+.legal {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 9rem clamp(1.2rem, 5vw, 2rem) 5rem;
+}
+
+.legal h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 0.6rem; }
+.legal .legal-updated { color: var(--muted); font-size: var(--fs-small); margin-bottom: 2.6rem; }
+.legal h2 { font-size: var(--fs-section); margin: 2.6rem 0 0.8rem; }
+.legal h3 { font-size: var(--fs-lead); margin: 1.8rem 0 0.5rem; }
+
+.legal p, .legal li:not(.crumbs li) { color: var(--muted); font-size: var(--fs-body); }
+.legal p { margin-bottom: 0.9rem; }
+.legal ul { margin: 0.4rem 0 1.1rem 1.3rem; display: grid; gap: 0.45rem; }
+.legal a:not(.crumbs a) { color: var(--accent-bright); }
+.legal a:not(.crumbs a):hover { text-decoration: underline; }
+.legal strong { color: var(--text); }
+
+.legal-callout {
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: var(--radius);
+  background: rgba(var(--accent-rgb), 0.06);
+  padding: 1.2rem 1.4rem;
+  margin: 1.4rem 0;
+}
+
+.legal-callout p { margin: 0; }
+
+
+
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible { opacity: 1; transform: none; }
+
+
+.rise { animation: rise 0.7s ease both; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: none; }
+}
+
+
+.delay-1 { transition-delay: 0.12s; animation-delay: 0.12s; }
+.delay-2 { transition-delay: 0.24s; animation-delay: 0.24s; }
+.delay-3 { transition-delay: 0.36s; animation-delay: 0.36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .rise { animation: none; }
+  
+  .pulse-dot::after { display: none; }
+  .hero-scroll span { animation: none; }
+  #neural { display: none; }
+}
+
+
+
+@media (max-width: 760px) {
+  .nav-toggle {
+    display: flex; flex-direction: column; gap: 6px;
+    background: none; border: none; cursor: pointer; padding: 8px;
+  }
+
+  .nav-toggle span {
+    display: block; width: 24px; height: 2px;
+    background: var(--text);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .nav-toggle[aria-expanded="true"] span:first-child { transform: translateY(4px) rotate(45deg); }
+  .nav-toggle[aria-expanded="true"] span:last-child { transform: translateY(-4px) rotate(-45deg); }
+
+  .nav-links {
+    position: fixed;
+    top: 61px; left: 0; right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    
+    text-align: left;
+    
+    background: rgb(var(--bg-rgb));
+    border-bottom: 1px solid var(--border);
+    padding: 1.4rem 1.5rem 1.8rem;
+    gap: 1.3rem;
+    transform: translateY(-130%);
+    transition: transform 0.35s ease;
+    }
+
+    
+    .nav-links .nav-cta { text-align: center; }
+
+  .nav-links.open { transform: translateY(0); }
+  .nav-links a { font-size: var(--fs-body); }
+
+  
+  
+
+  .about-media { max-width: 340px; }
+  .footer-bottom { flex-direction: column; }
+}
+
+
+
+.logo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.logo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1.6rem 1rem;
+  background: var(--bg);
+  transition: background 0.3s ease;
+}
+
+.logo-item:hover { background: var(--bg-alt); }
+
+.logo-item svg {
+  width: 30px; height: 30px;
+  fill: var(--muted);
+  transition: fill 0.3s ease, transform 0.3s ease;
+}
+
+.logo-item:hover svg { fill: var(--text); transform: translateY(-2px); }
+
+.logo-item span {
+  font-size: var(--fs-small); font-weight: var(--fw-medium);
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.tech-note {
+  margin-top: 1.6rem;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  max-width: 760px;
+}
+.tech-note strong { color: var(--text); font-weight: 600; }
+
+.tech-oss {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  margin-top: 1.6rem;
+  padding: 0.7rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-small); font-weight: var(--fw-medium);
+  text-decoration: none;
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+.tech-oss:hover { border-color: rgba(var(--accent-rgb), 0.5); transform: translateY(-2px); }
+.tech-oss svg { width: 18px; height: 18px; fill: currentColor; }
+
+
+
+.offer-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.4rem; }
+
+.btn-github {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--fw-bold); font-size: var(--fs-body);
+  text-decoration: none;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+.btn-github:hover { transform: translateY(-2px); border-color: rgba(var(--white-rgb), 0.35); }
+.btn-github svg { width: 20px; height: 20px; fill: currentColor; }
+
+
+
+.paperclip-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.paperclip-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: var(--fs-micro); font-weight: var(--fw-black); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--st-build, var(--warn));
+  border: 1px solid rgba(var(--warn-rgb), 0.35);
+  background: rgba(var(--warn-rgb), 0.1);
+  padding: 0.3rem 0.8rem; border-radius: 999px;
+}
+.paperclip-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+
+
+
+.btn-download, .btn-gh {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  font-weight: var(--fw-bold); font-size: var(--fs-body);
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.btn-download {
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent));
+  color: #000; border: 1px solid transparent;
+  box-shadow: 0 4px 28px var(--accent-glow);
+}
+.btn-download:hover { transform: translateY(-2px); box-shadow: 0 6px 40px var(--accent-glow); }
+.btn-gh {
+  border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+}
+.btn-gh:hover { transform: translateY(-2px); border-color: rgba(var(--white-rgb), 0.35); }
+.btn-download svg, .btn-gh svg { width: 20px; height: 20px; fill: currentColor; }
+
+
+
+
+.droplink { display: inline-flex; align-items: center; gap: 0.1rem; }
+.droplink > a { font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--muted); transition: color 0.2s ease; }
+.droplink > a:hover { color: var(--text); }
+
+.dropbtn {
+  display: grid; place-items: center;
+  width: 1.4rem; height: 1.6rem; padding: 0;
+  background: none; border: 0; cursor: pointer;
+  color: var(--muted); border-radius: var(--radius-sm);
+  transition: color 0.2s ease;
+}
+.dropbtn:hover { color: var(--text); }
+.dropbtn svg { width: 10px; height: 6px; transition: transform var(--dur) ease; }
+.dropbtn[aria-expanded="true"] { color: var(--accent-bright); }
+.dropbtn[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+
+.megapanel[hidden] { display: none; }
+.megapanel {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  top: calc(100% + 0.5rem);
+  width: min(860px, calc(100vw - 3rem));
+  display: grid; grid-template-columns: 1fr 1px 1.1fr; gap: 2rem;
+  padding: 1.75rem;
+  
+  background: linear-gradient(rgba(var(--white-rgb), 0.035), rgba(var(--white-rgb), 0.035)), var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+}
+
+.megapanel--split { grid-template-columns: 1fr 1px 1fr; }
+
+.mp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.1rem; align-content: start; }
+.mp-list a { display: block; padding: 0.5rem 0.6rem; font-size: var(--fs-small); color: var(--text); border-radius: var(--radius-sm); transition: background 0.2s ease, color 0.2s ease; }
+.mp-list a:hover { background: rgba(var(--white-rgb), 0.06); color: var(--accent-bright); }
+.mp-list a[aria-current] { color: var(--accent-bright); font-weight: var(--fw-bold); }
+.mp-rule { background: var(--border); }
+
+.mp-promo { display: grid; gap: 0.7rem; align-content: start; }
+.mp-promo h2 { font-size: var(--fs-section); margin: 0; line-height: 1.25; }
+.mp-promo p { font-size: var(--fs-small); color: var(--muted); margin: 0; }
+.mp-cta { color: var(--accent-bright); font-weight: var(--fw-bold); font-size: var(--fs-small); }
+.mp-cta:hover { text-decoration: underline; }
+.mp-visual {
+  width: 100%; max-width: 190px; aspect-ratio: 190 / 118;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.22), rgba(var(--accent-rgb), 0.04));
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+
+.nav-scrim { position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, 0.5); }
+.nav-scrim[hidden] { display: none; }
+
+@media (max-width: 760px) {
+  
+  .droplink { width: 100%; justify-content: space-between; }
+  .droplink > a { font-size: var(--fs-body); }
+  .dropbtn { width: 44px; height: 44px; }          
+  .dropbtn svg { width: 14px; height: 9px; }
+
+  .megapanel,
+  .megapanel--split {
+    position: static; transform: none; width: auto;
+    grid-template-columns: 1fr; gap: 1rem;
+    
+    text-align: left;
+    padding: 0.25rem 0 0.75rem 1rem;
+    margin-left: 0.4rem;
+    background: none; border: 0; box-shadow: none;
+    border-left: 2px solid rgba(var(--accent-rgb), 0.35);
+  }
+  .mp-rule { display: none; }
+  .nav-scrim { display: none; }   
+  .mp-visual { max-width: 160px; }
+}
+
+
+
+.tpl-grid {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: 1fr;
+  margin: var(--space-lg) 0 var(--space-xl);
+}
+
+@media (min-width: 620px)  { .tpl-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.625rem), 1fr)); } }
+
+.tpl-grid:has(> :last-child:nth-child(-n+3)) { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+.tpl-card {
+  position: relative;
+  display: block;
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  text-decoration: none;
+  transition: border-color var(--dur) ease, transform var(--dur) ease, background var(--dur) ease;
+}
+a.tpl-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.42);
+  background: rgba(var(--white-rgb), 0.055);
+  transform: translateY(-2px);
+}
+
+a.tpl-card::before, a.tpl-card::after {
+  content: "";
+  position: absolute;
+  width: 7px; height: 7px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur) ease;
+  background:
+    linear-gradient(rgba(var(--accent-rgb), .8), rgba(var(--accent-rgb), .8)) center / 7px 1px no-repeat,
+    linear-gradient(rgba(var(--accent-rgb), .8), rgba(var(--accent-rgb), .8)) center / 1px 7px no-repeat;
+}
+a.tpl-card::before { top: 7px; left: 7px; }
+a.tpl-card::after  { bottom: 7px; right: 7px; }
+a.tpl-card:hover::before, a.tpl-card:hover::after { opacity: 1; }
+
+.tpl-card img { width: 26px; height: 26px; margin-bottom: var(--space-sm); }
+.tpl-card h3 {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-black);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+}
+.tpl-card p { font-size: var(--fs-small); color: rgba(var(--text-rgb), 0.68); line-height: 1.55; }
+.tpl-kicker {
+  font-size: var(--fs-micro) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-bright) !important;
+  margin-bottom: 0.5rem;
+}
+
+
+.tpl-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-sm);
+}
+.st-live  { background: rgba(var(--ok-rgb), 0.16);    color: var(--ok); }
+.st-beta  { background: rgba(var(--warn-rgb), 0.16);  color: var(--warn); }
+.st-build { background: rgba(var(--white-rgb), 0.08); color: var(--muted); }
+
+
+.tpl-steps { display: grid; gap: var(--space-lg); margin: var(--space-lg) 0 var(--space-xl); }
+
+@media (min-width: 760px) { .tpl-steps { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.625rem), 1fr)); gap: var(--space-xl); } }
+
+.tpl-n {
+  display: block;
+  font-size: 2.6rem; font-weight: var(--fw-black);
+  letter-spacing: -0.03em; line-height: 1;
+  color: rgba(var(--white-rgb), 0.38);
+}
+.tpl-step h3 { font-size: var(--fs-lead); font-weight: var(--fw-black); margin: var(--space-sm) 0 0.35rem; }
+
+.tpl-step p  { font-size: var(--fs-small); color: rgba(var(--text-rgb), 0.66); line-height: 1.6; }
+
+.tpl-list { list-style: none; padding: 0; margin: var(--space-md) 0 var(--space-lg); }
+.tpl-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.7rem;
+  font-size: var(--fs-body);
+  color: rgba(var(--text-rgb), 0.78);
+}
+.tpl-list li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.62em;
+  width: 9px; height: 1px;
+  background: var(--accent-bright);
+}
+
+.tpl-related { margin-top: var(--space-lg); font-size: var(--fs-small); }
+.tpl-stamp   { margin-top: var(--space-xl); opacity: 0.7; }
+
+
+
+
+.shot { max-width: 720px; margin: 2rem auto 0; }
+.shot img {
+  width: 100%; height: auto; aspect-ratio: 1200 / 950;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); display: block;
+}
+.shot figcaption { color: var(--muted); font-size: var(--fs-small); margin-top: 0.7rem; }
+
+.hero-note { max-width: 34em; margin-left: auto; margin-right: auto; }
+.section-sub { max-width: 34em; }
+
+
+.wrap-narrow { max-width: 760px; margin: 0 auto; }
+.testi-col { display: flex; flex-direction: column; gap: 1.1rem; margin-top: 2rem; }
+
+
+.faq-acc { display: grid; gap: 0.7rem; margin-top: 2rem; }
+.faq-acc details { border: 1px solid var(--border); border-radius: var(--radius-sm);
+                   background: var(--surface); padding: 0 1.2rem; }
+.faq-acc summary { cursor: pointer; padding: 1.05rem 0; font-weight: 700; list-style: none;
+                   display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.faq-acc summary::-webkit-details-marker { display: none; }
+.faq-acc summary::after { content: "+"; font-size: 1.4rem; color: var(--accent-bright);
+                          line-height: 1; transition: transform 0.2s ease; }
+.faq-acc details[open] summary::after { transform: rotate(45deg); }
+.faq-acc details > p { color: var(--muted); margin: 0 0 1.1rem; max-width: 34em;
+                       font-size: 0.97rem; line-height: 1.6; }
+.faq-cierre { margin-top: 1.8rem; }
+
+
+h1, h2, h3, .lp-tagline, .hero h1 { text-wrap: balance; }
+
+
+.lp-hero-cta { margin: 1.4rem 0 0; }
+
+
+.cookie-bar {
+  position: fixed;
+  z-index: 200;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.4rem;
+  padding: 1.1rem 1.3rem;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+.cookie-bar__text {
+  margin: 0;
+  flex: 1 1 22rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.cookie-bar__text a { color: var(--accent-bright); }
+.cookie-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cookie-bar__btn {
+  min-width: 7.5rem;
+  padding: 0.62rem 1.1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.cookie-bar__btn:hover { border-color: rgba(var(--white-rgb), 0.28); }
+.cookie-bar__btn--yes { color: var(--accent-bright); border-color: var(--accent); }
+.cookie-bar__btn--yes:hover { border-color: var(--accent-bright); }
+
+
+@media (max-width: 560px) {
+  .cookie-bar {
+    left: 0.55rem;
+    right: 0.55rem;
+    bottom: 0.55rem;
+    padding: 0.55rem 0.7rem;
+    gap: 0.5rem 0.7rem;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .cookie-bar__text { flex: 1 1 auto; font-size: 0.78rem; line-height: 1.4; }
+  .cookie-bar__actions { flex: 0 0 auto; gap: 0.4rem; }
+  .cookie-bar__btn { min-width: 0; padding: 0.45rem 0.6rem; font-size: 0.8rem; }
+}
+
+
+.legal-table-wrap { margin: 0.6rem 0 1.4rem; }
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.legal-table th,
+.legal-table td {
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+.legal-table th {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.legal-table code {
+  font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+  font-size: 0.92em;
+  color: var(--accent-bright);
+}
+.legal-table strong { color: var(--text); }
+.legal-note { color: var(--muted); font-size: 0.9em; }
+
+@media (max-width: 640px) {
+  .legal-table thead { position: absolute; width: 1px; height: 1px;
+                       overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .legal-table,
+  .legal-table tbody,
+  .legal-table tr,
+  .legal-table td { display: block; width: 100%; }
+  .legal-table tr {
+    margin-bottom: 1rem;
+    padding: 0.3rem 0 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .legal-table td { border-bottom: 0; padding: 0.45rem 0.9rem; }
+  .legal-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--text);
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+}
+
+</style>
+  <style data-congelado="/components.css">
+
+
+:root {
+  --st-live: var(--ok);
+  --st-live-soft: rgba(var(--ok-rgb), 0.12);
+  --st-beta: var(--accent);
+  --st-beta-soft: rgba(var(--accent-rgb), 0.12);
+  --st-build: var(--warn);
+  --st-build-soft: rgba(var(--warn-rgb), 0.12);
+  --st-plan: #8a8a86;
+  --st-plan-soft: rgba(var(--white-rgb), 0.06);
+}
+
+
+.st-live::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-right: 0.4rem;
+  vertical-align: 0.08em;
+  animation: st-pulse 2.4s ease-in-out infinite;
+}
+
+
+@keyframes st-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .st-live::before { animation: none; }
+}
+
+
+.lp { max-width: 860px; margin: 0 auto; padding: 8rem clamp(1.2rem, 5vw, 2rem) 4rem; }
+.lp-back { display: inline-block; color: var(--muted); font-size: 0.88rem; margin-bottom: 2rem; text-decoration: none; }
+.lp-back:hover { color: var(--accent-bright); }
+
+.lp-hero { border-bottom: 1px solid var(--border); padding-bottom: 2.4rem; margin-bottom: 2.4rem; }
+.lp-hero__top { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.lp-hero__icon {
+  width: 54px; height: 54px; display: grid; place-items: center;
+  border-radius: 13px; color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.09); border: 1px solid rgba(var(--accent-rgb), 0.22);
+}
+.lp-hero__icon svg { width: 28px; height: 28px; }
+.lp p.lp-cat { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-bright); margin: 0; }
+.lp h1 { font-size: clamp(2.1rem, 5.5vw, 3.2rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.08; margin-top: 0.4rem; }
+.lp-tagline { color: var(--muted); font-size: 1.12rem; margin-top: 1rem; max-width: 640px; }
+.cmp-wrap { overflow-x: auto; margin: 1.6rem 0; }
+.cmp { width: 100%; border-collapse: collapse; font-size: 0.95rem; min-width: 460px; }
+.cmp th, .cmp td { text-align: left; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.cmp thead th { border-bottom: 2px solid var(--border); color: var(--text); font-weight: 800; }
+.cmp td:first-child, .cmp th:first-child { color: var(--muted); font-weight: 700; }
+.cmp strong { color: var(--text); }
+
+.lp h2 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.01em; margin: 2.6rem 0 1rem; }
+.lp p { color: var(--muted); font-size: 1rem; margin-bottom: 1rem; }
+.lp strong { color: var(--text); }
+
+.construction {
+  display: flex; align-items: flex-start; gap: 0.9rem;
+  border: 1px solid rgba(var(--warn-rgb), 0.32);
+  background:
+    repeating-linear-gradient(45deg, rgba(var(--warn-rgb), 0.05) 0 12px, transparent 12px 24px),
+    rgba(var(--warn-rgb), 0.04);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.3rem;
+  margin: 1.6rem 0;
+}
+.construction svg { width: 22px; height: 22px; color: var(--st-build); flex-shrink: 0; margin-top: 2px; }
+.construction p { margin: 0; color: var(--text); font-size: 0.95rem; }
+.construction strong { color: var(--st-build); }
+
+.offer {
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  padding: 1.8rem;
+  margin-top: 2.4rem;
+  background:
+    radial-gradient(500px circle at 30% -20%, rgba(var(--accent-rgb), 0.1), transparent 60%),
+    var(--surface);
+}
+.offer h2 { margin-top: 0; }
+.offer p { margin-bottom: 1.2rem; }
+.offer .btn-primary { margin-top: 0.4rem; }
+
+.spec-row { display: flex; flex-wrap: wrap; gap: 0.5rem 1.6rem; margin-top: 1rem; color: var(--muted); font-size: 0.85rem; }
+.spec-row span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.spec-row b { color: var(--text); font-weight: 600; }
+
+
+.lp-lead { border-left: 3px solid var(--accent); padding-left: 1.3rem; margin: 0 0 0.5rem; }
+.lp-lead p { color: var(--text); font-size: 1.1rem; line-height: 1.6; }
+.lp-lead p:last-child { margin-bottom: 0; }
+
+.faq { display: grid; gap: 0.8rem; margin: 0.6rem 0 1rem; }
+.faq-item { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.3rem; background: var(--surface); }
+.faq-q { color: var(--text); font-weight: 700; margin: 0 0 0.4rem; font-size: 1rem; }
+.faq-a { color: var(--muted); margin: 0; font-size: 0.96rem; line-height: 1.55; }
+
+@media (max-width: 640px) {
+  .lp { padding-top: 6.5rem; }
+}
+
+
+.srcquote {
+  margin: 1.6rem 0; padding: 1.1rem 1.3rem 1.1rem 1.5rem;
+  border-left: 3px solid var(--accent); background: var(--surface);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.srcquote p { color: var(--text); font-size: 1.03rem; line-height: 1.55; margin: 0; }
+.srcquote cite { display: block; margin-top: 0.6rem; color: var(--muted); font-size: 0.9rem; font-style: normal; }
+.srcquote cite a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.srcquote cite a:hover { color: var(--accent-bright); }
+
+.snip {
+  margin: 1.2rem 0; padding: 1.1rem 1.2rem; overflow-x: auto;
+  background: #0b0b0d; border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.86rem; line-height: 1.6; color: #d8d8d4; white-space: pre;
+}
+.snip-label { color: var(--muted); font-size: 0.86rem; font-weight: 700; margin: 1.4rem 0 0.1rem; }
+
+.fig { margin: 1.9rem 0; }
+.fig img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.fig figcaption { color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin-top: 0.7rem; }
+
+
+
+.lp p > a:not([class*="btn"]), .lp li:not(.crumbs li) > a:not([class*="btn"]) {
+  color: var(--accent-bright); text-decoration: underline;
+  text-underline-offset: 2px; text-decoration-thickness: 1px;
+}
+.lp p > a:not([class*="btn"]):hover, .lp li:not(.crumbs li) > a:not([class*="btn"]):hover { color: var(--accent-bright); }
+
+
+.mp-list--logos a { display: flex; align-items: center; gap: 0.6rem; }
+.mp-list--logos img { width: 18px; height: 18px; flex: none; }
+
+
+.llm-block {
+  margin: 2rem 0 0;
+  padding: 1.3rem 1.4rem;
+  max-height: 70vh;
+  overflow: auto;               
+  background: rgba(var(--bg-rgb), 0.6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-family: var(--report-font-family-monospace, ui-monospace, "SFMono-Regular", Consolas, monospace);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;        
+  word-break: break-word;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lp-note {
+  color: var(--muted);
+  font-size: var(--fs-small);
+  border-left: 2px solid rgba(var(--accent-rgb), 0.45);
+  padding-left: 1rem;
+  margin-top: 1.4rem;
+}
+
+button.btn-primary { font: inherit; cursor: pointer; }
+
+
+.pr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin: 1.8rem 0 1.2rem;
+  align-items: start;
+}
+
+.pr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.5rem 1.35rem 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  position: relative;
+}
+
+
+.pr-card--featured {
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.045);
+}
+
+.pr-flag {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+}
+
+
+.pr-card .pr-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pr-price {
+  margin: 0.15rem 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.pr-amount {
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pr-per {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.pr-clients {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-bright);
+  min-height: 1.2em;
+}
+
+.pr-for {
+  margin: 0.1rem 0 0.3rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.pr-feat {
+  margin: 0 0 0.4rem;
+  font-size: 0.86rem;
+}
+
+.pr-feat li { margin-bottom: 0.3rem; }
+
+
+.pr-cta {
+  margin-top: auto;
+  text-align: center;
+  width: 100%;
+}
+
+.pr-foot {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+}
+
+
+.pr-seats {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-bright);
+}
+
+.pr-seats[hidden] { display: none; }
+
+
+.gd-sec { padding-block: 2.6rem; border-top: 1px solid var(--border); }
+.gd-sec:first-of-type { padding-top: 0; border-top: 0; }
+
+.gd-sec > h2:first-child { margin-top: 0; }
+
+.gd-sec .lp-hero { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+
+
+.gd-sec p, .gd-sec li { max-width: 33em; }
+
+.lp > section[data-sec] > p,
+.lp > section[data-sec] .offer p { max-width: 33em; }
+
+.gd-sec .cmp-wrap, .gd-sec .fig, .gd-sec .snip { max-width: none; }
+
+
+.gd-faq { grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+
+@media (max-width: 640px) {
+  .gd-sec { padding-block: 2rem; }
+}
+
+
+.testi-grid { display: grid; gap: 1.1rem; margin-top: 1.6rem;
+              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.testi { margin: 0; background: var(--surface); border: 1px solid var(--border);
+         border-radius: var(--radius); padding: 1.5rem 1.6rem 1.2rem; position: relative; }
+
+.testi::before { content: "\201C"; position: absolute; top: 0; left: 0.7rem;
+                 font-size: 3.2rem; line-height: 1; color: var(--accent-bright);
+                 opacity: 0.3; pointer-events: none; }
+.testi blockquote { margin: 0; padding: 0; border: 0; font-style: normal;
+                    font-size: 0.97rem; line-height: 1.6; color: var(--muted); }
+.testi figcaption { margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border); }
+.testi cite { font-style: normal; font-weight: 700; font-size: 0.88rem; color: var(--accent-bright); }
+.testi-quien { display: block; font-weight: 400; font-size: 0.84rem; color: var(--muted); margin-top: 0.15rem; }
+
+
+.idx { border-top: 2px solid var(--text); margin: 1.4rem 0 0; padding: 0;
+       list-style: none; counter-reset: idx; }
+.idx li { counter-increment: idx; border-bottom: 1px solid var(--border); }
+.idx a { display: flex; align-items: baseline; gap: 0.9rem; padding: 0.85rem 0;
+         text-decoration: none; color: var(--text); font-size: var(--fs-body); line-height: 1.4; }
+.idx a:hover { color: var(--accent-bright); }
+.idx a:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: -2px; }
+.idx a::before { content: counter(idx, decimal-leading-zero); flex: none;
+                 color: var(--muted); font-size: 0.82rem; font-weight: 700;
+                 letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+
+.idx__t { flex: 0 1 auto; min-width: 0; }
+.idx__g { display: none; }
+.idx__n { margin-left: auto; flex: none; color: var(--muted); font-size: 0.82rem; }
+@media (min-width: 40rem) {
+  .idx__g { display: block; flex: 1; min-width: 2rem;
+            border-bottom: 1px dotted var(--border); transform: translateY(-0.35em); }
+  .idx__n { margin-left: 0; }
+}
+
+
+.lp-foto { max-width: 260px; margin: 2rem 0 0; }
+.lp-foto .about-frame { aspect-ratio: 2 / 3; }
+
+
+.lp .cta-linea {
+  display: block; margin: 1.7rem 0 0; padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem; font-weight: 700; line-height: 1.45;
+  color: var(--accent-bright); text-decoration: none;
+}
+.lp .cta-linea:hover { text-decoration: underline; }
+.lp .cta-linea:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; }
+.lp .cta-linea::after { content: " \2192"; }
+
+
+.lp .deflist { margin: 1.5rem 0 0; }
+.lp .deflist dt {
+  font-weight: 800; color: var(--accent-bright);
+  font-size: 1rem; line-height: 1.4; margin-top: 1.15rem;
+}
+.lp .deflist dt:first-child { margin-top: 0; }
+.lp .deflist dd {
+  margin: 0.35rem 0 0; padding-left: 0;
+  border-left: 2px solid var(--border); padding-left: 0.9rem;
+  color: var(--muted); line-height: 1.62;
+}
+
+</style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "What is a good ROAS? The two numbers that decide it",
+    "description": "A good ROAS is the one that clears your gross margin: break-even is 1 divided by that margin. The second number is conversion volume, which decides whether a ROAS difference is readable at all. Under about 50 conversions per period, most swings are counting noise.",
+    "author": {
+      "@type": "Person",
+      "@id": "https://manucliment.com/#person",
+      "name": "Manuel Climent",
+      "url": "https://manucliment.com/",
+      "jobTitle": "Founder",
+      "worksFor": { "@type": "Organization", "@id": "https://climentmedia.com/#organization", "name": "Climent Media", "url": "https://climentmedia.com/" },
+      "sameAs": ["https://www.linkedin.com/in/manu-climent-/", "https://github.com/Manucliment"]
+    },
+    "publisher": { "@type": "Organization", "@id": "https://climentmedia.com/#organization", "name": "Climent Media", "url": "https://climentmedia.com/" },
+    "datePublished": "2026-08-05",
+    "dateModified": "2026-08-05",
+    "mainEntityOfPage": "https://climentmedia.com/learn/what-is-a-good-roas/",
+    "image": "https://climentmedia.com/assets/og-what-is-a-good-roas.jpg",
+    "inLanguage": "en",
+    "about": ["what is a good roas", "return on ad spend", "break-even roas", "conversion volume", "marketing measurement"]
+  }
+  </script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://climentmedia.com/"},{"@type":"ListItem","position":2,"name":"Learn","item":"https://climentmedia.com/learn/"},{"@type":"ListItem","position":3,"name":"What is a good ROAS","item":"https://climentmedia.com/learn/what-is-a-good-roas/"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a good ROAS?","acceptedAnswer":{"@type":"Answer","text":"A good ROAS is one that clears your gross margin with room left over. Break-even ROAS is 1 divided by your gross margin, so a 40% margin breaks even at 2.5 and a 70% margin breaks even at about 1.43. Any number below that loses money on every sale, whatever the industry average says."}},{"@type":"Question","name":"How do I calculate my break-even ROAS?","acceptedAnswer":{"@type":"Answer","text":"Divide 1 by your gross margin expressed as a decimal. A 35% margin gives 1 divided by 0.35, which is 2.86. Subtract shipping, payment fees and expected returns from the margin first, or the break-even point you calculate will be lower than the one your bank account uses."}},{"@type":"Question","name":"Is a ROAS of 4 good?","acceptedAnswer":{"@type":"Answer","text":"Whether a ROAS of 4 is good depends entirely on your margin. At a 60% gross margin, a ROAS of 4 leaves 35% of revenue as contribution, which is healthy. At a 20% margin, break-even is 5, so a ROAS of 4 loses money on every order. The same number is a win in one account and a leak in another."}},{"@type":"Question","name":"Why does my ROAS swing so much week to week?","acceptedAnswer":{"@type":"Answer","text":"Mostly because the conversion count is small. The random spread of a count scales with the square root of that count, so at 20 conversions per period a swing of 80% or more is ordinary. Low-volume accounts see enormous week-to-week ROAS movement without anything in the account changing."}},{"@type":"Question","name":"How many conversions do I need before I can trust a ROAS comparison?","acceptedAnswer":{"@type":"Answer","text":"For a 20% difference to stand clear of noise you need roughly 200 to 500 conversions in each period, depending on how much your order values vary. At 50 conversions you can see a halving. At 20 you can barely see a doubling. Fewer conversions than that and the comparison is decoration."}},{"@type":"Question","name":"Should I use industry ROAS benchmarks?","acceptedAnswer":{"@type":"Answer","text":"Use them for orientation, never as a target. A benchmark averages accounts with different margins, price points, attribution settings and conversion definitions. Two shops reporting the same ROAS can be one profitable and one dying, and the benchmark cannot see which is which."}},{"@type":"Question","name":"What is the difference between ROAS and blended ROAS?","acceptedAnswer":{"@type":"Answer","text":"Platform ROAS divides the revenue that platform claims by the spend on that platform. Blended ROAS, sometimes called MER, divides all revenue by all marketing spend. Platform ROAS is useful for steering a campaign. Blended ROAS is the one that matches the bank, because no platform can double-count it."}}]}</script>
+  <script defer src="../../consent.js?v=63f7879748"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="nav nav-simple scrolled" id="nav">
+      <a class="nav-brand" href="../../" aria-label="Climent Media - home">
+        <span class="brand-mark">CM</span>
+        <span class="brand-word">CLIMENT<br>MEDIA</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <span class="droplink">
+          <a href="../../ads-assistant/">Ads Assistant</a>
+          <button class="dropbtn" aria-expanded="false" aria-controls="mm-p1">
+            <span class="visually-hidden">Open the Ads Assistant menu</span>
+            <svg viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </span>
+        <div class="megapanel megapanel--split" id="mm-p1" hidden>
+          <ul class="mp-list mp-list--logos">
+            <li><a href="../../ads-assistant/meta-ads/"><img src="../../assets/logos/meta.svg" alt="" width="18" height="18">Meta Ads</a></li>
+            <li><a href="../../ads-assistant/google-ads/"><img src="../../assets/logos/googleads.svg" alt="" width="18" height="18">Google Ads</a></li>
+            <li><a href="../../ads-assistant/google-analytics/"><img src="../../assets/logos/ga4.svg" alt="" width="18" height="18">Google Analytics</a></li>
+            <li><a href="../../ads-assistant/search-console/"><img src="../../assets/logos/searchconsole.svg" alt="" width="18" height="18">Search Console</a></li>
+          </ul>
+          <div class="mp-rule" aria-hidden="true"></div>
+          <ul class="mp-list">
+            <li><a href="../../ads-assistant/how-it-works/">How it works</a></li>
+            <li><a href="../../ads-assistant/open-source/">Open source</a></li>
+            <li><a href="../../ads-assistant/pricing/">Pricing</a></li>
+            <li><a href="../../ad-account-audit/">Google Ads audit</a></li>
+            <li><a href="../../ads-assistant/">Everything it reads</a></li>
+          </ul>
+        </div>
+        <a href="../../agents/">Agents</a>
+        <span class="droplink">
+          <a href="../../agency/">Agency</a>
+          <button class="dropbtn" aria-expanded="false" aria-controls="mm-p3">
+            <span class="visually-hidden">Open the Agency menu</span>
+            <svg viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </span>
+        <div class="megapanel" id="mm-p3" hidden>
+          <ul class="mp-list">
+            <li><a href="../../agency/">AI PPC management</a></li>
+            <li><a href="../../es/" hreflang="es" lang="es">Agencia Meta Ads (espa&ntilde;ol)</a></li>
+            <li><a href="../../ad-account-audit/">Google Ads audit</a></li>
+          </ul>
+          <div class="mp-rule" aria-hidden="true"></div>
+          <div class="mp-promo">
+            <div class="mp-visual" aria-hidden="true"></div>
+            <h2>Paid Media Capacity Check</h2>
+            <p>Being built now. You&rsquo;ll connect one ad account and see what your team should look at first, and why.</p>
+            <a class="mp-cta" href="../../ad-account-audit/">Get the link when it opens &rarr;</a>
+          </div>
+        </div>
+        <a href="../../learn/">Learn</a>
+        <a href="../../about/">About</a>
+        <a href="../../#contact" class="nav-cta">Contact</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span>
+      </button>
+    </header>
+
+  <main class="lp" id="main" tabindex="-1" data-tipo="guia">
+    <section class="gd-sec" data-sec="hero">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../learn/">Learn</a></li>
+        <li aria-current="page">What is a good ROAS</li>
+      </ol>
+    </nav>
+
+    <div class="lp-hero">
+      <p class="lp-cat">Measurement &middot; Benchmarks</p>
+      <h1>What is a good ROAS?</h1>
+      <p class="lp-tagline">A good ROAS is the one that clears your gross margin: break-even is 1 divided by that margin, so a 40% margin needs 2.5. The number nobody publishes is the second one. Below roughly 50 conversions per period, most of the ROAS swings you react to are counting noise, not performance.</p>
+      <p class="lp-hero-cta"><a class="btn-primary" href="../../ad-account-audit/">Get the Capacity Check link when it opens</a></p>
+    </div>
+    </section>
+
+    <section class="gd-sec" data-sec="contexto">
+    <p>Everyone answers this with a number.</p>
+    <p>Ask the question anywhere and you get 4x, or you get a table of industry averages, or you get "it depends" followed by a shrug.</p>
+    <p>There are actually two numbers here. The first is arithmetic and takes ten seconds. The second decides whether the first one is even readable in your account, and almost nobody checks it.</p>
+    <p>The second one is the reason a client can hand you a ROAS target that your account has no way to hit or miss on purpose.</p>
+    <a class="cta-linea" href="../../ad-account-audit/">Or see what your team should look at first: the Paid Media Capacity Check, being built now</a>
+
+    </section>
+
+    <section class="gd-sec" data-sec="oferta">
+    <h2>What is a good ROAS, in arithmetic?</h2>
+    <p>A good ROAS is one that clears your gross margin with room left over. Break-even ROAS is 1 divided by your gross margin. A 40% margin breaks even at 2.5. A 70% margin breaks even at about 1.43. That number belongs to your business, and no industry average knows your cost of goods.</p>
+    <p>Two columns are worth having written down before anyone sets a target:</p>
+
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <thead>
+          <tr>
+            <th>Gross margin</th>
+            <th>Break-even ROAS</th>
+            <th>ROAS to keep 10% of revenue</th>
+            <th>What this means for you</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>20%</td>
+            <td>5.0</td>
+            <td>10.0</td>
+            <td><strong>Paid acquisition is brutal here.</strong> Retail, distribution, thin-margin ecommerce. A 4x that everyone calls great is a loss on every order</td>
+          </tr>
+          <tr>
+            <td>30%</td>
+            <td>3.33</td>
+            <td>5.0</td>
+            <td><strong>Tight.</strong> The gap between break-even and profit is narrow, so a small measurement error changes the verdict</td>
+          </tr>
+          <tr>
+            <td>40%</td>
+            <td>2.5</td>
+            <td>3.33</td>
+            <td><strong>The typical DTC shape.</strong> This is where "aim for 3" comes from, and it is only right at this margin</td>
+          </tr>
+          <tr>
+            <td>50%</td>
+            <td>2.0</td>
+            <td>2.5</td>
+            <td><strong>Room to buy growth.</strong> You can run at 2.2 for volume and still be adding contribution</td>
+          </tr>
+          <tr>
+            <td>70%</td>
+            <td>1.43</td>
+            <td>1.67</td>
+            <td><strong>Software, info products, most services.</strong> A ROAS of 2 is strong here and would be a disaster at 20% margin</td>
+          </tr>
+          <tr>
+            <td>85%</td>
+            <td>1.18</td>
+            <td>1.33</td>
+            <td><strong>ROAS is close to the wrong metric.</strong> At this margin the binding constraint is payback period and lifetime value, not the ratio</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>One trap in that table. "Gross margin" has to be the margin after every variable cost that scales with an order: cost of goods, shipping, payment fees, and the returns you actually get. Use the accounting gross margin and your break-even point comes out lower than the one your bank uses.</p>
+    <p>The second trap is the target itself. If you want to keep 10% of revenue as contribution after ad spend, the ROAS you need is 1 divided by (margin minus 0.10). At a 30% margin that is 5.0, not 3.33. People set the break-even number as the target and then wonder why a profitable-looking account produces no money.</p>
+    <a class="cta-linea" href="../../ad-account-audit/">Or see what your team should look at first: the Paid Media Capacity Check, being built now</a>
+
+    </section>
+
+    <section class="gd-sec" data-sec="alternativas">
+    <h2>Why can't an industry benchmark answer this?</h2>
+    <p>Because a benchmark averages accounts with different margins, different price points, different attribution settings and different definitions of a conversion. Two shops reporting the same 3.0 can be one printing money and one dying quietly. The average cannot see which, and neither can you from the outside.</p>
+    <p>There is a second problem underneath, and it is the bigger one. The ROAS on your screen is not a fact about your business. It is a fact about a measurement configuration: which conversion counts, which attribution model, which lookback window, and which date the revenue lands on. Change any of those and the number moves without a single thing happening in the account. That is the whole argument in <a href="../marketing-attribution/">marketing attribution: why every tool gives you a different number</a>.</p>
+    <p>So a benchmark is comparing your configuration to somebody else's, and calling the difference performance.</p>
+    <h3>The third problem: which ROAS are you even comparing?</h3>
+    <p>The third problem is scope. Platform ROAS divides the revenue that platform claims by the spend on that platform. Blended ROAS, sometimes called MER, divides all revenue by all marketing spend. Only the second one can be checked against the bank, because no platform can double-count it. If a client gives you a target, find out which of the two they mean before you agree to it.</p>
+    <p>And some campaigns do work that their own number cannot capture. An operator in r/FacebookAds put it plainly in August 2026. His traffic campaign looked terrible judged on direct purchases. The retargeting pool it built was the only reason the later sales campaigns made money. His fix was to stop reading ROAS on that campaign, not to measure it better. That is often the right call. Worth saying out loud, though: it means giving up on measuring something, not measuring it well.</p>
+
+    </section>
+
+    <section class="gd-sec" data-sec="prueba">
+    <h2>Can your account tell a good ROAS from a bad week?</h2>
+    <p>The smallest difference your account can detect is the number nobody publishes, and it is the one that changes how you work. Conversions arrive as a count, and the random spread of a count scales with the square root of that count. So the smaller your conversion volume, the bigger a ROAS difference has to be before it means anything at all.</p>
+
+    <figure class="fig">
+      <img src="../../assets/roas-readable-difference.png" width="1800" height="1530" style="max-width:620px;display:block;margin:0 auto" loading="lazy" alt="Six horizontal bars, one per conversion volume. A striped orange band marks the range of ROAS difference that is indistinguishable from noise: it covers almost the full width at 7 conversions per period, 88 percent at 20 conversions, 55 percent at 50, 39 percent at 100, 28 percent at 200 and 18 percent at 500.">
+      <figcaption>The striped band is the difference you cannot read. At 20 conversions a period, a ROAS of 2.0 one week and 3.5 the next sits inside it.</figcaption>
+    </figure>
+    <a class="cta-linea" href="../../ad-account-audit/">Or see what your team should look at first: the Paid Media Capacity Check, being built now</a>
+
+    <h3>The arithmetic, so you can check it</h3>
+    <p>The rule of thumb behind the picture, so you can check it rather than trust me. For two periods with about <code>N</code> conversions each, the smallest relative difference you can distinguish is roughly:</p>
+
+    <p class="snip-label">Smallest readable ROAS difference, as a fraction</p>
+    <div class="snip">1.96 * sqrt( 2 * (1 + CV^2) / N )
+
+N  = conversions in EACH period
+CV = spread of your order values, as a fraction of the average
+     CV = 0    every order is the same size
+     CV = 1    typical ecommerce spread, used in the table below</div>
+
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <thead>
+          <tr>
+            <th>Conversions in each period</th>
+            <th>If every order is the same size</th>
+            <th>With normal order-value spread</th>
+            <th>What you can honestly conclude</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>7 <span style="opacity:.7">(one a day)</span></td>
+            <td>105%</td>
+            <td>148%</td>
+            <td><strong>Nothing.</strong> ROAS would have to more than double before you could call it a change</td>
+          </tr>
+          <tr>
+            <td>20</td>
+            <td>62%</td>
+            <td>88%</td>
+            <td><strong>Only a collapse.</strong> 2.0 against 3.5 is a coin flip, and that is the swing people restructure accounts over</td>
+          </tr>
+          <tr>
+            <td>50</td>
+            <td>39%</td>
+            <td>55%</td>
+            <td><strong>A halving is visible.</strong> A 20% move still is not. This is where most small accounts live</td>
+          </tr>
+          <tr>
+            <td>100</td>
+            <td>28%</td>
+            <td>39%</td>
+            <td><strong>Big moves only.</strong> Most weekly client reporting is built on differences smaller than this</td>
+          </tr>
+          <tr>
+            <td>200</td>
+            <td>20%</td>
+            <td>28%</td>
+            <td><strong>A real drop starts to show</strong> in the same week it happens</td>
+          </tr>
+          <tr>
+            <td>500</td>
+            <td>12%</td>
+            <td>18%</td>
+            <td><strong>Now a 20% move is a signal.</strong> This is the volume at which weekly ROAS reporting earns its place</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    </section>
+
+    <section class="gd-sec" data-sec="umbral">
+    <h2>What that means at your conversion volume</h2>
+    <p>Read the middle rows again, because they are the uncomfortable ones. An account doing 100 conversions a fortnight cannot distinguish a 30% ROAS difference from chance, and 30% is a much larger move than anything most weekly reviews are reacting to.</p>
+    </section>
+
+    <section class="gd-sec" data-sec="limitesdato">
+    <h2>Two honest caveats before you quote these numbers</h2>
+    <p>Two honest caveats, before anyone quotes these numbers at a client.</p>
+    <p>That threshold is a floor, not the real band. It assumes the two periods differ only by chance. Seasonality, an auction shift, a competitor or a tracking change all make it worse, and none of them are in the formula.</p>
+    <p>The order-value spread is also a guess unless you compute it from your own data. Tight, similar order values narrow the band. A handful of large orders widen it a lot.</p>
+
+    </section>
+
+    <section class="gd-sec" data-sec="proceso">
+    <h2>What do Google and Meta say you need?</h2>
+    <p>Both platforms publish a minimum volume, and both minimums get borrowed as if they answered this question. They do not. They describe what the machine needs to learn, which is a different and much lower bar than what you need to read a difference.</p>
+
+    <blockquote class="srcquote" cite="https://support.google.com/google-ads/answer/6268637">
+      <p>&ldquo;At least 15 conversions in the past 30 days at the conversion tracking level.&rdquo;</p>
+      <cite>Google Ads Help, <a href="https://support.google.com/google-ads/answer/6268637" rel="nofollow noopener" target="_blank">About Target ROAS bidding</a> (retrieved 5 August 2026). It is the threshold to switch the strategy on for Search and Shopping, not a threshold for reading results.</cite>
+    </blockquote>
+
+    <p>Meta's side of it is the learning phase. Its documentation puts the threshold at around 50 optimisation events in a 7-day window per ad set. An ad set unlikely to reach that gets flagged as <a href="https://www.facebook.com/business/help/269269737396981" rel="nofollow noopener" target="_blank">learning limited</a>.</p>
+    <h3>Put those minimums next to the table</h3>
+    <p>Now put those next to the table. At 15 conversions in a period, the smallest ROAS difference you can read is around 100%. So Google's minimum for switching Target ROAS on sits at a volume where your ability to judge the result is close to zero.</p>
+    <p>Both statements are true. One is about what the bidder needs to optimise. The other is about what you need to conclude anything. The gap between them is where a lot of bad decisions get made.</p>
+    <p>Meta's 50 is the more useful of the two to steal, for a reason that has nothing to do with bidding. It lands near the volume at which you can see a halving. If you wanted one rule of thumb, 50 conversions per review window beats any ROAS benchmark.</p>
+    <a class="cta-linea" href="../../ad-account-audit/">Or see what your team should look at first: the Paid Media Capacity Check, being built now</a>
+
+    </section>
+
+    <section class="gd-sec" data-sec="historia">
+    <h2>What this cost me to learn</h2>
+    <p>Two things, and one of them was expensive.</p>
+    <p>In 2025 I spent more than 10,000 euros of my own money on ad management platforms. Not a client's money. Mine. What they gave back was the commentary Google and Meta already show you inside their own interfaces, plus generic rules applied identically to every account.</p>
+    <p>Not one of them ever told me the thing on this page. None said the account had no volume to answer the question I was asking it. They were happy to draw me a ROAS trend line at nineteen conversions a month.</p>
+    <h3>The second lesson, and the cheaper one</h3>
+    <p>The second lesson is smaller and more embarrassing. In <a href="../google-ads-change-history/">Google Ads change history</a> I admitted my before-and-after window was 14 days a side, that 14 was a guess, and that I had no principled way to set it. This is the answer I settled on. <strong>Set the window by conversion count, not by calendar.</strong> Wait for 50 conversions on each side, then compare, however many days that takes. If it takes six weeks, that is the honest reading speed of the account. Shortening it does not make you faster. It makes you wrong more often.</p>
+    <p>How much any of this matters scales with the budget, and I would rather say that than pretend otherwise. On an account spending 300 euros a month, most of what you press barely moves anything. At 5,000 or 10,000 a month you need to know exactly what you are pressing and why. That is also the range where the volume is still too low for a weekly ROAS read to be trusted.</p>
+    <a class="cta-linea" href="../../ad-account-audit/">Or see what your team should look at first: the Paid Media Capacity Check, being built now</a>
+
+    </section>
+
+    <section class="gd-sec" data-sec="calificacion">
+    <h2>So what do you do when the volume is not there?</h2>
+    <p>Four things, none of which require more data than you have.</p>
+    <ul class="tpl-list">
+      <li><strong>Set the target from your margin, once, and write it down.</strong> Break-even plus whatever contribution the business needs. It is a business number, not a marketing number, and it should not move because last week was good.</li>
+      <li><strong>Set your review window by conversion count.</strong> "We review at 50 conversions" beats "we review on Mondays" in any account under a few hundred conversions a month. The calendar is not measuring anything.</li>
+      <li><strong>Write the expectation before the change, not after.</strong> One line: what you changed, what you expect, and the date you will look. Without it, you will read whatever happened as confirmation, which is the argument in <a href="../deciding-from-memory/">you are deciding from memory</a>.</li>
+      <li><strong>Give yourself explicit permission not to look daily.</strong> If the difference between today and yesterday is inside the band, opening the dashboard cannot inform a decision. It can only prompt one. Writing that permission down before the clock starts is the part of <a href="../incrementality-testing/">incrementality testing</a> that nobody publishes.</li>
+      <li><strong>Put the band in the report, not just in your head.</strong> A client reading a 22% drop with no noise floor next to it will explain it, and so will anything they paste the report into. That is one of the eight lines in the <a href="../marketing-report-template/">marketing report template</a>.</li>
+    </ul>
+    <h3>That last one is not theoretical</h3>
+    <p>That last one is not theoretical. In early August 2026 an operator in r/FacebookAds was running a jewellery shop on about 58 dollars a day, with roughly 20 purchases in three weeks. He described the noise accurately himself. He said his main metric looked volatile. Then he spent a whole day moving things around, and finally asked the subreddit whether it was acceptable to give a change a week before judging it. He knew he had no volume. He still needed somebody else to authorise the wait.</p>
+    <p>And the honest counter-argument, because leaving it out would be selling.</p>
+    <p>A lot of operators solve this by asking the number for less. Google announced a bidding change in August 2026, and the top-voted reply in r/PPC was to set an ideal CPA or ROAS, let it run, and stop worrying. That is cheaper than everything above. It also works for the pain most people actually feel, which is a client asking why the number moved. It stops working the moment that number is wired to something that spends money on its own, which is <a href="../what-not-to-automate-in-your-ad-accounts/">what not to automate in your ad accounts</a>.</p>
+    <a class="cta-linea" href="../../ad-account-audit/">Or see what your team should look at first: the Paid Media Capacity Check, being built now</a>
+
+    </section>
+
+    <section class="gd-sec" data-sec="limites">
+    <h2>What I still do not know</h2>
+    <ul class="tpl-list">
+      <li><strong>I have not automated the order-value spread.</strong> The tables use a typical figure. The right one is computed per account from your own order values. Until a tool does that for you, the band on this page is an estimate with your name on it.</li>
+      <li><strong>Readable is not the same as caused.</strong> A difference large enough to clear the band still does not tell you what produced it. It tells you the difference was probably not chance. Everything after that is judgement.</li>
+      <li><strong>Lead generation breaks the arithmetic.</strong> When the conversion is a form and the revenue lands months later in a CRM you often cannot see, none of these tables apply cleanly. I know the volume argument still holds. I do not have a clean answer for what "good" means before the revenue exists.</li>
+    </ul>
+
+    </section>
+
+    <section class="gd-sec" data-sec="hermanos">
+    <p>Related reading. <a href="../average-ctr-facebook-ads/">Average CTR on Facebook ads</a>: the same borrowed-number problem, one metric earlier in the funnel. <a href="../measure-ad-effectiveness/">Measure ad effectiveness</a>: which question a ratio like this one is allowed to answer. <a href="../marketing-attribution/">Marketing attribution</a>: which conversions the ROAS is even counting. <a href="../marketing-report-template/">Marketing report template</a>: how to hand the number to a client without handing over the argument. <a href="../google-ads-change-history/">Google Ads change history</a>: proving what changed before the numbers moved. <a href="../deciding-from-memory/">Deciding from memory</a>: why the expectation has to be written down first. <a href="../what-not-to-automate-in-your-ad-accounts/">What not to automate in your ad accounts</a>: what happens when a noisy number gets wired to a rule.</p>
+
+    </section>
+
+    <section class="gd-sec" data-sec="objeciones">
+    <div class="faq gd-faq">
+      <div class="faq-item"><h3 class="faq-q">What is a good ROAS?</h3><p class="faq-a">A good ROAS is one that clears your gross margin with room left over. Break-even ROAS is 1 divided by your gross margin, so a 40% margin breaks even at 2.5 and a 70% margin breaks even at about 1.43. Anything below that loses money on every sale, whatever the industry average says.</p></div>
+      <div class="faq-item"><h3 class="faq-q">How do I calculate my break-even ROAS?</h3><p class="faq-a">Divide 1 by your gross margin as a decimal. A 35% margin gives 1 &divide; 0.35 = 2.86. Subtract shipping, payment fees and expected returns from the margin first, or the break-even point you calculate will be lower than the one your bank account uses.</p></div>
+      <div class="faq-item"><h3 class="faq-q">Is a ROAS of 4 good?</h3><p class="faq-a">Whether a ROAS of 4 is good depends entirely on your margin. At 60% gross margin, a ROAS of 4 leaves 35% of revenue as contribution, which is healthy. At 20% margin, break-even is 5, so a ROAS of 4 loses money on every order. The same number is a win in one account and a leak in another.</p></div>
+      <div class="faq-item"><h3 class="faq-q">Why does my ROAS swing so much week to week?</h3><p class="faq-a">Mostly because the conversion count is small. The random spread of a count scales with the square root of that count, so at 20 conversions per period a swing of 80% or more is ordinary. Low-volume accounts see enormous week-to-week ROAS movement with nothing changing in the account.</p></div>
+      <div class="faq-item"><h3 class="faq-q">How many conversions do I need before I can trust a ROAS comparison?</h3><p class="faq-a">For a 20% difference to stand clear of noise you need roughly 200 to 500 conversions in each period, depending on how much your order values vary. At 50 conversions you can see a halving. At 20 you can barely see a doubling. Below that the comparison is decoration.</p></div>
+      <div class="faq-item"><h3 class="faq-q">Should I use industry ROAS benchmarks?</h3><p class="faq-a">Use them for orientation, never as a target. A benchmark averages accounts with different margins, price points, attribution settings and conversion definitions. Two shops reporting the same ROAS can be one profitable and one dying, and the benchmark cannot see which is which.</p></div>
+      <div class="faq-item"><h3 class="faq-q">What is the difference between ROAS and blended ROAS?</h3><p class="faq-a">Platform ROAS divides the revenue that platform claims by the spend on that platform. Blended ROAS, or MER, divides all revenue by all marketing spend. Platform ROAS steers a campaign. Blended ROAS is the one that matches the bank, because no platform can double-count it.</p></div>
+    </div>
+
+    <p class="lp-cat" style="margin-top:2rem;opacity:.7">Last updated: <time datetime="2026-08">August 2026</time></p>
+    <a class="cta-linea" href="../../ad-account-audit/">Or see what your team should look at first: the Paid Media Capacity Check, being built now</a>
+
+    </section>
+
+    <section class="gd-sec" data-sec="cierre">
+    <div class="offer">
+      <h2>Who wrote this</h2>
+      <p>I am Manu. I have been buying media for eight years, and I got tired of platforms that hand back the same commentary the ad platform already shows you. So I started building an open-source console that reads my Meta and Google data and never changes anything I have not approved. It is Apache-2.0, with a runnable demo on synthetic data. If you want the conversion counts and the margin arithmetic run against your own accounts, the audit below does exactly that and changes nothing.</p>
+      <div class="offer-actions">
+        <a class="btn-primary" href="../../ad-account-audit/">Get the Capacity Check link when it opens</a>
+        <a class="btn-github" href="../../ads-assistant/">See Climent Ads Assistant</a>
+        <a class="btn-ghost" href="mailto:manuel@climentmedia.com?subject=What%20is%20a%20good%20ROAS">Say hello</a>
+      </div>
+    </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">
+      <p>(c) 2026 Climent Media &middot; KVK 96588012 &middot; Utrecht, The Netherlands</p>
+      <nav class="footer-links" aria-label="Legal">
+        <a href="../../privacy.html">Privacy Policy</a><a href="../../terms.html">Terms of Service</a><a href="../../data-deletion.html">Data Deletion</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="../../script.js?v=26c54c28cb" defer></script>
+</body>
+</html>
