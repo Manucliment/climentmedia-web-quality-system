@@ -174,6 +174,20 @@ three the project's own notes declared **outside the generator.**
 > type, you extend the type, you do not improvise a layout"* — and then the fix reaches all
 > N pages at once. That is step 6.
 
+### 2-ter · A partial run does not write a site-wide file
+
+If the generator can rebuild ONE page (`--only`, a single slug), that run **must not rewrite
+the sitemap, `robots.txt` or `llms.txt`**: it would write them with what that run saw. Measured
+on a real store: regenerating one page rewrote `sitemap.xml` with 57 URLs instead of 64 — the
+7 category pages were filled inside a loop that `--only` skipped, and an empty list cannot be
+told apart from "there are no categories". Two of those 7 were among the pages with the most
+organic impressions.
+
+- **GATE** · two controls on the generator: with `--only`, `git status` shows **only that
+  page** changed; without it, the full count of URLs in the sitemap (write the number down).
+- **IF YOU SKIP IT** · the sitemap quietly loses pages, and nothing errors: it is a valid
+  file with fewer lines.
+
 ---
 
 ## Step 3 · Linking is decided before writing

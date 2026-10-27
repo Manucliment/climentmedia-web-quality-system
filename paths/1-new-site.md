@@ -238,6 +238,17 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   sites — including the site where the standard lives.** It was fixed on one site and
   **never left it**: if the alt text is not a field in the spec, it gets written by hand
   and forgotten.
+- **AND THE FACTS, IN A MIGRATION** · "Copy it as it is" is an instruction about the
+  wording, not a waiver on the facts. The frozen source says what was written, not what is
+  true today: one store asked for its descriptions "exactly as they are", and two promised
+  financing through a payment provider that did not exist on the new platform. And a claim
+  without a source gains authority every time it is copied: a homepage said "60 % versus the
+  usual 10 %" and "the largest farm in the country"; the 60 % was in the source, the other two
+  appeared **0 times** in the whole frozen dump — and the client heard their own site and
+  called it a lie.
+  `NO GATE — method:` every number, superlative and promise (price, financing, delivery,
+  guarantee) that the new site publishes is searched in the frozen source (`grep -c`). **0
+  occurrences → the client confirms it, or it does not ship.**
 - → `blueprint/03-content-and-seo.md` · `blueprint/18-page-standard.md`
 
 ## Step 7 · Measurement
@@ -328,6 +339,46 @@ perl gates/audit-vs-spec.pl --mode greenfield --repo <site-repo>
 - **IF YOU SKIP IT** · The error window cannot be undone: during propagation the client's
   site is down for everyone who already resolved the new record.
 - → `blueprint/06-publishing.md §1`
+
+## Step 11b · MIGRATION — moving a URL, a domain, or retiring the old CMS
+
+Four things that have each taken a live site down. None of them shows up in a gate that
+measures the new site, because the damage is on the old side.
+
+- **WHO ELSE WROTE AT THAT URL** · A CMS URL is its HTML **plus** whatever the CMS attaches
+  to it: schema from a plugin, a rewrite rule in `.htaccess`, a per-page script, the endpoint
+  a form posts to. When you take the URL, that stays behind without a word. Measured: six
+  injected JSON-LD snippets went silent while the panel still showed them "published"; the
+  rule that routed the form endpoint lived only in the old `.htaccess`, and **the only form
+  was mute for 8 hours.**
+  `NO GATE — method:` before migrating a URL, list who wrote at it (plugins, rules, scripts,
+  form endpoints, ad destinations); after, check that what it **emitted** is still emitted —
+  not that the page returns 200.
+- **A 404 RULE IS TESTED WITH THE STALE FILE INSIDE** · If the test tree is built with the
+  new exclusion, the file is already gone and the 404 comes from absence, with or without
+  the rule. The test tree is what the upload sends **plus** the stale files the server still
+  has. Compare the status of EVERY URL with the old and the new rules: only what you meant to
+  hide changes, and 0 responses are 500. Before believing "0 differences", look at the
+  distribution of codes (an HTTPS redirect can make every URL a 301 on both sides).
+- **A DOMAIN WITH HISTORY** · After touching its DNS, four checks, **from outside**:
+  1. the DNSSEC chain — a DS record at the registry against an empty DNSKEY at the
+     authoritative server is SERVFAIL for every validating resolver ("it is not propagation,
+     it is a broken chain");
+  2. a certificate for that name on the new destination;
+  3. the URL-by-URL map (old path → new path, written down; never everything to the home
+     page, which search engines read as a soft 404);
+  4. all of it from resolvers other than your own machine, which can answer 200 from its
+     DNS cache while the domain is down for everyone else.
+  `GATE · ` `dig +dnssec DS <domain>` and `dig DNSKEY <domain> @<authoritative>` agree;
+  `curl -I` without `-k` on three paths of the map, through two public resolvers.
+- **RETIRING THE OLD CMS** · Emptying the docroot is not retiring a WordPress: the host's
+  auto-updater can put a fresh, unconfigured core back in the docroot hours later (measured:
+  90 minutes). Verified copy and quarantine **outside** the docroot; the database is not
+  touched; a blocking `wp-config.php` **one level above** the docroot; and watch it.
+  `GATE · ` `/wp-login.php`, `/wp-admin/install.php` and `/xmlrpc.php` return 404 two hours
+  later and again the next day.
+- **IF YOU SKIP IT** · Each of these has already happened, and each looked fine from the new
+  site: the leads stopped, or the old domain stopped resolving, or a login screen came back.
 
 ## Step 12 · THE MASTER GATE — the single entry point
 

@@ -178,6 +178,20 @@ series.
 > matters because the console is exactly what goes missing when a property is new, blacked
 > out, or not ours yet.
 
+**And it is not judged with the site average.** Average position or average CTR punishes the
+plan for working: a new page enters at position 40 and drags the mean down the week it starts
+earning impressions. Before ~60 days the answer is "not known yet", and when the reading comes:
+
+- by **group of queries with the same intent**, against a **closed cohort** of ~20 queries
+  chosen before the change (the cohort does not change while it is being measured);
+- with the **criterion written down BEFORE** the change (metric, threshold, window), never
+  chosen after looking;
+- **one variable at a time** — you do not prune and add in the same change;
+- windows of **the same length**, and leads and index coverage next to clicks.
+
+A table written the day of the change is a hypothesis deployed, not a result: say so in the
+table itself, so nobody declares it solved by reading it.
+
 **The event log is NOT a new file.** Every class A or C touch is recorded in the
 corresponding row of the deploy queue, which already exists, is already the approval gate,
 and already carries a date.

@@ -55,6 +55,20 @@ them sees the others.
 background task on a file, that file is not touched: two writes at once and one is lost
 without a warning.
 
+**One working directory per session, not just one branch.** Two sessions in the same
+directory share the working tree whatever branch each is on: one commits the other's
+half-finished files, or `git status` comes back clean after you edited (someone committed
+your tree). Each session works in its own `git worktree` taken from the main branch, and
+`git worktree remove` refuses while anything is uncommitted. If you find the job half done in
+someone else's worktree, say so; do not take the tree over.
+
+**Looking is not sealing.** `qa-master.pl --repo DIR` writes `DIR/.qa-recibo` (the receipt) even when you
+only meant to look — a diagnostic sweep over five sites once overwrote five candidate receipts
+in 55 seconds with production verdicts, and the door then refused all five deploys. To
+diagnose: `--no-receipt`. The receipt is written only when preparing an upload, against the
+candidate. And when you wire one instrument to call another, check what the inner one
+**writes**: a decision artefact cannot be a side effect of a diagnosis.
+
 **The route table — write yours, and do not assume it follows a pattern:**
 
 | Site | Repo | `--thanks` | `--contact` |
