@@ -233,7 +233,7 @@ fi
 
 # ── 1-ter · LO QUE SE SUBE ESTA COMMITEADO (trampa de despliegue G1) ──────────
 #    27-oct-2026. El recibo sella el arbol que hay en disco, este o no en git, y la
-#    subida sube ese arbol. site-m sirvio el 8-sep un configurator.js con 4 lineas
+#    subida sube ese arbol. Una tienda sirvio el 8-sep un configurator.js con 4 lineas
 #    sin commitear: ese dia el formulario dejo de dar leads, y seis dias despues no
 #    habia nada con que compararlo. Git no sabe nada de produccion; si lo servido no
 #    esta en un commit, no hay vuelta atras ni diff.

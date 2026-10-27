@@ -371,7 +371,7 @@ mv "$T/_spec.aparte" "$T/repo/_spec"
 
 echo
 echo "-- 9-ter · G1: lo que se sube esta commiteado (27-oct-2026) -------------------"
-#  site-m, 8-sep: un configurator.js con 4 lineas sin commitear se sirvio, el
+#  Una tienda, 8-sep: un configurator.js con 4 lineas sin commitear se sirvio, el
 #  formulario dejo de dar leads y no habia con que comparar. El repo de pruebas pasa
 #  a ser git SOLO en este bloque (los demas no lo son, y salen «G1 NO MEDIDO»).
 gt() { git -C "$T/repo" -c user.name=banco -c user.email=banco@local "$@"; }
