@@ -169,6 +169,9 @@ our @EXCLUIR_FICHERO = (
     qr/^\.qa-recibo$/,   # el propio recibo NO se despliega ni se auto-hashea
     qr/^\.qa-arbol$/,
     qr/^\.gitignore$/,
+    # 27-oct-2026: un sitio lo sacó de la subida en su deploy.conf (servido, liga webs que lo comparten byte a byte) y el
+    # recibo lo seguía contando: G11 en rojo falso, porque tar no lo sube y el árbol sellado sí lo lleva.
+    qr/^\.gitattributes$/,
     qr/^\.DS_Store$/i,
     qr/^Thumbs\.db$/i,
 );

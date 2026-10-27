@@ -195,6 +195,16 @@ else MAL=$((MAL+1)); echo "  FALLA .qa-arbol no se esta leyendo"; fi
 r "y por tanto invalida el recibo anterior" 1 perl "$REF/receipt.pl" --verificar --repo "$R"
 rm -f "$R/.qa-arbol"
 
+echo
+echo "-- 12-ter · .gitattributes y .gitignore son andamiaje: no entran en el arbol ----"
+#  27-oct-2026: sacarlo solo del deploy.conf dejaba el recibo contandolo y G11 en rojo falso.
+H1="$(perl "$REF/receipt.pl" --arbol --repo "$R" | awk '/ARBOL-HASH/{print $2}')"
+printf '* text=auto eol=lf\n' > "$R/.gitattributes"; printf 'node_modules/\n' > "$R/.gitignore"
+H2="$(perl "$REF/receipt.pl" --arbol --repo "$R" | awk '/ARBOL-HASH/{print $2}')"
+if [ -n "$H1" ] && [ "$H1" = "$H2" ]; then OK=$((OK+1)); printf '  PASA  %-52s\n' "el arbol no cambia con .gitattributes ni .gitignore"
+else MAL=$((MAL+1)); echo "  FALLA .gitattributes o .gitignore entran en el arbol ($H1 / $H2)"; fi
+rm -f "$R/.gitattributes" "$R/.gitignore"
+
 # ── 12-bis · SERVIDOS_PESE_A_EXCLUIR: lo que la exclusion se lleva y SI viaja ──
 #  2-sep-2026. `AGENTS.md` se sirve en produccion y el `--exclude=*.md` del
 #  deploy -- que es carga estructural y no se puede quitar -- lo sacaba del
