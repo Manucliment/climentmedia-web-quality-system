@@ -357,6 +357,40 @@ cp "$T/deploy.conf.antes-spec" "$T/repo/_deploy/deploy.conf"
 mv "$T/_spec.aparte" "$T/repo/_spec"
 
 echo
+echo "-- 9-ter · G1: lo que se sube esta commiteado (27-oct-2026) -------------------"
+#  site-m, 8-sep: un configurator.js con 4 lineas sin commitear se sirvio, el
+#  formulario dejo de dar leads y no habia con que comparar. El repo de pruebas pasa
+#  a ser git SOLO en este bloque (los demas no lo son, y salen «G1 NO MEDIDO»).
+gt() { git -C "$T/repo" -c user.name=banco -c user.email=banco@local "$@"; }
+gt init -q && gt add . && gt commit -qm base
+export SERVIDO="$T/servido"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "todo commiteado: sube"                            0 bash "$REF/deploy.sh" "$T/repo" --subir
+no_contiene "y no habla de G1"                           "SIN COMMITEAR"
+printf 'notas sin commitear\n' >> "$T/repo/CLAUDE.md"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "un CLAUDE.md sin commitear no se sube: no para"   0 bash "$REF/deploy.sh" "$T/repo" --subir
+no_contiene "y no lo cuenta"                             "SIN COMMITEAR"
+printf 'portada v3 sin commitear\n' > "$T/repo/index.html"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "un fichero del arbol sin commitear: NO sube"      1 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "lo dice"                                       "SIN COMMITEAR"
+contiene "y nombra el fichero"                           "index.html"
+contiene "y como subir igual"                            "--sin-commit"
+r "en ensayo avisa y no para"                        0 bash "$REF/deploy.sh" "$T/repo"
+contiene "avisa"                                         "SIN COMMITEAR"
+printf 'nuevo\n' > "$T/repo/sub/nueva.html"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "un fichero nuevo sin añadir: tambien para"        1 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "y lo nombra"                                   "sub/nueva.html"
+r "con --sin-commit sube y lo anota"                 0 bash "$REF/deploy.sh" "$T/repo" --subir --sin-commit "arreglo de urgencia del formulario"
+if grep -q 'SIN-COMMIT \[' "$HIST" 2>/dev/null && grep -q 'arreglo de urgencia del formulario' "$HIST" 2>/dev/null; then
+  OK=$((OK+1)); printf '  PASA  %-52s\n' "la lista y el motivo, en el historial"
+else MAL=$((MAL+1)); printf '  FALLA %-52s\n' "la lista y el motivo, en el historial"; fi
+rm -f "$T/repo/sub/nueva.html"; printf 'portada v2 desplegada\n' > "$T/repo/index.html"; printf 'notas\n' > "$T/repo/CLAUDE.md"
+rm -rf "$T/repo/.git"
+
+echo
 echo "-- 10 · NEGATIVO: la subida no sube lo que dice (SUBIDA parcial) --------------"
 # El caso de site-d/_deploy/subir-css.sh usado como SUBIDA: sube el CSS y
 # nada mas. El gate de despues tiene que verlo.

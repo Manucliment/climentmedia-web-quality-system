@@ -19,6 +19,9 @@
 #                                      pierda palabras frente a lo que sirve
 #                                      produccion (paso 2-ter), dejando en el
 #                                      historial las paginas, cuantas y el motivo
+#    deploy.sh REPO --sin-commit "..."  permite subir ficheros del arbol que no
+#                                      estan commiteados (paso 1-ter, G1), dejando
+#                                      la lista y el motivo en el historial
 #
 #  🔴 EL FLUJO, Y SON DOS MOMENTOS (11-ago-2026)
 #  ---------------------------------------------
@@ -68,7 +71,7 @@
 set -u
 
 REF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0
+REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0; SIN_COMMIT=""
 
 while [ $# -gt 0 ]; do
   # English aliases. Additive: they cannot break an existing invocation.
@@ -79,6 +82,7 @@ while [ $# -gt 0 ]; do
     --show-upload) set -- "--ver-subida" "${@:2}" ;;
     --anyway)      set -- "--aun-asi" "${@:2}" ;;
     --loses-text)  set -- "--pierde-texto" "${@:2}" ;;
+    --uncommitted) set -- "--sin-commit" "${@:2}" ;;
     --hours)       set -- "--horas" "${@:2}" ;;
   esac
   case "$1" in
@@ -87,6 +91,7 @@ while [ $# -gt 0 ]; do
     --ver-subida) VER_SUBIDA=1 ;;
     --aun-asi)  shift; AUN_ASI="${1:-}" ;;
     --pierde-texto) shift; PIERDE_TEXTO="${1:-}" ;;
+    --sin-commit) shift; SIN_COMMIT="${1:-}" ;;
     --horas)    shift; HORAS="${1:-12}" ;;
     -h|--help)  sed -n '2,/^set -u$/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 2 ;;
     -*)         echo "opcion desconocida: $1"; exit 2 ;;
@@ -224,6 +229,46 @@ if [ "$GATE" != 0 ]; then
     echo "     perl \"$REF/qa-master.pl\" $SITIO --repo \"$REPO\" --candidato"
   fi
   exit 1
+fi
+
+# ── 1-ter · LO QUE SE SUBE ESTA COMMITEADO (trampa de despliegue G1) ──────────
+#    27-oct-2026. El recibo sella el arbol que hay en disco, este o no en git, y la
+#    subida sube ese arbol. site-m sirvio el 8-sep un configurator.js con 4 lineas
+#    sin commitear: ese dia el formulario dejo de dar leads, y seis dias despues no
+#    habia nada con que compararlo. Git no sabe nada de produccion; si lo servido no
+#    esta en un commit, no hay vuelta atras ni diff.
+#    Solo cuentan los ficheros DEL ARBOL (receipt.pl --arbol --listar): un CLAUDE.md o
+#    una nota de _seo/ sin commitear no se sube y no para nada.
+#    Para subir igualmente, como --aun-asi: --sin-commit "motivo", que queda anotado.
+SIN_COMMIT_LISTA=""
+if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  ARBOL_LISTA="$(perl "$REF/receipt.pl" --arbol --repo "$REPO" --listar 2>/dev/null | awk '$1 ~ /^[0-9a-f]{8}$/ && $2 ~ /^[0-9]+$/ { $1=""; $2=""; sub(/^  */, ""); print }')"
+  SUCIOS="$(git -C "$REPO" -c core.quotepath=off status --porcelain --untracked-files=all 2>/dev/null | sed -E 's/^.{3}//; s/^.* -> //; s/^"(.*)"$/\1/')"
+  if [ -n "$SUCIOS" ] && [ -n "$ARBOL_LISTA" ]; then
+    SIN_COMMIT_LISTA="$(printf '%s\n' "$SUCIOS" | grep -Fx -f <(printf '%s\n' "$ARBOL_LISTA") || true)"
+  fi
+  if [ -n "$SIN_COMMIT_LISTA" ]; then
+    N_SC="$(printf '%s\n' "$SIN_COMMIT_LISTA" | grep -c .)"
+    linea; echo "  1-ter · lo que se sube esta commiteado (G1)"; linea
+    echo "  🔴 $N_SC fichero(s) del arbol SIN COMMITEAR:"
+    printf '%s\n' "$SIN_COMMIT_LISTA" | head -10 | sed 's/^/       /'
+    if [ "$SUBIR" = 1 ] && [ -z "${SIN_COMMIT:-}" ]; then
+      echo
+      echo "  NO SE DESPLIEGA. Lo servido tiene que poder nombrar un commit: haz commit"
+      echo "  (por nombre, nunca git add -A) y vuelve a medir. Si de verdad hay que"
+      echo "  subirlo asi, que conste:  --sin-commit \"el motivo\""
+      exit 1
+    elif [ "$SUBIR" = 1 ]; then
+      echo "  se sube igualmente. Motivo: $SIN_COMMIT"
+      perl "$REF/receipt.pl" --anotar "SIN-COMMIT [$(printf '%s ' $SIN_COMMIT_LISTA | head -c 300)] $SIN_COMMIT" \
+           --repo "$REPO" >/dev/null 2>&1 && echo "  (anotado en el historial)"
+    else
+      echo "  (ensayo: con --subir, esto para la subida salvo --sin-commit \"motivo\")"
+    fi
+  fi
+else
+  echo "  G1 · NO MEDIDO: $REPO no es un repo git, no se puede saber si lo que se sube esta commiteado"
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "G1 no medido: no es un repo git" --repo "$REPO" >/dev/null 2>&1
 fi
 
 # ── 2 · lo que NADIE ha mirado ───────────────────────────────────────────────
