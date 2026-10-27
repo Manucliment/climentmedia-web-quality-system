@@ -372,10 +372,19 @@ if [ -f "$REF/holes.pl" ]; then
   HU_RC=$?
   printf '%s\n' "$HU_SALIDA" | sed 's/^/  /'
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "HUECOS $(printf '%s' "$HU_SALIDA" | grep -m1 -oE '[0-9]+ abiertos' || echo 'sin declarar') (exit $HU_RC)" --repo "$REPO" >/dev/null 2>&1
+  # 🔴 27-oct-2026 · el aviso decia «se arregla antes de subir» y la puerta SUBIA.
+  #    Paso en un sitio real con un estado escrito a mano fuera del vocabulario
+  #    («cerrado 2026-10-22»). Un hueco abierto sigue sin bloquear; el fichero
+  #    roto si, porque lo que no se puede leer no avisa a nadie.
   if [ "$HU_RC" = 1 ]; then
     echo
     echo "  🔴 El fichero de huecos esta mal formado. Se arregla antes de subir:"
     echo "     un hueco mal declarado no avisa a nadie y ensucia el recibo."
+    if [ "$SUBIR" = 1 ]; then
+      echo "  🔴 NO SUBO: el fichero de huecos esta mal formado. No se ha subido nada."
+      exit 1
+    fi
+    echo "     (ensayo: con --subir NO se subiria hasta arreglarlo)"
   fi
 fi
 # ── 2-bis · la SPEC contra el arbol ──────────────────────────────────────────

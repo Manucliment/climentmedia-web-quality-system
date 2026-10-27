@@ -636,6 +636,31 @@ no_contiene "sin pedir nada"                    "NO SUBO"
 r "--loses-text se acepta"                     0 bash "$REF/deploy.sh" "$T/repo" --loses-text "x"
 
 echo
+echo "-- 2-bis-a · un _huecos.tsv MAL FORMADO para la subida ------------------------"
+# 🔴 27-oct-2026. La puerta imprimia «El fichero de huecos esta mal formado. Se
+#    arregla antes de subir» y SUBIA. Paso en un sitio real: un estado escrito a
+#    mano («cerrado 2026-10-22») fuera del vocabulario de holes.pl. Un hueco abierto
+#    sigue sin bloquear (no es un defecto del arbol); el fichero roto, si.
+printf 'id\tquien\tque\tmedido\tbloquea\tdesde\testado\nHUECO-01\tcliente\tel NIF\tpedido el 1-oct sin respuesta\tlegal\t2026-10-01\tcerrado 2026-10-22\n' > "$T/repo/_huecos.tsv"
+printf 'portada con huecos rotos\n' > "$T/repo/index.html"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "en ensayo lo dice y no para"                0 bash "$REF/deploy.sh" "$T/repo"
+contiene "y avisa de que con --subir pararia"   "con --subir NO se subiria"
+r "con --subir, huecos mal formados NO suben"  1 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "lo dice"                             "NO SUBO: el fichero de huecos"
+if grep -q 'portada con huecos rotos' "$T/servido/index.html"; then
+  MAL=$((MAL+1)); printf '  FALLA %-52s\n' "y no ha subido nada"
+else OK=$((OK+1)); printf '  PASA  %-52s\n' "y no ha subido nada"; fi
+# Arreglado el estado, sube como siempre: el muro es el fichero roto, no los huecos.
+printf 'id\tquien\tque\tmedido\tbloquea\tdesde\testado\nHUECO-01\tcliente\tel NIF\tpedido el 1-oct sin respuesta\tlegal\t2026-10-01\tcerrado\n' > "$T/repo/_huecos.tsv"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "bien formado, sube"                         0 bash "$REF/deploy.sh" "$T/repo" --subir --pierde-texto "fixture"
+no_contiene "sin el aviso del fichero roto"    "mal formado"
+rm -f "$T/repo/_huecos.tsv"
+
+echo
 echo "==============================================================================="
 printf "  %d PASA · %d FALLA\n" "$OK" "$MAL"
 echo "==============================================================================="
