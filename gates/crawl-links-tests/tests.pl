@@ -293,6 +293,83 @@ caso_r5('jerarquico completo: nada que reprochar',     'PASA',
           ['/servicios/dos',    ['/servicios']] ]);
 
 # =============================================================================
+print "\n== R2 · R3 · R4 · LA PAGINA DE CAPTACION QUE NADIE ENLAZA · 27-oct\n";
+# 🔴 EL DEFECTO: una web que solo se navega por el menu, o una pagina de ciudad
+#    que solo trae el sitemap. Medido en una web real: 7 paginas huerfanas (las
+#    5 de ciudad y 2 mas) y un 9 % de enlaces de contenido. Las tres reglas que
+#    lo cazan no tenian un solo caso que las viera en rojo: este bloque se los
+#    da, y uno en verde para que no las «arregle» nadie apagandolas.
+#
+#    Cada pagina: [ruta, [destinos de CONTENIDO], [destinos de MENU/PIE]].
+#    El grafo sale de un recorrido desde '/', igual que el rastreo de verdad:
+#    lo que no se alcanza navegando no lleva reached_by_crawl. $solo_sitemap
+#    son URLs del sitemap que el rastreo nunca vio.
+sub caso_huerf {
+    my ($eti, $regla, $espera, $rutas, $solo_sitemap) = @_;
+    my $tmp = tempdir(CLEANUP => 1);
+    my $f   = "$tmp/g.json";
+    my $url = sub { my $r = shift; return "https://$HOST" . ($r eq '/' ? '/' : $r); };
+    my (%pages, %body, %all, %sale);
+    for my $par (@$rutas) {
+        my ($r, $cuerpo, $menu) = @$par;
+        my @c = map { $url->($_) } @$cuerpo; my @m = map { $url->($_) } @{ $menu || [] };
+        $body{$_}++ for @c; my %u = map { $_ => 1 } (@c, @m); $all{$_}++ for keys %u;
+        $sale{ $url->($r) } = [ sort keys %u ];
+        $pages{ $url->($r) } = {
+            status => 200, out_targets => [ sort keys %u ],
+            out_internal_unique => scalar(keys %u), out_chrome => scalar(@m) || 1, out_body => scalar @c,
+            has_breadcrumb_visible => JSON::PP::true, has_breadcrumb_schema => JSON::PP::false,
+            inbound => [],
+        };
+    }
+    my %depth = ($url->('/') => 0); my @cola = ($url->('/'));
+    while (defined(my $u = shift @cola)) {
+        for my $d (@{ $sale{$u} || [] }) { next if exists $depth{$d} || !$pages{$d}; $depth{$d} = $depth{$u} + 1; push @cola, $d; }
+    }
+    for my $u (keys %pages) {
+        $pages{$u}{in_unique} = $all{$u} // 0;
+        $pages{$u}{in_body}   = $body{$u} // 0;
+        $pages{$u}{depth}     = $depth{$u} // 99;
+        $pages{$u}{reached_by_crawl} = exists $depth{$u} ? JSON::PP::true : JSON::PP::false;
+    }
+    open my $h, '>', $f or die $!;
+    print $h JSON::PP->new->encode({ site => $HOST, start => $url->('/'),
+        sitemap => [ sort(keys %pages), map { $url->($_) } @{ $solo_sitemap || [] } ], pages => \%pages });
+    close $h;
+    my $log = `perl "$GATE" "$f" 2>&1`;
+    my ($real) = $log =~ /^(PASA|FALLA|AVISO|NOVERIF)\s+\Q$regla\E\b/m;
+    $real //= "SIN LINEA $regla";
+    if ($real eq $espera) { printf "  OK    %-52s %s=%s\n", $eti, $regla, $real; $ok++ }
+    else { printf "  MAL   %-52s esperaba %s=%s y salio %s\n", $eti, $regla, $espera, $real; $ko++ }
+}
+
+my @menu = ('/', '/servicios', '/contacto');
+# --- la web sana: todas alcanzables navegando y con un enlace de contenido
+my $sana = [ ['/',            ['/servicios', '/zona-a', '/zona-b'], \@menu],
+             ['/servicios',   ['/zona-a', '/zona-b'],               \@menu],
+             ['/zona-a',      ['/zona-b', '/contacto'],             \@menu],
+             ['/zona-b',      ['/zona-a', '/contacto'],             \@menu],
+             ['/contacto',    ['/servicios'],                       \@menu] ];
+caso_huerf('sana: R2 en verde',                                'R2', 'PASA',  $sana);
+caso_huerf('sana: R3 en verde',                                'R3', 'PASA',  $sana);
+caso_huerf('sana: R4 en verde',                                'R4', 'PASA',  $sana);
+# --- la pagina de ciudad que solo trae el sitemap
+my $huerf = [ ['/',            ['/servicios'],          \@menu],
+              ['/servicios',   ['/contacto'],           \@menu],
+              ['/contacto',    ['/servicios'],          \@menu],
+              ['/zona-a',      ['/contacto'],           \@menu] ];
+caso_huerf('ciudad solo por sitemap: R2 FALLA',                'R2', 'FALLA', $huerf);
+caso_huerf('ciudad solo por sitemap: R4 FALLA',                'R4', 'FALLA', $huerf);
+caso_huerf('en el sitemap y el rastreo no la vio: R2 FALLA',   'R2', 'FALLA', $sana, ['/zona-c']);
+# --- se llega, pero solo por el menu: sin enlace de contenido
+my $solomenu = [ ['/',            ['/servicios'],  [@menu, '/zona-a']],
+                 ['/servicios',   ['/contacto'],   [@menu, '/zona-a']],
+                 ['/contacto',    ['/servicios'],  [@menu, '/zona-a']],
+                 ['/zona-a',      ['/contacto'],   [@menu, '/zona-a']] ];
+caso_huerf('ciudad solo en el menu: R3 AVISA',                 'R3', 'AVISO', $solomenu);
+caso_huerf('ciudad solo en el menu: no es huerfana (R4 PASA)', 'R4', 'PASA',  $solomenu);
+
+# =============================================================================
 print "\n== R10 CUENTA OCURRENCIAS, NO DESTINOS · 13-ago-2026\n";
 # 🔴 EL DEFECTO: `out_chrome` cuenta OCURRENCIAS de enlace. Un pie con seis
 #    anclas `/services#generale`, `#massages`... suma seis y apunta a UNA
