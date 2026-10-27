@@ -473,6 +473,18 @@ caso('MED-03 · un script EXTERNO no cuenta como nuestro, FALLA',
      "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'FALLO:MED-03', 'migracion',
      { 'index.html' => '<html><head><script src="https://cdn.example/consent.js"></script></head><body><main><h1>x</h1></main></body></html>',
        'consent.js' => $CON_ID });
+# 🔴 27-oct-2026 · UNA CARPETA INTERNA NO ES UNA PAGINA. Una nota de trabajo en `_notes/preview.html` (no se publica:
+#    toda carpeta de primer nivel con «_» es andamiaje, como en receipt.pl) salia como «1 de 13 paginas sin el
+#    contenedor»: un FALLO falso en la puerta. El espejo: la misma pagina en una carpeta normal sigue fallando.
+my $CON_GTM = '<html><head><script>(GTM-ABC1234)</script></head><body><main><h1>x</h1></main></body></html>';
+caso('MED-03 · un HTML en una carpeta interna _algo/ no cuenta, pasa',
+     "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'ok:MED-03', 'migracion',
+     { 'index.html' => $CON_GTM,
+       '_notes/preview.html' => '<html><body><h1>borrador</h1></body></html>' });
+caso('MED-03 · ...y la misma pagina en una carpeta normal, FALLA',
+     "{$BASE,\"tracking\":{\"gtm\":\"GTM-ABC1234\"}}", 'FALLO:MED-03', 'migracion',
+     { 'index.html' => $CON_GTM,
+       'notes/preview.html' => '<html><body><h1>borrador</h1></body></html>' });
 # MED-01 · y por la misma razon, el RUNTIME tambien es lo que la pagina carga.
 #    Buscaba tres nombres fijos (script.js, assets/script.js, js/site.js), y con
 #    el consent.js delante decia «no se encontro runtime JS».

@@ -333,6 +333,10 @@ my @HTML;
         opendir(my $dh, $d) or next;
         for my $n (readdir $dh) {
             next if $n eq '.' || $n eq '..' || $skip{$n};
+            # 27-oct-2026 · toda carpeta de PRIMER nivel que empieza por «_» es andamiaje y no se publica, la misma
+            # regla que receipt.pl ($EXCLUIR_DIR_GUION_BAJO). La lista de arriba se escribia a mano y no tenia `_notas`:
+            # una nota de trabajo en _notas/preview.html salia como «1 de 13 paginas sin el contenedor» (MED-03).
+            next if $d eq $ROOT && $n =~ /^_/ && -d "$d/$n";
             my $p = "$d/$n";
             if    (-d $p)             { push @dirs, $p }
             elsif ($n =~ /\.html$/i)  { my $r = $p; $r =~ s{^\Q$ROOT\E/}{}; push @HTML, $r }
