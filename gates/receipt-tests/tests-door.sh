@@ -211,6 +211,19 @@ perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
 r "ensaya y no sube"                        0 bash "$REF/deploy.sh" "$T/repo"
 contiene "avisa de que no sube"               "NO se sube nada"
 contiene "ensena el comando exacto"           "subir.sh"
+# Trampa de despliegue A1 (27-oct-2026): un recibo sin MEDIDO-CONTRA es de PRODUCCION, y la puerta lo tiene
+# que decir en voz alta, en verde tambien. El aviso existia y ningun caso lo miraba: se podia perder sin que
+# saliera nada en rojo. Y el espejo: con un recibo de CANDIDATO no lo dice.
+contiene "dice que el recibo mide PRODUCCION" "medido contra: PRODUCCION"
+contiene "y que el veredicto no es del arbol" "WEB YA SUBIDA"
+sed 's/^{"sitio"/{"medido_contra":"CANDIDATO","sitio"/' "$T/qa-verde.json" > "$T/qa-verde-candidato.json"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde-candidato.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "con recibo de CANDIDATO ensaya igual"    0 bash "$REF/deploy.sh" "$T/repo"
+contiene "dice que mide el candidato"         "medido contra: CANDIDATO"
+no_contiene "y no avisa de produccion"        "WEB YA SUBIDA"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" \
+     --sitio "http://127.0.0.1:$PUERTO" >/dev/null
 
 echo
 echo "-- 7-bis · LA PLANTILLA EN INGLES: SITE y UPLOAD (26-sep-2026) --------------"
