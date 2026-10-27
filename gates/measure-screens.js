@@ -32,8 +32,13 @@
   // y un selector de 'section' solo cubria el 12% de la pagina. Se miran los
   // hijos DIRECTOS del contenedor principal, sea cual sea la etiqueta.
   const main = document.querySelector('main') || document.body;
+  // 27-oct-2026 · «btn» no es subcadena de «button»: los temas de Shopify (Horizon y casi todos) llaman a sus botones
+  // class="button", y una portada con sus CTA daba «3,1 pantallas sin un solo CTA» en falso (trampa de diseño E1). Se
+  // reconocen tambien `button`, `role=button` e `input[type=submit]`. Un <button> a secas NO cuenta: el del menu o el de
+  // un acordeon no llevan a convertir.
   const CTA = 'a.btn,button.btn,a[class*=btn],a[class*=cta],a[href*="wa.me"],' +
-              'a[href*="whatsapp"],a[href^="tel:"],button[type=submit],form';
+              'a[href*="whatsapp"],a[href^="tel:"],button[type=submit],form,' +
+              'a[class*=button],button[class*=button],[role=button][href],input[type=submit]';
 
   // 🔴 18-ago-2026 · QUE ES UN "BLOQUE" CUANDO EL BLOQUE ES UNA LISTA.
   // Medidos los 19 moldes de blueprint/moulds/ a 390x844 en el servidor

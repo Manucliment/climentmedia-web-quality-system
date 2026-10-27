@@ -125,6 +125,13 @@ espera f10-cita-en-medio.html  PASA  ""                              "una cita e
 espera f6-alto-sin-texto.html  FALLA "pantallas de scroll"          "mucho alto y 48 palabras: es aire"
 espera f7-largo-pero-denso.html PASA  ""                            "mismo alto, pero lo compra el texto"
 echo
+echo "== LOS BOTONES QUE NO SE LLAMAN btn (27-oct-2026, trampa de diseno E1)"
+#   «btn» no es subcadena de «button»: con CTA de clase `button` (Shopify) el gate contaba
+#   cero y acusaba en falso. El espejo: la misma pagina con un solo boton tiene que seguir
+#   cayendo, o el arreglo habria apagado la regla en vez de afinarla.
+espera f13-botones-de-shopify.html PASA  ""                         "CTA de clase button, cada 2 bloques"
+espera f14-sin-cta-de-verdad.html  FALLA "sin un solo CTA"          "la misma pagina con un boton al principio"
+echo
 # 🔴 Se CUENTAN antes de medir. Con la carpeta equivocada, el patron no casaba,
 #    `sh` dejaba el literal `[0-9]*.html` y el bucle media UN caso inexistente --
 #    un «MAL» que parecia un problema de ancho. Cero moldes no es un repertorio
