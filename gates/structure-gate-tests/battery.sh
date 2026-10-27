@@ -100,9 +100,11 @@ echo
 echo "=========== CONTROLES NEGATIVOS (deben FALLAR) =========="
 res N1-cm-learn   cm-learn.html        https://climentmedia.com/learn/what-is-a-good-roas/           '{}'                         FALLA
 # 27-oct-2026 · N1 es la misma pagina de entonces, congelada de nuevo con su CSS dentro (sigue fallando: AVISOS). N2 y N3
-#    sustituyen a las copias de site-a y site-c (no se publican) por dos paginas propias que fallan HOY por un defecto real:
-#    lineas de mas de 80 caracteres (ANCHO) y avisos simultaneos. Congeladas con su CSS: el dia que la web se arregle, el
-#    banco sigue probando que el gate cae sobre esto.
+#    sustituyen a las copias de site-a y site-c (no se publican) por dos paginas propias que fallan EN ESTE ARNES: lineas de
+#    mas de 80 caracteres (ANCHO) y avisos simultaneos. ⚠️ Este arnes abre el Chrome local a ~1422 px de ancho, no a los
+#    1298 del servidor de la puerta: la de N2 da PASA a 1298 (medido el 27-oct), porque con menos ancho caben menos
+#    caracteres por linea. Que falle AQUI es lo que el caso prueba (que el gate cae sobre lineas largas); no es un defecto
+#    de esa web. Un defecto de una web se mide en el servidor, a 1298, antes de decirlo.
 res N2-propia-serv own-service-wide.html https://manucliment.com/google-ads-freelancer/             '{}'                         FALLA
 res N3-propia-audi own-audit.html        https://climentmedia.com/ad-account-audit/                 '{}'                         FALLA
 res N4-fabric    prose-fabricated.html https://climentmedia.com/learn/guia-roas/                     '{}'                         FALLA

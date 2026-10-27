@@ -50,8 +50,10 @@ Since 2026-10-27 they run against **frozen copies of the maintainer's own sites*
 (`own-*.html`, `cm-learn.html`) with their stylesheets **inlined and comments stripped**, so a
 CSS change on the live site cannot move the bench, and one synthetic contact page
 (`contact-real.html`). Each was measured before it replaced the old case: the good pages pass,
-the pages kept as negatives fail today for a real defect (lines over 80 characters, stacked
-warnings), and the forced-type controls fail as they must. Result: **34 OK · 0 failed · 0 not
+the pages kept as negatives fail **in this harness** (lines over 80 characters, stacked
+warnings — this harness opens the local Chrome at ~1422 px, wider than the door's 1298, so a
+page can fail here and pass at the door; a site defect is measured at the door's width before it
+is reported), and the forced-type controls fail as they must. Result: **34 OK · 0 failed · 0 not
 measured**. Before committing a frozen page, run `node ../leak-sweep.js` on it: inlined CSS
 can carry internal notes.
 
