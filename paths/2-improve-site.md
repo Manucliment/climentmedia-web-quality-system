@@ -372,6 +372,28 @@ migration **the rule came from**. It was fixed there and it never left.
 
 ---
 
+## Traps this path must not skip
+
+> Each line is a trap that has already happened on a real site and that no gate catches on a live page. The tag in
+> brackets is checked weekly by a program that fails if the line disappears.
+
+- `[trap:design-A2]` When your rule has no effect, ask who is winning and why — not how to make yours win. Read the real
+  stylesheet order (`document.styleSheets`) before assuming it; an override is not good because a sibling one shows.
+- `[trap:design-C4]` Before believing a systematic contrast failure, check who paints the background; a NOT MEASURABLE is not a pass.
+- `[trap:design-F3]` Measuring an unpublished theme by its preview URL serves the PUBLISHED one unless the preview cookie is
+  forwarded by hand; the gate aborts if the theme served is not the one requested.
+- `[trap:design-F5]` In a CMS with a page builder, the checkout may be drawn by a builder template held up by the theme:
+  removing their assets breaks the checkout. Map who draws it before dismantling anything.
+- `[trap:deploy-D5]` A CDN keeps one copy per node: one request says nothing about what visitors see. Ask 10-16 times and group
+  by node; compare the served file against the ORIGIN with a forced miss. If the origin is right and one node is stale, waiting is the cheap exit.
+- `[trap:deploy-D11]` `php -v` over SSH is the command-line binary; the PHP serving the site is read from a real request's header.
+- `[trap:deploy-E3]` Purging by hand is not a fix: it convinces you the problem is solved. Put the file's hash in its URL;
+  a different stylesheet is a URL the CDN has never seen.
+- `[trap:deploy-E8]` In a CMS with a page-cache plugin, the page cache is keyed by URL and is cleared neither by the CDN purge
+  nor by the object-cache flush: name every cache layer and how each one is purged before calling a change live.
+- `[trap:deploy-G7]` A file with the expected name and the right md5 does not prove anyone loads it: before syncing a fix,
+  read from the program that runs it which path it loads.
+
 ## THE DOOR — the one step that cannot be skipped
 
 > **This block is identical in all four paths.** If it changes, it changes in one place:

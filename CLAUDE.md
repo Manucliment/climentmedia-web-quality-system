@@ -123,6 +123,20 @@ on this site and leaves it alive on every other one. After fixing a gate, ask wh
 the same rule applies — a fix that does not leave the site it was found on is how a
 standard rots.
 
+### Before you change a gate (checked weekly: the tags must stay)
+
+- `[trap:seo-E4]` A gate that does not move after a correct fix is telling you there is ANOTHER source producing the same
+  thing: take a census of who else produces it before touching the threshold or doubting the gate.
+- `[trap:seo-E5]` When a rule prints a sentence ("the menu links half the site"), check that the number triggering it
+  measures THAT; a gate fix arrives with cases that expect FAIL, seen in red against the old rule.
+- `[trap:design-E3]` Two copies of a rule do not diverge "if" someone is careless: they diverge. Until there is one source,
+  the layout verdict that counts is the one with a test bench that runs at the door.
+- `[trap:design-E4]` Before obeying a threshold, ask what the site would have to become to pass it. If the answer is
+  inventing a page, a section the anatomy does not ask for, or a cell wider than its content, the defect is the gate's.
+- `[trap:design-E5]` A fix that switches a rule off looks the same as one that sharpens it when you only watch the cases
+  that must pass: every false-positive fix comes with a fixture that MUST fail. If a failure disappears from every page
+  at once, suspect you switched the rule off.
+
 ---
 
 ## What you decide, and what you ask

@@ -465,6 +465,71 @@ They are not covered, which is why they are here rather than inside a green step
 
 ---
 
+## Traps this path must not skip
+
+> Each line is a trap that has already happened on a real site and that no gate can catch on a live page: it is caught
+> only by doing the step. The tag in brackets is checked weekly by a program that fails if the line disappears, so
+> deleting a line here is deleting a safeguard. Re-read this list before Step 1, Step 6, Step 10 and Step 11b.
+
+**Content (Steps 1a, 5, 6, 10)**
+- `[trap:content-A7]` The CMS export does not carry what the THEME adds (the `h1`, the header, the blog index, the share
+  image). Check: the metadata gate confirms the resource *resolves*, not that the field exists; an index or listing page
+  is generated, not migrated.
+- `[trap:content-A9]` A clean-up of "orphan" files sweeps EVERY surface (HTML, CSS, JS, XML, TXT and the spec) before
+  deleting. "Nobody serves it" is not "nobody declares it".
+- `[trap:content-C6]` What is generated from the source is never edited: every correction goes to `overrides` with its
+  `why`, anchored to something stable, asserting how many times it matched.
+- `[trap:content-C7]` "Above", "below" and each CTA's destination are checked against the real HTML: a CTA to an anchor is
+  rewritten only if the anchor exists in the generated page.
+- `[trap:content-C9]` Copy changes in the spec are text substitutions with counts, not rewritten objects; know which fields
+  end up inside an HTML attribute. Check: zero double-escaped entities in `content="…"`.
+- `[trap:content-D1]` What the client sees on a preview/staging environment is not what the visitor sees: remove the preview
+  bar (and count how many you removed) before measuring "something covers the page", and warn the client before they review.
+
+**Design (Steps 2, 4, 5)**
+- `[trap:design-A4]` Same specificity: the later rule wins, so media queries go at the END; a shorthand (`padding:`) resets
+  the sides you did not name. Measure with `getComputedStyle` and the printed `innerWidth` before calling it a defect.
+- `[trap:design-A5]` A component's CSS goes in the stylesheet that the pages USING it load (check their `<link>`s first); if
+  it clashes with a broad rule, exclude it in the broad rule instead of raising the component's specificity.
+- `[trap:design-A6]` Before choosing a section variant or reusing a class name, read what its CSS already does.
+- `[trap:design-D1]` When a section overflows, the problem is usually the CONTENT (six cards with bullets), not the padding:
+  fix it in the generator. Two blind CSS tweaks in a row is the signal to stop and re-diagnose.
+- `[trap:design-D2]` A page needs at least 4 distinct layout primitives and at most ONE card grid, crossed with its share of prose.
+- `[trap:design-D6]` Columns come from the container width (`auto-fit` with a minimum), not a fixed count per breakpoint;
+  what must never wrap is made unable to wrap (`nowrap`, `min-width:0`, ellipsis).
+- `[trap:design-F4]` From a component library or a reference you take the composition (what, where, in what order), never
+  the markup: rewrite it with native elements, real `alt` and visible focus.
+- `[trap:design-F6]` Icons, fonts and photos from third parties travel with their licence and attribution, or not at all.
+
+**SEO and architecture (Steps 3, 5)**
+- `[trap:seo-A3]` A partial generation pass (`--only`) never rewrites global derivatives (sitemap, `robots.txt`). Check:
+  with `--only`, `git status` stays clean.
+- `[trap:seo-E1]` Neither a one-page site nor "built like a blog": every page answers Step 0 of the standard — which
+  business lane, which measured term, and who links to it from the body (at least 2; the menu does not count).
+
+**Deploy, domains and rollback (Steps 11, 11b, 13)**
+- `[trap:deploy-A2]` Measuring writes the receipt: `qa-master.pl --repo DIR` writes `.qa-recibo` even when you only look.
+  To look, `--no-receipt`; a decision artefact is never a side effect of a diagnosis.
+- `[trap:deploy-B3]` One branch AND one directory per session (`git worktree` from `origin/main`): two sessions in one
+  directory share the working tree whatever branch they are on.
+- `[trap:deploy-F2]` Test a 404 rule with the STALE file inside the test tree, comparing every URL's code with the old and
+  the new rule set: only what you meant to hide changes, and zero 500s.
+- `[trap:deploy-F4]` After touching the DNS of a domain with history, check four things from outside: the DNSSEC chain (DS
+  against DNSKEY), the destination's certificate, the URL-to-URL mapping, and all of it from a network that is not yours.
+- `[trap:deploy-F5]` Before migrating a URL, list who else wrote into it (a plugin's schema, `.htaccess` rules, per-page
+  scripts); afterwards, check that what they emitted is still emitted — not that the page returns 200.
+- `[trap:deploy-F6]` Before retiring a subdomain, inventory who links to it (ads, listings, documents); the retired one gets
+  a catch-all tested with invented paths.
+- `[trap:deploy-F7]` Undoing a NEW file is deleting it: a full rollback restores the backup AND removes what was created.
+- `[trap:deploy-G2]` Backup, deploy and rollback come from ONE file list; the rollback is tested cold against a frozen copy.
+- `[trap:deploy-G3]` A backup you cannot start from where it is stored is not a rollback: keep the structure, and each backup
+  carries its manifest (what was touched, what was new, the exact rollback order).
+- `[trap:deploy-D10]` When one domain serves static pages and a live CMS, compare the SCOPE of two gate runs before comparing
+  their verdicts, read `DONDE` on every failure, and verify the purchase flow after each step — not a 200.
+- `[trap:deploy-D12]` Before writing to a DNS zone, test whether the write replaces the WHOLE zone (it would take MX, SPF and
+  DKIM: the email): a harmless TXT on a non-existent subdomain, re-read, delete. Back up the zone first; never "reset DNS"
+  on a domain with hosted email.
+
 ## THE DOOR — the one step that cannot be skipped
 
 > **This block is identical in all four paths.** If it changes, it changes in one place:
