@@ -131,8 +131,14 @@ class Lector(HTMLParser):
             return
         if tag == "img":
             self._flush_actual()
-            src = a.get("src") or a.get("data-src") or ""
-            if not src.startswith("data:"):
+            # Carga diferida: el src es un relleno `data:` y la foto va en
+            # data-src. Tomar el src primero perdia la imagen, y el control
+            # tampoco la contaba: 0 = 0, «OK», con la imagen fuera (28-oct).
+            src = a.get("src") or ""
+            if not src or src.startswith("data:"):
+                src = (a.get("data-src") or a.get("data-lazy-src")
+                       or a.get("data-original") or src)
+            if src and not src.startswith("data:"):
                 self.bloques.append({
                     "t": "img", "src": src, "alt": limpia(a.get("alt", "")),
                     "w": a.get("width"), "h": a.get("height"),
@@ -346,8 +352,13 @@ def main():
     for fichero in ("pages", "posts"):
         for it in json.loads((API / f"{fichero}.json").read_text(encoding="utf-8")):
             c = rendered(it, "content")
-            src_img += len([s for s in re.findall(r'<img\b[^>]*?\bsrc="([^"]*)"', c)
-                            if not s.startswith("data:")])
+            # Una imagen cuenta si tiene una URL de verdad: en el src o, si el
+            # src es un relleno `data:`, en su atributo de carga diferida.
+            for tag in re.findall(r"<img\b[^>]*>", c, re.I):
+                urls = [u for u in re.findall(
+                    r'\s(?:src|data-src|data-lazy-src|data-original)="([^"]*)"', tag)
+                        if u and not u.startswith("data:")]
+                src_img += 1 if urls else 0
             src_faq += len(re.findall(r"<summary\b", c))
             src_cite += len(re.findall(r"<cite\b", c))
     todo_ok &= linea("imagenes <img>", contadores["imagenes"], src_img)
@@ -355,7 +366,12 @@ def main():
     todo_ok &= linea("faq <summary>", contadores["faq"], src_faq)
 
     # Una FAQ sin respuesta cuenta igual en el total: hay que mirarla aparte
+    # Y cuenta en la salida: una respuesta que no es un <p> desaparecio asi (30
+    # de 31 cuadraban), y una linea roja con salida 0 se lee como un aprobado.
+    # Si el origen trae de verdad una pregunta sin respuesta, la decision va a
+    # overrides con su `why`, y esta salida sigue en 1: es la que lo recuerda.
     huerfanas = [(r["slug"], f["q"]) for r in registros for f in r["faq"] if not f["a"]]
+    todo_ok &= not huerfanas
     if huerfanas:
         print(f"\n  🔴 FAQ SIN RESPUESTA ({len(huerfanas)}):")
         for s, q in huerfanas:

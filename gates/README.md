@@ -478,7 +478,7 @@ whose verdict came from measuring a different object.
 |---|---|
 | `audit-vs-source.sh` | The new tree against the old one: what got lost. |
 | `audit-vs-source-wordpress.py` | The same, when the source was WordPress. |
-| `extract-wordpress.py` | Pulls content out of a WordPress export. |
+| `extract-wordpress.py` | Pulls content out of a WordPress export and counts it against the source: anything that does not add up exits 1. Its bench, `extract-wordpress-tests/tests.sh`, needs python3. |
 | `audit-source.sh` | Reads the source repository before anything is touched. |
 | `to-webp.sh` | Image conversion, with the sizes recorded. |
 
