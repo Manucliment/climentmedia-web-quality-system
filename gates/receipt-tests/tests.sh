@@ -152,6 +152,23 @@ contiene "lo nombra"                          "BORRADO   assets/logo.svg"
 mv "$T/logo.svg" "$R/assets/logo.svg"
 
 echo
+echo "-- 6-bis · NEGATIVO: un receptor cambia (no viaja en el arbol, y sella igual) ---"
+# El receptor del formulario vive en _deploy/ y NO esta en el arbol desplegable, pero el recibo lo sella aparte
+# (RECEPTORES-HASH). Una web dio por hecho lo contrario: toco el contact.php, no volvio a medir y la puerta paro la subida.
+printf 'PHP_EN_PRODUCCION="_deploy/contact.php:contact.php"\n' > "$R/_deploy/deploy.conf"
+perl "$REF/receipt.pl" --escribir --repo "$R" --json "$T/qa-verde.json" >/dev/null
+r "con el receptor sellado, verifica"       0 perl "$REF/receipt.pl" --verificar --repo "$R"
+cp "$R/_deploy/contact.php" "$T/contact.php.orig"
+printf 'ahora manda a otro correo\n' > "$R/_deploy/contact.php"
+r "tocar el receptor invalida el recibo"    1 perl "$REF/receipt.pl" --verificar --repo "$R"
+contiene "dice que cambiaron los receptores"  "los RECEPTORES han CAMBIADO"
+contiene "dice CUAL"                          "CAMBIADO  contact.php"
+cp "$T/contact.php.orig" "$R/_deploy/contact.php"
+r "al revertir el receptor, vuelve a valer" 0 perl "$REF/receipt.pl" --verificar --repo "$R"
+rm -f "$R/_deploy/deploy.conf"
+perl "$REF/receipt.pl" --escribir --repo "$R" --json "$T/qa-verde.json" >/dev/null
+
+echo
 echo "-- 7 · NEGATIVO: recibo retocado a mano ---------------------------------------"
 perl "$REF/receipt.pl" --escribir --repo "$R" --json "$T/qa-rojo.json" >/dev/null
 perl -i -pe 's/^VEREDICTO: FALLA/VEREDICTO: PASA/' "$R/.qa-recibo"
