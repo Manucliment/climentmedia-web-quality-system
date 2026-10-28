@@ -1,6 +1,6 @@
 # The gates
 
-36 programs and 32 test batteries. This file is the index: what each program is for,
+36 programs and 33 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -28,21 +28,22 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On a clean
-install the fast run is **819 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **835 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1386 cases green, 0 red**, with **five** banks reported as
+a clean install it reads **1462 cases green, 0 red**, with **five** banks reported as
 `NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `form-handler`), the one that needs a client repository this public repository does not
-ship (`compliance`), plus `structure-gate`. (`qa-master` left that list on 2026-09-22: see
-below.)
+ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
+Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
+`structure-gate` later: see below.)
 
 > **A machine with a measurement host reads more, and that is expected.** The three host
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1440**: 1386 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1516**: 1462 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all four banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -72,7 +73,7 @@ below.)
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-821, not 819, because that machine has deployed. `run-all.sh`
+837, not 835, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -94,14 +95,14 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  819 casos en verde · 0 en rojo
+  835 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
   NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1386 casos en verde · 0 en rojo
+  1462 casos en verde · 0 en rojo
   NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
 ```
 

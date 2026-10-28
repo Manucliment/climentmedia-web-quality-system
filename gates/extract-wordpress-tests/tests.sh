@@ -22,7 +22,13 @@ GATE="$(cd "$D/.." && pwd)/extract-wordpress.py"
 ok=0; ko=0
 T="$(mktemp -d 2>/dev/null || echo "${TMPDIR:-/tmp}/exw-$$")"
 trap 'rm -rf "$T"' EXIT
-command -v python3 >/dev/null || { echo "  NO MEDIDO: no hay python3"; exit 2; }
+# 🔴 28-oct-2026 · `command -v python3` NO BASTA: en Windows encuentra el atajo de
+#    la Microsoft Store, que no ejecuta nada, imprime «Python was not found» y
+#    SALE 0. Se le pide que demuestre ser Python 3 de verdad. Y sin el, 3 (NO
+#    MEDIDO, lo que run-all.sh entiende como hueco declarado), no 2, que contaba
+#    como banco en rojo.
+[ "$(python3 -c 'import sys; print(sys.version_info[0])' 2>/dev/null)" = 3 ] \
+  || { echo "  NO MEDIDO: no hay un python3 que ejecute (el de la Microsoft Store no cuenta)"; exit 3; }
 [ -f "$GATE" ] || { echo "  no encuentro extract-wordpress.py"; exit 2; }
 
 pasa() { ok=$((ok+1)); echo "  PASA  $1"; }
