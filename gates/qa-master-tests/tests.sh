@@ -1500,6 +1500,18 @@ if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" http://site-d.example
   #     la aceptacion firmada no surtia efecto y el FALLO seguia contando.
   conf "$H"; mv "$RA/_deploy/aceptado.conf" "$RA/_deploy/accepted.conf"
   espera "accepted.conf (el nombre en ingles) tambien vale" ACEPTADO MED-07 $BCQA -q
+  # 7-ter · 28-oct-2026 · Y LOS CAMPOS EN INGLES. config/accepted.conf.example
+  #     (publico) escribe [ACCEPTED], FINDING, REASON, ACCEPTS, DATE y UNTIL, y el
+  #     lector solo conocia los nombres en castellano: siguiendo el ejemplo, la
+  #     entrada salia rechazada por «faltan campos» y el FALLO seguia contando.
+  { echo "[ACCEPTED]"
+    echo "CHECK:     MED-07"
+    echo "FINDING:   $H"
+    echo "REASON:    Client legal copy: proposed, never invented."
+    echo "ACCEPTS:   Firstname Lastname"
+    echo "DATE:      $(date +%Y-%m-%d)"
+  } > "$RA/_deploy/accepted.conf"
+  espera "campos en ingles (los del ejemplo publico) valen" ACEPTADO MED-07 $BCQA -q
   rm -f "$RA/_deploy/accepted.conf"
 
   # 8 · el recibo lo lleva dentro, bajo el SELLO
@@ -1519,6 +1531,104 @@ if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" http://site-d.example
     printf '  MAL   %-46s se pudo estirar la caducidad a mano\n' "el aceptado va BAJO el sello"; ko=$((ko+1))
   fi
   rm -rf "$RA"
+fi
+
+echo
+echo "== MEDIDO A MANO · los siete que ningun script mide, firmados y con fecha (28-oct-2026)"
+#  🔴 POR QUE: SEO-17, A11Y-13, A11Y-14, MED-13, MED-14, EST-08 y EST-12f salian
+#     NO VERIFICADO siempre, y toda subida de toda web necesitaba --aun-asi.
+#     Como ACEPTADO, esto es un silenciador: la mayoria de los casos son
+#     NEGATIVOS, porque el modo de fallo no es «no lo cuenta», es «lo cuenta de mas».
+#  Misma fixture que ACEPTADO: site-d en PRODUCCION sintetica, repo en $CACHE.
+if mide_bloque "MEDIDO A MANO: las siete y sus cerraduras" http://site-d.example/ --cache "$CACHE"; then
+  RM="$CACHE/repo-medido"; rm -rf "$RM"; mkdir -p "$RM/_deploy"
+  printf '<!doctype html><html lang="es"><head><title>x</title></head><body><main><h1>x</h1></main></body></html>\n' > "$RM/index.html"
+  MQA="perl $QA http://site-d.example/ --repo $RM --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --sin-recibo --cache $CACHE"
+  SQA="perl $QA http://site-d.example/ --repo $RM --solo seo --sin-recibo --cache $CACHE"
+  # med <CHECK> <RESULTADO> <FECHA> [<campo extra>]  ·  escribe UNA entrada
+  med() {
+    { echo "[MEDIDO]"
+      echo "CHECK:     $1"
+      echo "RESULTADO: $2"
+      echo "COMO:      rama de Rechazar abierta en el panel, cookies y dataLayer mirados"
+      [ "${4:-}" = "sin-mide" ] || echo "MIDE:      banco de pruebas"
+      echo "FECHA:     $3"
+      case "${4:-}" in HASTA) echo "HASTA:     2026-12-31" ;; DATO=*) echo "DATO:      ${4#DATO=}" ;; esac
+    } > "$RM/_deploy/measured.conf"
+  }
+  HOY="$(date +%Y-%m-%d)"
+
+  # 0 · sin fichero: sigue NO VERIFICADO, y el informe dice como cerrarlo
+  rm -f "$RM/_deploy/measured.conf"
+  espera "sin fichero · sigue sin verificar"            NOVERIF MED-14 $MQA -q
+  texto  "y dice que se miden a mano y donde se firman" SI "NO LOS PUEDE MEDIR NINGUN SCRIPT" $MQA -q
+  # 1 · POSITIVO · entrada completa y de hoy: pasa a la casilla declarada
+  med MED-14 PASA "$HOY"
+  espera "medida completa · PASA declarado"             PASA    MED-14 $MQA
+  texto  "y el informe la firma"                        SI "MEDIDO A MANO: 1" $MQA -q
+  # 2 · un FALLO declarado es un FALLO: bloquea igual
+  med MED-13 FALLO "$HOY"
+  espera "FALLO declarado · bloquea"                    FALLO   MED-13 $MQA -q
+  # 3 · NEGATIVO · un check que el gate SI mide no se puede declarar medido
+  med MED-07 PASA "$HOY"
+  espera "MED-07 (lo mide el gate) · sigue en FALLO"    FALLO   MED-07 $MQA -q
+  texto  "y dice que no es de los siete"                SI "no se puede declarar medido a mano" $MQA -q
+  # 4 · NEGATIVO · falta quien mide
+  med MED-14 PASA "$HOY" sin-mide
+  espera "sin MIDE · NO vale"                           NOVERIF MED-14 $MQA -q
+  texto  "y dice que falta"                             SI "faltan campos obligatorios: MIDE" $MQA -q
+  # 5 · NEGATIVO · caducada (90 dias desde FECHA)
+  med MED-14 PASA "2026-01-01"
+  espera "medida CADUCADA · vuelve a sin verificar"     NOVERIF MED-14 $MQA -q
+  texto  "y lo dice con su fecha"                       SI "CADUCADA el 2026-04-01" $MQA -q
+  # 6 · NEGATIVO · FECHA futura
+  med MED-14 PASA "2099-01-01"
+  espera "FECHA futura · NO vale"                       NOVERIF MED-14 $MQA -q
+  # 7 · NEGATIVO · HASTA no se puede poner para estirarla
+  med MED-14 PASA "$HOY" HASTA
+  espera "con HASTA · NO vale"                          NOVERIF MED-14 $MQA -q
+  # 8 · NEGATIVO · RESULTADO que no es PASA/AVISO/FALLO
+  med MED-14 "BIEN" "$HOY"
+  espera "RESULTADO inventado · NO vale"                NOVERIF MED-14 $MQA -q
+  # 9 · ATADA AL DATO: SEO-17 trae dato; firmado sobre otro, no vale
+  rm -f "$RM/_deploy/measured.conf"
+  D17="$($SQA -q 2>&1 | grep -m1 -E '^[[:space:]]+SEO-17[[:space:]]+DATO: ' | sed -E 's/^[[:space:]]+SEO-17[[:space:]]+DATO: //')"
+  if [ -n "$D17" ]; then
+    printf '  OK    %-46s %s\n' "el informe imprime el DATO de SEO-17" "$D17"; ok=$((ok+1))
+    med SEO-17 PASA "$HOY" "DATO=hay etiquetas hreflang de otra web"
+    espera "DATO distinto · NO vale"                    NOVERIF SEO-17 $SQA -q
+    texto  "y dice que hay que volver a medir"          SI "DATO distinto" $SQA -q
+    med SEO-17 PASA "$HOY" "DATO=$D17"
+    espera "DATO el de hoy · PASA declarado"            PASA    SEO-17 $SQA
+  else
+    printf '  MAL   %-46s no hay linea DATO de SEO-17\n' "el informe imprime el DATO de SEO-17"; ko=$((ko+1))
+  fi
+  # 10 · el nombre en castellano tambien vale
+  med MED-14 PASA "$HOY"; mv "$RM/_deploy/measured.conf" "$RM/_deploy/medido.conf"
+  espera "medido.conf (castellano) tambien vale"        PASA    MED-14 $MQA
+  rm -f "$RM/_deploy/medido.conf"
+  # 10-bis · los campos en ingles del ejemplo publico, con PASS en vez de PASA
+  { echo "[MEASURED]"; echo "CHECK:        MED-14"; echo "RESULT:       PASS"
+    echo "HOW:          pressed Reject, looked at cookies and dataLayer"
+    echo "MEASURED-BY:  test bench"; echo "DATE:         $HOY"; } > "$RM/_deploy/measured.conf"
+  espera "campos en ingles (ejemplo publico) valen"     PASA    MED-14 $MQA
+  # 11 · el recibo la lleva, ya no la cuenta en SIN-MIRAR, y va BAJO el sello
+  med MED-14 PASA "$HOY"
+  RMC="$CACHE/recibo-medido"
+  perl $QA http://site-d.example/ --repo "$RM" --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --recibo "$RMC" --cache "$CACHE" >/dev/null 2>&1
+  if grep -q '^MEDIDO-A-MANO: 1' "$RMC" 2>/dev/null && grep -q '^MEDIDO-001: MED-14 | PASA' "$RMC" 2>/dev/null \
+     && ! grep -E '^SIN-MIRAR:' "$RMC" | grep -qw 'MED-14'; then
+    printf '  OK    %-46s %s\n' "el recibo lleva la medida, fuera de SIN-MIRAR" "$(grep -m1 '^MEDIDO-001:' "$RMC" | cut -c1-40)"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s el recibo no la lleva o sigue en SIN-MIRAR\n' "el recibo lleva la medida, fuera de SIN-MIRAR"; ko=$((ko+1))
+  fi
+  perl -i -pe 's/^(MEDIDO-001: MED-14 \| )PASA/${1}FALLO/' "$RMC"
+  if perl ../receipt.pl --verificar --repo "$RM" --recibo "$RMC" 2>&1 | grep -q 'el SELLO no cuadra'; then
+    printf '  OK    %-46s cambiar el resultado rompe el sello\n' "la medida va BAJO el sello"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s se pudo cambiar el resultado a mano\n' "la medida va BAJO el sello"; ko=$((ko+1))
+  fi
+  rm -rf "$RM" "$RMC"
 fi
 
 echo

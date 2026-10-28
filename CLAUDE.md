@@ -118,6 +118,14 @@ measured was the site already online.
 | **2** | A decision of the client's | `_deploy/accepted.conf`, signed, with an expiry |
 | **3** | A false positive of the gate | **Fix the gate.** Never the accepted file |
 
+**NOT VERIFIED is not a box: it is a question nobody has answered yet.** Seven checks can
+never be answered by a script (keyboard and screen reader, text over a photo, a conversion
+that actually arrives, the Reject path, the link graph, the language decision, the
+authorship anchor across your sites). Measure them by hand once and sign the result in
+`_deploy/measured.conf` (see `gates/config/measured.conf.example`); it expires after 90
+days. Do not reach for the "anyway" flag on every deploy instead: a flag that is always
+needed stops meaning anything.
+
 Box 3 matters more than it looks. Putting a false positive in the accepted file hides it
 on this site and leaves it alive on every other one. After fixing a gate, ask where else
 the same rule applies — a fix that does not leave the site it was found on is how a

@@ -147,9 +147,9 @@ Two numbers, both published because both can go down:
 | Number | Today | What it means |
 |---|---|---|
 | Test cases green | **819 cases green · 0 red** on `--fast`, **1386 cases green** on a full run | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect. Both figures are for a clean install; a machine that has deployed reads two more, and one with a measurement host configured runs three more banks |
-| Checks **with a fixture** | **128 of 142 (90%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
+| Checks **with a fixture** | **134 of 142 (94%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
-> **And the second number states its own scope, which is the honest half of it.** That 90% is
+> **And the second number states its own scope, which is the honest half of it.** That 94% is
 > measured over **4 programs out of 36**. The coverage tool prints the 32 it does not measure,
 > by name, on every run. A coverage figure without its scope is exactly the kind of claim this
 > system exists to stop, so it does not get quoted without this line.

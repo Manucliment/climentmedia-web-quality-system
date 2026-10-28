@@ -1111,6 +1111,25 @@ sub escribe_recibo {
     # no la tiene —y el fallo siguio contando—.
     push @cuerpo, "ACEPTADOS-RECHAZADOS: " . $a{aceptados_rechazados}
         if $a{aceptados_rechazados};
+    # ── MEDIDO A MANO (qa-master 10-ter, 28-oct-2026) ───────────────────────
+    #  Lo que ningun script mide (teclado, texto sobre foto, conversion que
+    #  llega, rama de Rechazar...) y alguien midio y firmo. Bajo el SELLO como
+    #  los aceptados, con el md5 del conf, por el mismo motivo: _deploy/ no entra
+    #  en ARBOL-HASH y sin esto no se sabria que version del fichero lo firmo.
+    if ($a{medidos} && @{$a{medidos}}) {
+        push @cuerpo, "MEDIDO-A-MANO: " . scalar(@{$a{medidos}});
+        my $i = 0;
+        for my $x (@{ $a{medidos} }) {
+            $i++;
+            push @cuerpo, sprintf('MEDIDO-%03d: %s | %s | %s -> %s | %s | %s', $i,
+                                  solo_ascii($x->{id}), solo_ascii($x->{resultado} // '?'),
+                                  solo_ascii($x->{fecha} // '?'), solo_ascii($x->{hasta} // '?'),
+                                  solo_ascii($x->{mide} // '?'), solo_ascii($x->{como} // ''));
+        }
+        push @cuerpo, "MEDIDOS-CONF-MD5: " . solo_ascii($a{medidos_conf})
+            if defined $a{medidos_conf} && $a{medidos_conf} ne '';
+    }
+    push @cuerpo, "MEDIDOS-RECHAZADOS: " . $a{medidos_rechazados} if $a{medidos_rechazados};
     # 🔴 La linea que hace honesto el recibo: que NO se ha mirado.
     if ($a{nv_ids} && @{$a{nv_ids}}) {
         push @cuerpo, "SIN-MIRAR: " . solo_ascii(join(' ', @{$a{nv_ids}}));

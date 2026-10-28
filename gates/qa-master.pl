@@ -5448,6 +5448,15 @@ use constant ACEPT_AVISO  => 14;    # a partir de aqui el recibo avisa
 #      ACEPTA:   Nombre Apellido
 #      FECHA:    2026-08-11
 #      HASTA:    2026-11-09        (opcional; por defecto FECHA + 90 dias)
+# 🔴 28-oct-2026 · LOS CAMPOS EN INGLES. config/accepted.conf.example (publico)
+#    escribe [ACCEPTED], FINDING, REASON, ACCEPTS, DATE y UNTIL, y aqui solo se
+#    leian los nombres en castellano: quien seguia el ejemplo firmaba una entrada
+#    que salia rechazada por «faltan campos», y el FALLO seguia contando. Es la
+#    misma enfermedad que el nombre del fichero (26-sep), un nivel mas abajo.
+#    Vale tambien para measured.conf (10-ter).
+my %CAMPO_EN = (FINDING => 'HALLAZGO', REASON => 'MOTIVO', ACCEPTS => 'ACEPTA', DATE => 'FECHA',
+                UNTIL => 'HASTA', RESULT => 'RESULTADO', HOW => 'COMO', 'MEASURED-BY' => 'MIDE',
+                DATA => 'DATO');
 sub lee_aceptados {
     my ($repo) = @_;
     my $f = "$repo/_deploy/aceptado.conf";
@@ -5498,10 +5507,11 @@ sub lee_aceptados {
         $l =~ s/^\x{FEFF}//;                 # BOM si lo puso un editor
         $l =~ s/\r?\n$//;
         next if $l =~ /^\s*#/;               # comentario
-        if ($l =~ /^\s*\[ACEPTADO\]\s*$/i) { $cierra->(); $linea_ini = $n; %cur = (_abierto=>1); next }
+        if ($l =~ /^\s*\[(ACEPTADO|ACCEPTED)\]\s*$/i) { $cierra->(); $linea_ini = $n; %cur = (_abierto=>1); next }
         next if $l =~ /^\s*$/;
         if ($l =~ /^\s*([A-Za-z-]+)\s*:\s*(.*)$/) {
             my ($k, $v) = (uc $1, $2);
+            $k = $CAMPO_EN{$k} if exists $CAMPO_EN{$k};
             $v =~ s/\s+$//;
             if (!$cur{_abierto}) { %cur = (_abierto=>1); $linea_ini = $n }
             $cur{$k} = $v;
@@ -5510,6 +5520,151 @@ sub lee_aceptados {
     close $fh;
     $cierra->();
     return (\@buenas, \@malas, $f, 1);
+}
+
+# =============================================================================
+#  10-ter · MEDIDO A MANO  ·  lo que ningun script puede medir, firmado y con fecha
+# =============================================================================
+#  POR QUE EXISTE (28-oct-2026, ticket de la mesa t-20261028-nv7q3k)
+#  -----------------------------------------------------------------
+#  Siete comprobaciones salian NO VERIFICADO SIEMPRE, con o sin la web medida:
+#  SEO-17, A11Y-13, A11Y-14, MED-13, MED-14, EST-08 y EST-12f (esta, si hay
+#  ancla de autoria). Medido en los recibos de 9 webs del 20 al 28-oct: las 6
+#  primeras en SIN-MIRAR en las 9, EST-12f en 6. Y `deploy.sh` para ante
+#  cualquier NO VERIFICADO real sin `--aun-asi`, asi que TODA subida de TODA web
+#  llevaba `--aun-asi`. Es el fallo que el comentario de `nv_cand` ya describia:
+#  un `--aun-asi` que hace falta en cada despliegue deja de significar nada en
+#  una semana, y entonces tampoco protege a los huecos de verdad.
+#  Ninguna de las siete la puede contestar este programa: teclado y lector de
+#  pantalla, texto sobre foto, que una conversion LLEGUE a Ads, la rama de
+#  Rechazar, el grafo (lo mide otro gate, con su propia corrida), la decision de
+#  idiomas y el ancla comparada con las OTRAS webs. Las mide una persona o un
+#  agente, una vez, y hasta hoy esa medida no tenia donde quedarse.
+#
+#  QUE ES
+#  ------
+#  <repo>/_deploy/measured.conf (o medido.conf). Cada bloque declara que UNA de
+#  esas siete se midio, con que resultado, como, quien y cuando:
+#      [MEDIDO]
+#      CHECK:      A11Y-14
+#      RESULTADO:  PASA            (PASA | AVISO | FALLO)
+#      COMO:       _seo/NO-VERIF-2026-10-28.md · measure-contrast-on-photo.py
+#      MIDE:       Nombre o agente
+#      FECHA:      2026-10-28
+#      DATO:       ...             (SOLO si el check trae dato: el que imprime hoy)
+#  El hallazgo pasa a la casilla declarada y sale en el informe y en el recibo
+#  con su firma. Un FALLO declarado es un FALLO: bloquea igual, y si es una
+#  decision del cliente va despues a accepted.conf como cualquier otro.
+#
+#  LAS CERRADURAS, mismas ideas que ACEPTADO y por los mismos motivos
+#  ------------------------------------------------------------------
+#   1 · SOLO ESTAS SIETE. La lista vive AQUI, no en el fichero: un check que el
+#       gate SI mide no se puede «declarar medido» para callarlo.
+#   2 · CINCO CAMPOS (seis con DATO). Si falta uno, la entrada no vale, se dice,
+#       y el check sigue NO VERIFICADO.
+#   3 · CADUCA A LOS 90 DIAS, sin HASTA que lo estire: una web cambia, y una
+#       medida de teclado de hace medio año habla de otra web. Caducada =
+#       NO VERIFICADO otra vez, que es lo que es.
+#   4 · ATADA AL DATO cuando el check lo trae (SEO-17: si hay hreflang; EST-12f:
+#       el ancla). Si lo medido hoy no es lo que se firmo, la firma no vale: la
+#       decision de idiomas se tomo sobre otra web, el ancla comparada era otra.
+#   5 · Una FECHA futura no vale: se mide antes de firmar, no despues.
+#  NO es `--aun-asi` (eso sigue siendo para lo que nadie ha mirado) y NO es
+#  ACEPTADO (eso es para un FALLO medido que es decision de otro).
+# =============================================================================
+my %MEDIBLE_A_MANO = map { $_ => 1 } qw(SEO-17 A11Y-13 A11Y-14 MED-13 MED-14 EST-08 EST-12f);
+use constant MEDIDO_DIAS => 90;
+
+sub lee_medidos {
+    my ($repo) = @_;
+    my $f = "$repo/_deploy/measured.conf";
+    $f = "$repo/_deploy/medido.conf" if !-f $f && -f "$repo/_deploy/medido.conf";
+    return ([], [], $f, 0) unless -f $f;
+    open my $fh, '<:encoding(UTF-8)', $f or return ([], [], $f, 0);
+    my (@buenas, @malas, %cur);
+    my ($n, $linea_ini) = (0, 0);
+    my $cierra = sub {
+        return unless %cur;
+        my %e = %cur; %cur = ();
+        $e{_linea} = $linea_ini;
+        my @faltan = grep { !defined $e{$_} || $e{$_} =~ /^\s*$/ } qw(CHECK RESULTADO COMO MIDE FECHA);
+        if (@faltan) { $e{_mal} = 'faltan campos obligatorios: ' . join(', ', @faltan); push @malas, \%e; return }
+        unless ($MEDIBLE_A_MANO{$e{CHECK}}) {
+            $e{_mal} = "$e{CHECK} no se puede declarar medido a mano: o lo mide el gate, o no es de los siete ("
+                     . join(' ', sort keys %MEDIBLE_A_MANO) . ')';
+            push @malas, \%e; return;
+        }
+        $e{RESULTADO} = uc $e{RESULTADO};
+        $e{RESULTADO} = { PASS => 'PASA', WARN => 'AVISO', FAIL => 'FALLO' }->{$e{RESULTADO}} // $e{RESULTADO};
+        unless ($e{RESULTADO} =~ /^(PASA|AVISO|FALLO)$/) {
+            $e{_mal} = "RESULTADO tiene que ser PASA, AVISO o FALLO, no «$e{RESULTADO}»"; push @malas, \%e; return;
+        }
+        my $ini = _iso_a_epoch($e{FECHA});
+        unless (defined $ini) { $e{_mal} = "FECHA no es una fecha ISO (AAAA-MM-DD): $e{FECHA}"; push @malas, \%e; return }
+        if ($ini > time + DIA) { $e{_mal} = "FECHA $e{FECHA} es futura: se mide antes de firmar"; push @malas, \%e; return }
+        if (defined $e{HASTA}) { $e{_mal} = 'HASTA no vale aqui: una medida caduca sola a los ' . MEDIDO_DIAS . ' dias'; push @malas, \%e; return }
+        $e{_fin} = $ini + MEDIDO_DIAS * DIA;
+        $e{_hasta_iso} = _epoch_a_iso($e{_fin});
+        $e{_dias} = int(($e{_fin} - time) / DIA);
+        push @buenas, \%e;
+    };
+    while (my $l = <$fh>) {
+        $n++;
+        $l =~ s/^\x{FEFF}//;
+        $l =~ s/\r?\n$//;
+        next if $l =~ /^\s*#/;
+        if ($l =~ /^\s*\[(MEDIDO|MEASURED)\]\s*$/i) { $cierra->(); $linea_ini = $n; %cur = (_abierto=>1); next }
+        next if $l =~ /^\s*$/;
+        if ($l =~ /^\s*([A-Za-z-]+)\s*:\s*(.*)$/) {
+            my ($k, $v) = (uc $1, $2);
+            $k = $CAMPO_EN{$k} if exists $CAMPO_EN{$k};
+            $v =~ s/\s+$//;
+            if (!$cur{_abierto}) { %cur = (_abierto=>1); $linea_ini = $n }
+            $cur{$k} = $v;
+        }
+    }
+    close $fh;
+    $cierra->();
+    return (\@buenas, \@malas, $f, 1);
+}
+
+# Se aplica ANTES que ACEPTADO: un FALLO declarado a mano tiene que poder ir a
+# accepted.conf si es decision del cliente, igual que uno medido por el gate.
+my @MEDIDOS;            # los NV que han pasado a la casilla declarada
+my @MED_RECHAZADAS;     # entradas que no valen, y por que
+my @MED_SOBRAN;         # validas que no casan con ningun NV de hoy
+my $MED_FICHERO = '';
+my $MED_CONF_MD5 = '';
+if ($opt{repo} ne '' && -d $opt{repo}) {
+    my ($buenas, $malas, $ruta, $hay) = lee_medidos($opt{repo});
+    $MED_FICHERO = $ruta;
+    if ($hay && open(my $cf, '<:raw', $ruta)) { local $/; $MED_CONF_MD5 = md5_hex(<$cf> // ''); close $cf }
+    push @MED_RECHAZADAS, { %$_, _por => $_->{_mal} } for @$malas;
+    my %usada;
+    for my $c (@R) {
+        next unless $c->{estado} eq 'NV' && $MEDIBLE_A_MANO{$c->{id}};
+        # La mas reciente gana: si hay dos para el mismo check, vale la ultima medida.
+        my @mias = sort { $b->{_fin} <=> $a->{_fin} } grep { $_->{CHECK} eq $c->{id} } @$buenas;
+        next unless @mias;
+        my $e = $mias[0];
+        $usada{"$_"} = 1 for @mias;
+        my $dato_hoy = _norm_ev($c->{dato});
+        if ($dato_hoy ne '' && _norm_ev($e->{DATO} // '') ne $dato_hoy) {
+            push @MED_RECHAZADAS, { %$e, _por => "DATO distinto: hoy se mide «$dato_hoy» y se firmo sobre «"
+                                    . ($e->{DATO} // '(sin DATO)') . '». Hay que volver a medir' };
+            next;
+        }
+        if (time > $e->{_fin}) {
+            push @MED_RECHAZADAS, { %$e, _por => sprintf('CADUCADA el %s (medida del %s): vuelve a NO VERIFICADO',
+                                                         $e->{_hasta_iso}, $e->{FECHA}) };
+            next;
+        }
+        $c->{estado} = $e->{RESULTADO} eq 'PASA' ? 'PASA' : $e->{RESULTADO} eq 'AVISO' ? 'AVISO' : 'FALLO';
+        $c->{_medido} = $e;
+        $c->{dato} = ($c->{dato} // '') ne '' ? "$c->{dato} · medido a mano: $e->{COMO}" : "medido a mano: $e->{COMO}";
+        push @MEDIDOS, $c;
+    }
+    push @MED_SOBRAN, $_ for grep { !$usada{"$_"} } @$buenas;
 }
 
 # ── Aplicarlo ───────────────────────────────────────────────────────────────
@@ -5792,6 +5947,40 @@ if (@ACEPT_RECHAZADAS) {
         printf "    %-9s (linea %s)  %s\n", ($e->{CHECK} // '(sin CHECK)'), ($e->{_linea} // '?'), $e->{_por};
     }
 }
+# ── MEDIDO A MANO (10-ter) · lo que el gate no puede medir, con su firma ─────
+if (@MEDIDOS) {
+    printf "\n  MEDIDO A MANO: %d · el gate no los puede medir; los firmo alguien y caducan\n", scalar(@MEDIDOS);
+    printf "    declarados en %s\n", $MED_FICHERO;
+    for my $c (sort { $a->{id} cmp $b->{id} } @MEDIDOS) {
+        my $e = $c->{_medido};
+        printf "    %-9s %-5s %s\n", $c->{id}, $e->{RESULTADO}, $c->{titulo};
+        printf "              %s · mide %s · %s -> %s (%d dias)\n", $e->{COMO}, $e->{MIDE}, $e->{FECHA},
+               $e->{_hasta_iso}, $e->{_dias};
+    }
+}
+if (@MED_RECHAZADAS) {
+    printf "\n  🔴 %d ENTRADA%s DE %s NO VALE%s · el check SIGUE SIN VERIFICAR\n",
+           scalar(@MED_RECHAZADAS), (@MED_RECHAZADAS==1?'':'S'), ($MED_FICHERO =~ m{([^/\\]+)$})[0],
+           (@MED_RECHAZADAS==1?'':'N');
+    printf "    %-9s (linea %s)  %s\n", ($_->{CHECK} // '(sin CHECK)'), ($_->{_linea} // '?'), $_->{_por} for @MED_RECHAZADAS;
+}
+if (@MED_SOBRAN) {
+    printf "\n  ⚠ %d medida%s a mano sin ningun NO VERIFICADO de hoy al que aplicarse:\n",
+           scalar(@MED_SOBRAN), (@MED_SOBRAN==1?'':'s');
+    printf "    %-9s %s\n", $_->{CHECK}, $_->{FECHA} for @MED_SOBRAN;
+}
+{
+    my @a_mano = grep { $_->{estado} eq 'NV' && $MEDIBLE_A_MANO{$_->{id}} } @R;
+    if (@a_mano) {
+        printf "\n  ESTOS %d NO LOS PUEDE MEDIR NINGUN SCRIPT: %s\n", scalar(@a_mano), join(' ', map { $_->{id} } @a_mano);
+        print  "    Se miden a mano (el «hacer» de cada uno dice como) y se firman en\n";
+        printf "    %s/_deploy/measured.conf: [MEDIDO] CHECK, RESULTADO, COMO, MIDE, FECHA%s.\n",
+               ($opt{repo} ne '' ? $opt{repo} : '<repo>'),
+               ((grep { ($_->{dato} // '') ne '' } @a_mano) ? ' (y DATO, copiado de aqui, en los que lo traen)' : '');
+        printf "    %-9s DATO: %s\n", $_->{id}, _norm_ev($_->{dato}) for grep { ($_->{dato} // '') ne '' } @a_mano;
+        print  "    Caduca a los " . MEDIDO_DIAS . " dias. Hasta entonces, la puerta pide --aun-asi por ellos.\n";
+    }
+}
 if (@ACEPT_SOBRAN) {
     printf "\n  ⚠ %d entrada%s de aceptado.conf no casa%s con ningun FALLO de hoy:\n",
            scalar(@ACEPT_SOBRAN), (@ACEPT_SOBRAN==1?'':'s'), (@ACEPT_SOBRAN==1?'':'n');
@@ -5855,6 +6044,12 @@ if ($opt{json} ne '') {
                        sort { $a->{id} cmp $b->{id} } @ACEPTADOS ],
         aceptados_rechazados => [ map { { check => ($_->{CHECK} // ''), linea => ($_->{_linea} // 0),
                                           por => $_->{_por} } } @ACEPT_RECHAZADAS ],
+        medidos => [ map { { id => $_->{id}, resultado => $_->{_medido}{RESULTADO}, como => $_->{_medido}{COMO},
+                             mide => $_->{_medido}{MIDE}, fecha => $_->{_medido}{FECHA},
+                             hasta => $_->{_medido}{_hasta_iso}, dias => $_->{_medido}{_dias} } }
+                     sort { $a->{id} cmp $b->{id} } @MEDIDOS ],
+        medidos_rechazados => [ map { { check => ($_->{CHECK} // ''), linea => ($_->{_linea} // 0),
+                                        por => $_->{_por} } } @MED_RECHAZADAS ],
         instrumento => { perl => "$]", dom => ($opt{dom} ne '' ? $opt{dom} : undef),
                          innerWidth => $DOM{innerWidth}, innerHeight => $DOM{innerHeight},
                          # 7-oct-2026 · de donde salen los bytes (ver «LA CACHE NO
@@ -5989,6 +6184,13 @@ if ($opt{repo} ne '' && -d $opt{repo} && !$opt{'sin-recibo'}) {
                     #    recibo dice «5 aceptados» y no hay forma de saber que
                     #    version del fichero los firmo. Con ella, se compara.
                     aceptados_conf => $ACEPT_CONF_MD5,
+                    # 10-ter · las medidas a mano, con su firma y bajo el sello
+                    medidos => [ map { { id => $_->{id}, resultado => $_->{_medido}{RESULTADO},
+                                         como => $_->{_medido}{COMO}, mide => $_->{_medido}{MIDE},
+                                         fecha => $_->{_medido}{FECHA}, hasta => $_->{_medido}{_hasta_iso} } }
+                                 sort { $a->{id} cmp $b->{id} } @MEDIDOS ],
+                    medidos_rechazados => scalar(@MED_RECHAZADAS),
+                    medidos_conf => $MED_CONF_MD5,
                     alcance => (%alc ? \%alc : undef),
                     # 🔴 11-ago-2026 · el DENOMINADOR. Sin esto el recibo decia
                     #    «ALCANCE-SEO: 25 URLs» y no habia forma de saber si eran

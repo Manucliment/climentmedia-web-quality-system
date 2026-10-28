@@ -1,0 +1,74 @@
+# =============================================================================
+#  measured.conf  ·  copy to <your-repo>/_deploy/measured.conf and fill it in
+# =============================================================================
+#  Read by the master gate. This is NOT shell: it is parsed, never executed.
+#
+#  WHAT IT IS
+#  ----------
+#  Seven checks can never be answered by a script, so they always came out
+#  NOT VERIFIED, and every deploy of every site needed the "anyway" flag:
+#
+#    SEO-17   the language decision (monolingual on purpose, or reciprocal hreflang)
+#    A11Y-13  real keyboard and a real screen reader
+#    A11Y-14  text over a photo or a gradient
+#    MED-13   that ONE conversion actually REACHED the ads platform / analytics
+#    MED-14   what happens when the visitor presses REJECT
+#    EST-08   the link graph (another gate measures it, in its own run)
+#    EST-12f  the authorship anchor compared against your OTHER sites
+#
+#  A person or an agent measures one of them once, and signs it here. The check
+#  then takes the RESULT you declare, and appears in the report and in the
+#  receipt with who measured it, how and when. A declared FAIL is a FAIL: it
+#  blocks like any other, and if it is the client's decision it then goes to
+#  accepted.conf like any other.
+#
+#  An "anyway" flag that is needed on every deploy stops meaning anything within
+#  a week — and then it no longer protects the checks nobody has looked at.
+#
+#  THE LOCKS
+#  ---------
+#  1 · ONLY THESE SEVEN. The list lives in the gate, not here: a check the gate
+#      DOES measure cannot be "declared measured" to silence it.
+#  2 · FIVE MANDATORY FIELDS (six when the check prints a DATA line). Missing
+#      one voids the entry, it is said out loud, and the check stays NOT VERIFIED.
+#  3 · IT EXPIRES AFTER 90 DAYS, and there is no UNTIL to stretch it: a site
+#      changes, and a keyboard pass from six months ago is about another site.
+#  4 · TIED TO THE DATA when the check prints one (SEO-17: whether there is
+#      hreflang; EST-12f: the anchor). If today's measurement is not what was
+#      signed, the signature is void and it must be measured again.
+#  5 · A FUTURE DATE is void: you measure before you sign, not after.
+#
+#  It is NOT the "anyway" flag, and it is NOT accepted.conf (that one is for a
+#  measured FAIL that is somebody else's decision).
+#
+#  HOW TO FILL IT IN
+#  -----------------
+#    perl gates/qa-master.pl <URL> --repo DIR --candidate
+#  The report lists which of the seven are still unmeasured and, for the ones
+#  that carry it, the exact DATA line to copy. The "hacer" line of each check
+#  says how to measure it.
+#  Spanish field names work too ([MEDIDO], RESULTADO, COMO, MIDE, FECHA, DATO),
+#  and so does the file name medido.conf.
+# =============================================================================
+
+[MEASURED]
+# One of the seven ids, exactly as the report prints it.
+CHECK:        MED-14
+# PASS, WARN or FAIL (the report prints them as PASA, AVISO, FALLO; both work).
+RESULT:       PASS
+# How it was measured, and where the evidence lives. Enough for someone else
+# to repeat it.
+HOW:          pressed Reject on the banner; 0 third-party cookies and gcs=G100 in the dataLayer. Notes in _seo/measured-2026-10-28.md
+# Who measured. A person or a named agent, not "the team".
+MEASURED-BY:  Firstname Lastname
+# When it was measured (YYYY-MM-DD). It expires 90 days later.
+DATE:         2026-10-28
+
+[MEASURED]
+CHECK:        SEO-17
+RESULT:       PASS
+HOW:          monolingual on purpose: the decision is written in the project's CLAUDE.md
+MEASURED-BY:  Firstname Lastname
+DATE:         2026-10-28
+# SEO-17 and EST-12f print a DATA line: copy it verbatim from the report.
+DATA:         ninguna etiqueta hreflang

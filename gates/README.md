@@ -487,7 +487,7 @@ whose verdict came from measuring a different object.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6), of the coverage (D8) and of one instrument or one bank (D9) must be the last one measured. |
-| `coverage.pl` | How many checks have a test case. Today: **128 of 142 (90%)**. |
+| `coverage.pl` | How many checks have a test case. Today: **134 of 142 (94%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **159 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
@@ -499,7 +499,7 @@ whose verdict came from measuring a different object.
 | `run-gate.js` | The harness the browser gates run inside. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the three host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **90% is measured over 4 programs of 36**,
+The coverage figure has a scope you should know: **94% is measured over 4 programs of 36**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
@@ -639,7 +639,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **384 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **407 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until
