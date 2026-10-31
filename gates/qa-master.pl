@@ -4601,7 +4601,10 @@ sub lente_medicion {
         #       vale para un `data-loquesea` que alguien declare «de herramienta»:
         #       el defecto que este check existe para cazar —el `data-thanks` de
         #       site-d, que era la conversion muerta— sigue entrando entero.
-        my %VOCAB_GATE = map { $_ => 1 } qw(sec tipo);
+        # 31-oct-2026 · Y LOS DE forms-gate.js: `data-envio-js`, `data-guarda-doble` y `data-pasos` son declaraciones que
+        #    ESE gate pide para dejar de avisar o para medir un formulario por pasos. Sin ellos aqui, climentmedia (T2) salia
+        #    MED-05 FALLO por obedecer a forms-gate: la misma contradiccion de arriba, entre dos gates en vez de entre dos lentes.
+        my %VOCAB_GATE = map { $_ => 1 } qw(sec tipo envio-js guarda-doble pasos);
         my (@huerfanos, @noaplica);
         for my $k (sort keys %escritos) {
             next if $VOCAB_GATE{$k};
@@ -4838,7 +4841,9 @@ sub lente_medicion {
         #    el plazo DELANTE del verbo, asi que el orden se mira en los dos sentidos.
         #    Control: med-plazo-nl (PASA) y med-plazo-nl-sin-plazo (FALLO).
         my $NUM_NL = qr/een|twee|drie|vier|vijf|zes|zeven|acht|negen|tien|elf|twaalf|achttien|vierentwintig/i;
-        my $DISP = qr/durante|pendant|por un plazo|conserv|prazo|bewaar|bewaren|bewaard|gewist|verwijderd/i;
+        # 31-oct-2026 · EN INGLES TAMPOCO HABIA PALABRA DISPARADORA. Ninguna era inglesa, asi que la politica de
+        #    climentmedia con «we keep them for 12 months» salia «sin plazo». Fixture med-plazo-ingles, visto en ROJO antes.
+        my $DISP = qr/durante|pendant|por un plazo|conserv|prazo|bewaar|bewaren|bewaard|gewist|verwijderd|keep|kept|retain|retention|stored/i;
         my $UNID = qr/mes|meses|ano|anos|año|años|mois|ans|years?|months?|maand|maanden|jaar|jaren/i;
         ($pol2 =~ /($DISP)[^.]{0,80}\b(?:$NUM|$NUM_NL)\b\s*($UNID)\b/i
          || $pol2 =~ /\b(?:$NUM|$NUM_NL)\b\s*($UNID)\b[^.]{0,80}($DISP)/i)

@@ -2732,6 +2732,10 @@ espera "MED-09 · el plazo EN LETRA («dos meses»), PASA"  PASA  MED-09 \
 #    la frase parecida y no la del cliente no prueba nada.
 espera "MED-09 · la frase REAL en frances, PASA"        PASA  MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-frances --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 31-oct-2026 · EN INGLES. Ninguna palabra disparadora era inglesa: «we keep them for 12 months» salia FALLO
+#    (climentmedia, T2). Fixture = med-bueno con la frase en ingles, y nada mas. Visto en ROJO contra el gate anterior.
+espera "MED-09 · el plazo en ingles («keep them for 12 months»), PASA" PASA MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-ingles --candidato --una-sola --solo medicion --sin-recibo
 # 🔴 21-sep-2026 · LA POLITICA EN OTRA RUTA. El gate la buscaba en cinco rutas
 #    fijas; una web con un solo documento legal (`/mentions-legales/` con ancla
 #    `#confidentialite`) salia FALLO con el plazo escrito. Ahora sigue tambien el
