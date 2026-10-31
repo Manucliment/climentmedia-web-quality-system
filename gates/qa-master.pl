@@ -4298,7 +4298,17 @@ sub lente_medicion {
         #    parecida y no la REAL deja pasar exactamente esto.
         #    `conserv` a secas cubre conservées, conservation, conservan,
         #    conservados y conservadas de una vez.
-        ($pol2 =~ /(durante|pendant|por un plazo|conserv|prazo)[^.]{0,80}\b(?:$NUM)\b\s*(mes|meses|ano|anos|año|años|mois|ans|years?|months?)\b/i)
+        # 🔴 31-oct-2026 · Y EL NEERLANDES NO EXISTIA. Una politica en neerlandes
+        #    con el plazo escrito y una purga que lo cumple («Twaalf maanden na je
+        #    aanvraag worden je gegevens gewist») salia «sin plazo»: ni la palabra
+        #    disparadora, ni el numero en letra, ni la unidad. Y el neerlandes pone
+        #    el plazo DELANTE del verbo, asi que el orden se mira en los dos sentidos.
+        #    Control: med-plazo-nl (PASA) y med-plazo-nl-sin-plazo (FALLO).
+        my $NUM_NL = qr/een|twee|drie|vier|vijf|zes|zeven|acht|negen|tien|elf|twaalf|achttien|vierentwintig/i;
+        my $DISP = qr/durante|pendant|por un plazo|conserv|prazo|bewaar|bewaren|bewaard|gewist|verwijderd/i;
+        my $UNID = qr/mes|meses|ano|anos|año|años|mois|ans|years?|months?|maand|maanden|jaar|jaren/i;
+        ($pol2 =~ /($DISP)[^.]{0,80}\b(?:$NUM|$NUM_NL)\b\s*($UNID)\b/i
+         || $pol2 =~ /\b(?:$NUM|$NUM_NL)\b\s*($UNID)\b[^.]{0,80}($DISP)/i)
           ? pasa(lente=>'MEDICION', id=>'MED-09', titulo=>'plazo de conservacion declarado')
           : fallo(lente=>'MEDICION', id=>'MED-09', titulo=>'sin plazo de conservacion de los datos del formulario',
                   umbral=>'un plazo en meses, escrito, y un borrado que lo cumpla',

@@ -2297,6 +2297,13 @@ espera "MED-09 · politica en /mentions-legales/, PASA"   PASA  MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-otra-ruta --candidato --una-sola --solo medicion --sin-recibo
 espera "MED-09 · la misma, SIN plazo, sigue FALLO"      FALLO MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-otra-ruta-sin-plazo --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 31-oct-2026 · EL NEERLANDES. «Twaalf maanden na je aanvraag worden je gegevens
+#    gewist»: plazo en letra, unidad neerlandesa y el plazo DELANTE del verbo. Salia
+#    «sin plazo». El negativo es el mismo fixture con la frase del plazo quitada.
+espera "MED-09 · politica en neerlandes con plazo, PASA"   PASA  MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-nl --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-09 · la misma, SIN plazo, sigue FALLO"        FALLO MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-nl-sin-plazo --candidato --una-sola --solo medicion --sin-recibo
 # 🔴 MED-11 · cada pulsacion de mas era un correo duplicado a la clinica y una
 #    conversion de mas en su cuenta de Ads.
 espera "MED-11 · sin guarda de doble envio, FALLA"       FALLO MED-11 \
