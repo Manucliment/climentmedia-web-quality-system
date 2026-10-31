@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Formulario por pasos con un obligatorio escondido | Fixture del paso 10</title>
+<style>
+  body { font: 16px/1.5 system-ui; margin: 2rem; }
+  .q label { display: block; margin-top: .6rem; }
+  .q__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .q label.q__olvidado { display: none; }
+</style>
+</head>
+<body>
+<!-- CASO ROJO por pasos: el mismo quiz, pero en el ultimo paso hay un obligatorio con display:none (un campo que alguien
+     escondio con CSS y olvido quitar el required). Mostrado su paso, sigue sin verse: el navegador se niega a enviar y
+     no ensena por que. Declarar data-pasos NO tapa esto. -->
+<main>
+  <h1>Cuatro preguntas</h1>
+  <form class="q" data-pasos data-envio-js="si" data-guarda-doble="si">
+    <fieldset>
+      <legend>¿Qué plataformas llevas?</legend>
+      <label><input type="checkbox" name="plataformas" value="meta"> Meta Ads</label>
+    </fieldset>
+    <fieldset hidden>
+      <legend>¿A quién le contesto?</legend>
+      <label>Nombre<input type="text" name="nombre" required></label>
+      <label>Correo<input type="email" name="email" required></label>
+      <label class="q__olvidado">Teléfono<input type="tel" name="telefono" required></label>
+      <div class="q__trap"><label>Fax<input name="fax" tabindex="-1" autocomplete="off"></label></div>
+      <label><input type="checkbox" name="consentimiento" required> Acepto la <a href="/privacidad/">política de privacidad</a>.</label>
+      <button type="submit">Enviar</button>
+    </fieldset>
+  </form>
+</main>
+</body>
+</html>

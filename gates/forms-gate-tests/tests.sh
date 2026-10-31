@@ -112,6 +112,13 @@ veredicto "un formulario perfecto sin declararla, PASA"  PASA sin-guarda.html '{
 contiene  "y en el que SI la declara, calla"             NO  "DOBLE ENVIO"      bueno.html '{}'
 
 echo
+echo "== POR PASOS (31-oct-2026, climentmedia T2: 6 de 6 en FALLA falso por F5 y F8)"
+veredicto "un quiz por pasos declarado PASA"                PASA pasos.html '{}'
+contiene  "y dice que lo ha medido paso a paso"            SI  "va por pasos (3)" pasos.html '{}'
+veredicto "un obligatorio escondido en su paso, FALLA"      FALLA pasos-roto.html '{}'
+contiene  "y nombra el campo"                              SI  "telefono"        pasos-roto.html '{}'
+veredicto "el mismo quiz sin declarar data-pasos, FALLA"   FALLA pasos-sin-declarar.html '{}'
+echo
 echo "-----------------------------------------------------------------"
 printf "  OK %d   ·   MAL %d\n" "$ok" "$ko"
 [ "$ko" -eq 0 ] && echo "  Caza los defectos reales, deja pasar lo bueno y dice lo que no sabe." \

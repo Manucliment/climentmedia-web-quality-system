@@ -140,8 +140,32 @@ forms.forEach((f, i) => {
                 ' · el placeholder NO cuenta: desaparece al escribir');
   }
 
+  /* ---------- Formulario POR PASOS: se mide paso a paso ----------------- */
+  // 31-oct-2026, climentmedia (T2): un quiz o un formulario por pasos esconde a proposito los pasos que no tocan.
+  // Medido al cargar, sus obligatorios y su boton «no se ven», y los 6 formularios del sitio salian en FALLA por F8 y
+  // F5 sin tener nada roto: el envio de verdad pasaba. El defecto real es otro: que un paso, MOSTRADO, esconda un
+  // obligatorio, o que el ultimo paso no ensene el boton. Se declara con data-pasos en el <form> (un [data-paso] o un
+  // <fieldset> por paso); el gate muestra cada paso a su vez, mide, y lo deja todo como estaba. Sin declarar, igual
+  // que antes: un formulario que esconde obligatorios sin decir por que sigue en FALLA.
+  const submit = f.querySelector('button[type="submit"], input[type="submit"], button:not([type])');
+  const marcados = [...f.querySelectorAll('[data-paso]')];
+  const pasos = f.hasAttribute('data-pasos') ? (marcados.length ? marcados : [...f.querySelectorAll('fieldset')]) : [];
+  let reqInvisible, submitSeVe = submit ? seVe(submit) : false;
+  if (pasos.length > 1) {
+    const antes = pasos.map(p => p.hidden);
+    reqInvisible = reales.filter(c => c.required && !pasos.some(p => p.contains(c)) && !seVe(c));
+    pasos.forEach((p, k) => {
+      pasos.forEach((q, j) => { q.hidden = j !== k; });
+      reales.filter(c => c.required && p.contains(c) && !seVe(c)).forEach(c => reqInvisible.push(c));
+      if (k === pasos.length - 1 && submit) submitSeVe = seVe(submit);
+    });
+    pasos.forEach((p, k) => { p.hidden = antes[k]; });
+    notas.push(`${ref} va por pasos (${pasos.length}): F5 y F8 se han medido mostrando cada paso`);
+  } else {
+    reqInvisible = reales.filter(c => c.required && !seVe(c));
+  }
+
   /* ---------- F8 · un `required` invisible bloquea sin explicar ---------- */
-  const reqInvisible = reales.filter(c => c.required && !seVe(c));
   if (reqInvisible.length) {
     fallos.push(`F8 · ${reqInvisible.length} campo(s) OBLIGATORIOS e invisibles en ${ref}: ` +
                 reqInvisible.map(c => c.name || c.type).join(', ') +
@@ -162,12 +186,11 @@ forms.forEach((f, i) => {
   }
 
   /* ---------- F5 · boton de envio de verdad ----------------------------- */
-  const submit = f.querySelector('button[type="submit"], input[type="submit"], button:not([type])');
   if (!submit) {
     fallos.push(`F5 · ${ref} no tiene boton de envio real (button[type=submit] o ` +
                 `input[type=submit]). Con un <div> o un <a>, quien usa teclado no puede enviar`);
-  } else if (!seVe(submit)) {
-    fallos.push(`F5 · el boton de envio de ${ref} NO SE VE`);
+  } else if (!submitSeVe) {
+    fallos.push(`F5 · el boton de envio de ${ref} NO SE VE${pasos.length > 1 ? ' en su ultimo paso' : ''}`);
   }
 
   /* ---------- F6 · consentimiento cuando se piden datos personales ------ */
@@ -211,7 +234,7 @@ forms.forEach((f, i) => {
   detalle.push({
     ref, campos: reales.length, cepos: cepos.length,
     action: action || '(sin action)',
-    consentimiento: !!consent, botonEnvio: !!submit,
+    consentimiento: !!consent, botonEnvio: !!submit, pasos: pasos.length,
   });
 });
 

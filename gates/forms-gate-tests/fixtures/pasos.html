@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Formulario por pasos | Fixture del paso 10</title>
+<style>
+  body { font: 16px/1.5 system-ui; margin: 2rem; }
+  .q label { display: block; margin-top: .6rem; }
+  .q input[type=email], .q input[type=text] { display: block; width: 100%; max-width: 30rem; padding: .5rem; }
+  .q__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+</style>
+</head>
+<body>
+<!-- CASO VERDE por pasos (31-oct-2026, climentmedia T2): un quiz que ensena un paso cada vez. Los obligatorios y el
+     boton viven en el ultimo paso, que al cargar esta oculto A PROPOSITO. Se declara con data-pasos y el gate mide
+     cada paso mostrandolo. El script que pasaria de paso esta fuera: el gate no lo necesita. -->
+<main>
+  <h1>Cuatro preguntas</h1>
+  <form class="q" data-pasos data-envio-js="si" data-guarda-doble="si">
+    <fieldset>
+      <legend>¿Qué plataformas llevas?</legend>
+      <label><input type="checkbox" name="plataformas" value="meta"> Meta Ads</label>
+      <label><input type="checkbox" name="plataformas" value="google"> Google Ads</label>
+    </fieldset>
+    <fieldset hidden>
+      <legend>¿Cuánto inviertes al mes?</legend>
+      <label><input type="radio" name="gasto" value="a"> Menos de 3.000 €</label>
+      <label><input type="radio" name="gasto" value="b"> Más de 3.000 €</label>
+    </fieldset>
+    <fieldset hidden>
+      <legend>¿A quién le contesto?</legend>
+      <label>Nombre<input type="text" name="nombre" required></label>
+      <label>Correo<input type="email" name="email" required></label>
+      <div class="q__trap"><label>Fax<input name="fax" tabindex="-1" autocomplete="off"></label></div>
+      <label><input type="checkbox" name="consentimiento" required> Acepto la <a href="/privacidad/">política de privacidad</a>.</label>
+      <button type="submit">Enviar</button>
+    </fieldset>
+  </form>
+</main>
+</body>
+</html>
