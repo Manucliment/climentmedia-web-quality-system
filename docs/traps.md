@@ -1,6 +1,6 @@
-# The trap log — 88 traps, read before debugging
+# The trap log — 90 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§88** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§90** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -16,6 +16,8 @@ original order, which is **by how much they cost**, not by when they happened.
 | §86 | [`traps/86.md`](traps/86.md) |
 | §87 | [`traps/87.md`](traps/87.md) |
 | §88 | [`traps/88.md`](traps/88.md) |
+| §89 | [`traps/89.md`](traps/89.md) |
+| §90 | [`traps/90.md`](traps/90.md) |
 
 ---
 
@@ -31,11 +33,11 @@ Not quoted — **derived by a program you can run**:
 perl gates/doc-gate.pl --lista D4
 ```
 
-Today it reports: **88 traps · all 88 declare what catches them · 31 say `nobody` on purpose.**
+Today it reports: **90 traps · all 90 declare what catches them · 31 say `nobody` on purpose.**
 
 That last ratio is the number that should go up. **It only goes up by writing a mechanism, never by
-writing more prose** — which is the measured finding the whole repository rests on. The twelve most
-recent traps moved the total from 76 to 88 and left `nobody` at 31, because each shipped with the
+writing more prose** — which is the measured finding the whole repository rests on. The fourteen most
+recent traps moved the total from 76 to 90 and left `nobody` at 31, because each shipped with the
 check that catches it. That is what adding a trap is supposed to look like.
 
 > **Use the gate's number, not a hand count.** Counting the whole declaration paragraph by hand gives
@@ -131,6 +133,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §80 | Porting a construct by copying the line `grep` showed me |
 | §81 | The census counted directories, so a battery hid inside a wired one |
 | §82 | The door said the host's 404 had been answered, and nobody had asked the host |
+| §89 | The browser gates ran after the upload, and the signed reason said the browser would answer |
 
 ### C · Silent loss — it delivered less and reported success
 
@@ -186,6 +189,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §64 | A control that passes for the wrong reason |
 | §70 | An anchor assuming an entity where the file has the literal character |
 | §76 | A template literal lost its interpolations and the warning went mute |
+| §90 | Git Bash's `grep -iF` aborts, and `||` read the crash as "not found" |
 
 ### G · Layout and typography
 

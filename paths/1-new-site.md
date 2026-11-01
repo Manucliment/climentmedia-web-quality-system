@@ -104,10 +104,25 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   favicon of **320,221 bytes served on 13 pages**, which `ESQ-02` catches.
 - → `blueprint/02-design.md §1` · **it is the source, not a supporting note**
 
-## Step 2 · Design — so they are not the same site
+## Step 2 · Design and conversion direction — theirs, and built to convert
 
-- **WHAT** · Move the five levers (palette, typography, hero shape, card treatment,
-  section order), and **open the component index before writing anything.**
+- **WHAT** · Three decisions, written in the design document **before any pixel**:
+  1. **Their personality gives three visual decisions.** From the personality block of the
+     intake (`blueprint/00-intake.md`, block A-bis): the palette, the typography and one
+     signature shape. Each one is traced to something they talk about, offer or look like, so the
+     note says "dark green because the shop front is dark green", not "dark green because it is
+     elegant".
+  2. **What counts as converting, and where each button leads.** Write one line per call to
+     action: its text, its destination, and whether that destination **collects the lead** (a
+     form, a phone number, a message app, their booking platform) or only **links** to another
+     page. A hero that only links is the defect this step exists to stop. If the booking lives on
+     an external platform, follow `blueprint/20-external-booking.md`.
+  3. **One grid for mobile and one for desktop, drawn separately.** At 390 the menu fits in one
+     row or sits behind a button. The converting action is whole on the first screen at
+     360×740, 390×844, 1366×768 and 1440×900.
+
+  Then move the five levers (palette, typography, hero shape, card treatment, section order),
+  and **open the component index before writing anything.**
 - **HOW** · In this order, and **with full paths**, because a name without a path does not
   get opened:
   ```bash
@@ -138,14 +153,26 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   When it was finally opened — with the site already built — three more primitives were
   adopted and **one was discarded on the strength of its own "when NOT to use this"**
   field. That field paid for itself.
-- **GATE** · `ESQ-03` covers the token's contrast. For the rest:
+- **GATE** · The browser gates **on the mock-up**, in the same candidate mode the door uses:
+  `run-gate.js` serves the folder from disk under the production origin.
+  ```bash
+  tar -C <mockup-dir> -cf - . | ssh <host> "mkdir -p /tmp/mockup && tar -xf - -C /tmp/mockup"
+  ssh <host> "cd ~/webtools && GATE_CANDIDATO=/tmp/mockup GATE_SITIO=https://<domain> \
+              node run-gate.js https://<domain>/ 390 844 gates/mobile-gate.js"
+  ```
+  Threshold: `VEREDICTO: PASA` from `gates/mobile-gate.js` at the four sizes,
+  `gates/mobile-menu-gate.js` at 390 and `gates/structure-gate.js` at 1298, with `"candidato"`
+  above 0 on the diagnostic line (0 means production was measured, not the mock-up). `ESQ-03`
+  still covers the token's contrast. One risk stays declared beside the gate:
   **`NO GATE — risk: two client sites recognisable as siblings.`** Nothing measures whether
   two of your sites look alike — and it has already happened: two client repositories, a
   dental clinic and a home-visit physiotherapist in different countries, declared the
   **same primary colour token, literally.**
-- **IF YOU SKIP IT** · Somebody wrote a numbered-steps component from scratch with an
-  approved one sitting in the canon. And a hero badge ended up on 17 pages because nobody
-  read its "when NOT": it was for the home page only.
+- **IF YOU SKIP IT** · **It does not convert.** A barbershop site went up with its booking
+  button under the fold at 360, the desktop menu in three rows on a phone, and a hero that
+  linked to the price list (`docs/traps.md` §89). Before that, somebody wrote a
+  numbered-steps component from scratch with an approved one sitting in the canon, and a hero
+  badge ended up on 17 pages because nobody read its "when NOT": it was for the home page only.
 - → `blueprint/02-design.md §3` (the five levers) · `blueprint/10-layout-vocabulary.md`
 
 ## Step 3 · Architecture and linking — decided BEFORE writing
@@ -445,13 +472,14 @@ measures the new site, because the damage is on the old side.
 | | |
 |---|---|
 | Entries in this path | **16** (0, 1, 1a, 1b, 2 … 13) |
-| **With an executable gate and an expected exit code** | **12** — steps 1, 1a, 1b, 3, 4, 5, 6, 7, 8, 9, 10, 12 (step 12 chains four commands) |
-| **`NO GATE`, declared, with its risk** | **3** — step 0 (shared state) · step 2 (so they are not the same site) · step 11 (SSL before DNS) |
+| **With an executable gate and an expected exit code** | **13** — steps 1, 1a, 1b, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12 (step 12 chains four commands) |
+| **`NO GATE`, declared, with its risk** | **2** — step 0 (shared state) · step 11 (SSL before DNS). Step 2 also keeps one declared risk beside its gate: two sites recognisable as siblings |
 | **Gate pending elsewhere** | **0** |
 
-**No step closes without a gate or without `NO GATE` written down.** The three without one
-are not an oversight: they are named debt. Step 2's is the only one **nobody knows how to
-measure today**; the other two are one-off human checks, not automation that was skipped.
+**No step closes without a gate or without `NO GATE` written down.** The two without one
+are not an oversight: they are named debt, one-off human checks, not automation that was
+skipped. Step 2's leftover risk is the only one **nobody knows how to measure today**. Since
+1-nov-2026 its conversion half has a gate: the browser gates on the mock-up.
 
 ## The three gates that today can only say NOT VERIFIED
 
@@ -461,7 +489,7 @@ They are not covered, which is why they are here rather than inside a green step
 |---|---|
 | `EST-08` | the link **graph** — covered by running the linking gate by hand at step 12 |
 | `MED-13` | that a conversion **arrived** at the ads platform. Checked in the account, not on the site |
-| `A11Y-13` | a real **keyboard** walkthrough. Needs a person |
+| `A11Y-13` | a real **keyboard** walkthrough. Needs a person. Its mobile-menu half is measured at the door (`gates/mobile-menu-gate.js`, step 1-quater); the full Tab order, the visible focus and a screen reader are not |
 
 ---
 
@@ -483,6 +511,9 @@ They are not covered, which is why they are here rather than inside a green step
   rewritten only if the anchor exists in the generated page.
 - `[trap:content-C9]` Copy changes in the spec are text substitutions with counts, not rewritten objects; know which fields
   end up inside an HTML attribute. Check: zero double-escaped entities in `content="…"`.
+- `[trap:content-C12]` The citation rule of our reports (source and date next to each number) never goes on the site. On
+  the page, the proof is the review with first name and month, plus a link to all of them. Check: no «(Platform,
+  31-10-2026)» in the generated HTML.
 - `[trap:content-D1]` What the client sees on a preview/staging environment is not what the visitor sees: remove the preview
   bar (and count how many you removed) before measuring "something covers the page", and warn the client before they review.
 
@@ -497,6 +528,15 @@ They are not covered, which is why they are here rather than inside a green step
 - `[trap:design-D2]` A page needs at least 4 distinct layout primitives and at most ONE card grid, crossed with its share of prose.
 - `[trap:design-D6]` Columns come from the container width (`auto-fit` with a minimum), not a fixed count per breakpoint;
   what must never wrap is made unable to wrap (`nowrap`, `min-width:0`, ellipsis).
+- `[trap:design-D12]` On mobile the menu is a button with `aria-expanded` that opens a panel (without JS the list stays
+  visible). The header fits ONE row at 360 and 390. Test it with the mouse, with Enter and with Escape.
+- `[trap:design-D13]` If the external booking tool cannot be embedded, measure what it DOES offer (direct route,
+  per-service link, simple flow, guest booking). Then design so each "Book" arrives with the decision made: price,
+  duration and what is included next to it, a sticky bar on mobile, booking in the header. Live slots only with the
+  platform's and the client's permission (`blueprint/20-external-booking.md`).
+- `[trap:design-E7]` Browser gates run on the CANDIDATE tree served on the measuring host, before the door, at 360×740,
+  390×844, 1366×768 and 1440×900. With one red you do not upload, and an `--aun-asi` names each gate and never says the
+  opposite of what was measured.
 - `[trap:design-F4]` From a component library or a reference you take the composition (what, where, in what order), never
   the markup: rewrite it with native elements, real `alt` and visible focus.
 - `[trap:design-F6]` Icons, fonts and photos from third parties travel with their licence and attribution, or not at all.

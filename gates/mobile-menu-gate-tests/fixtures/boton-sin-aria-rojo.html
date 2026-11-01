@@ -1,0 +1,5 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="_menu.css"><title>boton-sin-aria-rojo</title></head><body>
+<!-- El mismo boton sin aria-expanded: abre, pero un lector de pantalla no sabe si esta abierto. FALLA N2. -->
+<header><a href="/">Marca</a><button class="menu-btn" aria-controls="menu">Menu</button><nav id="menu" hidden><a href="/servicios/">Servicios</a><a href="/precios/">Precios</a><a href="/equipo/">Equipo</a><a href="/galeria/">Galeria</a><a href="/opiniones/">Opiniones</a><a href="/contacto/">Contacto</a></nav></header>
+<main><h1>Barberia de barrio</h1><p>Cortes de pelo y arreglo de barba con cita previa, de martes a sabado. Esta pagina existe para que el gate tenga una pagina que juzgar: mas de doscientos caracteres de texto y un titular, como cualquier pagina de verdad.</p></main>
+<script>const b=document.querySelector(".menu-btn"),m=document.getElementById("menu");b.addEventListener("click",()=>{m.hidden=!m.hidden;});</script></body></html>

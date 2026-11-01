@@ -42,6 +42,60 @@ const fs = require("fs");
                         "(KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36";
   await p.setUserAgent(+w < 768 ? UA_MOVIL : UA_ESCRITORIO);
   await p.setViewport({ width: +w, height: +h, deviceScaleFactor: 1 });
+  // 🔴 1-nov-2026 · EL CANDIDATO, SERVIDO CON LA URL DE PRODUCCION.
+  //  Los gates de navegador corrian en el paso 6 de la puerta, DESPUES de subir, y no
+  //  bloqueaban: una web salio con 10 FALLA de 16-18 medidas a la vista de todos.
+  //  Para medir ANTES hay que servir el arbol del repo, y servirlo en 127.0.0.1 cambia
+  //  el origen de la pagina: un enlace absoluto a https://dominio.tld pasa a ser
+  //  «externo», el sitemap deja de casar y la pagina ya no es la que vera el visitante.
+  //  Por eso no se levanta un servidor: se pide la URL REAL y cada peticion a ese
+  //  origen se contesta desde el disco, con las mismas reglas que el servidor del
+  //  candidato de qa-master.pl (`/` -> index.html, `x` -> x.html, `dir` -> 301 a
+  //  `dir/`, 404 con 404.html). Lo demas (fuentes, GTM) va a la red como siempre.
+  //    GATE_CANDIDATO=<dir del arbol>  GATE_SITIO=https://dominio.tld
+  //  `candidato` en la linea de diagnostico cuenta las respuestas servidas del disco:
+  //  si es 0, lo medido NO es el candidato, y quien llama no puede darlo por medido.
+  const CAND = process.env.GATE_CANDIDATO || "", SITIO = process.env.GATE_SITIO || "";
+  let servidas = 0;
+  if (CAND && SITIO) {
+    const path = require("path");
+    const origen = new URL(SITIO).origin;
+    const TIPOS = { html: "text/html; charset=utf-8", htm: "text/html; charset=utf-8",
+      css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", mjs: "text/javascript; charset=utf-8",
+      json: "application/json; charset=utf-8", xml: "application/xml; charset=utf-8", txt: "text/plain; charset=utf-8",
+      svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
+      webp: "image/webp", avif: "image/avif", ico: "image/x-icon", woff: "font/woff", woff2: "font/woff2",
+      ttf: "font/ttf", otf: "font/otf", mp4: "video/mp4", webm: "video/webm", pdf: "application/pdf",
+      webmanifest: "application/manifest+json" };
+    const raiz = path.resolve(CAND);
+    const esFichero = f => { try { return fs.statSync(f).isFile(); } catch (e) { return false; } };
+    const resolver = ruta => {   // -> [fichero|null, redireccion|null]
+      let r; try { r = decodeURIComponent(ruta); } catch (e) { r = ruta; }
+      if (/(^|\/)\.\.(\/|$)/.test(r)) return [null, null];
+      if (r === "/") return [path.join(raiz, "index.html"), null];
+      const limpia = r.replace(/\/+$/, "");
+      if (esFichero(path.join(raiz, limpia))) return [path.join(raiz, limpia), null];
+      if (esFichero(path.join(raiz, limpia + ".html"))) return [path.join(raiz, limpia + ".html"), null];
+      if (esFichero(path.join(raiz, limpia, "index.html")))
+        return [path.join(raiz, limpia, "index.html"), /\/$/.test(r) ? null : limpia + "/"];
+      return [null, null];
+    };
+    await p.setRequestInterception(true);
+    p.on("request", req => {
+      let u; try { u = new URL(req.url()); } catch (e) { return req.continue(); }
+      if (u.origin !== origen) return req.continue();
+      const [f, redir] = resolver(u.pathname);
+      servidas++;
+      if (redir) return req.respond({ status: 301, headers: { location: origen + redir + u.search }, body: "" });
+      if (f) {
+        const ext = (f.match(/\.([a-z0-9]+)$/i) || [, ""])[1].toLowerCase();
+        return req.respond({ status: 200, contentType: TIPOS[ext] || "application/octet-stream", body: fs.readFileSync(f) });
+      }
+      const e404 = path.join(raiz, "404.html");
+      return req.respond({ status: 404, contentType: "text/html; charset=utf-8",
+                           body: esFichero(e404) ? fs.readFileSync(e404) : "" });
+    });
+  }
   await p.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
   // `anchoPedido` viaja SIEMPRE, lo pida el gate o no. Es la unica forma de que
   // un gate pueda afirmar «lo que medi es lo que se PIDIO» sin cablearse un ancho
@@ -89,6 +143,7 @@ const fs = require("fs");
   catch (e) { out = JSON.stringify({ ERROR: String(e && e.message || e) }); }
   console.log(JSON.stringify({
     url, pedido: +w, innerWidth: iw, coincide: iw === +w,
+    ...(CAND && SITIO ? { candidato: servidas } : {}),
     titulo: diag.titulo, secciones: diag.secciones, hayMain: diag.main,
     sospechoso,
     ...(sospechoso ? { AVISO: 'esto NO parece la pagina: muro anti-bot o render vacio. La medida NO vale como veredicto.' } : {}),

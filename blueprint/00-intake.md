@@ -33,6 +33,24 @@ knows the opening hours or who approves copy.
 > reason is the part someone needs in six months. What the block protects is unchanged — nobody
 > discovers halfway through that a fact is missing — because the decision is already written down.
 
+## A-bis · Their personality — what makes the site theirs
+
+**Blocking for the design.** Step 2 of `paths/1-new-site.md` takes its three visual decisions
+from here. Without this block the design falls back to the house template, and two client sites
+end up as siblings.
+
+| Fact | Where it comes from | What it decides |
+|---|---|---|
+| **What they talk about**: the two or three things the owner brings up unprompted, such as the craft, the coffee or the conversation | ask; their social profiles; what their reviews keep mentioning | the first line of the hero, and what the photos show |
+| **What extra they offer**: what the competitor down the street does not, such as a drink while you wait, evening hours or a free touch-up between visits | ask; reviews that mention it | a block of its own near the top, not a bullet in a list |
+| **Their aesthetic**: the premises, the logo, the clothes, the music. Three words they would use for it, and one they would hate | photos of the place; ask | the palette, the typography and one signature shape |
+| **What their customers say, with a name** | their review profiles, with permission to quote | the social proof on the page |
+
+> **Source and date are for reports; on the site, the review carries a name.** A report quotes "4.9
+> from 212 reviews, on such a platform, on such a date". A visitor trusts "Jan, a regular for two
+> years: …". A client's page gets no citation apparatus. And no name gets invented: a review
+> without a real first name and permission to use it stays off the page.
+
 ## B · You can start without these, but you ask now
 
 - **Logo**, vector or a large PNG, and brand colours. With a site, it is in their

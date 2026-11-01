@@ -1,0 +1,7 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="_base.css"><title>M1 alta en un subdominio</title></head><body>
+<!-- 1-nov-2026 · el falso rojo del barrido: el boton del hero lleva al ALTA de la aplicacion, que vive en un
+     subdominio de la misma web (app.). Eso convierte, y el gate solo miraba la ruta si el origen era EXACTAMENTE
+     el de la pagina. El banco corre este mismo fichero dos veces: con el origen en ejemplo.test (mismo sitio:
+     PASA) y con el origen en otro.test (el alta es de otra web: FALLA). Mismos bytes, solo cambia de quien es. -->
+<header class="nav">Marca</header>
+<main data-tipo="home"><section data-sec="hero"><h1>Informes de anuncios cada manana</h1><p>Lee las cuentas y dice que ha cambiado.</p><p><a class="btn" href="https://app.ejemplo.test/account?entrar=registro">Empieza la prueba</a></p></section><div class="relleno"><h2>Como funciona</h2><p>La aplicacion se conecta a las cuentas de anuncios con permiso de lectura y cada manana compara el dia con la semana anterior. Lo que se mueve fuera de lo normal sale arriba, con el motivo probable y lo que se podria hacer.</p><p>Nada cambia en una campana sin que alguien lo firme. El informe se puede leer en el movil en dos minutos, y el detalle esta un clic mas abajo para quien lo quiera.</p></div></main></body></html>

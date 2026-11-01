@@ -320,7 +320,7 @@ repeated here.** What is added is the layout, and that is where it fails:
 
 **FORBIDDEN:** a heading as the only separator between runs of paragraphs — **a heading is a label,
 not a section boundary** · exceeding the height budget (6 screens plus one per 80 visible words past
-400) · more than 2.5 consecutive screens with nothing to click.
+400, capped at 12) · more than 2.5 consecutive screens with nothing to click.
 
 > **The real state, counted.** One guide had **36 paragraphs as direct children** of the wrapper and
 > zero sections. Another had 37; another, 30; another, 27. They satisfy the entire content layer —

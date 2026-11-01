@@ -56,7 +56,7 @@ gates/measure-screens.js   → paste into the console, or run it through the bro
 |---|---|
 | No block runs **> 1 screen without a stop** | If it does not fit in one glance, it does not get read: it gets skimmed |
 | No block **> 3 screens** in total | The container's own ceiling: a section that long is a page inside the page |
-| The page within its **WORD budget** | 6 screens + 1 per 80 visible words past 400. **The fixed 6 failed the DENSEST page in the estate** |
+| The page within its **WORD budget** | 6 screens + 1 per 80 visible words past 400, **capped at 12**. **The fixed 6 failed the DENSEST page in the estate**; without the cap, 6,000 words bought 78 screens |
 | **≤ 2.5 consecutive screens with no CTA** | Somebody convinced at the bottom has to be able to act there |
 | **≥ 2 CTAs** on the page | One at the top, one at the close, minimum |
 
@@ -87,8 +87,22 @@ three screens at 390.
 > document did not name them**: they lived in a table that is a **catalogue, not a step.** It is
 > already written in the house rules: **a rule that nothing forces anybody to look at is not a system.**
 
-All three run against the **published** site, after A and A-bis. Any of them at `FAIL` **does not
-close**, with the single declared exception below.
+**Where they run, and what a `FAIL` stops (1-nov-2026).**
+
+- **Before the upload, on the candidate.** The browser gates of A-bis and A-ter.1/A-ter.2 run
+  together with the mobile and mobile-menu gates: `gates/measure-screens.js`,
+  `gates/structure-gate.js`, `gates/mobile-gate.js` and `gates/mobile-menu-gate.js`. The door runs
+  them itself (`gates/deploy.sh`, step 1-quater, in the measuring host's Chrome), on the tree it is
+  about to upload. A `FAIL` there **stops the upload** unless an `--aun-asi` names every red gate.
+- **After the upload, on the published site.** A-ter.3, the linking gate, needs the published
+  graph, so it runs here (step 5 of the door), and so does step 6, which measures what the host
+  actually serves. These record a `FAIL`; they cannot undo the upload, so the fix goes in the
+  next deploy.
+
+Either way, any of them at `FAIL` **does not close** the QA, with the single declared exception
+below. *(Until 1-nov-2026 this paragraph said all three run against the published site, while
+A-bis said a `FAIL` does not close. Both cannot hold before an upload, and a site went up with 10
+browser FAILs in that gap: `docs/traps.md` §89.)*
 
 ### A-ter.1 · The structure gate — is it laid out, or is it prose?
 

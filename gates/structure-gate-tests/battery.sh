@@ -307,6 +307,22 @@ regla K1-cifras-ok    "$D/figure-band-narrow.html"  - '{"tipo":"servicio","ruta"
 regla K2-cifras-rotas "$D/figure-band-broken.html"  - '{"tipo":"servicio","ruta":"/x/"}' 'cifra(s) partida(s)'         si
 regla K3-tarjetas     "$D/figure-cards-narrow.html" - '{"tipo":"servicio","ruta":"/x/"}' 'celdas por debajo de 240px' si
 
+echo
+echo "=========== FRONTERA 10 - RESERVA FUERA: reservar en su plataforma es convertir ==="
+# 1-nov-2026 (traps §89). Un hero cuyo unico boton reserva en la plataforma de
+# citas de la web (otro dominio) salia «ninguna es mecanismo de conversion». Con
+# HOSTS_RESERVA= en deploy.conf la puerta pasa la lista como __GATE__.hostsReserva.
+#   R1 reserva en una plataforma que ninguna lista conoce   -> SIGUE acusando
+#   R2 la misma, declarada en hostsReserva                   -> no acusa
+#   R3 una plataforma de la lista base, sin declarar nada    -> no acusa
+# R1 existe para que «ya no acusa» no pueda ser «ya no mira»: la lista dice
+# DONDE se reserva, no convierte cualquier enlace de fuera. R2 y R3 se vieron en
+# ROJO contra el gate anterior.
+FX="$D/../mobile-gate-tests/fixtures"
+regla R1-reserva-ajena  "$FX/m1-reserva-propia.html"        https://www.ejemplo.test/x/ '{"tipo":"servicio"}'                                  'ninguna es mecanismo de conversion' si
+regla R2-reserva-propia "$FX/m1-reserva-propia.html"        https://www.ejemplo.test/x/ '{"tipo":"servicio","hostsReserva":["mijnsalon.example"]}' 'ninguna es mecanismo de conversion' no
+regla R3-reserva-base   "$FX/m1-reserva-externa-verde.html" https://www.ejemplo.test/x/ '{"tipo":"servicio"}'                                  'ninguna es mecanismo de conversion' no
+
 # --- el numero, que es lo que faltaba ---------------------------------------
 echo
 for c in $CONOCIDOS; do

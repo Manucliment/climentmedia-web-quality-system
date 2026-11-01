@@ -38,6 +38,9 @@
  *    ecommerce  true  -> el hero puede navegar al catalogo (excepcion 09 §3.1)
  *    sitemap    lista de URLs del sitio, en lugar de leer <origen>/sitemap.xml
  *               (para medir una copia local; ver ENLACES en la seccion 3)
+ *    hostsReserva  plataformas de reserva de la web, ademas de las conocidas: un
+ *               enlace a ellas CONVIERTE (bloque CONVIERTE). La puerta las pasa
+ *               desde HOSTS_RESERVA= de deploy.conf
  * ========================================================================== */
 (() => {
 'use strict';
@@ -420,15 +423,76 @@ const SEL_ACC = 'a[href],button,input[type=submit],input[type=button]';
 const visible = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
 const accionesDe = b => q(b, SEL_ACC).filter(visible);
 
+// ── CONVIERTE · que accion es un mecanismo de conversion ──────────────────────
+//  🔴 BLOQUE IDENTICO en structure-gate.js y mobile-gate.js, de la linea de arriba
+//  a la de cierre: el banco de mobile-gate (CONVIERTE-COPIA) los compara byte a
+//  byte. Dos copias de una regla divergen (07-trampas §68); hasta que haya una
+//  sola fuente, la copia que se aparte de la otra pone el banco en rojo.
+//  1-nov-2026 · RESERVAR FUERA ES CONVERTIR. Una barberia que reserva en una
+//  plataforma externa tenia su «Reservar» contado como un enlace mas, y su hero
+//  como «un hero que ENLAZA»: la regla solo conocia tel:, mailto:, WhatsApp y
+//  cuatro agendas. HOSTS_RESERVA_BASE son las plataformas conocidas; cada web
+//  anade las suyas con HOSTS_RESERVA= en deploy.conf (llega en __GATE__.hostsReserva).
+//  Una palabra sin punto casa con una etiqueta del host (treatwell -> treatwell.nl,
+//  widget.treatwell.es); con punto, con ese host o un subdominio suyo.
+//  Y LA HOJA DE RESERVA PROPIA: un ancla (#reservar) o un boton que abre un panel
+//  (aria-controls, popovertarget, data-target) convierte si lo que abre recoge el
+//  dato: un formulario, o un enlace o un iframe que convierten por si mismos.
 const RE_CONVIERTE = /^tel:|^mailto:|wa\.me|whatsapp|calendly|cal\.com|typeform|hubspot|^https?:\/\/[^\/]*(book|meet)/i;
-const RE_RUTA_CONV = /contact|contacto|audit|auditor|presupuesto|cita|reserva|book|demo|devis|rdv|quote|empez|start|signup|sign-up|registro|register|checkout|carrito|cart|comprar|apply|candidat|trial|prueba|merci|gracias/i;
-function convierte (el) {
+const RE_RUTA_CONV = /contact|contacto|audit|auditor|presupuesto|cita|reserv|book|boek|afspraak|offerte|rendez|demo|devis|rdv|quote|empez|start|signup|sign-up|registro|register|checkout|carrito|cart|comprar|apply|candidat|trial|prueba|merci|gracias/i;
+const HOSTS_RESERVA_BASE = ['bjootify', 'treatwell', 'salonized', 'fresha', 'planity', 'booksy', 'setmore',
+  'simplybook', 'timify', 'acuityscheduling', 'youcanbook', 'doctolib', 'vagaro', 'mindbodyonline',
+  'phorest', 'uala', 'zenoti'];
+const HOSTS_RESERVA = HOSTS_RESERVA_BASE.concat(
+  (Array.isArray(CFG.hostsReserva) ? CFG.hostsReserva : String(CFG.hostsReserva || '').split(/[\s,]+/))
+    .map(h => String(h).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''))
+    .filter(Boolean));
+function esHostReserva (href) {
+  let u; try { u = new URL(href, BASE); } catch (e) { return false; }
+  if (!/^https?:$/.test(u.protocol)) return false;
+  const host = u.hostname.toLowerCase(), etiquetas = host.split('.');
+  return HOSTS_RESERVA.some(h => h.includes('.') ? (host === h || host.endsWith('.' + h)) : etiquetas.includes(h));
+}
+// 1-nov-2026 · «la misma web» es el mismo SITIO, no el mismo origen: el alta de una aplicacion vive en
+// app.<dominio>, y el barrido de las webs publicadas la daba por «otra web» (hero que ENLAZA, en falso).
+// Dominio registrable aproximado: las dos ultimas etiquetas, o tres tras un sufijo corto de pais (co.uk).
+function sitioDe (host) {
+  const e = String(host || '').toLowerCase().split('.');
+  const n = (e.length > 2 && e[e.length - 1].length === 2 && /^(co|com|org|net|gob|gov|ac|edu)$/.test(e[e.length - 2])) ? 3 : 2;
+  return e.slice(-n).join('.');
+}
+function mismoSitio (u) {
+  if (u.origin === ORIGEN) return true;
+  let o; try { o = new URL(ORIGEN); } catch (e) { return false; }
+  return /^https?:$/.test(u.protocol) && sitioDe(u.hostname) === sitioDe(o.hostname);
+}
+function convierteSolo (el) {
+  if (el.tagName === 'IFRAME') return esHostReserva(el.src || '') || RE_CONVIERTE.test(el.getAttribute('src') || '');
   if (el.tagName === 'BUTTON' || el.tagName === 'INPUT') return !!el.closest('form');
   const h = el.getAttribute('href') || '';
-  if (RE_CONVIERTE.test(h)) return true;
-  try { const u = new URL(el.href, BASE); return u.origin === ORIGEN && RE_RUTA_CONV.test(u.pathname); }
+  if (RE_CONVIERTE.test(h) || esHostReserva(h)) return true;
+  if (h.charAt(0) === '#') return false;
+  // en el mismo origen cuenta la ruta; en un subdominio hermano, tambien la consulta (?entrar=registro)
+  try { const u = new URL(el.href, BASE);
+        return mismoSitio(u) && RE_RUTA_CONV.test(u.pathname + (u.origin === ORIGEN ? '' : u.search)); }
   catch (e) { return RE_RUTA_CONV.test(h); }
 }
+function abreA (el) {
+  const h = el.getAttribute('href') || '';
+  let id = /^#./.test(h) ? h.slice(1) : '';
+  if (!id) id = el.getAttribute('aria-controls') || el.getAttribute('popovertarget') ||
+                (el.getAttribute('data-target') || el.getAttribute('data-bs-target') || '').replace(/^#/, '');
+  if (!id) return null;
+  try { return document.getElementById(decodeURIComponent(id.split(/\s+/)[0])); } catch (e) { return null; }
+}
+function convierte (el) {
+  if (convierteSolo(el)) return true;
+  const d = abreA(el);
+  if (!d || d === el || d.contains(el)) return false;
+  return !!(d.matches('form') || d.querySelector('form') ||
+            [...d.querySelectorAll('a[href],iframe[src]')].some(convierteSolo));
+}
+// ── /CONVIERTE ────────────────────────────────────────────────────────────────
 // «Primaria» = accion con relleno propio. Dos rellenas del mismo peso es el
 // hero-que-enlaza descrito en 09 §3: el visitante elige la opcion mas barata,
 // que es irse.

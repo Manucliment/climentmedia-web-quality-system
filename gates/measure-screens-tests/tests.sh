@@ -124,6 +124,9 @@ espera f10-cita-en-medio.html  PASA  ""                              "una cita e
 #   con el umbral viejo salia FALLA.
 espera f6-alto-sin-texto.html  FALLA "pantallas de scroll"          "mucho alto y 48 palabras: es aire"
 espera f7-largo-pero-denso.html PASA  ""                            "mismo alto, pero lo compra el texto"
+# 1-nov-2026 · el presupuesto por palabras tiene techo (12): f7 sigue pasando por debajo
+# de el, y f15 -que sin techo tendria derecho a 78 pantallas y PASA con la regla vieja (medido)- cae por el techo.
+espera f15-techo-de-pantallas.html FALLA "el techo es 12"           "mucho texto no compra pantallas sin fin"
 echo
 echo "== LOS BOTONES QUE NO SE LLAMAN btn (27-oct-2026, trampa de diseno E1)"
 #   «btn» no es subcadena de «button»: con CTA de clase `button` (Shopify) el gate contaba

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  BANCO DE LA PUERTA · el bloque 4-bis (lo que se retiro, ¿sigue servido?)
+#                       y, desde el 1-nov-2026, nav_decide (el 1-quater: ¿para
+#                       la subida lo que los gates de navegador dicen del candidato?)
 # =============================================================================
 #  POR QUE EXISTE, y por que no existia antes:
 #
@@ -100,6 +102,66 @@ espera "un retirado ya borrado NO da falso rojo" "El destino cuadra" "SIGUEN SER
 # Y que CUENTE, no que solo avise: 1 de 2, no 2 de 2 ni 1 de 1.
 RETIRADAS="$RET"; printf 'viva.css\nborrada-de-verdad.css\n' > "$RET"
 espera "cuenta solo los vivos: 1 de 2" "1 de 2 SIGUEN SERVIDOS" ""
+
+# =============================================================================
+#  EL BLOQUE nav_decide (1-quater, 1-nov-2026): los gates de navegador sobre el
+#  CANDIDATO, ¿paran la subida? Los mismos bytes de la puerta, entre sus marcas.
+#  Sin red y sin servidor: la decision es pura (entra lo medido, sale el si o el no).
+# =============================================================================
+DEC="$(mktemp -t navdecide-XXXXXXXX)"
+A2=$(grep -n '^# >>> nav_decide' "$PUERTA" | head -1 | cut -d: -f1)
+B2=$(grep -n '^# <<< nav_decide' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A2:-}" ] || [ -z "${B2:-}" ] || [ "$A2" -ge "$B2" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque nav_decide en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A2},${B2}p" "$PUERTA" > "$DEC"
+  # shellcheck disable=SC1090
+  . "$DEC"
+  decide() { # nombre · rc esperado · lo que TIENE que salir · lo que NO puede salir
+    local n="$1" rc_esp="$2" si="$3" no="$4" rc bien=1
+    ( nav_decide; r=$?; printf '\nNOTA=%s\n' "$NAVC_NOTA"; exit $r ) > "$TMP" 2>&1; rc=$?
+    [ "$rc" = "$rc_esp" ] || bien=0
+    [ -n "$si" ] && ! grep -qF -- "$si" "$TMP" && bien=0
+    [ -n "$no" ] &&   grep -qF -- "$no" "$TMP" && bien=0
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s (rc %s, esperaba %s)\n' "$n" "$rc" "$rc_esp"; sed 's/^/        /' "$TMP"; fi
+  }
+  NAVC_EXIGE=1; NAVC_HUECOS=""
+
+  NAVC_ROJOS="mobile-gate structure-gate"; AUN_ASI=""; SUBIR=1
+  decide "FALLA sin --aun-asi: NO sube"                      1 "EN ROJO EN EL NAVEGADOR NO SE SUBE" ""
+  SUBIR=0
+  decide "FALLA en ensayo: avisa y no para el ensayo"        0 "con --subir, esto para la subida" "NO SE DESPLIEGA"
+  SUBIR=1; AUN_ASI="mobile-gate: el cliente quiere el hero asi"
+  decide "el motivo nombra uno de dos: NO sube"              1 "no nombra: structure-gate" ""
+  AUN_ASI="mobile-gate y structure-gate: decision del cliente, con fecha"
+  decide "nombra los dos: sube y deja la nota"               0 "NOTA=NAVEGADOR-ROJO [mobile-gate structure-gate]" "NO SE DESPLIEGA"
+  # 🔴 EL CASO QUE ORIGINO ESTO: el hueco se firmo con «lo contestan G11 y el navegador»
+  #    y el navegador ya habia dicho FALLA. Aunque nombre el gate, ese motivo no vale.
+  NAVC_ROJOS="mobile-gate"; AUN_ASI="mobile-gate firmado; EST-06 lo contestan G11 y el navegador"
+  decide "motivo «lo contesta el navegador» con FALLA: NO"   1 "Y EL NAVEGADOR YA HA CONTESTADO" "NOTA=NAVEGADOR-ROJO"
+  AUN_ASI="mobile-gate: the browser covers it after upload"
+  decide "lo mismo en ingles: tambien NO"                    1 "Y EL NAVEGADOR YA HA CONTESTADO" ""
+  # El espejo: nombrar el navegador sin apoyarse en el no es motivo de rechazo.
+  AUN_ASI="mobile-gate: decision del cliente; en su oficina no hay navegador movil para probarlo"
+  decide "nombrar el navegador sin decir que contesta: sube" 0 "NOTA=NAVEGADOR-ROJO [mobile-gate]" "YA HA CONTESTADO"
+  # mobile-menu-gate no contiene «mobile-gate»: nombrar uno no firma el otro.
+  NAVC_ROJOS="mobile-gate mobile-menu-gate"; AUN_ASI="mobile-menu-gate: el menu se rehace la semana que viene"
+  decide "nombrar mobile-menu-gate no firma mobile-gate"     1 "no nombra: mobile-gate" ""
+
+  # Lo que NO se pudo medir
+  NAVC_ROJOS=""; NAVC_HUECOS="todo (sin host-de-prueba)"; AUN_ASI=""; SUBIR=1; NAVC_EXIGE=1
+  decide "web con URLS_NAVEGADOR sin medir: NO sube"         1 "NO MEDIDO NO ES UN APROBADO" ""
+  AUN_ASI="sin navegador: servidor de medida caido, arreglo urgente del formulario"
+  decide "firmado con «navegador»: sube y lo anota"          0 "NOTA=NAVEGADOR-CANDIDATO no medido [todo (sin host-de-prueba)]" "NO SE DESPLIEGA"
+  AUN_ASI="lo comprueba el navegador despues de subir"
+  decide "«lo comprueba el navegador» sin medir: NO"         1 "NO HA MEDIDO EL CANDIDATO" ""
+  AUN_ASI=""; NAVC_EXIGE=0
+  decide "web sin URLS_NAVEGADOR sin medir: sube y anota"    0 "NOTA=NAVEGADOR-CANDIDATO no medido" "NO SE DESPLIEGA"
+  NAVC_HUECOS=""; NAVC_EXIGE=1
+  decide "todo verde y medido: sube sin nota"                0 "NOTA=" "NAVEGADOR"
+fi
+rm -f "$DEC"
 
 rm -f "$TMP" "$VACIO" "$ANT" "$RET"
 echo

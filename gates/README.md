@@ -1,6 +1,6 @@
 # The gates
 
-36 programs and 33 test batteries. This file is the index: what each program is for,
+37 programs and 34 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -28,23 +28,23 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On a clean
-install the fast run is **835 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **848 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1462 cases green, 0 red**, with **five** banks reported as
-`NOT MEASURED`: the three that measure on a Linux host (`measure-screens`, `mobile-gate`,
-`form-handler`), the one that needs a client repository this public repository does not
+a clean install it reads **1480 cases green, 0 red**, with **six** banks reported as
+`NOT MEASURED`: the four that measure on a Linux host (`measure-screens`, `mobile-gate`,
+`mobile-menu-gate`, `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
 Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
 `structure-gate` later: see below.)
 
-> **A machine with a measurement host reads more, and that is expected.** The three host
+> **A machine with a measurement host reads more, and that is expected.** The four host
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1516**: 1462 plus 52 host cases plus the 2 of the deploy-history bank. `run-all.sh`
-> counts all four banks as *machine-dependent*, and the documentation gate accepts either
+> **1570**: 1480 plus 88 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> counts all five banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
 > Until 21-sep-2026 those three banks looked for a placeholder host left behind when this
@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-837, not 835, because that machine has deployed. `run-all.sh`
+850, not 848, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,15 +95,14 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  835 casos en verde · 0 en rojo
+  848 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  NO MEDIDO structure-gate   layout: prose vs laid out             (23 of its cases WERE measured)
-  1462 casos en verde · 0 en rojo
-  NO MEDIDOS: measure-screens structure-gate mobile-gate compliance form-handler
+  1480 casos en verde · 0 en rojo
+  NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler
 ```
 
 > **The very first run on a clean install also lists `doc-gate(skill)`**, whichever of the two
@@ -429,6 +428,35 @@ uploading it verifies that **what is served is what was measured**. Neither subs
 the other — without `--candidate` you measure production, and the receipt then seals a tree
 whose verdict came from measuring a different object.
 
+**Between the two, the door measures the candidate in a real browser (step 1-quater, since
+2026-11-01).** It copies the tree to the measuring host and runs the gates there, through
+`run-gate.js` in candidate mode:
+
+- `structure-gate.js` at 1298;
+- `measure-screens.js` at 1298 and 390;
+- `mobile-gate.js` at 360, 390, 1366 and 1440;
+- `mobile-menu-gate.js` at 390.
+
+They run on every page in `URLS_NAVEGADOR` (`/` if none).
+
+- **A FAIL stops `--upload`.** It goes through only with an `--anyway` that **names every red
+  gate**.
+- The door **rejects a reason that says the browser will answer** when the browser has just
+  said FAIL, or has measured nothing.
+- A site that declares `URLS_NAVEGADOR` and could not be measured also stops, unless the reason
+  says "browser"/"navegador".
+- `NO_BROWSER=1` stays a declared hole, as before.
+
+Three `deploy.conf` keys tune it:
+
+- `HOSTS_RESERVA` (or `BOOKING_HOSTS`): the booking platforms the site books on, besides the
+  ones the gates already know. See `blueprint/20-external-booking.md`.
+- `ECOMMERCE=1`: a shop. The first screen does not have to carry a contact.
+- `NAV_PARALELO`: measurements at a time. The default is 3.
+
+The step after the upload (6) still measures what the host actually serves, and records it
+without blocking. Why the order changed is trap §89.
+
 ---
 
 ## What each program is for
@@ -438,7 +466,7 @@ whose verdict came from measuring a different object.
 | Program | What it does |
 |---|---|
 | `qa-master.pl` | The master gate. Five lenses over a page or a tree, and it writes the receipt. |
-| `deploy.sh` | The door. No valid receipt, no upload — then checks what is served. |
+| `deploy.sh` | The door. No valid receipt, no upload. Before the upload line it runs the browser gates on the candidate (step 1-quater) and a FAIL stops it; after, it checks what is served. |
 | `receipt.pl` | Writes, verifies and records receipts; owns the deploy history. |
 
 ### Structure, layout and type
@@ -446,7 +474,8 @@ whose verdict came from measuring a different object.
 | Program | What it does |
 |---|---|
 | `structure-gate.js` | Is this laid out, or is it a wall of prose wearing a stylesheet? |
-| `mobile-gate.js` | Action above the fold, and calls to action nothing covers. |
+| `mobile-gate.js` | An action that **converts** whole on the first screen at 360, 390, 1366 and 1440 (a form, a phone, a message app, a booking platform, a contact path of the same site), and calls to action nothing covers. |
+| `mobile-menu-gate.js` | The mobile menu at 390: the menu fits in one row or sits behind a button with `aria-expanded` that opens it; closed, its links are out of the Tab order. Measures the menu half of `A11Y-13`, not the rest. |
 | `measure-screens.js` | Density: how much page per screen, measured against the moulds. |
 | `anatomy.pl` | One table of page anatomies, three consumers, and they must agree. |
 | `roles.pl` | The role vocabulary (`roles.tsv` = 09 §1), and it generates one reference sheet per page type into `blueprint/moulds/types/`. `--gate` re-derives all thirteen and fails on any difference, so a sheet edited by hand does not survive a battery. |
@@ -497,10 +526,10 @@ whose verdict came from measuring a different object.
 | `compliance-selftest.pl` | Its own self-test. |
 | `audit-vs-spec.pl` | The spec against the tree. **26 of 26 checks have a case.** |
 | `audit.sh`, `qa-final.sh` | The site auditor, and the last look before publishing. |
-| `run-gate.js` | The harness the browser gates run inside. |
-| `nav-host.sh` | Where the measurement host comes from, read once for the door and the three host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
+| `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. |
+| `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **94% is measured over 4 programs of 36**,
+The coverage figure has a scope you should know: **94% is measured over 4 programs of 37**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
@@ -640,7 +669,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **407 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **409 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until

@@ -14,7 +14,11 @@
 #    deploy.sh REPO --subir         comprueba, sube, y verifica lo servido
 #    deploy.sh REPO --servido       solo la verificacion de despues (G11)
 #    deploy.sh REPO --aun-asi "..." permite subir con cosas SIN MIRAR,
-#                                      dejando el motivo escrito en el historial
+#                                      dejando el motivo escrito en el historial.
+#                                      Con gates de navegador en FALLA sobre el
+#                                      candidato (paso 1-quater), el motivo tiene
+#                                      que NOMBRAR cada gate en rojo, y no puede
+#                                      decir que «lo contesta el navegador»
 #    deploy.sh REPO --pierde-texto "..."  permite subir aunque alguna pagina
 #                                      pierda palabras frente a lo que sirve
 #                                      produccion (paso 2-ter), dejando en el
@@ -37,6 +41,12 @@
 #  Los dos momentos hacen falta y ninguno sustituye al otro:
 #      · el candidato contesta «¿lo que voy a subir esta bien?»
 #      · G11 contesta «¿el visitante esta viendo eso?»
+#  1-nov-2026 · y entre los dos, la propia puerta mide EL CANDIDATO con los gates de
+#  navegador (1-quater: maqueta, pantallas, primer pantallazo a 360/390/1366/1440 y
+#  menu movil), en el Chrome de NAV_HOST, antes de la linea que sube. Un FALLA para.
+#  Claves de deploy.conf que lo afinan: URLS_NAVEGADOR (que paginas), HOSTS_RESERVA
+#  (plataformas de reserva propias, ademas de las conocidas), ECOMMERCE=1 (tienda:
+#  el primer pantallazo no exige un contacto) y NAV_PARALELO (medidas a la vez, 3).
 #  EL FALLO QUE ESTO ARREGLA, encontrado en el primer uso real de la puerta: el
 #  recibo sellaba el arbol del repo con un veredicto sacado de medir PRODUCCION.
 #  site-d salio «VEREDICTO: FALLA» por los 11 defectos que el despliegue
@@ -271,6 +281,259 @@ else
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "G1 no medido: no es un repo git" --repo "$REPO" >/dev/null 2>&1
 fi
 
+# ── las claves y las medidas de navegador (las usan el 1-quater y el 6) ──────
+#    Las claves aceptan los dos nombres (ver el paso 6, 21-sep-2026). Lo de este
+#    bloque son funciones: medir aqui no mide nada hasta que alguien las llama.
+URLS_NAVEGADOR="${URLS_NAVEGADOR:-${BROWSER_URLS:-}}"
+URLS_FORMULARIO="${URLS_FORMULARIO:-${FORM_URLS:-}}"
+SIN_NAVEGADOR="${SIN_NAVEGADOR:-${NO_BROWSER:-0}}"
+# 1-nov-2026 · las plataformas de reserva de la web (ademas de las que ya conocen los
+# gates) y si es una tienda: los dos cambian que cuenta como «convierte» en el
+# primer pantallazo. Solo letras, cifras, punto y guion: va dentro de un JSON y de
+# unas comillas simples del shell remoto.
+HOSTS_RESERVA="$(printf '%s' "${HOSTS_RESERVA:-${BOOKING_HOSTS:-}}" | tr ',' ' ' | tr -cd 'A-Za-z0-9. -' | tr 'A-Z' 'a-z')"
+ECOMMERCE="${ECOMMERCE:-0}"
+NAV_CFG=""
+if [ -n "$HOSTS_RESERVA" ] || [ "$ECOMMERCE" = 1 ]; then
+  NAV_CFG="{$( [ -n "$HOSTS_RESERVA" ] && printf '"hostsReserva":"%s"' "$HOSTS_RESERVA" )$( [ -n "$HOSTS_RESERVA" ] && [ "$ECOMMERCE" = 1 ] && printf ',' )$( [ "$ECOMMERCE" = 1 ] && printf '"ecommerce":true' )}"
+fi
+NAV_PARALELO="${NAV_PARALELO:-3}"
+. "$REF/nav-host.sh"
+NAV_HOST="$(nav_host "$REF")"
+NAV_HOST_CONF="$(nav_host_conf "$REF")"
+NAV_ENV=""   # en el 1-quater lleva GATE_CANDIDATO y GATE_SITIO; en el 6, nada
+
+nav_empuja() {   # los gates y el corredor, canonicos, al servidor (dos copias divergen el primer dia)
+  ssh -n -o BatchMode=yes "$NAV_HOST" 'mkdir -p ~/webtools/gates' >/dev/null 2>&1 || return 1
+  scp -q "$REF/run-gate.js" "$NAV_HOST:webtools/run-gate.js" </dev/null 2>/dev/null || return 1
+  local g
+  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js; do
+    [ -f "$REF/$g" ] && { scp -q "$REF/$g" "$NAV_HOST:webtools/gates/$g" </dev/null 2>/dev/null || return 1; }
+  done
+  return 0
+}
+
+nav_mide() {     # <fichero de salida> <url> <gate> <ancho> <alto> [json de __GATE__]
+  # ⚠️ El JSON va entre COMILLAS SIMPLES para el shell remoto. Con dobles,
+  #    `"{"exigeFormulario":true}"` pierde las suyas por el camino y `node`
+  #    recibe `{exigeFormulario:true}`, que no es JSON; `run-gate.js` muere con
+  #    RUNNER-ERROR y parecia un problema de red. Probado antes de darlo por bueno.
+  # `-n`: se llama en segundo plano dentro de un `while read`, y un ssh sin -n se
+  # come el resto de la lista.
+  # Una medida que no llega a dar veredicto, o que mide un muro, se repite UNA vez:
+  # el barrido del 1-nov-2026 dio cuatro «504 Gateway Time-out» seguidos de un host
+  # compartido que poco despues servia bien. La segunda tambien mal = NO MEDIDO.
+  local i
+  for i in 1 2; do
+    ssh -n -o BatchMode=yes "$NAV_HOST" \
+        "cd ~/webtools && ${NAV_ENV}node run-gate.js '$2' $4 $5 gates/$3 ${6:+'$6'}" > "$1" 2>&1
+    grep -q '"VEREDICTO"' "$1" && ! grep -q '"sospechoso":true' "$1" && return 0
+    [ "$i" = 1 ] && sleep 5
+  done
+  return 0
+}
+
+nav_lee() {      # <fichero> <gate> <ruta> <ancho> -> imprime la linea; NAV_R = PASA | FALLA | NO MEDIDO
+  local out titulo ver
+  out="$(cat "$1" 2>/dev/null)"
+  NAV_R="NO MEDIDO"
+  # 🔴 1-nov-2026 · EN EL CANDIDATO, ANTES QUE NADA, QUE SE HAYA SERVIDO EL CANDIDATO.
+  #    `run-gate.js` sirve del disco lo que se pide al origen de la web y cuenta las
+  #    respuestas en `candidato`. Con 0 lo medido es la web YA SUBIDA, y un PASA de
+  #    produccion sobre un arbol que nadie ha mirado es el fallo del 11-ago otra vez.
+  if [ -n "$NAV_ENV" ] && ! printf '%s' "$out" | grep -q '"candidato":[1-9]'; then
+    printf '    %-22s %-26s %4spx  NO MEDIDO (no se ha servido el candidato)\n' "$2" "$3" "$4"; return
+  fi
+  # 🔴 18-ago-2026 · Y ANTES QUE `coincide`, QUE SEA LA PAGINA. `coincide` dice
+  #    que el ancho es el pedido; no dice que se haya medido el sitio. site-a y
+  #    loja.site-b sirven a este Chrome un muro anti-bot y el gate media el
+  #    muro: 1 pantalla, 0 CTA, FALLA. Una acusacion falsa contra dos de las
+  #    cinco webs, con el ancho cuadrando. `run-gate.js` ahora lo marca.
+  if printf '%s' "$out" | grep -q '"sospechoso":true'; then
+    titulo="$(printf '%s' "$out" | grep -oE '"titulo":"[^"]*"' | head -1 | sed 's/.*://;s/"//g' | cut -c1-40)"
+    printf '    %-22s %-26s %4spx  NO MEDIDO (no parece la pagina: %s)\n' "$2" "$3" "$4" "$titulo"; return
+  fi
+  # ⚠️ REGLA DE LA CASA: `coincide` PRIMERO. Una medida hecha a un ancho que no
+  #    es el pedido no es un resultado peor: es basura, y darla por numero es
+  #    peor que no medir.
+  if ! printf '%s' "$out" | grep -q '"coincide":true'; then
+    printf '    %-22s %-26s %4spx  NO MEDIDO (el ancho no coincide o no cargo)\n' "$2" "$3" "$4"; return
+  fi
+  ver="$(printf '%s' "$out" | grep -m1 '"VEREDICTO"' | grep -o 'PASA\|FALLA')"
+  if [ -z "$ver" ]; then
+    printf '    %-22s %-26s %4spx  NO MEDIDO (el gate no dio veredicto)\n' "$2" "$3" "$4"; return
+  fi
+  NAV_R="$ver"
+  printf '    %-22s %-26s %4spx  %s\n' "$2" "$3" "$4" "$ver"
+  [ "$ver" = FALLA ] && printf '%s' "$out" | grep -A6 '"fallos"' | head -7 | sed 's/^/        /'
+  return 0
+}
+
+nav_corre() {    # <dir> <lista: n ruta gate ancho alto conCfg>  -> mide en paralelo, cada una en <dir>/<n>.out
+  local n r g w h c
+  while read -r n r g w h c; do
+    # `wait -n` es de bash 4.3; sin el (bash 3 de macOS) se espera a todas: mas lento, igual de correcto
+    while [ "$(jobs -rp | wc -l)" -ge "$NAV_PARALELO" ]; do wait -n 2>/dev/null || wait; done
+    nav_mide "$1/$n.out" "${SITIO%/}$r" "$g" "$w" "$h" "$( [ "$c" = c ] && printf '%s' "$NAV_CFG" )" &
+  done < "$2"
+  wait
+}
+
+# >>> nav_decide · la decision del 1-quater (deploy-tests/tests.sh ejecuta estos bytes)
+# 🔴 1-nov-2026 · Entra: NAVC_ROJOS (los gates en FALLA, por nombre), NAVC_HUECOS (lo
+#    que no se pudo medir), NAVC_EXIGE (1 = la web declara URLS_NAVEGADOR), AUN_ASI y
+#    SUBIR. Imprime la decision, deja en NAVC_NOTA lo que se anota y devuelve 1 si
+#    la subida se para. No escribe en ningun sitio: eso lo hace quien la llama.
+#    El motivo que dice que algo «lo contesta el navegador» se rechaza cuando el
+#    navegador ya ha contestado otra cosa (FALLA) o no ha contestado nada (no medido):
+#    un motivo que se apoya en un instrumento que dice lo contrario no es un motivo.
+RE_NAV_CONTESTA='(contest|respond|cubr|cubre|mide|miden|medir|medira|comprueb|answer|cover|check)[a-z]*[^.;]{0,60}(navegador|browser|paso 6|step 6)|(navegador|browser|paso 6|step 6)[^.;]{0,30}(contest|respond|cubr|cubre|mide|miden|medir|medira|comprueb|answer|cover|check)'
+nav_decide() {
+  NAVC_NOTA=""
+  local g faltan="" contesta=0 motivo
+  # ⚠️ En minusculas con `tr` y comparado con `case`/`grep -E`, NUNCA con `grep -i`: el
+  #    grep de Git Bash ABORTA con `-iF` (SIGABRT, medido en el banco el 1-nov-2026), y
+  #    el `||` lo leia como «no lo nombra»: toda firma valida salia rechazada.
+  motivo="$(printf '%s' "$AUN_ASI" | tr '[:upper:]' '[:lower:]')"
+  if [ -n "$motivo" ] && printf '%s' "$motivo" | grep -qE "$RE_NAV_CONTESTA"; then contesta=1; fi
+  if [ -n "$NAVC_ROJOS" ]; then
+    if [ "$contesta" = 1 ]; then
+      echo "  🔴 EL MOTIVO DICE QUE LO CONTESTA EL NAVEGADOR, Y EL NAVEGADOR YA HA CONTESTADO:"
+      echo "     FALLA en $NAVC_ROJOS. Ese motivo no se acepta: se arregla el arbol, o se firma"
+      echo "     cada gate en rojo con un motivo que no diga lo contrario de lo medido."
+      [ "$SUBIR" = 1 ] && { echo "  NO SE DESPLIEGA."; return 1; }
+      echo "  (ensayo: con --subir, este motivo se rechazaria y no se subiria)"; return 0
+    fi
+    for g in $NAVC_ROJOS; do
+      case "$motivo" in *"${g%.js}"*) ;; *) faltan="$faltan $g" ;; esac
+    done
+    faltan="${faltan# }"
+    if [ -n "$faltan" ]; then
+      echo "  🔴 EN ROJO EN EL NAVEGADOR NO SE SUBE: FALLA en $NAVC_ROJOS"
+      if [ -n "$AUN_ASI" ]; then
+        echo "     El --aun-asi no nombra: $faltan. Cada gate en rojo se nombra, uno a uno."
+      else
+        echo "     Se arregla en el arbol y se vuelve a medir. Para subirlo asi, que conste cada uno:"
+        echo "         --aun-asi \"${NAVC_ROJOS// /, }: el motivo\""
+      fi
+      [ "$SUBIR" = 1 ] && { echo "  NO SE DESPLIEGA."; return 1; }
+      echo "  (ensayo: con --subir, esto para la subida)"; return 0
+    fi
+    echo "  se sube con el navegador en rojo, firmado gate a gate: $NAVC_ROJOS"
+    echo "  Motivo: $AUN_ASI"
+    NAVC_NOTA="NAVEGADOR-ROJO [$NAVC_ROJOS] $AUN_ASI"
+  fi
+  if [ -n "$NAVC_HUECOS" ]; then
+    if [ "$contesta" = 1 ]; then
+      echo "  🔴 EL MOTIVO DICE QUE LO CONTESTA EL NAVEGADOR, Y EL NAVEGADOR NO HA MEDIDO EL CANDIDATO:"
+      echo "     $NAVC_HUECOS"
+      [ "$SUBIR" = 1 ] && { echo "  NO SE DESPLIEGA."; return 1; }
+      echo "  (ensayo: con --subir, este motivo se rechazaria y no se subiria)"; return 0
+    fi
+    if [ "$NAVC_EXIGE" = 1 ] && ! printf '%s' "$motivo" | grep -qE 'navegador|browser'; then
+      echo "  🔴 NO MEDIDO NO ES UN APROBADO. Esta web declara URLS_NAVEGADOR y el candidato"
+      echo "     no se ha podido medir entero: $NAVC_HUECOS"
+      echo "     Para subir asi, que conste:  --aun-asi \"sin navegador: el motivo\""
+      [ "$SUBIR" = 1 ] && { echo "  NO SE DESPLIEGA."; return 1; }
+      echo "  (ensayo: con --subir, esto para la subida)"; return 0
+    fi
+    NAVC_NOTA="${NAVC_NOTA:+$NAVC_NOTA · }NAVEGADOR-CANDIDATO no medido [$NAVC_HUECOS]${AUN_ASI:+ $AUN_ASI}"
+  fi
+  return 0
+}
+# <<< nav_decide
+
+# ── 1-quater · LOS GATES DE NAVEGADOR, SOBRE EL CANDIDATO, ANTES DE SUBIR ─────
+# 🔴 1-nov-2026 · POR QUE. Una web nueva subio con 10 FALLA de 16-18 medidas en los
+#    gates de navegador: el paso 6 los corria DESPUES de subir y no bloqueaba («ya
+#    se ha subido, parar no deshace nada»), asi que el rojo llego al historial y a
+#    ningun sitio mas. Y el --aun-asi de esa subida firmaba un hueco con «lo
+#    contestan G11 y el navegador» cuando el navegador ya habia dicho FALLA.
+#    → Se mide EL ARBOL QUE SE VA A SUBIR, en el Chrome del servidor: se copia alli y
+#      `run-gate.js` lo sirve del disco con el origen de produccion (enlaces,
+#      sitemap y «misma web» no cambian). Un FALLA para la subida; solo pasa con un
+#      --aun-asi que nombre cada gate en rojo, y nav_decide rechaza el motivo que
+#      se apoya en el navegador cuando el navegador dice lo contrario.
+#    Lo que NO para: SIN_NAVEGADOR=1 (un hueco declarado, como en el 6), y una web
+#    que no declara URLS_NAVEGADOR y no se ha podido medir (se dice y se anota). Si
+#    la web SI declara URLS_NAVEGADOR, no medirla pide --aun-asi con «navegador».
+#    Medir no se pregunta: el ensayo (sin --subir) mide igual, y dice lo que pararia.
+NAVC_ROJOS=""; NAVC_HUECOS=""; NAVC_EXIGE=0; NAVC_MIRADAS=0; NAVC_FALLOS=0
+NAVC_MENU_PASA=0; NAVC_MENU_TOTAL=0
+[ -n "$URLS_NAVEGADOR" ] && NAVC_EXIGE=1
+if [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
+  linea; echo "  1-quater · navegador sobre el candidato: SIN_NAVEGADOR=1, no se mide"; linea
+else
+  linea; echo "  1-quater · maqueta, pantallas, movil y menu, sobre el CANDIDATO"; linea
+  if [ -z "${NAV_HOST:-}" ]; then
+    NAVC_HUECOS="todo (NAV_HOST sin configurar)"
+    echo "  NO MEDIDO: NAV_HOST sin configurar (ni $CONF, ni el entorno, ni $NAV_HOST_CONF)."
+  elif ! ssh -n -o BatchMode=yes -o ConnectTimeout=10 "$NAV_HOST" 'true' 2>/dev/null; then
+    NAVC_HUECOS="todo (sin $NAV_HOST)"
+    echo "  NO MEDIDO: no llego a $NAV_HOST."
+  elif [ ! -f "$REF/run-gate.js" ]; then
+    NAVC_HUECOS="todo (falta gates/run-gate.js)"
+    echo "  NO MEDIDO: falta $REF/run-gate.js."
+  else
+    NAVC_DIR="$(mktemp -d -t navcand-XXXXXXXX)"
+    NAVC_R="/tmp/wqs-candidato-$$-$(date +%s)"
+    NAVC_ARBOL="$(perl "$REF/receipt.pl" --arbol --repo "$REPO" --listar 2>/dev/null | awk '$1 ~ /^[0-9a-f]{8}$/ && $2 ~ /^[0-9]+$/ { $1=""; $2=""; sub(/^  */, ""); print }')"
+    if [ -z "$NAVC_ARBOL" ]; then
+      NAVC_HUECOS="todo (receipt.pl no lista el arbol)"
+      echo "  NO MEDIDO: receipt.pl --arbol --listar no devuelve ningun fichero."
+    elif ! nav_empuja \
+         || ! ssh -n -o BatchMode=yes "$NAV_HOST" "mkdir -p '$NAVC_R/arbol'" 2>/dev/null \
+         || ! printf '%s\n' "$NAVC_ARBOL" | (cd "$REPO" && tar -cf - -T -) 2>/dev/null \
+              | ssh -o BatchMode=yes "$NAV_HOST" "tar -xf - -C '$NAVC_R/arbol'" 2>/dev/null; then
+      NAVC_HUECOS="todo (no se ha podido copiar el candidato a $NAV_HOST)"
+      echo "  NO MEDIDO: no se ha podido copiar el arbol ni los gates a $NAV_HOST."
+    else
+      echo "  $(printf '%s\n' "$NAVC_ARBOL" | grep -c .) ficheros del arbol copiados a $NAV_HOST; se sirven con el origen $SITIO"
+      [ -n "$NAV_CFG" ] && echo "  configuracion de los gates de conversion: $NAV_CFG"
+      # Los cuatro anchos del primer pantallazo (mobile-gate M1, 1-nov-2026) y el menu
+      # a 390. `c` = esa medida recibe NAV_CFG (que cuenta como convertir).
+      : > "$NAVC_DIR/lista"; n=0
+      for r in ${URLS_NAVEGADOR:-/}; do
+        for m in "structure-gate.js 1298 720 c" "measure-screens.js 1298 720 -" "measure-screens.js 390 844 -" \
+                 "mobile-gate.js 360 740 c" "mobile-gate.js 390 844 c" "mobile-gate.js 1366 768 c" \
+                 "mobile-gate.js 1440 900 c" "mobile-menu-gate.js 390 844 -"; do
+          n=$((n+1)); printf '%s %s %s\n' "$n" "$r" "$m" >> "$NAVC_DIR/lista"
+        done
+      done
+      NAVC_TOTAL=$n   # el `while read -r n` de abajo deja n vacio al acabar
+      NAV_ENV="GATE_CANDIDATO='$NAVC_R/arbol' GATE_SITIO='${SITIO%/}' "
+      nav_corre "$NAVC_DIR" "$NAVC_DIR/lista"
+      NAV_ENV=""
+      while read -r n r g w h c; do
+        nav_lee "$NAVC_DIR/$n.out" "$g" "$r" "$w"
+        case "$NAV_R" in
+          PASA)  NAVC_MIRADAS=$((NAVC_MIRADAS+1)) ;;
+          FALLA) NAVC_MIRADAS=$((NAVC_MIRADAS+1)); NAVC_FALLOS=$((NAVC_FALLOS+1))
+                 case " $NAVC_ROJOS " in *" ${g%.js} "*) ;; *) NAVC_ROJOS="${NAVC_ROJOS:+$NAVC_ROJOS }${g%.js}" ;; esac ;;
+          *)     NAVC_HUECOS="${NAVC_HUECOS:+$NAVC_HUECOS, }${g%.js} $r ${w}px" ;;
+        esac
+        if [ "$g" = mobile-menu-gate.js ]; then
+          NAVC_MENU_TOTAL=$((NAVC_MENU_TOTAL+1)); [ "$NAV_R" = PASA ] && NAVC_MENU_PASA=$((NAVC_MENU_PASA+1))
+        fi
+      done < "$NAVC_DIR/lista"
+      echo
+      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir"
+    fi
+    ssh -n -o BatchMode=yes "$NAV_HOST" "rm -rf '$NAVC_R'" >/dev/null 2>&1
+    rm -rf "$NAVC_DIR"
+  fi
+fi
+if [ "${SIN_NAVEGADOR:-0}" != 1 ]; then
+  echo
+  nav_decide || exit 1
+  if [ "$SUBIR" = 1 ]; then
+    perl "$REF/receipt.pl" --anotar "NAVEGADOR-CANDIDATO $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA${NAVC_HUECOS:+ · sin medir: $NAVC_HUECOS}" \
+         --repo "$REPO" >/dev/null 2>&1
+    [ -n "$NAVC_NOTA" ] && perl "$REF/receipt.pl" --anotar "$NAVC_NOTA" --repo "$REPO" >/dev/null 2>&1 \
+      && echo "  (anotado en el historial)"
+  fi
+fi
+
 # ── 2 · lo que NADIE ha mirado ───────────────────────────────────────────────
 #    NO bloquea. Si bloqueara, el primer despliegue sin navegador ensenaria a
 #    saltarse el gate, y un gate que se saltan una vez ya no vuelve. Pero deja
@@ -295,6 +558,21 @@ if [ "$NV" != 0 ]; then
   linea; echo "  2 · lo que nadie ha mirado"; linea
   echo "  $NV comprobaciones quedaron SIN VERIFICAR:"
   grep -m1 '^SIN-MIRAR:' "$REPO/.qa-recibo" | sed 's/^/    /'
+  # 1-nov-2026 · A11Y-13 (teclado real y lector) tiene UNA parte que ya se mide: el
+  #    menu movil, que mobile-menu-gate abre y cierra en el 1-quater. Se dice cual, y
+  #    NO se resta del hueco: el orden de Tab de la pagina entera, el foco visible y
+  #    el lector de pantalla siguen sin mirar, y el propio A11Y-13 dice que eso no lo
+  #    sustituye ningun script. Restarlo seria un gate afirmando lo que no mide.
+  if grep -m1 '^SIN-MIRAR:' "$REPO/.qa-recibo" | grep -qw 'A11Y-13' && [ "$NAVC_MENU_TOTAL" -gt 0 ]; then
+    if [ "$NAVC_MENU_PASA" = "$NAVC_MENU_TOTAL" ]; then
+      echo "  A11Y-13 · la parte del menu movil SI esta medida: mobile-menu-gate PASA en"
+      echo "            $NAVC_MENU_PASA de $NAVC_MENU_TOTAL paginas a 390. Sigue sin mirar el resto: el orden de"
+      echo "            Tab de la pagina entera, el foco visible y un lector de pantalla."
+    else
+      echo "  A11Y-13 · la parte del menu movil esta medida y es un NO: mobile-menu-gate"
+      echo "            FALLA en $((NAVC_MENU_TOTAL - NAVC_MENU_PASA)) de $NAVC_MENU_TOTAL paginas (ver el 1-quater)."
+    fi
+  fi
   if [ "$NVC" != 0 ]; then
     echo
     echo "  De esas, $NVC NO son huecos: son las preguntas que solo produccion"
@@ -333,7 +611,12 @@ if [ "$NV" != 0 ]; then
     SIN_MIRAR="$(grep -m1 '^SIN-MIRAR:' "$REPO/.qa-recibo" 2>/dev/null | sed 's/^SIN-MIRAR:[[:space:]]*//')"
     HUECOS=""
     for x in $SIN_MIRAR; do
-      case " $NVC_LISTA " in *" $x "*) ;; *) HUECOS="$HUECOS $x" ;; esac
+      case " $NVC_LISTA " in *" $x "*) continue ;; esac
+      # el historial guarda tambien la mitad medida de A11Y-13 (ver arriba)
+      if [ "$x" = A11Y-13 ] && [ "$NAVC_MENU_TOTAL" -gt 0 ]; then
+        x="A11Y-13(menu:$( [ "$NAVC_MENU_PASA" = "$NAVC_MENU_TOTAL" ] && echo PASA || echo FALLA)$NAVC_MENU_PASA/$NAVC_MENU_TOTAL)"
+      fi
+      HUECOS="$HUECOS $x"
     done
     HUECOS="${HUECOS# }"
     if perl "$REF/receipt.pl" --anotar "AUN-ASI [$NV_REALES sin mirar: $HUECOS] $AUN_ASI" \
@@ -1060,6 +1343,13 @@ fi
 #    deshace nada. Lo que hace es dejar el veredicto en el historial. Se salta
 #    declarandolo (`SIN_NAVEGADOR=1` en deploy.conf), y la declaracion tambien
 #    se anota: un hueco declarado sigue siendo un hueco.
+# 🔴 1-nov-2026 · LO QUE BLOQUEA ESTA EN EL 1-quater. Este paso era el UNICO sitio
+#    donde corrian estos gates, y por eso un rojo de navegador nunca paro una
+#    subida: una web nueva subio con 10 FALLA. Ahora los mismos gates miden el
+#    CANDIDATO antes de subir, y para. Este paso se queda para lo que el arbol no
+#    puede contestar: lo que sirve el host de verdad (CDN, cache, cabeceras, el
+#    formulario contra su backend). Las claves y las funciones de medir son las
+#    del 1-quater (nav_empuja, nav_mide, nav_lee, nav_corre): una sola copia.
 #
 # 🔴 21-sep-2026 · EL HOST POR DEFECTO ERA UN MARCADOR, Y EL PASO 6 NO MEDIA NADA.
 #    Aqui ponia `NAV_HOST="${NAV_HOST:-example-host}"`: el nombre real se quito al
@@ -1090,12 +1380,7 @@ fi
 #    una lectura propia, y los tres bancos que miden en el servidor seguian con
 #    su `example-host` escrito a mano: el arreglo de la puerta no habia salido de
 #    la puerta. Ahora los cuatro cargan el mismo fichero. Ver su cabecera.
-URLS_NAVEGADOR="${URLS_NAVEGADOR:-${BROWSER_URLS:-}}"
-URLS_FORMULARIO="${URLS_FORMULARIO:-${FORM_URLS:-}}"
-SIN_NAVEGADOR="${SIN_NAVEGADOR:-${NO_BROWSER:-0}}"
-. "$REF/nav-host.sh"
-NAV_HOST="$(nav_host "$REF")"
-NAV_HOST_CONF="$(nav_host_conf "$REF")"
+#    (1-nov-2026: la lectura de las claves y del host se subio al 1-quater.)
 if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ -z "${NAV_HOST:-}" ]; then
   echo
   echo "  ============================================================================"
@@ -1134,12 +1419,8 @@ elif [ ! -f "$REF/run-gate.js" ]; then
   perl "$REF/receipt.pl" --anotar "NAVEGADOR no medido: falta gates/run-gate.js" \
        --repo "$REPO" >/dev/null 2>&1
 else
-  linea; echo "  6 · maqueta, densidad y formularios de lo servido"; linea
-  ssh "$NAV_HOST" 'mkdir -p ~/webtools/gates' >/dev/null 2>&1
-  scp -q "$REF/run-gate.js" "$NAV_HOST:webtools/run-gate.js" 2>/dev/null
-  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js; do
-    [ -f "$REF/$g" ] && scp -q "$REF/$g" "$NAV_HOST:webtools/gates/$g" 2>/dev/null
-  done
+  linea; echo "  6 · maqueta, densidad, movil y formularios de lo servido"; linea
+  nav_empuja || echo "  (no he podido empujar todos los gates a $NAV_HOST: lo que falle saldra NO MEDIDO)"
 
   # Que URLs. Por defecto la portada; el repo puede declarar mas. Las de
   # formulario van aparte porque ahi el paso 10 se EXIGE: si esa pagina se queda
@@ -1147,65 +1428,46 @@ else
   URLS_NAV="${URLS_NAVEGADOR:-/}"
   URLS_FORM="${URLS_FORMULARIO:-}"
   NAV_FALLOS=0; NAV_MIRADAS=0; NAV_BASURA=0
-
-  corre_gate() {   # <ruta> <gate> <ancho> <alto> [json de __GATE__]
-    ruta="$1"; gate="$2"; w="$3"; h="$4"; cfg="${5:-}"
-    url="${SITIO%/}${ruta}"
-    # ⚠️ El JSON va entre COMILLAS SIMPLES para el shell remoto. Con dobles,
-    #    `"{"exigeFormulario":true}"` pierde las suyas por el camino y `node`
-    #    recibe `{exigeFormulario:true}`, que no es JSON. Y el sintoma engana:
-    #    `run-gate.js` muere con RUNNER-ERROR, la salida no lleva
-    #    `"coincide":true`, y este paso lo contaria como NO MEDIDO -- o sea,
-    #    parecia un problema de red. Probado antes de darlo por bueno.
-    out="$(ssh "$NAV_HOST" "cd ~/webtools && node run-gate.js '$url' $w $h gates/$gate ${cfg:+'$cfg'}" 2>&1)"
-    # ⚠️ REGLA DE LA CASA: `coincide` PRIMERO. Una medida hecha a un ancho que no
-    #    es el pedido no es un resultado peor: es basura, y darla por numero es
-    #    peor que no medir.
-    # 🔴 18-ago-2026 · Y ANTES QUE `coincide`, QUE SEA LA PAGINA. `coincide` dice
-    #    que el ancho es el pedido; no dice que se haya medido el sitio. site-a y
-    #    loja.site-b sirven a este Chrome un muro anti-bot y el gate media el
-    #    muro: 1 pantalla, 0 CTA, FALLA. Una acusacion falsa contra dos de las
-    #    cinco webs, con el ancho cuadrando. `run-gate.js` ahora lo marca.
-    if printf '%s' "$out" | grep -q '"sospechoso":true'; then
-      NAV_BASURA=$((NAV_BASURA+1))
-      titulo="$(printf '%s' "$out" | grep -oE '"titulo":"[^"]*"' | head -1 | sed 's/.*://;s/"//g' | cut -c1-40)"
-      printf '    %-22s %-26s %4spx  NO MEDIDO (no parece la pagina: %s)\n' "$gate" "$ruta" "$w" "$titulo"
-      return
-    fi
-    if ! printf '%s' "$out" | grep -q '"coincide":true'; then
-      NAV_BASURA=$((NAV_BASURA+1))
-      printf '    %-22s %-26s %4spx  NO MEDIDO (el ancho no coincide)\n' "$gate" "$ruta" "$w"
-      return
-    fi
-    NAV_MIRADAS=$((NAV_MIRADAS+1))
-    ver="$(printf '%s' "$out" | grep -m1 '"VEREDICTO"' | grep -o 'PASA\|FALLA')"
-    printf '    %-22s %-26s %4spx  %s\n' "$gate" "$ruta" "$w" "${ver:-SIN VEREDICTO}"
-    if [ "$ver" = "FALLA" ]; then
-      NAV_FALLOS=$((NAV_FALLOS+1))
-      printf '%s' "$out" | grep -A6 '"fallos"' | head -7 | sed 's/^/        /'
-    fi
-  }
-
+  NAV_DIR="$(mktemp -d -t navserv-XXXXXXXX)"; : > "$NAV_DIR/lista"; n=0
   for r in $URLS_NAV; do
-    corre_gate "$r" structure-gate.js 1298 720
-    corre_gate "$r" measure-screens.js 1298 720
-    corre_gate "$r" measure-screens.js  390 844
-    # 🔴 20-ago-2026 · EL GATE DE MOVIL. Se cablea aqui el mismo dia que se
-    # escribe, y no despues: un gate fuera de la cadena no guarda nada -- este
-    # sitio ya tiene dos casos escritos de gates dias en rojo sin que nadie los
-    # viera. Lo que caza no lo ve ningun otro: si el visitante puede ACTUAR
-    # desde el telefono (accion sobre el pliegue, y sin nada encima).
-    # Mismo ancho que la linea de arriba, a proposito: los dos hablan del mismo
-    # movil y se leen juntos.
+    # 🔴 20-ago-2026 · EL GATE DE MOVIL. Se cableo aqui el mismo dia que se
+    # escribio, y no despues: un gate fuera de la cadena no guarda nada. Lo que
+    # caza no lo ve ningun otro: si el visitante puede ACTUAR desde el telefono
+    # (accion sobre el pliegue, y sin nada encima). Mismo ancho que la densidad,
+    # a proposito: los dos hablan del mismo movil y se leen juntos.
     # ⚠️ Mide la PRIMERA VISITA. El escenario "ya acepto cookies" exige pulsar
     # el banner, y esta puerta no toma decisiones de consentimiento por nadie;
     # el informe del gate lo declara en cada corrida.
-    corre_gate "$r" mobile-gate.js 390 844
+    for m in "structure-gate.js 1298 720 c" "measure-screens.js 1298 720 -" \
+             "measure-screens.js 390 844 -" "mobile-gate.js 390 844 c"; do
+      n=$((n+1)); printf '%s %s %s\n' "$n" "$r" "$m" >> "$NAV_DIR/lista"
+    done
   done
+  nav_corre "$NAV_DIR" "$NAV_DIR/lista"
+  NAV_N=$n   # el while de abajo deja n vacio: los formularios siguen la cuenta desde aqui
+  while read -r n r g w h c; do
+    nav_lee "$NAV_DIR/$n.out" "$g" "$r" "$w"
+    case "$NAV_R" in
+      PASA)  NAV_MIRADAS=$((NAV_MIRADAS+1)) ;;
+      FALLA) NAV_MIRADAS=$((NAV_MIRADAS+1)); NAV_FALLOS=$((NAV_FALLOS+1)) ;;
+      *)     NAV_BASURA=$((NAV_BASURA+1)) ;;
+    esac
+  done < "$NAV_DIR/lista"
+  # Los formularios, en serie y con su propia configuracion: forms-gate exige el
+  # formulario en estas paginas, que es otra pregunta que «que cuenta como convertir».
   for r in $URLS_FORM; do
-    corre_gate "$r" forms-gate.js 1298 720 '{"exigeFormulario":true}'
-    corre_gate "$r" forms-gate.js  390 844 '{"exigeFormulario":true}'
+    for w in "1298 720" "390 844"; do
+      NAV_N=$((NAV_N+1))
+      nav_mide "$NAV_DIR/$NAV_N.out" "${SITIO%/}$r" forms-gate.js ${w% *} ${w#* } '{"exigeFormulario":true}'
+      nav_lee "$NAV_DIR/$NAV_N.out" forms-gate.js "$r" "${w% *}"
+      case "$NAV_R" in
+        PASA)  NAV_MIRADAS=$((NAV_MIRADAS+1)) ;;
+        FALLA) NAV_MIRADAS=$((NAV_MIRADAS+1)); NAV_FALLOS=$((NAV_FALLOS+1)) ;;
+        *)     NAV_BASURA=$((NAV_BASURA+1)) ;;
+      esac
+    done
   done
+  rm -rf "$NAV_DIR"
 
   # Un formulario no medido NO es un formulario correcto. Si el repo no declara
   # donde estan, se dice -- callarlo dejaria el paso 10 en el mismo sitio del
@@ -1216,13 +1478,14 @@ else
          --repo "$REPO" >/dev/null 2>&1
   fi
   perl "$REF/receipt.pl" \
-       --anotar "NAVEGADOR $NAV_MIRADAS medidas · $NAV_FALLOS FALLA · $NAV_BASURA sin medir por ancho" \
+       --anotar "NAVEGADOR $NAV_MIRADAS medidas · $NAV_FALLOS FALLA · $NAV_BASURA sin medir" \
        --repo "$REPO" >/dev/null 2>&1
   if [ "$NAV_FALLOS" != 0 ]; then
     echo
     echo "  El despliegue esta hecho y G11 lo ha verificado: los ficheros estan."
-    echo "  Lo que falla es lo que solo se ve con un navegador, y queda anotado."
-    echo "  No se deshace nada por esto, pero tampoco salio limpio."
+    echo "  Lo que falla es lo que solo se ve con un navegador EN LO SERVIDO, y queda"
+    echo "  anotado. Si el 1-quater dio verde sobre el candidato, la diferencia la pone"
+    echo "  el host (cache, CDN, cabeceras) o un formulario: se mira alli, no en el arbol."
   fi
 fi
 exit 0

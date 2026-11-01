@@ -41,7 +41,7 @@ recibo-hook|bash receipt-tests/tests-hook.sh|0|el hook que bloquea subir sin rec
 recibo-cdn|perl receipt-tests/cdn-controls.pl|0|G11 detras de un CDN que reescribe imagenes
 recibo-sello|bash receipt-tests/tests-sealing.sh|0|el asset sellado con ?v= y el cache de la URL desnuda
 recibo-404|bash receipt-tests/tests-404-host.sh|0|G11 le pregunta al host por su 404 (EST-03): generica, soft 404, sin 404.html
-puerta-sobras|bash deploy-tests/tests.sh|0|4-bis: lo retirado del arbol que el tar dejo vivo en el destino
+puerta-sobras|bash deploy-tests/tests.sh|0|4-bis: lo retirado del arbol que el tar dejo vivo en el destino; 1-quater: el navegador sobre el candidato para la subida
 audit-vs-spec|perl audit-vs-spec-tests/tests.pl|0|la spec contra el arbol
 audit-vs-origen|bash audit-vs-source-tests/tests.sh|0|el gate de migracion (medios)
 gate-formularios|bash forms-gate-tests/tests.sh|1|el formulario en el DOM (paso 10)
@@ -51,6 +51,7 @@ medir-pantallas|bash measure-screens-tests/tests.sh|1|densidad: la UNIDAD y los 
 gate-estructura|bash structure-gate-tests/battery.sh|1|maqueta: prosa vs maquetada, 3 REVISAR congelados
 moldes-maqueta|bash structure-gate-tests/battery-layout.sh|1|los moldes: colisiones, contraste AA, anchos
 gate-movil|bash mobile-gate-tests/battery.sh|1|movil: accion sobre el pliegue y CTA tapado (mide en el SERVIDOR)
+gate-menu|bash mobile-menu-gate-tests/battery.sh|1|menu movil a 390: una fila o un boton que abre, aria-expanded, cerrado fuera del Tab (mide en el SERVIDOR)
 conformidad|perl compliance-selftest.pl|1|la matriz y su alcance (sonda home-only)
 historial|perl history-gate.pl|0|el registro nombra al check que acusa
 form-handler|bash form-handler-tests/tests.sh|1|la plantilla del formulario: php -l y ejecucion
@@ -79,7 +80,7 @@ echo "==========================================================================
 #    total de ESTA maquina -881 el dia del cambio- y doc-gate se pondria rojo a
 #    todo el que clone el repo sin servidor de medida: el mismo falso rojo que
 #    `historial` ya enseno a evitar.
-DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil form-handler"
+DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil gate-menu form-handler"
 TOT_ESTADO=0
 TOT_OK=0; TOT_MAL=0; ROTOS=""; NO_MEDIDOS=""
 # 28-sep-2026 · para D9: el recuento de cada banco que PASA, los que esta

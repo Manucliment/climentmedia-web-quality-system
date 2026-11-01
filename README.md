@@ -60,16 +60,16 @@ paths/            Four entry points. Start here, not in blueprint/.
   3-add-page.md         Add a page to a site already published
   4-iterate-seo-design.md   Iterate SEO or design on a live site
 
-blueprint/        The method. 19 reference documents — consulted, not read end to end.
+blueprint/        The method. 20 reference documents — consulted, not read end to end.
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
-gates/            The executable half. 36 programs and 33 test batteries.
+gates/            The executable half. 37 programs and 34 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.
-docs/             The trap log: 84 traps, each with the failure that produced it.
+docs/             The trap log: 90 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.
 GLOSSARY.md       Receipt, gate, lens, scope, mould, primitive, prose-page.
 ```
 
-**Do not read the 19 references.** Open the path for your job; it points at what you
+**Do not read the 20 references.** Open the path for your job; it points at what you
 need, when you need it. The references are lookup material.
 
 ---
@@ -146,11 +146,11 @@ Two numbers, both published because both can go down:
 
 | Number | Today | What it means |
 |---|---|---|
-| Test cases green | **835 cases green · 0 red** on `--fast`, **1462 cases green** on a full run | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect. Both figures are for a clean install; a machine that has deployed reads two more, and one with a measurement host configured runs three more banks |
+| Test cases green | **848 cases green · 0 red** on `--fast`, **1480 cases green** on a full run | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect. Both figures are for a clean install; a machine that has deployed reads two more, and one with a measurement host configured runs four more banks |
 | Checks **with a fixture** | **134 of 142 (94%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
 > **And the second number states its own scope, which is the honest half of it.** That 94% is
-> measured over **4 programs out of 36**. The coverage tool prints the 32 it does not measure,
+> measured over **4 programs out of 37**. The coverage tool prints the 33 it does not measure,
 > by name, on every run. A coverage figure without its scope is exactly the kind of claim this
 > system exists to stop, so it does not get quoted without this line.
 >

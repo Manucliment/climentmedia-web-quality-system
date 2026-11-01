@@ -29,8 +29,13 @@ SITE=https://your-domain.tld
 UPLOAD=_deploy/upload.sh
 
 # ── Browser step: the things only a browser can see ──────────────────────────
-# Runs the structure, screen-density and forms gates against what has JUST been
-# served. Does not block; records its verdict in the history file.
+# Runs TWICE (2026-11-01, traps §89):
+# - BEFORE the upload (step 1-quater), on the tree about to go up: structure,
+#   screen density, mobile at 360/390/1366/1440 and the mobile menu at 390. A
+#   FAIL STOPS the upload. Going up anyway takes an --aun-asi that names each red
+#   gate; a motive saying "the browser answers it" is refused.
+# - AFTER the upload (step 6), on what is served, with the forms gate. It does
+#   not block; it records its verdict in the history file.
 #
 # IMPORTANT: run this from a Linux host with a real Chrome. On Windows, headless
 # Chrome clamps the window width to about 500px, so a measurement "at 390"
@@ -38,7 +43,21 @@ UPLOAD=_deploy/upload.sh
 # any probe for its innerWidth and refuse the number if it does not match.
 
 # Which pages get measured for layout and density. Default: the home page only.
+# With this line set, a page the browser could not measure before the upload
+# also stops it, unless the --aun-asi says why.
 BROWSER_URLS="/ /contact/"
+
+# Where this site takes bookings, besides the platforms the gates already know
+# (space-separated host names; see blueprint/20-external-booking.md). A button
+# to one of them counts as converting. It says WHERE booking happens; the hero
+# button still has to go there.
+# BOOKING_HOSTS="mybookingplatform.example"
+
+# A shop: the hero may lead to the catalogue instead of converting on the page.
+# ECOMMERCE=1
+
+# How many browser measurements run at once on the measuring host (default 3).
+# NAV_PARALELO=3
 
 # Which pages have a form. On these, the form step is REQUIRED: a page here that
 # ends up without a working form is a FAIL, not a "does not apply". Without this

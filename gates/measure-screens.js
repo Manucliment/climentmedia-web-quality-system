@@ -234,17 +234,30 @@
   //
   //  Se cuentan las palabras VISIBLES (innerText): lo que esta plegado en un
   //  acordeon no ocupa alto, asi que tampoco compra allowance.
+  //
+  //  🔴 1-nov-2026 · Y EL PRESUPUESTO TIENE TECHO. Sin el, el limite crecia una
+  //  pantalla por cada 80 palabras SIN FIN: una pagina de 2.000 palabras tenia
+  //  derecho a 26 pantallas, y una web de reservas paso este gate con paginas en
+  //  las que el boton quedaba a muchas pantallas de cualquier visitante. Que el
+  //  texto sea decision del cliente justifica no castigar la densidad; no
+  //  justifica una pagina que nadie recorre. El techo es el DOBLE del colchon (12):
+  //  a partir de ahi lo que sobra no es maqueta que se aprieta, es una pagina que
+  //  se parte en dos (o un acordeon, que no ocupa alto y tampoco compra
+  //  presupuesto, ver arriba).
   const PALABRAS_GRATIS = 400;
   const PALABRAS_POR_PANTALLA = 80;
+  const TOPE_PANTALLAS = 12;
   const raizTexto = document.querySelector("main") || document.body;
   const textoVisible = (raizTexto.innerText || "").replace(/\s+/g, " ").trim();
   const palabras = textoVisible ? textoVisible.split(" ").length : 0;
-  const limitePantallas = 6 + Math.max(0, palabras - PALABRAS_GRATIS) / PALABRAS_POR_PANTALLA;
+  const limiteSinTope = 6 + Math.max(0, palabras - PALABRAS_GRATIS) / PALABRAS_POR_PANTALLA;
+  const limitePantallas = Math.min(TOPE_PANTALLAS, limiteSinTope);
 
   const fallos = [];
   if (desbordan.length) fallos.push(`${desbordan.length} bloque(s) con mas de una pantalla SIN UNA PARADA`);
   if (gigantes.length) fallos.push(`${gigantes.length} bloque(s) de mas de 3 pantallas (limite del contenedor)`);
-  if (alto / vh > limitePantallas) fallos.push(`la pagina son ${(alto / vh).toFixed(1)} pantallas de scroll (limite ${limitePantallas.toFixed(1)} para sus ${palabras} palabras visibles)`);
+  if (alto / vh > limitePantallas) fallos.push(`la pagina son ${(alto / vh).toFixed(1)} pantallas de scroll (limite ${limitePantallas.toFixed(1)} para sus ${palabras} palabras visibles` +
+    (limiteSinTope > TOPE_PANTALLAS ? `: el presupuesto por palabras daria ${limiteSinTope.toFixed(1)}, y el techo es ${TOPE_PANTALLAS}` : '') + `)`);
   if (peorPx > vh * 2.5) fallos.push(`se recorren ${(peorPx / vh).toFixed(1)} pantallas seguidas sin un solo CTA (limite 2,5)`);
   if (totalCTA < 2) fallos.push(`solo ${totalCTA} CTA en toda la pagina`);
 
@@ -256,6 +269,7 @@
     resumen: {
       pantallasDeScroll: +(alto / vh).toFixed(1),
       limitePantallas: +limitePantallas.toFixed(1),
+      techoPantallas: TOPE_PANTALLAS,
       palabrasVisibles: palabras,
       palabrasPorPantalla: palabras ? +(palabras / (alto / vh)).toFixed(0) : 0,
       bloques: bloques.length,

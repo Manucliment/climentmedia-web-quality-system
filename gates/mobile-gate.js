@@ -27,6 +27,17 @@
 //        Regla del estandar, `09-tipos-de-pagina.md` §2 fila `hero`:
 //        "Sin accion sobre el pliegue, el 60% que solo ve esto no tiene que
 //        hacer". Estaba escrita y no la comprobaba nadie.
+//        🔴 1-nov-2026 · Y TIENE QUE SER LA DE CONVERTIR, ENTERA A LA VISTA. Una
+//        web de reservas salio con sus botones por debajo del primer pantallazo
+//        y el del hero llevando a otra pagina en vez de a reservar. Este gate
+//        daba PASA a cualquier `.btn` cuyo borde SUPERIOR asomara (`top < vh`) y
+//        solo se corria a 390. Ahora, en los tipos cuyo hero convierte (los
+//        `hero:true` de structure-gate.js: home, servicio, ciudad, ficha,
+//        precios, landing) hace falta una accion que CONVIERTA -la regla del
+//        bloque CONVIERTE, la misma de structure-gate- con su caja ENTERA dentro
+//        del primer pantallazo y sin nada encima. La puerta lo corre a 360x740,
+//        390x844, 1366x768 y 1440x900. Lo flotante (fixed/sticky) no cuenta: es
+//        cromo, esta en todas las paginas, como el boton de la cabecera.
 //
 //    M2  CERO CTAs tapados por cromo flotante, esten donde esten.
 //        Regla NUEVA (no estaba escrita en ningun sitio). Se anade tambien a
@@ -67,12 +78,94 @@
     trasConsentimiento: false,
     // Ancho que se PIDIO. Lo inyecta `run-gate.js` en cada corrida; el 390 de
     // aqui es solo el que se usa si alguien ejecuta el gate a mano.
-    anchoPedido: 390
+    anchoPedido: 390,
+    // Lo mismo que en structure-gate.js: una tienda puede llevar el hero al
+    // catalogo (09 §3.1), y M1 acepta entonces cualquier accion. La puerta lo
+    // pasa si deploy.conf declara ECOMMERCE=1.
+    ecommerce: false,
+    // Plataformas de reserva propias de la web, ademas de HOSTS_RESERVA_BASE.
+    // La puerta las pasa desde HOSTS_RESERVA= de deploy.conf.
+    hostsReserva: [],
+    origen: null
   }, (typeof window !== 'undefined' && window.__GATE__) || {});
 
   const esperar = ms => new Promise(r => setTimeout(r, ms));
   const vw = innerWidth, vh = innerHeight;
   const dentro = (a, b) => a === b || a.contains(b) || b.contains(a);
+  const BASE   = (document.querySelector('base') || {}).href || location.href;
+  const ORIGEN = CFG.origen || (() => { try { return new URL(BASE).origin; }
+                                        catch (e) { return location.origin; } })();
+
+// ── CONVIERTE · que accion es un mecanismo de conversion ──────────────────────
+//  🔴 BLOQUE IDENTICO en structure-gate.js y mobile-gate.js, de la linea de arriba
+//  a la de cierre: el banco de mobile-gate (CONVIERTE-COPIA) los compara byte a
+//  byte. Dos copias de una regla divergen (07-trampas §68); hasta que haya una
+//  sola fuente, la copia que se aparte de la otra pone el banco en rojo.
+//  1-nov-2026 · RESERVAR FUERA ES CONVERTIR. Una barberia que reserva en una
+//  plataforma externa tenia su «Reservar» contado como un enlace mas, y su hero
+//  como «un hero que ENLAZA»: la regla solo conocia tel:, mailto:, WhatsApp y
+//  cuatro agendas. HOSTS_RESERVA_BASE son las plataformas conocidas; cada web
+//  anade las suyas con HOSTS_RESERVA= en deploy.conf (llega en __GATE__.hostsReserva).
+//  Una palabra sin punto casa con una etiqueta del host (treatwell -> treatwell.nl,
+//  widget.treatwell.es); con punto, con ese host o un subdominio suyo.
+//  Y LA HOJA DE RESERVA PROPIA: un ancla (#reservar) o un boton que abre un panel
+//  (aria-controls, popovertarget, data-target) convierte si lo que abre recoge el
+//  dato: un formulario, o un enlace o un iframe que convierten por si mismos.
+const RE_CONVIERTE = /^tel:|^mailto:|wa\.me|whatsapp|calendly|cal\.com|typeform|hubspot|^https?:\/\/[^\/]*(book|meet)/i;
+const RE_RUTA_CONV = /contact|contacto|audit|auditor|presupuesto|cita|reserv|book|boek|afspraak|offerte|rendez|demo|devis|rdv|quote|empez|start|signup|sign-up|registro|register|checkout|carrito|cart|comprar|apply|candidat|trial|prueba|merci|gracias/i;
+const HOSTS_RESERVA_BASE = ['bjootify', 'treatwell', 'salonized', 'fresha', 'planity', 'booksy', 'setmore',
+  'simplybook', 'timify', 'acuityscheduling', 'youcanbook', 'doctolib', 'vagaro', 'mindbodyonline',
+  'phorest', 'uala', 'zenoti'];
+const HOSTS_RESERVA = HOSTS_RESERVA_BASE.concat(
+  (Array.isArray(CFG.hostsReserva) ? CFG.hostsReserva : String(CFG.hostsReserva || '').split(/[\s,]+/))
+    .map(h => String(h).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''))
+    .filter(Boolean));
+function esHostReserva (href) {
+  let u; try { u = new URL(href, BASE); } catch (e) { return false; }
+  if (!/^https?:$/.test(u.protocol)) return false;
+  const host = u.hostname.toLowerCase(), etiquetas = host.split('.');
+  return HOSTS_RESERVA.some(h => h.includes('.') ? (host === h || host.endsWith('.' + h)) : etiquetas.includes(h));
+}
+// 1-nov-2026 · «la misma web» es el mismo SITIO, no el mismo origen: el alta de una aplicacion vive en
+// app.<dominio>, y el barrido de las webs publicadas la daba por «otra web» (hero que ENLAZA, en falso).
+// Dominio registrable aproximado: las dos ultimas etiquetas, o tres tras un sufijo corto de pais (co.uk).
+function sitioDe (host) {
+  const e = String(host || '').toLowerCase().split('.');
+  const n = (e.length > 2 && e[e.length - 1].length === 2 && /^(co|com|org|net|gob|gov|ac|edu)$/.test(e[e.length - 2])) ? 3 : 2;
+  return e.slice(-n).join('.');
+}
+function mismoSitio (u) {
+  if (u.origin === ORIGEN) return true;
+  let o; try { o = new URL(ORIGEN); } catch (e) { return false; }
+  return /^https?:$/.test(u.protocol) && sitioDe(u.hostname) === sitioDe(o.hostname);
+}
+function convierteSolo (el) {
+  if (el.tagName === 'IFRAME') return esHostReserva(el.src || '') || RE_CONVIERTE.test(el.getAttribute('src') || '');
+  if (el.tagName === 'BUTTON' || el.tagName === 'INPUT') return !!el.closest('form');
+  const h = el.getAttribute('href') || '';
+  if (RE_CONVIERTE.test(h) || esHostReserva(h)) return true;
+  if (h.charAt(0) === '#') return false;
+  // en el mismo origen cuenta la ruta; en un subdominio hermano, tambien la consulta (?entrar=registro)
+  try { const u = new URL(el.href, BASE);
+        return mismoSitio(u) && RE_RUTA_CONV.test(u.pathname + (u.origin === ORIGEN ? '' : u.search)); }
+  catch (e) { return RE_RUTA_CONV.test(h); }
+}
+function abreA (el) {
+  const h = el.getAttribute('href') || '';
+  let id = /^#./.test(h) ? h.slice(1) : '';
+  if (!id) id = el.getAttribute('aria-controls') || el.getAttribute('popovertarget') ||
+                (el.getAttribute('data-target') || el.getAttribute('data-bs-target') || '').replace(/^#/, '');
+  if (!id) return null;
+  try { return document.getElementById(decodeURIComponent(id.split(/\s+/)[0])); } catch (e) { return null; }
+}
+function convierte (el) {
+  if (convierteSolo(el)) return true;
+  const d = abreA(el);
+  if (!d || d === el || d.contains(el)) return false;
+  return !!(d.matches('form') || d.querySelector('form') ||
+            [...d.querySelectorAll('a[href],iframe[src]')].some(convierteSolo));
+}
+// ── /CONVIERTE ────────────────────────────────────────────────────────────────
 
   const visible = el => {
     const r = el.getBoundingClientRect();
@@ -237,6 +330,10 @@
     const p = location.pathname.toLowerCase();
     if (/legal|privac|cookie|condi|terms|mentions|aviso/.test(p)) tipo = 'legal';
     else if (/gracias|merci|thanks|bedankt/.test(p)) tipo = 'gracias';
+    // La portada (y la de cada idioma, /en/) es `home`: su hero convierte. Lo demas
+    // sin declarar sigue en `otro`, que pide una accion y no que convierta: inferir
+    // `servicio` de una ruta cualquiera acusaria a una guia sin `data-tipo`.
+    else if (/^\/([a-z]{2}\/)?(index\.html?)?$/.test(p)) tipo = 'home';
     else tipo = 'otro';
     tipoDe = 'inferido de la ruta';
   }
@@ -255,6 +352,34 @@
   // inferencia, igual que con el resto de `data-tipo`.
   const SIN_CTA_OBLIGATORIO = ['legal', 'gracias', 'recurso'];
   const exigeCTA = !SIN_CTA_OBLIGATORIO.includes(tipo);
+  // Los tipos `hero:true` de structure-gate.js: su hero CONVIERTE, no enlaza (09 §3).
+  // `empleo` (hero:'accion'), hub, guia, contacto, nosotros y `otro` piden una
+  // accion, como antes. Una tienda (ecommerce) puede llevar el hero al catalogo.
+  const HERO_CONVIERTE = ['home', 'servicio', 'ciudad', 'producto', 'ficha', 'precios', 'landing', 'quiz'];
+  const exigeConversion = exigeCTA && HERO_CONVIERTE.includes(tipo) && !CFG.ecommerce;
+
+  // --- M1 · lo que se ve ENTERO en el primer pantallazo ---------------------
+  // Se mide sobre el documento (yDoc), no sobre la pantalla: si algo dejo la pagina
+  // desplazada, el primer pantallazo sigue siendo 0..vh. Cuenta todo <a>/<button>
+  // de <main> que sea CTA o que convierta (un «Reserveer» en texto llano tambien
+  // es la accion), menos lo flotante.
+  const flotanteDe = el => { for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    const p = getComputedStyle(n).position; if (p === 'fixed' || p === 'sticky') return true; } return false; };
+  const candM1 = [...main.querySelectorAll('a[href],button,input[type=submit]')]
+    .filter(e => visible(e) && !flotanteDe(e) && (esCTA(e) || convierte(e)))
+    .map(el => {
+      const r = el.getBoundingClientRect();
+      const top = r.top + scrollY, bottom = r.bottom + scrollY;
+      const e = estado(el);
+      return Object.assign(e, {
+        convierte: convierte(el),
+        destino: (el.getAttribute('href') || (el.closest('form') ? '(formulario)' : '')).slice(0, 60),
+        entero: top >= 0 && bottom <= vh && r.left >= 0 && r.right <= vw,
+        asoma: top < vh && bottom > vh,
+        bordeInferior: Math.round(bottom)
+      });
+    });
+  const m1Validas = candM1.filter(c => c.entero && !c.tapadoPor && (!exigeConversion || c.convierte));
 
   // 🔴 ¿ES ESTO SIQUIERA UNA PAGINA? Un 404, un cascaron o un muro anti-bot dan
   // `ctas: 0` -- exactamente igual que una pagina real sin botones. Y el fallo
@@ -273,11 +398,9 @@
       `404, cascaron que monta JS, o muro anti-bot. NO se juzga la maqueta de esto.`);
   } else if (!exigeCTA) {
     notas.push(`M1 no aplica: tipo "${tipo}" (${tipoDe}) no exige accion sobre el pliegue`);
-  } else if (!info.length) {
+  } else if (!info.length && !candM1.length) {
     fallos.push('M1 · la pagina no tiene NI UN CTA: no hay nada que pulsar');
-  } else if (!utilesArriba.length) {
-    const d = primero ? `el primero util cae a ${primero.pantallas} pantallas ("${primero.txt}")`
-                      : 'y ninguno esta libre de estorbos';
+  } else if (!m1Validas.length) {
     // 🔴 "PROPIA DE LA PAGINA" no es un matiz: se cuenta solo lo que hay DENTRO
     // de <main>. Un boton en la cabecera pegajosa esta sobre el pliegue en las
     // 18 paginas del sitio por igual, asi que contarlo haria que TODAS pasaran
@@ -285,8 +408,26 @@
     // "un hero que convierte, no uno que enlaza". El cromo no convierte.
     // Se dice en el fallo para que nadie lo lea como un falso positivo mirando
     // el boton del menu.
-    fallos.push(`M1 · ninguna accion PROPIA DE LA PAGINA sobre el pliegue: ${d}` +
-      ` (los CTA de cabecera/pie no cuentan: son cromo, estan en todas)`);
+    // Y el fallo dice CUAL de las tres cosas falta, porque se arreglan distinto:
+    // no hay ninguna que convierta (el hero enlaza), la hay pero cae debajo o
+    // asoma cortada (la maqueta), o esta tapada (el cromo, que M2 detalla).
+    const pantalla = `${vw}x${vh}`;
+    const utiles = candM1.filter(c => !exigeConversion || c.convierte).sort((a, b) => a.yDoc - b.yDoc);
+    const arribaQueEnlazan = candM1.filter(c => c.entero && !c.tapadoPor && !c.convierte);
+    let d;
+    if (!utiles.length) {
+      d = `ninguna accion de la pagina CONVIERTE` +
+          (arribaQueEnlazan.length ? ` (a la vista: ${arribaQueEnlazan.slice(0, 3).map(c => `«${c.txt}» -> ${c.destino}`).join(' · ')})` : '') +
+          `: es un hero que ENLAZA, no que convierte (09 §3)`;
+    } else {
+      const u = utiles[0];
+      d = u.tapadoPor ? `la primera que ${exigeConversion ? 'convierte' : 'sirve'}, «${u.txt}», esta TAPADA por ${u.tapadoPor}`
+        : u.asoma ? `la primera que ${exigeConversion ? 'convierte' : 'sirve'}, «${u.txt}», ASOMA CORTADA: su borde inferior cae a ${u.bordeInferior}px y la pantalla acaba en ${vh}`
+        : `la primera que ${exigeConversion ? 'convierte' : 'sirve'}, «${u.txt}», cae a ${u.pantallas} pantallas`;
+    }
+    fallos.push(`M1 · ninguna accion ${exigeConversion ? 'DE CONVERSION ' : ''}PROPIA DE LA PAGINA entera a la vista ` +
+      `en el primer pantallazo (${pantalla}): ${d}` +
+      ` (los CTA de cabecera/pie y lo flotante no cuentan: son cromo, estan en todas)`);
   }
 
   // M2 · no se juzga lo que no es una pagina
@@ -372,6 +513,10 @@
       // numero alto, ese es el que se te escapa midiendo al cargar.
       cromoAparecioMs: cambios,
       exigeCTAsobrePliegue: exigeCTA,
+      exigeConversion,
+      // M1, lo que se vio: cada accion con si convierte y si cabe ENTERA arriba
+      m1: candM1.slice(0, 8).map(c => ({ txt: c.txt, destino: c.destino, convierte: c.convierte,
+            entero: c.entero, tapado: c.tapadoPor || null, pantallas: c.pantallas })),
       ctas: info.length,
       ctasSobrePliegue: info.filter(c => c.sobrePliegue).length,
       ctasUtilesSobrePliegue: utilesArriba.length,
