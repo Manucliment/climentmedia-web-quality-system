@@ -285,18 +285,28 @@ function convierte (el) {
 
   const estado = el => {
     const r = el.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = Math.min(Math.max(r.top + r.height / 2, 1), vh - 1);
     // Solo se puede preguntar por lo que esta EN pantalla. Lo de mas abajo se
     // evalua por su posicion, no por oclusion: tapar algo fuera de vista no es
     // taparlo, y decir que si seria un falso positivo garantizado.
     const enPantalla = r.bottom > 0 && r.top < vh;
-    let tapadoPor = null;
+    // tapadoPor: lo que hay sobre el CENTRO (lo que leen M1 y M2, como siempre).
+    // tapadoParte: el centro esta libre pero otro punto del boton no. 1-nov-2026 ·
+    // con solo el centro, un boton del hero con su borde de abajo bajo el aviso de
+    // cookies (19 px de 78) pasaba. Se mira una rejilla de 3x3 al 20/50/80 % del
+    // boton, dentro de la pantalla. En una esquina redonda el punto cae en el
+    // fondo, que CONTIENE al boton: dentro() no lo cuenta, y la rejilla no acusa a
+    // un boton pildora. Solo lo lee M2 (abajo dice cuando es fallo).
+    let tapadoPor = null, tapadoParte = null;
     if (enPantalla) {
-      const encima = document.elementFromPoint(cx, cy);
-      if (!encima || !dentro(el, encima)) {
-        tapadoPor = encima ? encima.tagName + '.' + ((encima.getAttribute('class') || '-').split(' ')[0])
-                           : '(fuera del arbol)';
+      const quien = e => e ? e.tagName + '.' + ((e.getAttribute('class') || '-').split(' ')[0]) : '(fuera del arbol)';
+      const xs = [0.2, 0.5, 0.8].map(f => Math.min(Math.max(r.left + r.width * f, 1), vw - 1));
+      const ys = [0.2, 0.5, 0.8].map(f => Math.min(Math.max(r.top + r.height * f, 1), vh - 1));
+      const tapa = (x, y) => { const e = document.elementFromPoint(x, y); return !e || !dentro(el, e) ? { e } : null; };
+      const c = tapa(xs[1], ys[1]);
+      if (c) tapadoPor = quien(c.e);
+      else {
+        const otros = ys.flatMap(y => xs.map(x => tapa(x, y))).filter(Boolean);
+        if (otros.length) tapadoParte = `${quien(otros[0].e)} (en parte: ${otros.length} de 9 puntos)`;
       }
     }
     return {
@@ -305,7 +315,7 @@ function convierte (el) {
       yDoc: Math.round(r.top + scrollY),
       pantallas: +((r.top + scrollY) / vh).toFixed(2),
       sobrePliegue: (r.top + scrollY) < vh,
-      enPantalla, tapadoPor
+      enPantalla, tapadoPor, tapadoParte, convierte: convierte(el)
     };
   };
 
@@ -447,9 +457,15 @@ function convierte (el) {
   // roto.
   //   FALLO -> el CTA tapado esta en el HERO (la accion principal, al aterrizar)
   //   AVISO -> tapado en cualquier otro sitio
+  // 1-nov-2026 · tapado EN PARTE (el centro libre, el borde no; ver estado()):
+  //   FALLO -> en el hero y es el que CONVIERTE (un sitio de servicio a domicilio: «Llamar», 19 px bajo el aviso)
+  //   AVISO -> en el hero y solo enlaza (un sitio de software: «See pricing», 3 de 9
+  //            puntos bajo el aviso): la accion principal no es esa
+  //   fuera del hero, en parte, no se dice: ni el tapado entero alli es fallo.
   // ⚠️ Un gate que nunca se puede satisfacer es un gate que alguien apaga. Esto
   // NO es bajar el liston: es apuntarlo a lo que se puede y se debe arreglar.
-  if (tapados.length && !pareceRoto) {
+  const enParte = info.filter(c => c.tapadoParte);
+  if ((tapados.length || enParte.length) && !pareceRoto) {
     const enHero = c => {
       const el = [...(document.querySelector('main') || document.body).querySelectorAll('a,button')]
         .find(e => (e.innerText || e.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 30) === c.txt);
@@ -457,11 +473,17 @@ function convierte (el) {
       const sec = el.closest('[data-sec="hero"], .hero, .lp-hero, section:first-of-type');
       return !!sec;
     };
-    const graves = tapados.filter(enHero);
+    const graves = [...tapados.filter(enHero), ...enParte.filter(c => enHero(c) && c.convierte)];
     const leves  = tapados.filter(c => !enHero(c));
+    const parteQueEnlaza = enParte.filter(c => enHero(c) && !c.convierte);
     if (graves.length) {
       fallos.push(`M2 · ${graves.length} CTA(s) del HERO TAPADOS por cromo flotante: ` +
-        graves.map(c => `"${c.txt}" bajo ${c.tapadoPor}`).join(' · '));
+        graves.map(c => `"${c.txt}" bajo ${c.tapadoPor || c.tapadoParte}`).join(' · '));
+    }
+    if (parteQueEnlaza.length) {
+      avisos.push(`M2 · ${parteQueEnlaza.length} enlace(s) del hero tapados EN PARTE al cargar: ` +
+        parteQueEnlaza.map(c => `"${c.txt}" bajo ${c.tapadoParte}`).join(' · ') +
+        ' (no es la accion que convierte; si lo fuera, seria fallo)');
     }
     if (leves.length) {
       avisos.push(`M2 · ${leves.length} CTA(s) tapados al cargar, fuera del hero: ` +

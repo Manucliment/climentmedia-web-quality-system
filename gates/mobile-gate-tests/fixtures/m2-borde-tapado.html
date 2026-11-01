@@ -1,0 +1,16 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>M2: el borde de un CTA del hero bajo el aviso (tapado)</title><link rel="stylesheet" href="_base.css"></head><body>
+<!-- 1-nov-2026 (un sitio real, 390x844): el segundo boton del hero va de 670 a 748 y el aviso empieza en 729. Su CENTRO (709)
+     queda libre, y M2 miraba solo el centro: PASA con 19 px del boton debajo del aviso. Pareja: m2-borde-libre, el
+     mismo boton de 600 a 678, entero por encima del aviso, que tiene que seguir pasando. -->
+<header class="nav">Marca</header>
+<main data-tipo="servicio">
+  <section data-sec="hero">
+    <h1>Fisioterapia a domicilio</h1>
+    <p>Recibe tratamiento en tu casa, adaptado a tu movilidad y a tu ritmo.</p>
+    <p><a class="btn" href="/contacto/">Pedir cita</a></p>
+    <a class="btn" href="tel:+3200000000" style="position:absolute;top:670px;left:16px;height:78px;line-height:50px">Llamar</a>
+  </section>
+  <div class="relleno"><h2>Como funciona</h2><p>El tratamiento empieza con una valoracion inicial.</p></div>
+</main>
+<div class="banner" style="height:115px">Usamos cookies. <button class="btn">Aceptar</button></div>
+</body></html>

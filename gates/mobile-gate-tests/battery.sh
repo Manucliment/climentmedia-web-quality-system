@@ -28,6 +28,8 @@
 #              barra flotante sola, y los cuatro tamanos de la puerta (el boton
 #              que cabe a 390 y asoma a 360). Mas el modo CANDIDATO de
 #              run-gate.js y la copia del bloque CONVIERTE con structure-gate.js
+#    1-nov-2026 · M2 en parte: el CTA del hero con el borde bajo el aviso de
+#              cookies y el centro libre (solo se miraba el centro)
 # =============================================================================
 set -u
 D="$(cd "$(dirname "$0")" && pwd)"
@@ -90,6 +92,13 @@ echo
 echo "=========== M2 · CTA tapado · la distincion hero/fuera ==========="
 res M2-rojo-hero m2-rojo-hero.html      FALLA  'del HERO TAPADOS'
 res M2-aviso     m2-aviso-fuera.html    PASA   'tapados al cargar, fuera del hero'
+# 1-nov-2026 · tapado EN PARTE: el centro libre y el borde bajo el aviso. El que
+# convierte, fallo; el que solo enlaza, aviso. Mas sus dos controles: el mismo boton
+# entero por encima del aviso, y un boton pildora (su esquina da el fondo).
+res M2-borde     m2-borde-tapado.html   FALLA  'en parte: 3 de 9 puntos'
+res M2-borde-ok  m2-borde-libre.html    PASA
+res M2-pildora   m2-pildora-libre.html  PASA
+res M2-enlace    m2-borde-enlace.html   PASA   'tapados EN PARTE'
 echo
 echo "=========== M3 · cromo por encima del tercio (AVISO, no fallo) ==========="
 res M3-aviso     m3-aviso.html          PASA   'M3 · el cromo flotante cubre'
