@@ -59,6 +59,17 @@ BROWSER_URLS="/ /contact/"
 # How many browser measurements run at once on the measuring host (default 3).
 # NAV_PARALELO=3
 
+# The brand gate (marca-gate.js) only WARNS until you set this. Set it once the
+# site's brand file, _diseno/MARCA.md, is done (palette under «## Colores», type
+# under «## Tipos») and its icons are in place: from then on a missing icon or a
+# colour outside the palette stops the upload like any other browser gate.
+# MARCA_GATE=para
+
+# Third-party widgets whose colours are not the brand's (a chat bubble, a
+# consent tool you cannot style): comma-separated CSS selectors, left out of
+# the palette count. Only letters, digits, # . _ and -.
+# MARCA_IGNORAR="#chat-widget, .third-party-badge"
+
 # Which pages have a form. On these, the form step is REQUIRED: a page here that
 # ends up without a working form is a FAIL, not a "does not apply". Without this
 # line the form step IS NOT MEASURED, and that gets recorded — an unmeasured

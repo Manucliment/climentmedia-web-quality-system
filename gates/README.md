@@ -32,9 +32,9 @@ install the fast run is **859 cases green, 0 red**, with the deploy-history bank
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1492 cases green, 0 red**, with **six** banks reported as
-`NOT MEASURED`: the four that measure on a Linux host (`measure-screens`, `mobile-gate`,
-`mobile-menu-gate`, `form-handler`), the one that needs a client repository this public repository does not
+a clean install it reads **1492 cases green, 0 red**, with **seven** banks reported as
+`NOT MEASURED`: the five that measure on a Linux host (`measure-screens`, `mobile-gate`,
+`mobile-menu-gate`, `marca-gate`, `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
 Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
 `structure-gate` later: see below.)
@@ -435,7 +435,11 @@ whose verdict came from measuring a different object.
 - `structure-gate.js` at 1298;
 - `measure-screens.js` at 1298 and 390;
 - `mobile-gate.js` at 360, 390, 1366 and 1440;
-- `mobile-menu-gate.js` at 390.
+- `mobile-menu-gate.js` at 390;
+- `marca-gate.js` at 1366 and 390 (since 2026-11-01). It **only warns** until the site's
+  `deploy.conf` says `MARCA_GATE=para`, which the site sets once its brand file
+  (`_diseno/MARCA.md`) is done: a door that stopped every site on day one, for something none of
+  them had, would teach everyone to step around it.
 
 They run on every page in `URLS_NAVEGADOR` (`/` if none).
 
@@ -476,6 +480,7 @@ without blocking. Why the order changed is trap §89.
 | `structure-gate.js` | Is this laid out, or is it a wall of prose wearing a stylesheet? |
 | `mobile-gate.js` | An action that **converts** whole on the first screen at 360, 390, 1366 and 1440 (a form, a phone, a message app, a booking platform, a contact path of the same site), and calls to action nothing covers. |
 | `mobile-menu-gate.js` | The mobile menu at 390: the menu fits in one row or sits behind a button with `aria-expanded` that opens it; closed, its links are out of the Tab order. Measures the menu half of `A11Y-13`, not the rest. |
+| `marca-gate.js` | The brand, whole and alone: a logo in the header (a mark made of text and CSS warns), a tab icon in SVG and in PNG or ICO of 32 px or more, an `apple-touch-icon`, a manifest naming 192 and 512, all of them **loading**, `theme-color`, and no colour or typeface outside the site's brand file (`_diseno/MARCA.md`: the `#hex` under «## Colores», the backticked names under «## Tipos»). Without that file the two palette rules say `NOT MEASURED`. The social image is not measured here: S2.9, SEO-06 and SEO-08 already do. |
 | `measure-screens.js` | Density: how much page per screen, measured against the moulds. |
 | `anatomy.pl` | One table of page anatomies, three consumers, and they must agree. |
 | `roles.pl` | The role vocabulary (`roles.tsv` = 09 §1), and it generates one reference sheet per page type into `blueprint/moulds/types/`. `--gate` re-derives all thirteen and fails on any difference, so a sheet edited by hand does not survive a battery. |

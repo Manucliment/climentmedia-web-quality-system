@@ -47,6 +47,10 @@
 #  Claves de deploy.conf que lo afinan: URLS_NAVEGADOR (que paginas), HOSTS_RESERVA
 #  (plataformas de reserva propias, ademas de las conocidas), ECOMMERCE=1 (tienda:
 #  el primer pantallazo no exige un contacto) y NAV_PARALELO (medidas a la vez, 3).
+#  1-nov-2026 · y la marca (marca-gate.js a 1366 y 390: logo en la cabecera, iconos y
+#  manifest que cargan, theme-color, nada fuera de la paleta de _diseno/MARCA.md).
+#  SOLO AVISA hasta que la web pone MARCA_GATE=para (cuando su _diseno/ esta hecho);
+#  MARCA_IGNORAR= lista los selectores de widgets de terceros que no cuentan.
 #  EL FALLO QUE ESTO ARREGLA, encontrado en el primer uso real de la puerta: el
 #  recibo sellaba el arbol del repo con un veredicto sacado de medir PRODUCCION.
 #  site-d salio «VEREDICTO: FALLA» por los 11 defectos que el despliegue
@@ -298,6 +302,28 @@ if [ -n "$HOSTS_RESERVA" ] || [ "$ECOMMERCE" = 1 ]; then
   NAV_CFG="{$( [ -n "$HOSTS_RESERVA" ] && printf '"hostsReserva":"%s"' "$HOSTS_RESERVA" )$( [ -n "$HOSTS_RESERVA" ] && [ "$ECOMMERCE" = 1 ] && printf ',' )$( [ "$ECOMMERCE" = 1 ] && printf '"ecommerce":true' )}"
 fi
 NAV_PARALELO="${NAV_PARALELO:-3}"
+# 1-nov-2026 · LA MARCA. marca-gate.js compara lo que se ve con la paleta y los tipos
+#    del fichero de marca de la web (_diseno/MARCA.md: los #hex bajo «## Colores», los
+#    nombres entre comillas invertidas bajo «## Tipos»). Sin el fichero, las listas van
+#    vacias y el gate dice NO MEDIDO en esas dos reglas: no compara contra nada.
+#    Al principio SOLO AVISA: una puerta que para a las diez webs el primer dia por algo
+#    que ninguna tenia ensena a saltarsela. Para cuando la web pone MARCA_GATE=para.
+#    Va dentro de un JSON y de comillas simples del shell remoto: solo #hex, letras,
+#    cifras, espacio y guion (y en los selectores, # . _ ,).
+MARCA_GATE="${MARCA_GATE:-avisa}"
+MARCA_IGNORAR="$(printf '%s' "${MARCA_IGNORAR:-}" | tr -cd 'A-Za-z0-9#._, -')"
+MARCA_CFG="$(IGN="$MARCA_IGNORAR" perl -e '
+  # dos sentencias: un `my $f` no existe hasta la siguiente, y `open my $f … and <$f>` leia de otra $f, vacia
+  my $s = ""; if (-f $ARGV[0]) { local $/; if (open my $f, "<", $ARGV[0]) { $s = <$f> // ""; } }
+  my ($c) = $s =~ /^##[ \t]+Colores[^\n]*\n(.*?)(?=^##[ \t]|\z)/msi;
+  my ($t) = $s =~ /^##[ \t]+Tipos[^\n]*\n(.*?)(?=^##[ \t]|\z)/msi;
+  my %v; my @col = grep { !$v{$_}++ } map { my $h = lc $_; length($h) == 3 ? join("", map { $_ x 2 } split //, $h) : $h }
+    (($c // "") =~ /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g);
+  my %w; my @tip = grep { length && !$w{lc $_}++ } map { (my $x = $_) =~ tr/A-Za-z0-9 -//cd; $x } (($t // "") =~ /`([^`]+)`/g);
+  my @ign = grep { length } map { s/^\s+|\s+$//gr } split /,/, ($ENV{IGN} // "");
+  my $l = sub { join ",", map { "\"$_\"" } @_ };
+  print "{\"colores\":[", $l->(map { "#$_" } @col), "],\"tipos\":[", $l->(@tip), "],\"ignorar\":[", $l->(@ign), "]}";
+' "$REPO/_diseno/MARCA.md" 2>/dev/null)"
 . "$REF/nav-host.sh"
 NAV_HOST="$(nav_host "$REF")"
 NAV_HOST_CONF="$(nav_host_conf "$REF")"
@@ -380,7 +406,7 @@ nav_empuja() {   # los gates y el corredor, canonicos, al servidor (dos copias d
   ssh -n -o BatchMode=yes "$NAV_HOST" 'mkdir -p ~/webtools/gates' >/dev/null 2>&1 || return 1
   scp -q "$REF/run-gate.js" "$NAV_HOST:webtools/run-gate.js" </dev/null 2>/dev/null || return 1
   local g
-  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js; do
+  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js marca-gate.js; do
     [ -f "$REF/$g" ] && { scp -q "$REF/$g" "$NAV_HOST:webtools/gates/$g" </dev/null 2>/dev/null || return 1; }
   done
   return 0
@@ -437,6 +463,14 @@ nav_lee() {      # <fichero> <gate> <ruta> <ancho> -> imprime la linea; NAV_R = 
     printf '    %-22s %-26s %4spx  NO MEDIDO (el gate no dio veredicto)\n' "$2" "$3" "$4"; return
   fi
   NAV_R="$ver"
+  # 1-nov-2026 · marca-gate solo avisa hasta MARCA_GATE=para: su FALLA se ensena
+  #    entero, pero cuenta como AVISO y no para la subida.
+  if [ "$ver" = FALLA ] && [ "$2" = marca-gate.js ] && [ "${MARCA_GATE:-avisa}" != para ]; then
+    NAV_R="AVISO"
+    printf '    %-22s %-26s %4spx  AVISO (solo avisa hasta MARCA_GATE=para)\n' "$2" "$3" "$4"
+    printf '%s' "$out" | grep -A6 '"fallos"' | head -7 | sed 's/^/        /'
+    return 0
+  fi
   printf '    %-22s %-26s %4spx  %s\n' "$2" "$3" "$4" "$ver"
   [ "$ver" = FALLA ] && printf '%s' "$out" | grep -A6 '"fallos"' | head -7 | sed 's/^/        /'
   return 0
@@ -447,7 +481,7 @@ nav_corre() {    # <dir> <lista: n ruta gate ancho alto conCfg>  -> mide en para
   while read -r n r g w h c; do
     # `wait -n` es de bash 4.3; sin el (bash 3 de macOS) se espera a todas: mas lento, igual de correcto
     while [ "$(jobs -rp | wc -l)" -ge "$NAV_PARALELO" ]; do wait -n 2>/dev/null || wait; done
-    nav_mide "$1/$n.out" "${SITIO%/}$r" "$g" "$w" "$h" "$( [ "$c" = c ] && printf '%s' "$NAV_CFG" )" &
+    nav_mide "$1/$n.out" "${SITIO%/}$r" "$g" "$w" "$h" "$( [ "$c" = c ] && printf '%s' "$NAV_CFG"; [ "$c" = m ] && printf '%s' "$MARCA_CFG" )" &
   done < "$2"
   wait
 }
@@ -532,7 +566,7 @@ nav_decide() {
 #    la web SI declara URLS_NAVEGADOR, no medirla pide --aun-asi con «navegador».
 #    Medir no se pregunta: el ensayo (sin --subir) mide igual, y dice lo que pararia.
 NAVC_ROJOS=""; NAVC_HUECOS=""; NAVC_EXIGE=0; NAVC_MIRADAS=0; NAVC_FALLOS=0
-NAVC_MENU_PASA=0; NAVC_MENU_TOTAL=0
+NAVC_MENU_PASA=0; NAVC_MENU_TOTAL=0; NAVC_MARCA_AVISOS=0
 [ -n "$URLS_NAVEGADOR" ] && NAVC_EXIGE=1
 paginas_cambiadas   # antes del 1-quater y de la subida: despues, la lista anterior ya es esta
 if [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
@@ -567,13 +601,16 @@ else
     else
       echo "  $(printf '%s\n' "$NAVC_ARBOL" | grep -c .) ficheros del arbol copiados a $NAV_HOST; se sirven con el origen $SITIO"
       [ -n "$NAV_CFG" ] && echo "  configuracion de los gates de conversion: $NAV_CFG"
-      # Los cuatro anchos del primer pantallazo (mobile-gate M1, 1-nov-2026) y el menu
-      # a 390. `c` = esa medida recibe NAV_CFG (que cuenta como convertir).
+      # Los cuatro anchos del primer pantallazo (mobile-gate M1, 1-nov-2026), el menu
+      # a 390 y la marca a 1366 y 390. `c` = esa medida recibe NAV_CFG (que cuenta como
+      # convertir); `m`, MARCA_CFG (la paleta y los tipos).
+      echo "  marca-gate: $( [ "$MARCA_GATE" = para ] && echo 'PARA la subida (MARCA_GATE=para)' || echo 'solo avisa (MARCA_GATE=para cuando _diseno/ este hecho)' )$( [ -f "$REPO/_diseno/MARCA.md" ] || echo '; sin _diseno/MARCA.md: colores y tipos NO MEDIDO' )"
       : > "$NAVC_DIR/lista"; n=0
       for r in $(urls_navegador); do
         for m in "structure-gate.js 1298 720 c" "measure-screens.js 1298 720 -" "measure-screens.js 390 844 -" \
                  "mobile-gate.js 360 740 c" "mobile-gate.js 390 844 c" "mobile-gate.js 1366 768 c" \
-                 "mobile-gate.js 1440 900 c" "mobile-menu-gate.js 390 844 -"; do
+                 "mobile-gate.js 1440 900 c" "mobile-menu-gate.js 390 844 -" \
+                 "marca-gate.js 1366 768 m" "marca-gate.js 390 844 m"; do
           n=$((n+1)); printf '%s %s %s\n' "$n" "$r" "$m" >> "$NAVC_DIR/lista"
         done
       done
@@ -585,6 +622,7 @@ else
         nav_lee "$NAVC_DIR/$n.out" "$g" "$r" "$w"
         case "$NAV_R" in
           PASA)  NAVC_MIRADAS=$((NAVC_MIRADAS+1)) ;;
+          AVISO) NAVC_MIRADAS=$((NAVC_MIRADAS+1)); NAVC_MARCA_AVISOS=$((NAVC_MARCA_AVISOS+1)) ;;
           FALLA) NAVC_MIRADAS=$((NAVC_MIRADAS+1)); NAVC_FALLOS=$((NAVC_FALLOS+1))
                  case " $NAVC_ROJOS " in *" ${g%.js} "*) ;; *) NAVC_ROJOS="${NAVC_ROJOS:+$NAVC_ROJOS }${g%.js}" ;; esac ;;
           *)     NAVC_HUECOS="${NAVC_HUECOS:+$NAVC_HUECOS, }${g%.js} $r ${w}px" ;;
@@ -594,7 +632,7 @@ else
         fi
       done < "$NAVC_DIR/lista"
       echo
-      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir"
+      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca (no paran)" )}"
     fi
     ssh -n -o BatchMode=yes "$NAV_HOST" "rm -rf '$NAVC_R'" >/dev/null 2>&1
     rm -rf "$NAVC_DIR"
