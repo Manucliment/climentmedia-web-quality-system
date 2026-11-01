@@ -258,8 +258,20 @@
   if (gigantes.length) fallos.push(`${gigantes.length} bloque(s) de mas de 3 pantallas (limite del contenedor)`);
   if (alto / vh > limitePantallas) fallos.push(`la pagina son ${(alto / vh).toFixed(1)} pantallas de scroll (limite ${limitePantallas.toFixed(1)} para sus ${palabras} palabras visibles` +
     (limiteSinTope > TOPE_PANTALLAS ? `: el presupuesto por palabras daria ${limiteSinTope.toFixed(1)}, y el techo es ${TOPE_PANTALLAS}` : '') + `)`);
-  if (peorPx > vh * 2.5) fallos.push(`se recorren ${(peorPx / vh).toFixed(1)} pantallas seguidas sin un solo CTA (limite 2,5)`);
-  if (totalCTA < 2) fallos.push(`solo ${totalCTA} CTA en toda la pagina`);
+  // 1-nov-2026 · LAS REGLAS DE CTA NO VAN CON TODAS LAS PAGINAS. Unas condiciones
+  // generales con `data-tipo="legal"` caian por «solo 0 CTA», a 390 y a 1298, y como
+  // el sello ?v= del CSS las cambia en cada subida, paraban todas las de esa web.
+  // Una politica o unas condiciones no llevan llamada a la accion. El tipo se lee
+  // como en mobile-gate (SIN_CTA_OBLIGATORIO): declarado en <main>, o, si no, la ruta.
+  // La densidad (unidades, contenedor, techo de pantallas) sigue valiendo para ellas.
+  const mainTipo = (document.querySelector("main") || {}).getAttribute
+    ? document.querySelector("main").getAttribute("data-tipo") : null;
+  const rutaMin = location.pathname.toLowerCase();
+  const tipoPagina = mainTipo || (/legal|privac|cookie|condi|terms|mentions|aviso/.test(rutaMin) ? "legal"
+    : /gracias|merci|thanks|bedankt/.test(rutaMin) ? "gracias" : "");
+  const exigeCTA = !["legal", "gracias", "recurso"].includes(tipoPagina);
+  if (exigeCTA && peorPx > vh * 2.5) fallos.push(`se recorren ${(peorPx / vh).toFixed(1)} pantallas seguidas sin un solo CTA (limite 2,5)`);
+  if (exigeCTA && totalCTA < 2) fallos.push(`solo ${totalCTA} CTA en toda la pagina`);
 
   return JSON.stringify({
     url: location.hostname + location.pathname,
@@ -277,6 +289,7 @@
       contenedoresGigantes: gigantes.map(b => `${b.que} — ${b.px}px = ${b.pantallas} pantallas`),
       sinCTA: `${sinCTA.length}/${bloques.length}`,
       ctasTotales: totalCTA,
+      reglasDeCTA: exigeCTA ? 'se aplican' : `no se aplican: tipo «${tipoPagina}» (${mainTipo ? 'declarado en <main>' : 'por la ruta'})`,
       mayorTramoSinCTA: `${peorRacha} bloques = ${(peorPx / vh).toFixed(1)} pantallas`,
     },
     detalle: bloques,

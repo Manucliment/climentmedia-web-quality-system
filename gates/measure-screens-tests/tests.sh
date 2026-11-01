@@ -135,6 +135,15 @@ echo "== LOS BOTONES QUE NO SE LLAMAN btn (27-oct-2026, trampa de diseno E1)"
 espera f13-botones-de-shopify.html PASA  ""                         "CTA de clase button, cada 2 bloques"
 espera f14-sin-cta-de-verdad.html  FALLA "sin un solo CTA"          "la misma pagina con un boton al principio"
 echo
+echo "== UNA PAGINA LEGAL NO LLEVA CTA (1-nov-2026, caja 3)"
+#   Unas condiciones generales con `data-tipo="legal"` caian por «solo 0 CTA» y «pantallas
+#   sin CTA», a 390 y a 1298, y como el sello ?v= del CSS las cambia en cada subida, paraban
+#   todas las de esa web. mobile-gate ya las eximia (SIN_CTA_OBLIGATORIO). El espejo: el MISMO
+#   texto sin tipo y con una ruta neutra sigue cayendo, o el arreglo habria apagado la regla.
+espera f16-tipo-declarado.html        PASA  ""                      "legal declarada: sin CTA y bien"
+espera f17-condiciones-generales.html PASA  ""                      "legal por la ruta, como en mobile-gate"
+espera f18-texto-sin-tipo.html        FALLA "CTA en toda la pagina" "el mismo texto sin tipo sigue cayendo"
+echo
 # 🔴 Se CUENTAN antes de medir. Con la carpeta equivocada, el patron no casaba,
 #    `sh` dejaba el literal `[0-9]*.html` y el bucle media UN caso inexistente --
 #    un «MAL» que parecia un problema de ancho. Cero moldes no es un repertorio
