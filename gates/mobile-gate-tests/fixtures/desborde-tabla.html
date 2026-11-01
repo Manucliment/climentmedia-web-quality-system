@@ -1,0 +1,14 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D3: tabla ancha dentro de su propia caja con scroll</title><link rel="stylesheet" href="_base.css">
+<style>.caja{overflow-x:auto}.caja table{width:700px;border-collapse:collapse}.caja td{border:1px solid #ccc;padding:6px}</style></head><body>
+<!-- 1-nov-2026 · control: una tabla de 700 px dentro de una caja overflow-x:auto. Se mueve la caja, no la pagina: PASA
+     sin aviso. -->
+<header class="nav">Marca</header>
+<main data-tipo="servicio">
+  <section data-sec="hero">
+    <h1>Fisioterapia a domicilio</h1>
+    <p>Recibe tratamiento en tu casa, adaptado a tu movilidad.</p>
+    <p><a class="btn" href="/contacto/">Pedir cita</a></p>
+  </section>
+  <div class="relleno"><h2>Tarifas</h2><div class="caja"><table><tr><td>Sesion</td><td>Precio</td><td>Reembolso</td><td>Duracion</td><td>Zona</td></tr></table></div></div>
+</main>
+</body></html>

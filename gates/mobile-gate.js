@@ -47,6 +47,10 @@
 //        AVISO, no fallo: 33% es un tope de sentido comun, NO una medida
 //        contra referencias. Mientras no haya banco de referencia, no bloquea.
 //
+//    M4  La pagina no se mueve de lado: si se puede desplazar en horizontal,
+//        FALLO, con quien se sale y el arreglo probable. Recortado por overflow
+//        oculto, AVISO. Una tabla en su propia caja con scroll, nada.
+//
 //  EL TESTIGO ES `elementFromPoint`, y se elige a proposito: es exactamente lo
 //  que el navegador usa para decidir donde va un dedo. No es una heuristica de
 //  rectangulos: es la respuesta del propio motor.
@@ -496,6 +500,61 @@ function convierte (el) {
   if (pctFlotante > CFG.topeFlotante) {
     avisos.push(`M3 · el cromo flotante cubre el ${pctFlotante}% de la pantalla ` +
       `(aviso >${CFG.topeFlotante}%; tope de sentido comun, NO medido contra referencias)`);
+  }
+
+  // M4 · la pagina NO se mueve de lado. 1-nov-2026 · un sitio real: a 390 la portada media
+  // 411 (cinco enlaces del pie en un flex sin wrap) y la puerta dio 32 de 32 PASA:
+  // nadie miraba el ancho. Lo que cuenta es lo que hace el visitante: si la pagina
+  // se puede desplazar de lado, FALLA. Por eso se prueba a desplazarla y no se
+  // compara scrollWidth: un adorno recortado con overflow-x:hidden no se mueve (eso
+  // es un AVISO, por si lo recortado era texto), y una tabla en su propia caja con
+  // scroll mueve la caja, no la pagina. `instant`: con scroll-behavior:smooth el
+  // desplazamiento llega tarde y la prueba pasaria sin haber medido.
+  // Y overflow:hidden deja desplazar al SCRIPT, no al visitante: lo que manda es el
+  // overflow-x que hereda la vista (el de <html>, o el de <body> si <html> lo deja en
+  // visible). Si ese recorta, la pagina no se mueve para quien la usa.
+  const sx0 = scrollX, sy0 = scrollY;
+  window.scrollTo({ left: sx0 + 400, top: sy0, behavior: 'instant' });
+  const ovHtml = getComputedStyle(document.documentElement).overflowX;
+  const ovVista = ovHtml !== 'visible' ? ovHtml : (document.body ? getComputedStyle(document.body).overflowX : 'visible');
+  const deLado = ['hidden', 'clip'].includes(ovVista) ? 0 : Math.round(scrollX - sx0);
+  window.scrollTo({ left: sx0, top: sy0, behavior: 'instant' });
+  const anchoDoc = Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0);
+  if (deLado > 0 || anchoDoc > vw + 1) {
+    // Quien se sale: el que pasa del borde derecho con un padre que no pasa (ahi empieza).
+    const sale = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.right + scrollX > vw + 1; };
+    const nombre = e => `${e.tagName.toLowerCase()}${e.classList[0] ? '.' + e.classList[0] : e.id ? '#' + e.id : ''}`;
+    const todos = [...document.body.querySelectorAll('*')];
+    // Cada fallo dice el arreglo probable: quien lo lee no tiene que aprender la regla a
+    // golpe de rechazo (Asistente, 1-nov).
+    let arreglo = 'esa caja tiene un ancho fijo, un min-width o un flex sin wrap: max-width:100%, ' +
+      'min-width:0 o flex-wrap:wrap en ella o en su contenedor';
+    let origen = todos
+      .filter(e => sale(e) && !(e.parentElement && e.parentElement !== document.body && sale(e.parentElement)))
+      .slice(0, 4)
+      .map(e => `${nombre(e)} (hasta ${Math.round(e.getBoundingClientRect().right + scrollX)} px)`);
+    // Si ninguna caja pasa del borde, lo que se sale es su CONTENIDO: una palabra o
+    // una direccion que no parte, o un ::before/::after. La caja mide bien y su
+    // scrollWidth no (una pagina de contacto, 1-nov: «no se ve quien»). Se nombra la mas honda.
+    if (!origen.length) {
+      origen = todos.filter(e => {
+        if (getComputedStyle(e).overflowX !== 'visible') return false;
+        const r = e.getBoundingClientRect();
+        return r.width > 0 && r.left + scrollX + e.scrollWidth > vw + 1 && e.scrollWidth > e.clientWidth + 1;
+      }).filter((e, _, l) => !l.some(o => o !== e && e.contains(o))).slice(0, 4)
+        .map(e => `${nombre(e)} (su contenido llega a ${Math.round(e.getBoundingClientRect().left + scrollX + e.scrollWidth)} px` +
+          `${(e.textContent || '').trim() ? ': «' + e.textContent.trim().replace(/\s+/g, ' ').slice(0, 40) + '»' : ''})`);
+      arreglo = 'un texto que no parte (un correo, una URL, una palabra larga): overflow-wrap:anywhere en ese ' +
+        'texto, o letra mas pequena a este ancho';
+    }
+    if (deLado > 0) {
+      fallos.push(`M4 · la pagina es mas ancha que la pantalla: mide ${anchoDoc} px a ${vw} y se ` +
+        `desplaza ${deLado} px de lado. Se sale: ${origen.join(' · ') || 'no se ve quien'}` +
+        `${origen.length ? `. Arreglo probable: ${arreglo}` : ''}`);
+    } else {
+      avisos.push(`M4 · hay contenido de ${anchoDoc} px a ${vw}, recortado (overflow oculto): la ` +
+        `pagina no se mueve, pero lo recortado no se ve. ${origen.join(' · ')}`);
+    }
   }
 
   if (vw !== CFG.anchoPedido) {

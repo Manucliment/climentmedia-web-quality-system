@@ -1,0 +1,15 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>D2: adorno mas ancho, recortado por overflow-x hidden</title><link rel="stylesheet" href="_base.css">
+<style>html,body{overflow-x:hidden}.adorno{position:absolute;top:120px;left:0;width:600px;height:40px;background:#eee;z-index:-1}</style></head><body>
+<!-- 1-nov-2026 · control: un adorno de 600 px recortado con overflow-x:hidden en html y body. La pagina NO se mueve de
+     lado: PASA. El recorte sale como aviso, por si lo cortado era texto. -->
+<header class="nav">Marca</header>
+<main data-tipo="servicio">
+  <section data-sec="hero">
+    <h1>Fisioterapia a domicilio</h1>
+    <p>Recibe tratamiento en tu casa, adaptado a tu movilidad.</p>
+    <p><a class="btn" href="/contacto/">Pedir cita</a></p>
+  </section>
+  <div class="relleno"><h2>Como funciona</h2><p>El tratamiento empieza con una valoracion inicial.</p></div>
+</main>
+<div class="adorno"></div>
+</body></html>

@@ -100,6 +100,15 @@ res M2-borde-ok  m2-borde-libre.html    PASA
 res M2-pildora   m2-pildora-libre.html  PASA
 res M2-enlace    m2-borde-enlace.html   PASA   'tapados EN PARTE'
 echo
+echo "=========== M4 · la pagina no se mueve de lado ==========="
+# 1-nov-2026 · el pie de un sitio real (flex sin wrap) y una direccion de correo que
+# no parte: FALLA, con el arreglo probable. Sus controles: un adorno recortado por
+# overflow-x:hidden (aviso) y una tabla ancha en su propia caja con scroll.
+res M4-pie      desborde-pie.html      FALLA  'flex-wrap:wrap'
+res M4-oculto   desborde-oculto.html   PASA   'M4 · hay contenido de'
+res M4-tabla    desborde-tabla.html    PASA
+res M4-palabra  desborde-palabra.html  FALLA  'overflow-wrap:anywhere'
+echo
 echo "=========== M3 · cromo por encima del tercio (AVISO, no fallo) ==========="
 res M3-aviso     m3-aviso.html          PASA   'M3 · el cromo flotante cubre'
 echo
