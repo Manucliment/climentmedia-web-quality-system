@@ -24,7 +24,7 @@ se rompe si te lo saltas.
 | **Hacer una web** (migrar o de cero) | [`paths/1-new-site.md`](paths/1-new-site.md) |
 | **Mejorar una web que ya es nuestra** | [`paths/2-improve-site.md`](paths/2-improve-site.md) |
 | **Anadir una pagina** a una web publicada | [`paths/3-add-page.md`](paths/3-add-page.md) |
-| **Iterar SEO o diseno** en una web viva | [`paths/4-iterate-seo-design.md`](paths/4-iterate-seo-design.md) |
+| **Iterar SEO o diseno** en una web viva | [`paths/4-iterate-seo-design.md`](paths/4-iterate-seo-design.md) · si es la siguiente pieza del plan de la web, la skill `web-semanal`, que es este camino una vez por semana |
 
 **Por que existen** (medido, 10-ago-2026): de 256 reglas del estandar, **102 no tenian
 ningun gate** y **106 no se habian comprobado nunca en ninguna web**. En las reglas que YA

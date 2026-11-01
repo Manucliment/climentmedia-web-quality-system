@@ -163,6 +163,94 @@ else
 fi
 rm -f "$DEC"
 
+# =============================================================================
+#  LAS PAGINAS QUE CAMBIA LA SUBIDA (1-nov-2026): el 1-quater y el 6 miden las
+#  declaradas Y las altas y las cambiadas. Dos casos del 31-oct: una guia nueva
+#  servida con FALLA porque no estaba en URLS_NAVEGADOR, y una portada que se
+#  rompio por una tarjeta mas. Los bytes de la puerta entre sus marcas; el arbol
+#  se finge redefiniendo arbol_huellas, que es lo unico que toca receipt.pl.
+# =============================================================================
+PC="$(mktemp -t pagcamb-XXXXXXXX)"; RP="$(mktemp -d -t repo-XXXXXXXX)"
+A3=$(grep -n '^# >>> paginas-cambiadas' "$PUERTA" | head -1 | cut -d: -f1)
+B3=$(grep -n '^# <<< paginas-cambiadas' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A3:-}" ] || [ -z "${B3:-}" ] || [ "$A3" -ge "$B3" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque paginas-cambiadas en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A3},${B3}p" "$PUERTA" > "$PC"
+  mkdir -p "$RP/_deploy"
+  cambia() { # nombre · URLS_NAVEGADOR · tope · lo que TIENE que dar `urls_navegador` (en una linea) · y en la nota
+    local n="$1" got
+    ( REPO="$RP"; URLS_NAVEGADOR="$2"; URLS_CAMBIADAS_MAX="$3"; . "$PC"
+      arbol_huellas() { cat "$RP/hoy"; }
+      paginas_cambiadas; printf '%s|%s|%s\n' "$(urls_navegador | tr '\n' ' ' | sed 's/ $//')" "$CAMBIADAS_FUERA" "$CAMBIADAS_NOTA" ) > "$TMP" 2>&1
+    got="$(cat "$TMP")"
+    if [ "$got" = "$4" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s\n' "$n" "$got" "$4"; fi
+  }
+  V2="# huellas-v2 (html sin sellos ?v=)"
+  printf '%s\n' "$V2" "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "cccccccc 10 guias/index.html" "dddddddd 10 404.html" \
+    "eeeeeeee 10 estilo.css" > "$RP/_deploy/.desplegado-huellas.txt"
+  printf '%s\n' "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "cccccccc 10 guias/index.html" "dddddddd 10 404.html" \
+    "eeeeeeee 10 estilo.css" > "$RP/hoy"
+  cambia "nada cambia: solo las declaradas"                "/ /contact" 8 "/ /contact|0|"
+  # 🔴 EL CASO DE INFI: una guia nueva, que no esta en URLS_NAVEGADOR, se mide.
+  printf '%s\n' "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "c2c2c2c2 11 guias/index.html" "dddddddd 10 404.html" \
+    "e2e2e2e2 10 estilo.css" "ffffffff 10 guias/reembolso.html" "11111111 10 _og/x.html" "22222222 10 google0a1b2c.html" > "$RP/hoy"
+  cambia "un alta y su hub cambiado entran; ni CSS, ni _, ni 404, ni la de Google" "/ /contact" 8 "/ /contact /guias/reembolso /guias/|0|"
+  cambia "lo ya declarado no se repite (con o sin barra)"  "/ /contact /guias" 8 "/ /contact /guias /guias/reembolso|0|"
+  cambia "el tope deja fuera y lo cuenta (altas primero)"  "/" 1 "/ /guias/reembolso|1|"
+  printf '%s\n' "index.html" "contact.html" "guias/index.html" > "$RP/_deploy/.desplegado.txt"
+  # Unas huellas de la version vieja (sin cabecera, con el ?v= dentro) no se comparan.
+  sed -i 1d "$RP/_deploy/.desplegado-huellas.txt"
+  cambia "huellas de otra version: solo las altas"         "/" 8 "/ /guias/reembolso|0|sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
+  rm -f "$RP/_deploy/.desplegado-huellas.txt"
+  cambia "sin huellas: solo las altas, y lo dice"          "/" 8 "/ /guias/reembolso|0|sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
+  rm -f "$RP/_deploy/.desplegado.txt"
+  cambia "sin ninguna lista: las declaradas, y lo dice"    "/" 8 "/|0|sin lista de la subida anterior: solo URLS_NAVEGADOR"
+  # 🔴 EL SELLO ?v= (1-nov, kine): cambiar el CSS reescribe `styles.css?v=` en todas las paginas.
+  #    arbol_huellas de verdad (no la fingida), con un receipt.pl de mentira que solo lista.
+  HREF="$(mktemp -d -t ref-XXXXXXXX)"
+  printf '%s\n' 'print "aaaaaaaa 10 a.html\naaaaaaaa 10 b.html\naaaaaaaa 10 c.html\n"; exit 0;' > "$HREF/receipt.pl"
+  printf '<link href="/styles.css?v=161204fb"><p>uno</p>\n' > "$RP/a.html"
+  printf '<link href="/styles.css?v=aead9fbc4b"><p>uno</p>\n' > "$RP/b.html"
+  printf '<link href="/styles.css?v=161204fb"><p>dos</p>\n' > "$RP/c.html"
+  huella() { ( REPO="$RP"; REF="$HREF"; . "$PC"; arbol_huellas | awk -v f="$1" '$3 == f { print $1 }' ); }
+  hA="$(huella a.html)"; hB="$(huella b.html)"; hC="$(huella c.html)"
+  if [ -n "$hA" ] && [ "$hA" = "$hB" ] && [ "$hA" != "$hC" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "un ?v= nuevo no cambia la huella; un texto nuevo si"
+  else ko=$((ko+1)); printf '  MAL   %s (a=%s b=%s c=%s)\n' "un ?v= nuevo no cambia la huella; un texto nuevo si" "$hA" "$hB" "$hC"; fi
+  rm -rf "$HREF"
+fi
+rm -rf "$PC" "$RP"
+
+# =============================================================================
+#  EL SELLO JUSTO ANTES DE SUBIR (3-ter, 1-nov-2026). Medido el 31-oct: el repo
+#  se toco durante la puerta y subio un arbol que ningun recibo habia sellado.
+#  Los bytes de la puerta entre sus marcas; receipt.pl se finge con un REF propio
+#  (que receipt.pl detecta el cambio lo prueba su banco, receipt-tests).
+# =============================================================================
+SEL="$(mktemp -t sello-XXXXXXXX)"; FREF="$(mktemp -d -t ref-XXXXXXXX)"
+A4=$(grep -n '^# >>> sello-antes-de-subir' "$PUERTA" | head -1 | cut -d: -f1)
+B4=$(grep -n '^# <<< sello-antes-de-subir' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A4:-}" ] || [ -z "${B4:-}" ] || [ "$A4" -ge "$B4" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque sello-antes-de-subir en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A4},${B4}p" "$PUERTA" > "$SEL"
+  sella() { # nombre · rc que da el receipt.pl fingido · rc esperado de la puerta · lo que TIENE que salir · lo que NO
+    local n="$1" rc bien=1
+    printf 'my $v = grep { $_ eq "--verificar" } @ARGV; if ($v && %s) { print "  el arbol ha CAMBIADO desde el QA\\n     CAMBIADO  estilo.css\\n"; exit 1 } exit 0;\n' "$2" > "$FREF/receipt.pl"
+    ( REF="$FREF"; REPO="$DIR"; CMD="echo SUBIDOR-EJECUTADO"; . "$SEL"; exit "$RC" ) > "$TMP" 2>&1; rc=$?
+    [ "$rc" = "$3" ] || bien=0
+    [ -n "$4" ] && ! grep -qF -- "$4" "$TMP" && bien=0
+    [ -n "$5" ] &&   grep -qF -- "$5" "$TMP" && bien=0
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s (rc %s, esperaba %s)\n' "$n" "$rc" "$3"; sed 's/^/        /' "$TMP"; fi
+  }
+  sella "el arbol cambio despues del recibo: NO se ejecuta el subidor" 1 1 "NO se sube" "SUBIDOR-EJECUTADO"
+  sella "y dice que fichero"                                           1 1 "CAMBIADO  estilo.css" ""
+  sella "el arbol es el del recibo: sube"                              0 0 "SUBIDOR-EJECUTADO" "NO se sube"
+fi
+rm -rf "$SEL" "$FREF"
+
 rm -f "$TMP" "$VACIO" "$ANT" "$RET"
 echo
 printf '  %d bien · %d mal\n' "$ok" "$ko"

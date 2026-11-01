@@ -8,6 +8,12 @@
 > below is pointers, classifications and gates. The criteria are already written in
 > `blueprint/`. If you find yourself drafting a criterion, stop: it lives somewhere else and
 > what is missing is the link.
+>
+> **If your setup has a weekly routine for this, use it, not this file (1-nov-2026).** The
+> agency that runs this system has one, the `web-semanal` skill. It takes the next item of the
+> site's plan, measures what already works before and after, and publishes through the door.
+> That routine *is* this path, run once a week. Come here when the routine sends you here,
+> or when there is no routine.
 
 ---
 

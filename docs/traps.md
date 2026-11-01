@@ -4,6 +4,13 @@ Every one of these cost real time on real work. They are numbered **§1–§90**
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
+> **One source, and this is not it (since 1-nov-2026).** The living trap catalogue of the
+> agency that runs this system is private (`paquete-web-seo/05-trampas`), because it names the
+> sites where each trap happened. A new trap goes there first, with its instrument or its tagged
+> step. It comes here only once it is generic and has no client in it, under the next free
+> number. This log is the public record: it is never rewritten to mirror the catalogue, and its
+> numbers do not move.
+
 | Part | File |
 |---|---|
 | §1–§19 | [`traps/1-19.md`](traps/1-19.md) |

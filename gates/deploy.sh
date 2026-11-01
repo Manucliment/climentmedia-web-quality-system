@@ -303,6 +303,79 @@ NAV_HOST="$(nav_host "$REF")"
 NAV_HOST_CONF="$(nav_host_conf "$REF")"
 NAV_ENV=""   # en el 1-quater lleva GATE_CANDIDATO y GATE_SITIO; en el 6, nada
 
+# 1-nov-2026 · QUE PAGINAS MIDE EL NAVEGADOR: las declaradas Y las que cambia esta
+#    subida. Dos casos del 31-oct: una guia NUEVA paso la puerta con G11 en PASA y
+#    quedo servida con measure-screens en FALLA (3 pantallas sin CTA), porque no
+#    estaba en URLS_NAVEGADOR; y una tarjeta mas en la portada la rompio siendo
+#    otra la pagina «cambiada». Una pagina nueva o cuyo HTML cambia se mide, en el
+#    1-quater y en el 6. Un enlace nuevo cambia el HTML del hub que lo recibe: el
+#    hub entra solo.
+#    Contra que: las huellas (hash, tamano, ruta) del arbol de la subida anterior,
+#    que la puerta guarda al acabar en _deploy/.desplegado-huellas.txt. Sin ellas
+#    solo se ven las ALTAS, contra .desplegado.txt, y se dice.
+#    Tope: URLS_CAMBIADAS_MAX (8 por defecto), altas primero. Un cambio de plantilla
+#    toca todas las paginas y medirlas todas a ocho anchos tarda; las que quedan
+#    fuera se dicen y se anotan, no se callan.
+# >>> paginas-cambiadas (marca del banco deploy-tests: no la muevas sin moverlo)
+HUELLAS_ANT="$REPO/_deploy/.desplegado-huellas.txt"
+# La primera linea dice como se tomaron. Unas huellas de otra version (las del 1-nov
+# por la manana llevaban el ?v= dentro) no se comparan: daria la web entera por cambiada.
+HUELLAS_VERSION="# huellas-v2 (html sin sellos ?v=)"
+URLS_CAMBIADAS_MAX="${URLS_CAMBIADAS_MAX:-${CHANGED_URLS_MAX:-8}}"
+URLS_CAMBIADAS=""; CAMBIADAS_ALTAS=0; CAMBIADAS_N=0; CAMBIADAS_FUERA=0; CAMBIADAS_NOTA=""
+#    🔴 EL SELLO ?v= NO ES UN CAMBIO DE PAGINA (1-nov, el mismo dia): cambiar el CSS
+#    reescribe `styles.css?v=…` en TODAS las paginas, y con el hash del fichero cada
+#    subida «cambiaba» la web entera, llenaba el tope con las primeras por orden
+#    alfabetico y arrastraba la legal. En el HTML la huella se toma sin los ?v=.
+arbol_huellas() {   # hash tamano ruta, una linea por fichero del arbol desplegable
+  local h t rel
+  perl "$REF/receipt.pl" --arbol --listar --repo "$REPO" 2>/dev/null | awk '$1 ~ /^[0-9a-f]{8}$/ && $2 ~ /^[0-9]+$/' |
+  while read -r h t rel; do
+    case "$rel" in
+      *.html) h="$(sed -E 's/\?v=[A-Za-z0-9._-]+//g' "$REPO/$rel" 2>/dev/null | md5sum | cut -c1-8)" ;;
+    esac
+    printf '%s %s %s\n' "$h" "$t" "$rel"
+  done
+}
+pagina_ruta() {     # como sirve run-gate el candidato: index.html -> / · sub/index.html -> /sub/ · otra.html -> /otra
+  case "$1" in
+    index.html)   printf '/\n' ;;
+    */index.html) printf '/%s/\n' "${1%/index.html}" ;;
+    *)            printf '/%s\n' "${1%.html}" ;;
+  esac
+}
+paginas_cambiadas() {   # -> URLS_CAMBIADAS, CAMBIADAS_ALTAS, CAMBIADAS_N, CAMBIADAS_FUERA, CAMBIADAS_NOTA
+  local hoy lista tipo rel r d decl=" "
+  hoy="$(arbol_huellas)"
+  if [ -s "$HUELLAS_ANT" ] && [ "$(head -1 "$HUELLAS_ANT")" = "$HUELLAS_VERSION" ]; then
+    lista="$(printf '%s\n' "$hoy" | awk 'NR==FNR { if ($0 !~ /^#/) h[$3]=$1; next } $3 ~ /\.html$/ { if (!($3 in h)) print "0 " $3; else if (h[$3] != $1) print "1 " $3 }' "$HUELLAS_ANT" -)"
+  elif [ -s "$REPO/_deploy/.desplegado.txt" ]; then
+    lista="$(printf '%s\n' "$hoy" | awk 'NR==FNR { v[$0]=1; next } $3 ~ /\.html$/ && !($3 in v) { print "0 " $3 }' "$REPO/_deploy/.desplegado.txt" -)"
+    CAMBIADAS_NOTA="sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
+  else
+    CAMBIADAS_NOTA="sin lista de la subida anterior: solo URLS_NAVEGADOR"
+    return 0
+  fi
+  for r in ${URLS_NAVEGADOR:-/}; do decl="$decl${r%/}| "; done
+  while read -r tipo rel; do
+    [ -n "$rel" ] || continue
+    case "/$rel" in */_*|*/.*|/404.html) continue ;; esac
+    [[ "$rel" =~ ^google[0-9a-f]+\.html$ ]] && continue   # verificacion de Search Console
+    r="$(pagina_ruta "$rel")"; d="${r%/}"
+    case "$decl" in *" $d| "*) continue ;; esac
+    if [ "$CAMBIADAS_N" -lt "$URLS_CAMBIADAS_MAX" ]; then
+      URLS_CAMBIADAS="${URLS_CAMBIADAS:+$URLS_CAMBIADAS }$r"; decl="$decl$d| "
+      CAMBIADAS_N=$((CAMBIADAS_N+1)); [ "$tipo" = 0 ] && CAMBIADAS_ALTAS=$((CAMBIADAS_ALTAS+1))
+    else
+      CAMBIADAS_FUERA=$((CAMBIADAS_FUERA+1))
+    fi
+  done <<EOF
+$(printf '%s\n' "$lista" | LC_ALL=C sort -k1,1n -k2)
+EOF
+}
+urls_navegador() { printf '%s\n' ${URLS_NAVEGADOR:-/} $URLS_CAMBIADAS; }   # la lista de las dos medidas
+# <<< paginas-cambiadas
+
 nav_empuja() {   # los gates y el corredor, canonicos, al servidor (dos copias divergen el primer dia)
   ssh -n -o BatchMode=yes "$NAV_HOST" 'mkdir -p ~/webtools/gates' >/dev/null 2>&1 || return 1
   scp -q "$REF/run-gate.js" "$NAV_HOST:webtools/run-gate.js" </dev/null 2>/dev/null || return 1
@@ -461,10 +534,14 @@ nav_decide() {
 NAVC_ROJOS=""; NAVC_HUECOS=""; NAVC_EXIGE=0; NAVC_MIRADAS=0; NAVC_FALLOS=0
 NAVC_MENU_PASA=0; NAVC_MENU_TOTAL=0
 [ -n "$URLS_NAVEGADOR" ] && NAVC_EXIGE=1
+paginas_cambiadas   # antes del 1-quater y de la subida: despues, la lista anterior ya es esta
 if [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
   linea; echo "  1-quater · navegador sobre el candidato: SIN_NAVEGADOR=1, no se mide"; linea
 else
   linea; echo "  1-quater · maqueta, pantallas, movil y menu, sobre el CANDIDATO"; linea
+  echo "  paginas: ${URLS_NAVEGADOR:-/} (declaradas)${URLS_CAMBIADAS:+ + $URLS_CAMBIADAS (las que cambia esta subida: $CAMBIADAS_ALTAS altas)}"
+  [ "$CAMBIADAS_FUERA" -gt 0 ] && echo "  ⚠ $CAMBIADAS_FUERA paginas cambiadas mas quedan SIN MEDIR por el tope (URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX)"
+  [ -n "$CAMBIADAS_NOTA" ] && echo "  ($CAMBIADAS_NOTA)"
   if [ -z "${NAV_HOST:-}" ]; then
     NAVC_HUECOS="todo (NAV_HOST sin configurar)"
     echo "  NO MEDIDO: NAV_HOST sin configurar (ni $CONF, ni el entorno, ni $NAV_HOST_CONF)."
@@ -493,7 +570,7 @@ else
       # Los cuatro anchos del primer pantallazo (mobile-gate M1, 1-nov-2026) y el menu
       # a 390. `c` = esa medida recibe NAV_CFG (que cuenta como convertir).
       : > "$NAVC_DIR/lista"; n=0
-      for r in ${URLS_NAVEGADOR:-/}; do
+      for r in $(urls_navegador); do
         for m in "structure-gate.js 1298 720 c" "measure-screens.js 1298 720 -" "measure-screens.js 390 844 -" \
                  "mobile-gate.js 360 740 c" "mobile-gate.js 390 844 c" "mobile-gate.js 1366 768 c" \
                  "mobile-gate.js 1440 900 c" "mobile-menu-gate.js 390 844 -"; do
@@ -527,7 +604,9 @@ if [ "${SIN_NAVEGADOR:-0}" != 1 ]; then
   echo
   nav_decide || exit 1
   if [ "$SUBIR" = 1 ]; then
-    perl "$REF/receipt.pl" --anotar "NAVEGADOR-CANDIDATO $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA${NAVC_HUECOS:+ · sin medir: $NAVC_HUECOS}" \
+    perl "$REF/receipt.pl" --anotar "NAVEGADOR-CANDIDATO $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA${NAVC_HUECOS:+ · sin medir: $NAVC_HUECOS}${URLS_CAMBIADAS:+ · cambiadas: $URLS_CAMBIADAS}" \
+         --repo "$REPO" >/dev/null 2>&1
+    [ "$CAMBIADAS_FUERA" -gt 0 ] && perl "$REF/receipt.pl" --anotar "CAMBIADAS sin medir por el tope: $CAMBIADAS_FUERA (URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX)" \
          --repo "$REPO" >/dev/null 2>&1
     [ -n "$NAVC_NOTA" ] && perl "$REF/receipt.pl" --anotar "$NAVC_NOTA" --repo "$REPO" >/dev/null 2>&1 \
       && echo "  (anotado en el historial)"
@@ -1142,9 +1221,29 @@ if [ -s "$LISTA_ANT" ] && [ -s "$LISTA_HOY" ]; then
   rm -f "$LISTA_ANT.orden.tmp"
 fi
 
+# >>> sello-antes-de-subir (marca del banco deploy-tests: no la muevas sin moverlo)
+# ── 3-ter · ¿ES ESTE EL ARBOL DEL RECIBO? (1-nov-2026) ───────────────────────
+#    El recibo se comprueba en el paso 1 y el subidor empaqueta el arbol de AHORA,
+#    minutos despues (tras el auditor y el navegador). Medido el 31-oct en una web:
+#    se regenero el CSS en medio, subio un arbol que ningun recibo habia sellado, y
+#    G11 lo cazo con 27 ficheros DISTINTO... ya servidos. Se vuelve a comparar el
+#    arbol y los receptores con el sello justo antes de subir; si no cuadra, no sube.
+#    ⚠️ LIMITE, declarado: el subidor es de cada repo y empaqueta el disco. Entre
+#    esta comprobacion y su `tar` quedan segundos, no minutos: durante una subida,
+#    el repo no se toca.
+if ! SELLO_SAL="$(perl "$REF/receipt.pl" --verificar --repo "$REPO" 2>&1)"; then
+  echo "  🔴 el arbol ya no es el que sello el recibo: NO se sube."
+  printf '%s\n' "$SELLO_SAL" | grep -E 'CAMBIADO|recibo:|NUEVO|RETIRADO|SELLO|DISTINTO|ahora' | head -8 | sed 's/^ */     /'
+  echo "     Algo toco el repo durante la puerta. Vuelve a medir el candidato y repite,"
+  echo "     sin tocar el repo mientras sube."
+  perl "$REF/receipt.pl" --anotar "subida parada: el arbol cambio despues del recibo" --repo "$REPO" >/dev/null 2>&1
+  exit 1
+fi
+echo "  el arbol sigue siendo el del recibo (comprobado justo antes de subir)"
 echo "  $CMD"
 eval "$CMD"
 RC=$?
+# <<< sello-antes-de-subir
 if [ "$RC" != 0 ]; then
   echo
   echo "  🔴 la subida ha fallado (exit $RC). NO doy por desplegado nada."
@@ -1223,6 +1322,9 @@ if [ -s "$LISTA_HOY" ]; then
   mkdir -p "$REPO/_deploy" 2>/dev/null
   cp "$LISTA_HOY" "$LISTA_ANT" 2>/dev/null \
     && echo "  (lista de $(grep -c . "$LISTA_HOY") ficheros guardada para el proximo despliegue)"
+  # Y sus huellas: con ellas, la proxima subida sabe que paginas cambia (1-nov-2026).
+  { echo "$HUELLAS_VERSION"; arbol_huellas; } > "$HUELLAS_ANT.tmp" 2>/dev/null && [ "$(grep -c . "$HUELLAS_ANT.tmp")" -gt 1 ] \
+    && mv -f "$HUELLAS_ANT.tmp" "$HUELLAS_ANT" || rm -f "$HUELLAS_ANT.tmp"
 fi
 
 echo
@@ -1425,7 +1527,7 @@ else
   # Que URLs. Por defecto la portada; el repo puede declarar mas. Las de
   # formulario van aparte porque ahi el paso 10 se EXIGE: si esa pagina se queda
   # sin formulario es un FALLO, no un «no aplica».
-  URLS_NAV="${URLS_NAVEGADOR:-/}"
+  URLS_NAV="$(urls_navegador)"   # las declaradas y las que cambio esta subida (calculadas antes de subir)
   URLS_FORM="${URLS_FORMULARIO:-}"
   NAV_FALLOS=0; NAV_MIRADAS=0; NAV_BASURA=0
   NAV_DIR="$(mktemp -d -t navserv-XXXXXXXX)"; : > "$NAV_DIR/lista"; n=0
