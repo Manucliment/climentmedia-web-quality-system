@@ -559,7 +559,9 @@ for p in $PAGES; do
   t="$(title_of "$f")"
   if [ -z "$t" ]; then bad "S2.1 sin <title>: $p"; T_MISS=1
   else
-    echo "$t" >> "$TITLES_FILE"
+    # S2.8 solo entre paginas indexables: una noindex no compite por la busqueda
+    # (1-nov-2026: las /lp/ de anuncios de un sitio copian el title de su pagina).
+    if [ "$INDEXABLE" -eq 1 ]; then echo "$t" >> "$TITLES_FILE"; fi
     # title que es solo la marca = 0 clics con impresiones (ya medido en mkt.)
     if [ -n "$BRAND" ]; then
         core="$(echo "$t" | sed "s/[[:space:]]*[-|&][a-z]*;*[[:space:]]*$BRAND[[:space:]]*$//I" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"

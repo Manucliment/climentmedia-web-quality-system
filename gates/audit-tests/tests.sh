@@ -91,6 +91,12 @@ muta "$T/c6/index.html" 's{<title>[^<]*</title>}{<title>Marca</title>}' \
 sitio_base "$T/c7" dir-barra
 muta "$T/c7/contacto/index.html" 's{<title>[^<]*</title>}{<title>Portada de prueba | Marca</title>}' \
   && caso "dos paginas con el MISMO <title>"            ROJO S2.8 "$T/c7"
+# 1-nov-2026 · un sitio real: las /lp/ de anuncios son noindex y copian el title de su pagina
+# indexable. No compiten en buscadores (su ficha lo dice: noindex), y S2.8 las contaba.
+sitio_base "$T/c7b" dir-barra
+muta "$T/c7b/contacto/index.html" 's{<title>[^<]*</title>}{<title>Portada de prueba | Marca</title><meta name="robots" content="noindex,follow">}' \
+  && muta "$T/c7b/sitemap.xml" 's{<url><loc>https://ejemplo.test/contacto</loc></url>}{}' \
+  && caso "MISMO <title>, pero una es noindex: no compite" VERDE - "$T/c7b"
 
 sitio_base "$T/c8" dir-barra
 muta "$T/c8/index.html" 's{<link rel="canonical"[^>]*>}{}' \
