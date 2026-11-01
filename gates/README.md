@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1589**: 1492 plus 95 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1593**: 1492 plus 99 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all five banks as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
