@@ -62,7 +62,7 @@ paths/            Four entry points. Start here, not in blueprint/.
 
 blueprint/        The method. 20 reference documents — consulted, not read end to end.
 checklists/       The QA that closes a project, the deploy gate, the page sprint.
-gates/            The executable half. 37 programs and 34 test batteries.
+gates/            The executable half. 38 programs and 35 test batteries.
                   Start at gates/README.md — the index, the flags, what does not ship.
 docs/             The trap log: 90 traps, each with the failure that produced it.
 config.example.md Everything specific to your site. The programs are never edited.
@@ -150,7 +150,7 @@ Two numbers, both published because both can go down:
 | Checks **with a fixture** | **134 of 142 (94%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
 > **And the second number states its own scope, which is the honest half of it.** That 94% is
-> measured over **4 programs out of 37**. The coverage tool prints the 33 it does not measure,
+> measured over **4 programs out of 38**. The coverage tool prints the 34 it does not measure,
 > by name, on every run. A coverage figure without its scope is exactly the kind of claim this
 > system exists to stop, so it does not get quoted without this line.
 >

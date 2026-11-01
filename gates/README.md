@@ -1,6 +1,6 @@
 # The gates
 
-37 programs and 34 test batteries. This file is the index: what each program is for,
+38 programs and 35 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -39,12 +39,12 @@ ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the
 Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
 `structure-gate` later: see below.)
 
-> **A machine with a measurement host reads more, and that is expected.** The four host
+> **A machine with a measurement host reads more, and that is expected.** The five host
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1593**: 1492 plus 99 host cases plus the 2 of the deploy-history bank. `run-all.sh`
-> counts all five banks as *machine-dependent*, and the documentation gate accepts either
+> **1613**: 1492 plus 119 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> counts all six banks (the five, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
 > Until 21-sep-2026 those three banks looked for a placeholder host left behind when this
@@ -534,7 +534,7 @@ without blocking. Why the order changed is trap §89.
 | `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **94% is measured over 4 programs of 37**,
+The coverage figure has a scope you should know: **94% is measured over 4 programs of 38**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
