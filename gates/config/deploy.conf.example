@@ -16,6 +16,14 @@
 # The root URL. The served-equals-measured check builds its URLs from this.
 SITE=https://your-domain.tld
 
+# A RETIRED DOMAIN whose tree is only a robots.txt and an .htaccess that sends
+# everything with 301 to another site: declare it, and the receipt comes from
+# gates/redirects-gate.pl --candidate instead of qa-master.pl. The door then says
+# NOT APPLICABLE out loud for the steps that measure pages, and after the upload
+# asks the domain for every mapped path and the WordPress ones (step 4-ter).
+# A page in such a tree makes the receipt invalid. Default: pages.
+# TREE=redirects
+
 # The command that uploads THE WHOLE TREE. Either:
 #   · a path relative to the repo   -> run with bash
 #   · a complete command

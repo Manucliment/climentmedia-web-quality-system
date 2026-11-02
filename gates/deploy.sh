@@ -156,6 +156,27 @@ SUBIDA="${SUBIDA:-${UPLOAD:-}}"
 MODO_SPEC="${MODO_SPEC:-${SPEC_MODE:-}}"
 [ -n "$SITIO" ] || { echo "  $CONF no define SITIO"; exit 2; }
 
+# ── ARBOL DE REDIRECCIONES (2-nov-2026) ──────────────────────────────────────
+#    Un dominio retirado cuyo arbol es un robots.txt y un .htaccess que lo manda
+#    todo con 301 a otra web. qa-master.pl no tiene ninguna pagina que medir y
+#    deja sus cinco lentes sin medir, asi que ese arbol no tenia camino por la
+#    puerta: o pagina de relleno, o subida por fuera. Con ARBOL=redirecciones
+#    (TREE=redirects) el recibo lo escribe redirects-gate.pl, los pasos que miden
+#    paginas dicen NO APLICA en voz alta, y despues de subir se piden las rutas
+#    al dominio (4-ter). receipt.pl rechaza ese recibo si el arbol trae una pagina.
+ARBOL_TIPO="${ARBOL:-${TREE:-paginas}}"
+case "$ARBOL_TIPO" in
+  paginas|pages)           REDIR=0 ;;
+  redirecciones|redirects) REDIR=1 ;;
+  *) echo "  $CONF: ARBOL=$ARBOL_TIPO no lo se leer (paginas | redirecciones)"; exit 2 ;;
+esac
+no_aplica() { echo; echo "  $1 · NO APLICA: ARBOL=redirecciones (no hay paginas que medir)"; }
+if [ "$REDIR" = 1 ]; then
+  MEDIR_CMD="perl \"$REF/redirects-gate.pl\" --repo \"$REPO\" --sitio $SITIO --candidato"
+else
+  MEDIR_CMD="perl \"$REF/qa-master.pl\" $SITIO --repo \"$REPO\" --candidato"
+fi
+
 # ── modo «enseñame que subirias» ─────────────────────────────────────────────
 #  🔴 NO PASA POR EL GATE, Y ES A PROPOSITO. Esto no despliega: corre la subida
 #  EN SECO para contestar una pregunta de diagnostico —«¿que le pasaria al
@@ -234,14 +255,34 @@ if [ "$GATE" != 0 ]; then
   echo
   if [ "$MEDIDO" = "CANDIDATO" ]; then
     echo "     Lo que falla esta EN EL ARBOL: se arregla en el repo y se vuelve a medir."
-    echo "     perl \"$REF/qa-master.pl\" $SITIO --repo \"$REPO\" --candidato"
+    echo "     $MEDIR_CMD"
   else
     echo "     🔴 OJO: este recibo mide PRODUCCION. Puede estar rojo por defectos que"
     echo "        el arbol del repo YA arregla y que solo faltan por subir —y entonces"
     echo "        el gate estaria bloqueando justo la mejora que existe para permitir."
     echo "        Antes de tocar nada, mide lo que vas a subir:"
-    echo "     perl \"$REF/qa-master.pl\" $SITIO --repo \"$REPO\" --candidato"
+    echo "     $MEDIR_CMD"
   fi
+  exit 1
+fi
+
+# ── 1-bis-b · EL RECIBO Y EL deploy.conf DICEN LO MISMO DEL ARBOL ────────────
+#    Un recibo de redirecciones vale sin lentes de pagina; uno de paginas, sin
+#    medir las redirecciones. Si el conf y el recibo no coinciden, uno de los
+#    dos esta mal, y subir con cualquiera es subir algo que nadie ha medido asi.
+TIPO_RECIBO="$(grep -m1 '^TIPO:' "$REPO/.qa-recibo" 2>/dev/null | sed 's/^TIPO:[[:space:]]*//' | tr -d '\r')"
+if [ "$REDIR" = 1 ] && [ "$TIPO_RECIBO" != "REDIRECCIONES" ]; then
+  echo
+  echo "  🔴 $CONF declara ARBOL=redirecciones y el recibo no es de redirects-gate.pl."
+  echo "     Medir:  $MEDIR_CMD"
+  echo "  🔴 NO SE DESPLIEGA."
+  exit 1
+fi
+if [ "$REDIR" = 0 ] && [ -n "$TIPO_RECIBO" ]; then
+  echo
+  echo "  🔴 el recibo es de tipo $TIPO_RECIBO y $CONF no declara ARBOL=redirecciones."
+  echo "     Si el arbol solo redirige, declararlo; si tiene paginas, medir con qa-master.pl."
+  echo "  🔴 NO SE DESPLIEGA."
   exit 1
 fi
 
@@ -569,7 +610,9 @@ NAVC_ROJOS=""; NAVC_HUECOS=""; NAVC_EXIGE=0; NAVC_MIRADAS=0; NAVC_FALLOS=0
 NAVC_MENU_PASA=0; NAVC_MENU_TOTAL=0; NAVC_MARCA_AVISOS=0
 [ -n "$URLS_NAVEGADOR" ] && NAVC_EXIGE=1
 paginas_cambiadas   # antes del 1-quater y de la subida: despues, la lista anterior ya es esta
-if [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
+if [ "$REDIR" = 1 ]; then
+  no_aplica "1-quater · navegador sobre el candidato"
+elif [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
   linea; echo "  1-quater · navegador sobre el candidato: SIN_NAVEGADOR=1, no se mide"; linea
 else
   linea; echo "  1-quater · maqueta, pantallas, movil y menu, sobre el CANDIDATO"; linea
@@ -638,7 +681,7 @@ else
     rm -rf "$NAVC_DIR"
   fi
 fi
-if [ "${SIN_NAVEGADOR:-0}" != 1 ]; then
+if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ "$REDIR" != 1 ]; then
   echo
   nav_decide || exit 1
   if [ "$SUBIR" = 1 ]; then
@@ -908,7 +951,11 @@ fi
 #    paginas, cuantas palabras y el motivo. En ensayo sigue sin descargarse nada
 #    y no para: la parada de --subir ocurre antes de la linea que sube, asi que
 #    hace de ensayo de este paso.
-if [ "$SUBIR" != 1 ]; then
+if [ "$REDIR" = 1 ]; then
+  # Retirar el dominio ES quitar todo su texto: a donde va cada pagina lo
+  # mide redirects-gate.pl (cada ruta del mapa a su pagina, que contesta 200).
+  no_aplica "2-ter · texto del cliente"
+elif [ "$SUBIR" != 1 ]; then
   :   # en ensayo no se descarga nada
 elif [ ! -f "$REF/same-text.pl" ]; then
   echo
@@ -1055,7 +1102,9 @@ fi
 #  CUANDO PASA A BLOQUEAR: cuando las 6 webs hayan pasado por aqui sin que
 #  aparezca un falso positivo nuevo. Hoy 3 estan en FAIL 0 (climentmedia,
 #  site-d, site-f) y 3 no (site-c 1, site-a 16, site-b 73).
-if [ ! -f "$REF/audit.sh" ]; then
+if [ "$REDIR" = 1 ]; then
+  no_aplica "2-quater · auditor de sitio"
+elif [ ! -f "$REF/audit.sh" ]; then
   echo
   echo "  2-quater · auditor de sitio: no encuentro audit.sh. NO MEDIDO."
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "AUDITOR no medido: falta el programa" --repo "$REPO" >/dev/null 2>&1
@@ -1107,7 +1156,9 @@ fi
 #  ⚠️ SOLO se mira `BLOQUEA`. `DEBILITA` y `PULIDO` son consejo de redaccion: si
 #  contaran, hoy no subiria ninguna web (una tiene 29 de pulido) y la puerta se
 #  volveria ruido el primer dia.
-if [ ! -f "$REF/citable.pl" ]; then
+if [ "$REDIR" = 1 ]; then
+  no_aplica "2-quinquies · citabilidad"
+elif [ ! -f "$REF/citable.pl" ]; then
   echo
   echo "  2-quinquies · citabilidad: no encuentro citable.pl. NO MEDIDO."
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "CITABLE no medido: falta el programa" --repo "$REPO" >/dev/null 2>&1
@@ -1397,6 +1448,26 @@ if [ "$MEDIDO" = "CANDIDATO" ]; then
 fi
 rm -f "$G11_LOG"
 
+# ── 4-ter · ARBOL DE REDIRECCIONES: ¿EL DOMINIO REDIRIGE LO QUE DICE? ────────
+#    G11 compara lo servido con el recibo, y aqui el recibo es un robots.txt: lo
+#    que importa —que /wp-login.php y cada ruta del mapa contesten 301 al sitio
+#    que dice el .htaccess— solo lo contesta pedirlo al dominio. Bloquea igual
+#    que G11: subido y redirigiendo mal no esta hecho.
+if [ "$REDIR" = 1 ]; then
+  linea; echo "  4-ter · las redirecciones, pedidas al dominio"; linea
+  perl "$REF/redirects-gate.pl" --repo "$REPO" --sitio "$SITIO" --servido
+  RED_RC=$?
+  perl "$REF/receipt.pl" --anotar "REDIRECCIONES servidas (exit $RED_RC)" --repo "$REPO" >/dev/null 2>&1
+  if [ "$RED_RC" != 0 ]; then
+    echo
+    echo "  🔴 HAS SUBIDO Y EL DOMINIO NO REDIRIGE COMO DICE EL .htaccess."
+    echo "     Si una ruta de WordPress contesta 200, el servidor no esta leyendo"
+    echo "     ese .htaccess (otro docroot, cache del host) o algo lo pisa."
+    echo "     No lo des por hecho hasta que esto salga en verde."
+    exit 1
+  fi
+fi
+
 # ── 5 · EL ENLAZADO DE LO QUE ACABA DE QUEDAR SERVIDO ────────────────────────
 # 🔴 13-ago-2026 · POR QUE ESTE PASO EXISTE AHORA.
 #    Hasta hoy, de los seis gates de la skill la puerta invocaba UNO: receipt.pl.
@@ -1417,7 +1488,9 @@ rm -f "$G11_LOG"
 #
 #    Se salta solo si el repo lo declara (`SIN_ENLAZADO=1` en deploy.conf), y esa
 #    declaracion tambien se anota: un hueco declarado sigue siendo un hueco.
-if [ "${SIN_ENLAZADO:-0}" = 1 ]; then
+if [ "$REDIR" = 1 ]; then
+  no_aplica "5 · enlazado"
+elif [ "${SIN_ENLAZADO:-0}" = 1 ]; then
   echo
   echo "  5 · enlazado: $CONF declara SIN_ENLAZADO=1, no se mide."
   perl "$REF/receipt.pl" --anotar "ENLAZADO no medido: SIN_ENLAZADO=1 en deploy.conf" \
@@ -1521,7 +1594,9 @@ fi
 #    su `example-host` escrito a mano: el arreglo de la puerta no habia salido de
 #    la puerta. Ahora los cuatro cargan el mismo fichero. Ver su cabecera.
 #    (1-nov-2026: la lectura de las claves y del host se subio al 1-quater.)
-if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ -z "${NAV_HOST:-}" ]; then
+if [ "$REDIR" = 1 ]; then
+  no_aplica "6 · navegador"
+elif [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ -z "${NAV_HOST:-}" ]; then
   echo
   echo "  ============================================================================"
   echo "  6 · navegador: NO MEDIDO: NAV_HOST sin configurar."

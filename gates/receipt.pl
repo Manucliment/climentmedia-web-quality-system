@@ -594,6 +594,15 @@ sub paginas_selladas {
     return grep { /\.html?$/i } map { $_->[0] } @$man;
 }
 
+# Lo que un ARBOL DE REDIRECCIONES no puede llevar (2-nov-2026): nada que se
+# sirva como pagina o se ejecute. Una sola lista: la usan verifica() aqui y
+# redirects-gate.pl, que la lee de este fichero.
+sub paginas_ejecutables {
+    my ($man) = @_;
+    return grep { /\.(?:html?|shtml|php\d?|phtml|phar|cgi|pl|py|asp|aspx|jsp)$/i }
+           map { $_->[0] } @$man;
+}
+
 #  Normaliza una URL a la PAGINA que pide, para poder casarla con un fichero:
 #    · el #fragmento no llega al servidor;
 #    · el ?query lo sirve el MISMO fichero (loja.html?cat=redondos = loja.html);
@@ -843,6 +852,10 @@ sub alcance_lineas {
 #  alguien decide si se fia del recibo, y es ahi donde tiene que ver el desfase.
 sub imprime_alcance {
     my ($R) = @_;
+    if (($R->{TIPO} // '') eq 'REDIRECCIONES') {
+        printf "  alcance: %s\n", ($R->{ALCANCE} // '?');
+        return;
+    }
     my $nf = $R->{'ALCANCE-FICHEROS-SELLADOS'} // $R->{'ARBOL-FICHEROS'} // '?';
     my (undef, $d) = juzga_alcance($R);
     if (!$d->{declarado}) {
@@ -1056,8 +1069,26 @@ sub escribe_recibo {
                                   solo_ascii($r->{repo}), solo_ascii($r->{prod}));
         }
     }
+    # ── ARBOL DE REDIRECCIONES (2-nov-2026, redirects-gate.pl) ──────────────
+    #  Un arbol sin paginas no tiene nada que medir para las cinco lentes: se
+    #  escriben NO APLICA y la medida es la suya. Va bajo el SELLO como todo:
+    #  TIPO no se puede añadir a mano a un recibo normal para saltarse las lentes.
+    my $red = $a{redirecciones};
     for my $l (qw(SEO RENDIMIENTO ACCESIBILIDAD MEDICION ESTRUCTURA)) {
-        push @cuerpo, "LENTE-$l: " . (($a{lentes} && $a{lentes}{$l}) ? $a{lentes}{$l} : 'NO CORRIDA');
+        push @cuerpo, "LENTE-$l: " . ($red ? 'NO APLICA'
+                                    : ($a{lentes} && $a{lentes}{$l}) ? $a{lentes}{$l} : 'NO CORRIDA');
+    }
+    if ($red) {
+        push @cuerpo, "TIPO: REDIRECCIONES";
+        push @cuerpo, "LENTE-REDIRECCIONES: " . solo_ascii($red->{lente} // 'NO CORRIDA');
+        push @cuerpo, "REDIRECCIONES-HTACCESS: " . solo_ascii($red->{htaccess} // '');
+        push @cuerpo, "REDIRECCIONES-REGLAS: "   . ($red->{reglas}   // 0);
+        push @cuerpo, "REDIRECCIONES-COMODIN: "  . solo_ascii($red->{comodin} // 'NO');
+        push @cuerpo, "REDIRECCIONES-SONDAS: "   . ($red->{sondas}   // 0);
+        push @cuerpo, "REDIRECCIONES-DESTINOS: " . ($red->{destinos} // 0);
+        push @cuerpo, "REDIRECCIONES-DESTINOS-OK: " . ($red->{destinos_ok} // 0);
+        push @cuerpo, "REDIRECCIONES-CADENAS: "  . ($red->{cadenas}  // 0);
+        push @cuerpo, "REDIRECCIONES-PRUEBA: SI" if ($red->{prueba} // '') eq 'SI';
     }
     push @cuerpo, "FALLO: "         . ($a{fallo} // 0);
     push @cuerpo, "AVISO: "         . ($a{aviso} // 0);
@@ -1145,6 +1176,16 @@ sub escribe_recibo {
     if ($a{nv_candidato} && @{$a{nv_candidato}}) {
         push @cuerpo, "NV-POR-CANDIDATO: " . solo_ascii(join(' ', @{$a{nv_candidato}}));
     }
+    # El alcance de un arbol de redirecciones no son paginas: son las reglas y
+    # las sondas, y van en sus lineas REDIRECCIONES-*. Se dice aqui en una frase
+    # para que nadie lea la ausencia de ALCANCE-URLS como «no declarado».
+    if ($red) {
+        push @cuerpo, solo_ascii(sprintf('ALCANCE: REDIRECCIONES - %d reglas del mapa + comodin %s - %d sondas simuladas - %d de %d destinos pedidos',
+                              $red->{reglas} // 0, $red->{comodin} // 'NO', $red->{sondas} // 0,
+                              $red->{destinos_ok} // 0, $red->{destinos} // 0));
+        push @cuerpo, "ALCANCE-FICHEROS-SELLADOS: " . scalar(@$man);
+        push @cuerpo, "ALCANCE-PAGINAS-SELLADAS: " . scalar(paginas_selladas($man));
+    } else {
     push @cuerpo, alcance_lineas(alcance    => $a{alcance},
                                  dom        => $a{alcance_dom},
                                  manifiesto => $man,
@@ -1153,6 +1194,7 @@ sub escribe_recibo {
                                  sitio_urls => $a{alcance_sitio},
                                  lista_urls => $a{alcance_lista},
                                  documentos => $a{alcance_documentos});
+    }
     push @cuerpo, "---MANIFIESTO---";
     push @cuerpo, "$_->[1]\t$_->[2]\t$_->[0]" for @$man;
 
@@ -1298,6 +1340,16 @@ sub verifica {
             }
         }
 
+        # ── ARBOL DE REDIRECCIONES (2-nov-2026) ─────────────────────────────
+        #  Sus cinco lentes dicen NO APLICA y su medida es otra: la juzga
+        #  juzga_redirecciones(), que vuelve a mirar el arbol de AHORA (cero
+        #  paginas) en vez de fiarse de lo que diga el recibo.
+        my $tipo = $R->{TIPO} // '';
+        if ($tipo eq 'REDIRECCIONES') {
+            push @mal, juzga_redirecciones($R, $repo);
+        } elsif ($tipo ne '') {
+            push @mal, "TIPO de recibo que no se leer: $tipo";
+        } else {
         # ── 🔴 LA PUERTA DE ATRAS MAS FACIL ─────────────────────────────────
         # `qa-master.pl --solo seo` sale PASA en 20 segundos y escribia un
         # recibo verde con CUATRO lentes sin correr. Lo encontre en la primera
@@ -1347,9 +1399,42 @@ sub verifica {
         #     no la cambia. Lo que el alcance decide es si vale como VERDE.
         my ($mal_alc) = juzga_alcance($R);
         push @mal, @$mal_alc;
+        }
     }
 
     return (@mal ? 0 : 1, \@mal, $R);
+}
+
+#  Lo que hace falta para que un recibo de ARBOL DE REDIRECCIONES valga para
+#  subir. Lo del arbol se mira AHORA, no en el recibo: un recibo de
+#  redirecciones sobre un arbol al que despues le ha crecido una pagina no
+#  puede servir para subirla sin que ninguna lente la haya mirado.
+sub juzga_redirecciones {
+    my ($R, $repo) = @_;
+    my @mal;
+    my $l = $R->{'LENTE-REDIRECCIONES'} // 'NO CORRIDA';
+    push @mal, "lente REDIRECCIONES: $l" unless $l eq 'PASA';
+    my @raras = grep { ($R->{"LENTE-$_"} // '') ne 'NO APLICA' }
+                qw(SEO RENDIMIENTO ACCESIBILIDAD MEDICION ESTRUCTURA);
+    push @mal, "recibo de redirecciones con lentes de pagina que no dicen NO APLICA: " . join(', ', @raras)
+        if @raras;
+    my ($man) = arbol($repo);
+    my @pag = paginas_ejecutables($man);
+    if (@pag) {
+        push @mal, "un arbol de REDIRECCIONES no puede llevar paginas ni nada que se ejecute: "
+                 . join(' ', @pag[0 .. ($#pag > 4 ? 4 : $#pag)]) . (@pag > 5 ? ' …' : '');
+        push @mal, "   esas paginas no las ha medido ninguna lente: o se quitan, o se mide con qa-master.pl";
+    }
+    my @otros = grep { $_->{prod} ne '.htaccess' } receptores($repo);
+    push @mal, "receptores que no son el .htaccess: " . join(' ', map { $_->{prod} } @otros) if @otros;
+    push @mal, "no hay comodin: lo que no case con el mapa se serviria del disco"
+        unless ($R->{'REDIRECCIONES-COMODIN'} // '') eq 'SI';
+    my ($d, $dok) = ($R->{'REDIRECCIONES-DESTINOS'} // 0, $R->{'REDIRECCIONES-DESTINOS-OK'} // 0);
+    push @mal, "destinos: $dok de $d contestan 200" unless $d > 0 && $d == $dok;
+    push @mal, "sin sondas: el .htaccess no se ha simulado" unless ($R->{'REDIRECCIONES-SONDAS'} // 0) > 0;
+    push @mal, "recibo de PRUEBA (--permitir-http): vale para los bancos, no para subir"
+        if ($R->{'REDIRECCIONES-PRUEBA'} // '') eq 'SI';
+    return @mal;
 }
 
 sub diferencias {
