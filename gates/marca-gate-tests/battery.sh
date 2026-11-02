@@ -12,7 +12,7 @@
 #  QUE CUBRE: cada regla en rojo y en verde, y los casos que impiden que una
 #  regla se ensanche hasta no decir nada o se apague sin que se vea:
 #    B1  sin marca (FALLA) · logo (PASA) · marca hecha con texto (PASA con aviso)
-#    B2  sin SVG · sin 32 · un PNG de 48 vale · uno de 16 no · sin apple · apple
+#    B2  sin SVG (y sin logo en vector: AVISO, con sus 3 que siguen en FALLA) · sin 32 · un PNG de 48 vale · uno de 16 no · sin apple · apple
 #        declarado que no carga · sin manifest · manifest sin 512 · manifest que
 #        no es JSON
 #    B3  sin theme-color
@@ -71,6 +71,12 @@ res LOGO-TEXTO     logo-texto.html     PASA  'hecha con texto y CSS'
 echo
 echo "=========== B2 · los iconos, declarados y que cargan ==========="
 res SIN-SVG        sin-svg.html        FALLA 'B2 · sin icono SVG'
+# 2-nov: sin logo en vector (logoVector:false, logo de la cabecera en PNG), el SVG que falta es AVISO. Y que no se
+# ensanche: sin la clave, con el logo en vector en el repo o con un logo SVG en la cabecera, sigue en FALLA.
+res SVG-SIN-VECTOR sin-svg-raster.html PASA  'no tiene el logo en vector' '{"colores":["#1a1a2e","#ffffff","#c2410c","#f5f0e8"],"tipos":["Inter"],"marca":"Una marca","logoVector":false}'
+res SVG-SIN-CLAVE  sin-svg-raster.html FALLA 'B2 · sin icono SVG'
+res SVG-CON-VECTOR sin-svg-raster.html FALLA 'B2 · sin icono SVG' '{"colores":["#1a1a2e","#ffffff","#c2410c","#f5f0e8"],"tipos":["Inter"],"marca":"Una marca","logoVector":true}'
+res SVG-LOGO-SVG   sin-svg.html        FALLA 'B2 · sin icono SVG' '{"colores":["#1a1a2e","#ffffff","#c2410c","#f5f0e8"],"tipos":["Inter"],"marca":"Una marca","logoVector":false}'
 res SIN-32         sin-32.html         FALLA 'B2 · sin icono PNG o .ico de 32'
 # Un sitio real servia su icono en un PNG de 48: vale (el navegador lo reduce). Uno de 16, no.
 res ICONO-48       icono-48.html       PASA

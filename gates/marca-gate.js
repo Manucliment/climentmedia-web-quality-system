@@ -21,6 +21,11 @@
 //        32 px o mas (los navegadores sin SVG; un 48x48 vale); apple-touch-icon
 //        (el iPhone); manifest que se lee como JSON y nombra 192 y 512, que
 //        cargan. Lo que falta o no carga, FALLA, cada uno con su linea.
+//        Salvo una (2-nov): sin icono SVG cuando la marca NO TIENE el logo en
+//        vector es AVISO. Lo dice `logoVector: false` (la puerta mira el repo)
+//        y que el logo de la cabecera no sea un SVG. Un SVG redibujado a mano
+//        seria un logo nuevo, y uno que envuelve el PNG engañaria al gate. Sin
+//        `logoVector` en la configuracion, FALLA como siempre.
 //    B3  `<meta name="theme-color">`. FALLA.
 //    B4  Ningun color fuera de la paleta (`colores` en la configuracion: la
 //        lista de #hex del fichero de marca de la web). Se cuentan el color del
@@ -40,7 +45,8 @@
 //
 //  CONFIGURACION (window.__GATE__, por run-gate.js):
 //    { "colores": ["#1a1a2e", …], "tipos": ["Inter", …], "marca": "Nombre",
-//      "ignorar": ["#chat-widget", …] }      ignorar = selectores de terceros
+//      "ignorar": ["#chat-widget", …], "logoVector": true|false }
+//    ignorar = selectores de terceros · logoVector = si el repo tiene el logo en SVG
 //
 //  `datos` lleva todo lo medido (logo, iconos, colores y tipos contados) para
 //  quien puntua encima: la nota de diseno de 0 a 100 lee ESTE gate, no una copia.
@@ -101,7 +107,11 @@
     if (!lista.some((i) => i.carga)) { fallos.push(`B2 · ${que} declarado y NO carga: ${lista.map((i) => (i.href || '').slice(0, 80)).join(', ')}`); b2[k] = 'no carga'; return; }
     b2[k] = 'ok';
   };
-  comprueba('svg', 'icono SVG para la pestaña (<link rel="icon" type="image/svg+xml">)', deIcono.filter(esSvg));
+  const vectorEnPagina = !!logo && (logo.tag === 'svg' || /\.svg$/i.test(logo.firma || ''));
+  if (CFG.logoVector === false && !vectorEnPagina && !deIcono.some(esSvg)) {
+    avisos.push('B2 · sin icono SVG para la pestaña, y la marca no tiene el logo en vector (ni en el repo ni en la cabecera): se hace cuando llegue el original, no redibujado');
+    b2.svg = 'sin vector';
+  } else comprueba('svg', 'icono SVG para la pestaña (<link rel="icon" type="image/svg+xml">)', deIcono.filter(esSvg));
   comprueba('png32', 'icono PNG o .ico de 32 px o mas (los navegadores sin SVG)', deIcono.filter(es32));
   comprueba('apple', 'apple-touch-icon (la pantalla de inicio del iPhone; sin el sale una captura de la pagina)', iconos.filter((i) => /apple-touch-icon/.test(i.rel)));
   const man = iconos.find((i) => i.rel === 'manifest');

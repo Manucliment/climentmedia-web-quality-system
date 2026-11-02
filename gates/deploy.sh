@@ -353,7 +353,14 @@ NAV_PARALELO="${NAV_PARALELO:-3}"
 #    cifras, espacio y guion (y en los selectores, # . _ ,).
 MARCA_GATE="${MARCA_GATE:-avisa}"
 MARCA_IGNORAR="$(printf '%s' "${MARCA_IGNORAR:-}" | tr -cd 'A-Za-z0-9#._, -')"
-MARCA_CFG="$(IGN="$MARCA_IGNORAR" perl -e '
+# 2-nov-2026 · ¿hay logo en vector? Sin el, B2 no puede pedir el icono SVG sin que
+#    alguien lo redibuje a mano (un logo nuevo): el gate lo deja en AVISO. Se busca un
+#    fichero de logo o de icono en SVG en el arbol (no en _seo/, que lleva QR y graficos).
+MARCA_VECTOR=false
+[ -n "$(find "$REPO" -maxdepth 4 \( -name node_modules -o -name .git -o -name _seo \) -prune -o -type f \
+  \( -iname '*logo*.svg' -o -iname 'favicon.svg' -o -iname 'icon.svg' -o -ipath '*/marca/*.svg' -o -ipath '*/brand/*.svg' \) \
+  -print 2>/dev/null | head -1)" ] && MARCA_VECTOR=true
+MARCA_CFG="$(IGN="$MARCA_IGNORAR" LV="$MARCA_VECTOR" perl -e '
   # dos sentencias: un `my $f` no existe hasta la siguiente, y `open my $f … and <$f>` leia de otra $f, vacia
   my $s = ""; if (-f $ARGV[0]) { local $/; if (open my $f, "<", $ARGV[0]) { $s = <$f> // ""; } }
   my ($c) = $s =~ /^##[ \t]+Colores[^\n]*\n(.*?)(?=^##[ \t]|\z)/msi;
@@ -363,7 +370,8 @@ MARCA_CFG="$(IGN="$MARCA_IGNORAR" perl -e '
   my %w; my @tip = grep { length && !$w{lc $_}++ } map { (my $x = $_) =~ tr/A-Za-z0-9 -//cd; $x } (($t // "") =~ /`([^`]+)`/g);
   my @ign = grep { length } map { s/^\s+|\s+$//gr } split /,/, ($ENV{IGN} // "");
   my $l = sub { join ",", map { "\"$_\"" } @_ };
-  print "{\"colores\":[", $l->(map { "#$_" } @col), "],\"tipos\":[", $l->(@tip), "],\"ignorar\":[", $l->(@ign), "]}";
+  my $lv = ($ENV{LV} // "") eq "true" ? "true" : "false";
+  print "{\"colores\":[", $l->(map { "#$_" } @col), "],\"tipos\":[", $l->(@tip), "],\"ignorar\":[", $l->(@ign), "],\"logoVector\":$lv}";
 ' "$REPO/_diseno/MARCA.md" 2>/dev/null)"
 . "$REF/nav-host.sh"
 NAV_HOST="$(nav_host "$REF")"
