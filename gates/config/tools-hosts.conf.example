@@ -1,0 +1,12 @@
+# Copy to tools-hosts.conf (gitignored: a machine name has no place in a public
+# repository). Without that file the deploy hook exempts no host.
+#
+# Machines that serve NO website from the paths you copy to. A copy to one of them
+# is measuring, not deploying, so the hook lets it through even if the command
+# names a client's domain. See section 5b of hooks/block-deploy-without-receipt.sh.
+#
+# One host per line, exactly as it appears before the colon, without the user.
+# If a machine serves a site from somewhere, keep that document root named in
+# production-markers.conf: a destination matching a marker stays blocked.
+#
+# tools-server

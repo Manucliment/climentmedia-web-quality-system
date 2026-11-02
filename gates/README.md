@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On a clean
-install the fast run is **859 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **909 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1492 cases green, 0 red**, with **seven** banks reported as
+a clean install it reads **1542 cases green, 0 red**, with **seven** banks reported as
 `NOT MEASURED`: the five that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1613**: 1492 plus 119 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1663**: 1542 plus 119 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all six banks (the five, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-861, not 859, because that machine has deployed. `run-all.sh`
+911, not 909, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,13 +95,13 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  859 casos en verde · 0 en rojo
+  909 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  1492 casos en verde · 0 en rojo
+  1542 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler
 ```
 
@@ -624,25 +624,31 @@ Before turning it on:
 bash gates/receipt-tests/tests-hook.sh
 ```
 
-**35 OK · 0 BAD · 2 known false positives, pinned.** Sixteen of those cases are negatives —
-ordinary commands it must not block — because a guard that blocks too much gets switched
-off, and then there is no guard at all. Three of the negatives exist because this hook
-really did block them: downloading a file from production, uploading a measuring script to
-a tools server, and reading its own source.
+**85 OK · 0 BAD.** Run it again after any change: the number that matters is the one you
+measure. Roughly half the cases are negatives — ordinary commands it must not block —
+because a guard that blocks too much gets switched off, and then there is no guard at all.
+Most of the negatives exist because this hook really did block them: downloading a file
+from production, committing two scripts at once, renaming one, reading its own source.
 
-The two pinned false positives are real and unfixed: copying or renaming a deploy script to
-another deploy-ish name reads as executing it. They are recorded rather than hidden, and
-each pins the verdict the guard gives **today**, so that fixing the guard turns the pin red
-and forces the note to be updated. The damage is bounded — they block work that is safe,
-never allow a deploy — which is the cheap direction.
+Commands that fill several lines reach the hook with the line break written as a backslash
+and an `n`. The hook normalises that once, at the top; the battery writes those cases the
+way they travel, because every case on one line is how a hole stayed open.
 
 **No exemptions ship.** Two existed upstream, both for scripts publishing assets no page
 ever serves, and both named one particular estate. Section 6 of the hook carries the three
 rules that made them safe, every one written after an exemption leaked.
 
+**One exemption ships switched off.** A copy to a machine that serves no website is
+measuring, not deploying, and the hook cannot know which machines those are. List them in
+`config/tools-hosts.conf` and section 5b exempts an `scp` or `rsync` whose last argument
+literally points at one of them, away from any production marker. Without the file it does
+nothing.
+
 > The hook and the door are coupled by a filename. That coupling is the point of the
 > exemption, so it is also what breaks silently when somebody renames the door — and it did
-> exactly that here. Two cases in the battery now pin both halves.
+> exactly that here. The exemption also needs the door to be **executed** as
+> `gates/deploy.sh`, with no other upload in the command: naming it used to be enough, and
+> that let an upload through behind it. The battery pins both halves.
 
 ---
 
@@ -655,6 +661,7 @@ say what happens without them.
 |---|---|
 | `config/site-repos.conf` | Which site repositories the documentation gate also checks |
 | `config/production-markers.conf` | Extra document roots and hostnames the hook treats as production |
+| `config/tools-hosts.conf` | Machines serving no website, which the hook lets you copy to |
 | `compliance.conf.example` | The compliance matrix's scope |
 
 With no config the runner **prints a line saying so**. Printing nothing would read as

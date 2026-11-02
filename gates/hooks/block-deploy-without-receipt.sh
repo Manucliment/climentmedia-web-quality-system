@@ -39,11 +39,10 @@
 #      bash gates/receipt-tests/tests-hook.sh
 #
 #  A guard that blocks too much gets switched off, and then there is no guard at
-#  all. The battery is one positive case per thing it must catch and SIXTEEN
-#  negatives — every one of them a command somebody genuinely types. Three of
-#  the negatives are there because this hook really did block them: downloading
-#  a file from production, uploading a measuring script to a tools server, and
-#  reading its own source.
+#  all. The battery is one positive case per thing it must catch and a longer
+#  list of negatives — every one of them a command somebody genuinely types. Most
+#  of the negatives are there because this hook really did block them: downloading
+#  a file from production, reading its own source, committing two scripts at once.
 #
 #  ---------------------------------------------------------------------------
 #  ZERO DEPENDENCIES, ON PURPOSE
@@ -61,6 +60,23 @@
 #  new fault. Split the command and leave the uploading part out.
 # =============================================================================
 payload=$(cat)
+
+# --- a line break travels as two characters, and that was a hole --------------
+#  🔴 Inside the JSON a line break is not a line break: it is a backslash and the
+#     letter n. So every guard below that asks "is something chained behind this?"
+#     looked for `;`, `&` or `|`, found none, and exempted the command:
+#         scp b.html user@host:…/public_html/              -> denied
+#         echo hi<line break>scp b.html user@host:…/public_html/   -> PASSED
+#     The same hole as the chained read verb in §0, walked through by a separator
+#     nobody listed. The battery never saw it because all its commands fit on one
+#     line. Closing a hole for the separators you thought of is not closing it:
+#     enumerate the ones that exist.
+#     It becomes `;` and not a space on purpose: `;` is what the guards recognise
+#     as "another command follows". Normalised ONCE, so everything below looks at
+#     the same thing. The backslash is built in octal: by hand it gets eaten.
+BSN=$(printf '\134')
+payload=${payload//"${BSN}n"/;}
+payload=${payload//"${BSN}r"/;}
 
 # --- the command, extracted from the JSON payload without a JSON parser -------
 #  🔴 The command's quotes travel ESCAPED inside the JSON, and `[^"]*` cuts the
@@ -112,6 +128,28 @@ case "$first" in
   git\ status*|git\ diff*|git\ log*|git\ show*|which\ *|type\ *|realpath\ *|readlink\ *)
     case "$first" in
       *\;*|*\&*|*\|*|*\`*|*'$('*) : ;;   # something else follows: NOT exempt
+      *) exit 0 ;;
+    esac ;;
+esac
+
+# ── 0c · GIT DOES NOT DEPLOY ─────────────────────────────────────────────────
+#    🔴 Measured: `git add data/ _deploy/build.sh _deploy/migrate.sh` died whole,
+#       with nothing staged. Not because of `git`: §2 asks for an execution context
+#       with the alternative (bash|sh|…), that `sh` is not bound to a word, so the
+#       `.sh` of the FIRST file named acts as the context for the SECOND. Naming
+#       two scripts in one command was enough.
+#    ⚠️ `git` DOES write —index, objects, refs— so it does NOT go in §0, which is
+#       verbs that only read. But it does not write into a document root, and it
+#       only talks to another machine in push/fetch/pull/clone, which stay OUT of
+#       this list on purpose.
+#    ⚠️ As in §0 and `bash -n`: only with nothing chained behind, and not if the
+#       command names a document root.
+case "$first" in
+  git\ add\ *|git\ commit*|git\ rm\ *|git\ mv\ *|git\ restore*|git\ checkout*|\
+  git\ stash*|git\ branch*|git\ merge*|git\ tag*|git\ reset*|git\ apply*|git\ worktree*)
+    case "$first" in
+      *\;*|*\&*|*\|*|*\`*|*'$('*) : ;;             # something else follows: NOT exempt
+      *public_html*|*/var/www/*|*domains/*) : ;;   # names a document root: NOT exempt
       *) exit 0 ;;
     esac ;;
 esac
@@ -240,6 +278,37 @@ case "$first" in
     esac ;;
 esac
 
+# ── 2c · READING, COPYING OR COMMITTING A SCRIPT IS NOT RUNNING IT ───────────
+#    🔴 §0, §0c and `bash -n` exempt a CLEAN command and give up on anything
+#       chained, so `sed -n 1,5p _deploy/upload.sh | head` and
+#       `git add _deploy/a.sh && git commit -F m.txt` came out blocked. Measured on
+#       a real machine: 5 of 33 orders that deploy nothing.
+#       Here it is read SEGMENT BY SEGMENT, and exempt only if EVERY segment starts
+#       with a verb that does not run the script it names.
+#    ⚠️ Every segment, not just the ones naming the script: `cat upload.sh | bash`
+#       names it in one and runs it in the other. That is why this list has no
+#       shells, xargs, find, awk, env or tee, and why `$(` or a backtick cancel the
+#       exemption. Anything it does not recognise stays blocked, as it always was.
+#    ⚠️ This only lowers `script`. §1 already decided `upload` separately, so an
+#       scp chained to these verbs is still an upload.
+if [ "$script" = 1 ]; then
+  no_exec=1
+  case "$first" in *\`*|*'$('*) no_exec=0 ;; esac
+  while IFS= read -r seg; do
+    [ "$no_exec" = 1 ] || break
+    set -f; set -- $seg; set +f
+    [ $# -eq 0 ] && continue
+    case "$1" in
+      cd|ls|ll|cat|bat|grep|rg|head|tail|wc|stat|file|diff|md5sum|sha1sum|sha256sum|\
+      sed|sort|uniq|cut|tr|echo|printf|git|cp|mv|mkdir|true) : ;;
+      *) no_exec=0 ;;
+    esac
+  done <<FINSEG2
+$(printf '%s' "$first" | sed 's/[;&|]/\n/g')
+FINSEG2
+  [ "$no_exec" = 1 ] && script=0
+fi
+
 [ "$upload" = 1 ] || [ "$script" = 1 ] || exit 0
 
 # ── 2b · TOOLING IS NOT A WEBSITE ────────────────────────────────────────────
@@ -273,7 +342,29 @@ fi
 #       but a rename must change both files.
 #       Caught by: `gates/receipt-tests/tests-hook.sh`, which asserts both that
 #       the current door name is exempt AND that an arbitrary other name is not.
-printf '%s' "$payload" | grep -qE '(^|[^a-zA-Z0-9._-])deploy\.sh([^a-zA-Z0-9]|$)' && exit 0
+#    🔴 AND THE EXEMPTION USED TO APPLY BY MENTION, which made it a door of its
+#       own. Measured, all three PASSED:
+#           scp gates/deploy.sh user@host:…/public_html/
+#           bash gates/deploy.sh /site ; scp b.html user@host:…/public_html/
+#           echo gates/deploy.sh ; rsync -a ./ user@host:…/public_html/
+#       Now the door has to be EXECUTED (`bash` or `sh` right before it, so an scp
+#       or a tar carrying it as an argument no longer matches), from a `gates/`
+#       directory (a bare `deploy.sh` is any repository's), and nothing else in
+#       the command may be an upload, a write over ssh, or another deploy script:
+#       the door's own call is taken out and §2 asks again about what is left.
+#       `$first`, not `$payload`: the description field is not part of the command.
+#    ⚠️ Measured by mutation: today no command the battery knows is decided by the
+#       "executed" requirement alone — the "nothing else uploads" check behind it
+#       already blocks every one. It stays as defence in depth, because it says
+#       what this exemption is for. Do not write a case pretending to prove it.
+#       `bash.exe` counts: from PowerShell the door is called through that path.
+DOOR='(^|[^A-Za-z0-9_-])(bash|sh)(\.exe)?[[:space:]]+[^[:space:];&|]*gates/deploy\.sh([^a-zA-Z0-9._-]|$)'
+if printf '%s' "$first" | grep -qE "$DOOR" \
+   && ! printf '%s' "$first" | grep -qE 'scp |rsync |sftp |lftp |curl -T|vercel |netlify |tar .*\| *ssh|ssh .*(tar -x|tee |cat *>|dd +of=|install -)'; then
+  rest=$(printf '%s' "$first" | sed -E "s#$DOOR# #g")
+  printf '%s' "$rest" | grep -qE '((bash|sh|zsh|\./|source|\. |powershell|pwsh)|(^|[^&])& )[^|;&]*(_deploy/[^ "]*\.sh|upload[^ "]*\.(sh|ps1)|deploy[^ "]*\.(sh|ps1)|publish[^ "]*\.(sh|ps1))' \
+    || exit 0
+fi
 
 # ── 5 · DESTINATIONS THAT ARE NOT PRODUCTION, EVEN ON THE SERVER ─────────────
 #    /tmp and ~/backups are normal work: copying a script to run it, or taking a
@@ -286,6 +377,42 @@ printf '%s' "$payload" | grep -qE '(^|[^a-zA-Z0-9._-])deploy\.sh([^a-zA-Z0-9]|$)
 #       exemption lapses the moment the command names a document root.
 if printf '%s' "$payload" | grep -qE ':/tmp/|:~/tmp/|~/backups|_backups|/scrape/|:~/webtools'; then
   printf '%s' "$payload" | grep -qE 'public_html|/var/www|domains/' || exit 0
+fi
+
+# ── 5b · COPYING TO A TOOLS SERVER IS NOT DEPLOYING ──────────────────────────
+#    🔴 `scp probe.mjs tools:~/probes/ && ssh tools 'node ~/probes/probe.mjs
+#       https://client.example'`, or `scp -r _candidate tools:~/client.example/`,
+#       came out blocked for NAMING a domain, and §5 only knows a few folders. The
+#       DESTINATION decides, not what gets named.
+#    OFF UNTIL YOU SAY OTHERWISE: which of your machines serves no website is
+#    something this hook cannot know, so without `config/tools-hosts.conf` this
+#    section does nothing and those commands stay blocked. List a host there ONLY
+#    if it serves no site from the paths you copy to. One host per line, exactly as
+#    it appears before the colon, without the user; `#` comments are ignored.
+#    Every condition is required, and if one fails nothing is exempt: no document
+#    root named anywhere in the command, no other upload verb, no deploy script,
+#    and in EVERY scp or rsync the LAST argument literally points at a listed host,
+#    with no `$` or backtick, and at a path that matches no production marker. A
+#    destination that cannot be read stays blocked.
+TOOLS="${DEPLOY_HOOK_TOOLS_CONF:-$(cd "$(dirname "$0")" && pwd)/../config/tools-hosts.conf}"
+if [ -f "$TOOLS" ] && [ "$upload" = 1 ] && [ "$script" != 1 ] \
+   && ! printf '%s' "$payload" | grep -qE 'public_html|/var/www|domains/|sftp |lftp |curl -T|vercel |netlify |--prod|tar .*\| *ssh'; then
+  any_transfer=0; all_tools=1
+  while IFS= read -r seg; do
+    case "$seg" in *scp\ *|*rsync\ *) : ;; *) continue ;; esac
+    any_transfer=1
+    set -f; set -- $seg; set +f
+    last=""; for t in "$@"; do last=$t; done
+    case "$last" in *'$'*|*'`'*) all_tools=0; continue ;; esac
+    dest_host=${last%%:*}; dest_host=${dest_host##*@}; dest_path=${last#*:}
+    if printf '%s' "$dest_path" | grep -qE "$MARKERS" \
+       || ! grep -v '^[[:space:]]*#' "$TOOLS" | tr -d ' \r\t' | grep -qxF -- "$dest_host"; then
+      all_tools=0
+    fi
+  done <<FINSEG3
+$(printf '%s' "$first" | sed 's/[;&|]/\n/g')
+FINSEG3
+  [ "$any_transfer" = 1 ] && [ "$all_tools" = 1 ] && exit 0
 fi
 
 # ── 6 · HOW TO ADD AN EXEMPTION, IF YOU EVER NEED ONE ────────────────────────
@@ -314,5 +441,5 @@ fi
 #     fails silently open, which is the expensive direction. Quoted delimiter so
 #     nothing inside is expanded.
 cat <<'JSON'
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"BLOCKED: this uploads to production without passing the QA receipt gate. A contrast fix once sat in the repository for hours with every gate green while production kept serving the old CSS: nobody checks AFTER uploading, and 'I ran the QA' is a claim nobody verifies. DO IT LIKE THIS: 1) perl gates/qa-master.pl <URL> --repo <REPO> --candidate   (writes <REPO>/.qa-recibo with the md5 of the deployable tree); 2) bash gates/deploy.sh <REPO>   to rehearse without uploading; 3) add --upload once it is green: it checks the receipt, uploads, and then verifies that what is served is what was measured (G11). The receipt expires after 12 h and is valid ONLY for the exact tree that was measured: touch one file and it must be measured again. WATCH THE COLLATERAL DAMAGE: this block kills the WHOLE command. If local work came first (a heredoc writing a file, a mkdir), THAT WORK DID NOT HAPPEN, and the next command's 'No such file or directory' is a consequence of this block, not a new fault: split the command and leave the uploading part out. If this genuinely is not a deploy - a copy to /tmp, a backup, a DOWNLOAD from production (remote -> local), or writing to a tools server that serves no site - reword the command, or add an exemption following the three rules in section 6 of the hook."}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"BLOCKED: this uploads to production without passing the QA receipt gate. A contrast fix once sat in the repository for hours with every gate green while production kept serving the old CSS: nobody checks AFTER uploading, and 'I ran the QA' is a claim nobody verifies. DO IT LIKE THIS: 1) perl gates/qa-master.pl <URL> --repo <REPO> --candidate   (writes <REPO>/.qa-recibo with the md5 of the deployable tree); 2) bash gates/deploy.sh <REPO>   to rehearse without uploading; 3) add --upload once it is green: it checks the receipt, uploads, and then verifies that what is served is what was measured (G11). The receipt expires after 12 h and is valid ONLY for the exact tree that was measured: touch one file and it must be measured again. WATCH THE COLLATERAL DAMAGE: this block kills the WHOLE command. If local work came first (a heredoc writing a file, a mkdir), THAT WORK DID NOT HAPPEN, and the next command's 'No such file or directory' is a consequence of this block, not a new fault: split the command and leave the uploading part out. If this genuinely is not a deploy - a copy to /tmp, a backup, a DOWNLOAD from production (remote -> local), or a copy to a tools server that serves no site (list it in config/tools-hosts.conf) - reword the command, or add an exemption following the three rules in section 6 of the hook."}}
 JSON
