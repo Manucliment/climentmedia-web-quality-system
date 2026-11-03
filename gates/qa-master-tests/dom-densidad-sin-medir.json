@@ -1,0 +1,8 @@
+{ "_caso": "FRONTERA · measure-screens.js no corrio dentro del snippet (3-nov-2026). Los bloques no se midieron, asi que no hay veredicto: un 0 por defecto aprobaria lo que nadie miro. Con el qa-master anterior salia PASA.",
+  "innerWidth": 390, "innerHeight": 844, "url": "https://site-c.example/",
+  "http": 200, "titulo": "Site C", "hay_main": true, "secciones": 4, "texto_len": 3000,
+  "testigo": { "valido": true, "motivos": [] },
+  "screens": 4.0, "blocks": 5, "densidad_de": "measure-screens.js",
+  "blocks_over_1screen": null, "contenedores_gigantes": null, "densidad_error": "measure-screens.js no corrio: ReferenceError: x is not defined",
+  "ctas": 4, "buttons_visibles": 0, "max_gap_screens": 1.5, "es_pagina_prosa": false,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0 }

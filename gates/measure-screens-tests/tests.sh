@@ -99,6 +99,9 @@ espera f1-muro-prosa.html      FALLA "SIN UNA PARADA" "seis parrafos seguidos so
 espera f2-prosa-con-hijos.html FALLA "SIN UNA PARADA" "y con enlace y negrita dentro, tambien"
 espera f3-unidad-enorme.html   FALLA "SIN UNA PARADA" "una sola unidad de 1628 px"
 espera f4-seccion-gigante.html FALLA "limite del contenedor"         "doce unidades que suman 5 pantallas"
+# 3-nov-2026 · bajar a un envoltorio no puede apagar el tope: el mismo <div id="product">
+# que f19, con doce unidades en una seccion, sigue cayendo por su hijo.
+espera f20-envoltorio-con-seccion-gigante.html FALLA "limite del contenedor" "envoltorio con una seccion gigante dentro"
 # 20-ago-2026 (07-trampas §66). f8 y f9 llevan EXACTAMENTE el mismo texto
 # visible: lo unico que cambia es si la pregunta es <p> o <h3>. Si alguien
 # mete <p> en la lista de PARADA, f8 se pone verde y este par lo canta.
@@ -116,6 +119,10 @@ espera f9-faq-titulares.html   PASA  ""                              "el mismo t
 # 27-sep-2026 · el gemelo de f11: una cita en <blockquote> parte el tramo (1074 ->
 # 575 px a 390). Visto en ROJO contra el gate anterior, que no la contaba.
 espera f10-cita-en-medio.html  PASA  ""                              "una cita en <blockquote> es una parada"
+# 3-nov-2026 · una ficha con la pagina entera en <main><div id="product"> (dos <section> y
+# un contenedor dentro). El tope de 3 pantallas es para una seccion, no para la pagina.
+# Visto en ROJO contra el gate anterior: «limite del contenedor».
+espera f19-envoltorio-de-ficha.html PASA ""                          "un envoltorio de toda la ficha no es una seccion"
 
 # 19-ago-2026 - EL LIMITE DE ALTURA CUENTA PALABRAS. Antes era un 6 fijo anclado
 #   a una portada de 206 palabras, y por eso suspendia a la pagina MAS DENSA del
