@@ -1,0 +1,8 @@
+{ "_caso": "FRONTERA · el snippet midio el MURO de la CDN, no la web (28-oct-2026, una web en Hostinger, puppeteer sin setUserAgent: 403 «Checking your browser»). Con el ancho bien, 1,0 pantallas y 0 CTA salian FALLO EST-06 sin ningun error. Tiene que decir NO VERIFICADO.",
+  "innerWidth": 390, "innerHeight": 844, "url": "https://site-c.example/",
+  "http": 403, "titulo": "Checking your browser...", "ua_headless": true, "hay_main": false, "secciones": 0, "texto_len": 61,
+  "testigo": { "valido": false, "motivos": ["HTTP 403", "titulo de muro anti-bot: Checking your browser..."] },
+  "screens": 1.0, "blocks": 1, "blocks_over_1screen": 0, "ctas": 0, "buttons_visibles": 0,
+  "max_gap_screens": 1.0, "es_pagina_prosa": false,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0,
+  "lcp_ms": 120, "cls": 0 }

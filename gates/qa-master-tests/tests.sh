@@ -657,6 +657,15 @@ espera "guia de PROSA de 12,4 pantallas (sospecha)"       PASA  EST-06  perl $QA
 espera "tactil 44x44: es AAA, nunca FALLO"                AVISO A11Y-12 perl $QA http://site-d.example/ --solo a11y --cache "$CACHE"
 espera "sin hoja de tokens: NO medido != aprobado (X12)"  NOVERIF A11Y-03 perl $QA http://site-d.example/ --solo a11y --css /no/existe.css --cache "$CACHE"
 espera "ancho clampado: la medida se tira entera (PC15)"  NOVERIF EST-05  perl $QA http://site-c.example/ --solo estructura --dom dom-unmeasured.json --cache "$CACHE"
+# 3-nov-2026 · EL TESTIGO DEL DOM. El 28-oct el snippet midio el 403 de una CDN y salio
+# FALLO EST-06 (1,0 pantallas, 0 CTA) sin error. Vistos en ROJO contra el qa-master de
+# antes: el muro daba FALLO EST-06 y PASA REN-11, el error maquetado FALLO EST-06, y el
+# JSON sin testigo PASA EST-06.
+espera "muro de la CDN (403): la medida no es la web"     NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-muro-403.json --cache "$CACHE"
+espera "muro de la CDN (403): EST-05 dice por que"        NOVERIF EST-05  perl $QA http://site-c.example/ --solo estructura --dom dom-muro-403.json --cache "$CACHE"
+espera "muro de la CDN (403): su LCP tampoco vale"        NOVERIF REN-11  perl $QA http://site-c.example/ --solo rendimiento --dom dom-muro-403.json --cache "$CACHE"
+espera "error maquetado con 403 y testigo que miente"     NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-error-maquetado.json --cache "$CACHE"
+espera "JSON sin testigo: no prueba nada"                 NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-sin-testigo.json --cache "$CACHE"
 espera "hover sin fondo declarado: no se acusa"           NOVERIF A11Y-03b perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
 
 echo

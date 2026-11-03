@@ -1,2 +1,4 @@
 { "_caso": "FRONTERA · captura con el ancho CLAMPADO (Chrome headless en Windows) e innerHeight cambiado por --disable-web-security. NO puede dar un veredicto: tiene que decir NO VERIFICADO.",
-  "innerWidth": 0, "innerHeight": 0, "url": "https://ejemplo/", "screens": 8.4, "ctas": 0 }
+  "innerWidth": 0, "innerHeight": 0, "url": "https://ejemplo/",
+  "http": 200, "titulo": "Ejemplo", "hay_main": true, "secciones": 6, "texto_len": 4200,
+  "testigo": { "valido": true, "motivos": [] }, "screens": 8.4, "ctas": 0 }

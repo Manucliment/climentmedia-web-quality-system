@@ -1,0 +1,7 @@
+{ "_caso": "FRONTERA · pagina de error MAQUETADA (titulo propio, <main>, texto) servida con 403, y un testigo que dice valido. qa-master no se fia del testigo del JSON: mira el codigo HTTP crudo. Tiene que decir NO VERIFICADO.",
+  "innerWidth": 1298, "innerHeight": 900, "url": "https://site-c.example/",
+  "http": 403, "titulo": "Site C", "ua_headless": false, "hay_main": true, "secciones": 2, "texto_len": 900,
+  "testigo": { "valido": true, "motivos": [] },
+  "screens": 1.2, "blocks": 2, "blocks_over_1screen": 0, "ctas": 0, "buttons_visibles": 0,
+  "max_gap_screens": 1.2, "es_pagina_prosa": false,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0 }

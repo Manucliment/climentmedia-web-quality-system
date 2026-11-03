@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-938, not 936, because that machine has deployed. `run-all.sh`
+945, not 943, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -529,6 +529,7 @@ without blocking. Why the order changed is trap §89.
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
 | `history-gate.pl` | Every recorded failure must name the check that accused. |
+| `pipefail-guard.js` | No script turns on `pipefail` and also pipes into `grep -q`: with `pipefail` that pipe returns 141 once the input passes ~64 KB, and a "red if it contains X" guard goes silently green. Measured 2026-11-03: 0 of 400 runs wrong without `pipefail`, 141 in 50 of 50 at 200 KB with it. Names file and lines; has its own self-test. |
 | `compliance.pl` | The compliance matrix, and how far it reaches. |
 | `compliance-selftest.pl` | Its own self-test. |
 | `audit-vs-spec.pl` | The spec against the tree. **26 of 26 checks have a case.** |
