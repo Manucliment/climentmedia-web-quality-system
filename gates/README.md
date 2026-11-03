@@ -1,6 +1,6 @@
 # The gates
 
-39 programs and 36 test batteries. This file is the index: what each program is for,
+40 programs and 37 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On a clean
-install the fast run is **936 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **943 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1569 cases green, 0 red**, with **seven** banks reported as
+a clean install it reads **1581 cases green, 0 red**, with **seven** banks reported as
 `NOT MEASURED`: the five that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1690**: 1569 plus 119 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1706**: 1581 plus 123 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all six banks (the five, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-938, not 936, because that machine has deployed. `run-all.sh`
+945, not 943, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,13 +95,13 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  936 casos en verde · 0 en rojo
+  943 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  1569 casos en verde · 0 en rojo
+  1581 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler
 ```
 
@@ -523,11 +523,12 @@ without blocking. Why the order changed is trap §89.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6), of the coverage (D8) and of one instrument or one bank (D9) must be the last one measured. |
-| `coverage.pl` | How many checks have a test case. Today: **134 of 142 (94%)**. |
+| `coverage.pl` | How many checks have a test case. Today: **135 of 142 (95%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **159 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
 | `history-gate.pl` | Every recorded failure must name the check that accused. |
+| `pipefail-guard.js` | No script turns on `pipefail` and also pipes into `grep -q`: with `pipefail` that pipe returns 141 once the input passes ~64 KB, and a "red if it contains X" guard goes silently green. Measured 2026-11-03: 0 of 400 runs wrong without `pipefail`, 141 in 50 of 50 at 200 KB with it. Names file and lines; has its own self-test. |
 | `compliance.pl` | The compliance matrix, and how far it reaches. |
 | `compliance-selftest.pl` | Its own self-test. |
 | `audit-vs-spec.pl` | The spec against the tree. **26 of 26 checks have a case.** |
@@ -535,7 +536,7 @@ without blocking. Why the order changed is trap §89.
 | `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **94% is measured over 4 programs of 39**,
+The coverage figure has a scope you should know: **95% is measured over 4 programs of 40**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
@@ -682,7 +683,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **409 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **414 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until
