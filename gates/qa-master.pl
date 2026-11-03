@@ -5088,11 +5088,15 @@ sub lente_estructura {
             my $pant = $DOM{screens} // 0;
             my $ctas = $DOM{ctas} // 0;
             my $desb = $DOM{blocks_over_1screen} // 0;
+            my $gig  = $DOM{contenedores_gigantes} // 0;
             my $gapmax = $DOM{max_gap_screens} // 0;
             my $prosa  = $DOM{es_pagina_prosa} ? 'si' : 'no';
             my @d;
             # Sospecha de metodo: el limite de 6 pantallas NO aplica a prosa.
-            push @d, sprintf('bloque > 1 pantalla: %d', $desb) if $desb > 0;
+            # Desde el 3-nov los dos recuentos vienen de measure-screens.js (la regla
+            # de la puerta): mas de una pantalla SIN UNA PARADA, y contenedor > 3.
+            push @d, sprintf('bloque > 1 pantalla%s: %d', ($DOM{densidad_de} ? ' sin una parada' : ''), $desb) if $desb > 0;
+            push @d, sprintf('contenedor > 3 pantallas: %d (%s)', $gig, join(' · ', @{ $DOM{que_gigante} || [] })) if $gig > 0;
             push @d, sprintf('tramo sin CTA: %.1f pantallas', $gapmax) if $gapmax > 2.5;
             push @d, sprintf('pagina: %.1f pantallas', $pant) if $pant > 6 && !$DOM{es_pagina_prosa};
             # 🔴 LA UNICA EXCEPCION DECLARADA (08-qa-final): si falla SOLO por el
@@ -5112,7 +5116,13 @@ sub lente_estructura {
                       proc=>'08-qa-final «la unica excepcion declarada» · medido en shop.site-b.example/a-medida.html el 7-ago-2026',
                       hacer=>'ANOTARLO Y SEGUIR. 🔴 No cambies las clases del componente para que el gate lo vea');
             }
-            @d ? fallo(lente=>'ESTRUCTURA', id=>'EST-06', titulo=>'densidad y CTAs',
+            # Si measure-screens.js no corrio dentro del snippet, los bloques no se han
+            # medido: un 0 por defecto aprobaria lo que nadie miro.
+            $DOM{densidad_error}
+            ? nv(lente=>'ESTRUCTURA', id=>'EST-06', titulo=>'densidad y CTAs: los bloques no se midieron',
+                 donde=>$u, dato=>$DOM{densidad_error}, proc=>'densidad de una sola fuente (3-nov-2026)',
+                 hacer=>'volver a generar el snippet con qa-master.pl --snippet (lleva dentro measure-screens.js) y recapturar')
+            : @d ? fallo(lente=>'ESTRUCTURA', id=>'EST-06', titulo=>'densidad y CTAs',
                        donde=>"$u a innerWidth=$iw innerHeight=$ih",
                        dato=>join(' · ', @d)." · esPaginaProsa: $prosa",
                        umbral=>'ningun bloque >1 pantalla · <=2,5 pantallas sin CTA · >=2 CTA · <=6 pantallas SOLO si no es prosa',
@@ -5236,6 +5246,29 @@ sub lente_estructura {
 #  9 · EL SNIPPET  ·  lo unico que necesita navegador
 # =============================================================================
 sub snippet_js {
+    # 🔴 3-nov-2026 · LA DENSIDAD TIENE UNA SOLA FUENTE: measure-screens.js, la que
+    #  corre en la puerta con su banco. Este snippet contaba «hijo de <main> mas alto
+    #  que una pantalla» -la regla de antes del 18-ago- y acusaba la rejilla de un
+    #  catalogo (9 pantallas de 50 tarjetas, cada una con su imagen y su titulo) como
+    #  un bloque sin leer. La puerta, con la regla de la UNIDAD y del tramo sin
+    #  parada, no veia ningun bloque desbordado en esas mismas paginas. Dos copias de
+    #  una regla divergen (trap design-E3): ahora se incrusta el fichero entero.
+    my ($midir) = $0 =~ m{^(.*)[\\/][^\\/]+$}; $midir = '.' unless defined $midir;
+    my $f = "$midir/measure-screens.js";
+    # Con :encoding, no :raw: la plantilla son CARACTERES (use utf8) y STDOUT lleva
+    # capa UTF-8; pegar BYTES dentro los codificaba dos veces (el «—» salia «â»).
+    open my $fh, '<:encoding(UTF-8)', $f or do {
+        print STDERR "NO MEDIDO: el snippet necesita $f (la regla de densidad de la puerta) y no se puede abrir: $!\n";
+        exit 3;
+    };
+    local $/; my $ms = <$fh>; close $fh;
+    my $js = snippet_js_plantilla();
+    my $n = ($js =~ s{/\*__MEASURE_SCREENS__\*/}{$ms});
+    die "snippet: el hueco de measure-screens.js tenia que aparecer 1 vez y aparecio " . ($n || 0) . "\n" unless $n == 1;
+    return $js;
+}
+
+sub snippet_js_plantilla {
     return <<'JS';
 /* ===========================================================================
    qa-maestro · SNIPPET DE NAVEGADOR
@@ -5294,7 +5327,20 @@ sub snippet_js {
   out.screens = +(doc.scrollHeight / vh).toFixed(2);
   const bloques = [...main.children].filter(e => e.getBoundingClientRect().height > 4);
   out.blocks = bloques.length;
-  out.blocks_over_1screen = bloques.filter(e => e.getBoundingClientRect().height > vh).length;
+  // Bloques y contenedores: lo que diga measure-screens.js (incrustado por
+  // qa-master al generar este snippet). Si no corre, NO se cuenta a mano: se
+  // dice, y qa-master lo deja en NO VERIFICADO.
+  out.densidad_de = 'measure-screens.js';
+  try {
+    const ms = JSON.parse(/*__MEASURE_SCREENS__*/);
+    out.blocks_over_1screen = ms.resumen.queDesbordan.length;
+    out.contenedores_gigantes = ms.resumen.contenedoresGigantes.length;
+    out.que_desborda = ms.resumen.queDesbordan;
+    out.que_gigante = ms.resumen.contenedoresGigantes;
+  } catch (e) {
+    out.blocks_over_1screen = null; out.contenedores_gigantes = null;
+    out.densidad_error = 'measure-screens.js no corrio: ' + String(e && e.message || e);
+  }
 
   // ⚠️ Limite conocido: no cuenta los <button> que son la interaccion principal
   //    de una pagina-configurador. Se cuentan aparte, para poder distinguir un

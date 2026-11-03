@@ -1,0 +1,32 @@
+{
+ "_caso": "CONTROL POSITIVO · densidad de measure-screens.js (3-nov-2026): ningun bloque sin parada, pero una seccion de 3,4 pantallas en una pagina de 5 (por debajo del tope de pagina, para que SOLO pueda caer por el contenedor). La regla de la puerta lo para por el tope del contenedor, y qa-master tiene que decir lo mismo. Con el qa-master anterior salia PASA: no leia contenedores_gigantes.",
+ "innerWidth": 390,
+ "innerHeight": 844,
+ "url": "https://site-c.example/tienda/",
+ "http": 200,
+ "titulo": "Tienda",
+ "hay_main": true,
+ "secciones": 3,
+ "texto_len": 5200,
+ "testigo": {
+  "valido": true,
+  "motivos": []
+ },
+ "screens": 5,
+ "blocks": 2,
+ "densidad_de": "measure-screens.js",
+ "blocks_over_1screen": 0,
+ "contenedores_gigantes": 1,
+ "que_desborda": [],
+ "que_gigante": [
+  "Catalogo — 2870px = 3.4 pantallas"
+ ],
+ "ctas": 6,
+ "buttons_visibles": 0,
+ "max_gap_screens": 2,
+ "es_pagina_prosa": false,
+ "filas_cojas": 0,
+ "titulares_huerfanos": 0,
+ "alturas_desiguales": 0,
+ "listas_de_uno": 0
+}

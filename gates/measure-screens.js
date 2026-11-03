@@ -152,7 +152,21 @@
     // Se desciende SOLO cuando el hijo no es una seccion Y contiene 2 o mas
     // [data-sec]: asi no puede dispararse en una pagina que no declara roles
     // -que son 3 de las 6 webs- ni partir un bloque que de verdad es uno.
-    const hijosReales = [...main.children].flatMap(c =>
+    // 🔴 3-nov-2026 · Y EL ENVOLTORIO SIN data-sec. Una ficha de producto metia la
+    // pagina entera en <main><div id="product">: galeria con la compra, historia y
+    // relacionados -dos <section> y un contenedor-, y el gate veia UN bloque de 5,2
+    // pantallas a 390 (3,4 a 1298) y lo acusaba como «contenedor de mas de 3». El
+    // tope del contenedor es para una seccion que es una pagina dentro de la pagina,
+    // no para la pagina. Se baja un nivel SOLO si ese hijo es el UNICO de <main> y
+    // tiene 2 o mas hijos DIRECTOS que son secciones (<section>, <article> o
+    // [data-sec]). Asi una <section> sola llena de tarjetas -f4, doce unidades en
+    // cinco pantallas- sigue siendo un bloque y sigue cayendo por el tope.
+    const visibles = el => [...el.children].filter(c => c.getBoundingClientRect().height > 40);
+    const esSeccion = c => /^(SECTION|ARTICLE)$/.test(c.tagName) || c.hasAttribute('data-sec');
+    const deMain = visibles(main);
+    const envoltorio = deMain.length === 1 && !esSeccion(deMain[0]) &&
+                       [...deMain[0].children].filter(esSeccion).length >= 2;
+    const hijosReales = (envoltorio ? [...deMain[0].children] : [...main.children]).flatMap(c =>
       (!c.hasAttribute('data-sec') && c.querySelectorAll('[data-sec]').length >= 2)
         ? [...c.children] : [c]);
     const bloques = hijosReales

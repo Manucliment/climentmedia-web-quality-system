@@ -666,6 +666,14 @@ espera "muro de la CDN (403): EST-05 dice por que"        NOVERIF EST-05  perl $
 espera "muro de la CDN (403): su LCP tampoco vale"        NOVERIF REN-11  perl $QA http://site-c.example/ --solo rendimiento --dom dom-muro-403.json --cache "$CACHE"
 espera "error maquetado con 403 y testigo que miente"     NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-error-maquetado.json --cache "$CACHE"
 espera "JSON sin testigo: no prueba nada"                 NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-sin-testigo.json --cache "$CACHE"
+# 3-nov-2026 · LA DENSIDAD DE UNA SOLA FUENTE: el snippet lleva measure-screens.js dentro
+# y qa-master lee sus dos recuentos. Vistos en ROJO contra el qa-master de antes: el
+# contenedor gigante salia PASA (no leia contenedores_gigantes) y la densidad sin medir
+# tambien PASA (un 0 por defecto).
+espera "contenedor de 3,4 pantallas (regla de la puerta)" FALLO EST-06    perl $QA http://site-c.example/ --solo estructura --dom dom-contenedor-gigante.json --cache "$CACHE"
+texto  "...y cae POR el contenedor, no por otra cosa"     SI "contenedor > 3 pantallas: 1" perl $QA http://site-c.example/ --solo estructura --dom dom-contenedor-gigante.json --cache "$CACHE"
+espera "measure-screens no corrio: no hay veredicto"      NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-densidad-sin-medir.json --cache "$CACHE"
+texto  "el snippet lleva dentro la regla de la puerta"    SI "tramoSinParada" perl $QA --snippet
 espera "hover sin fondo declarado: no se acusa"           NOVERIF A11Y-03b perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
 
 echo
