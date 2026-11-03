@@ -446,6 +446,30 @@ espera "MED-07b · declarado y no cargado, sigue avisando" AVISO MED-07b \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-tercero-declarado-que-no-existe --contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo
 
 echo
+echo "== MED-15 · DATOS PERSONALES HACIA LA MEDICION · 3-nov-2026"
+# MED-03 cruza el NOMBRE del evento; MED-15 mira lo que LLEVA: la web (dataLayer.push,
+# gtag event) y las variables que usa cada etiqueta del contenedor que no esta en pausa.
+# 🔑 EL CASO QUE DISCRIMINA ES EL PRIMERO: `link:'tel:+32...'` no es una clave `tel`.
+#    Con la clave leida tras cualquier caracter (y no solo tras `{` o `,`) sale FALLO
+#    «la web manda tel»: medido el 3-nov con la regla cambiada en una copia del gate.
+_M15="--candidato --una-sola --solo medicion --sin-recibo"
+espera "MED-15 · un clic tel: no es un dato personal"   PASA  MED-15 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med15-tel --contenedor fixtures-lenses/med15-contenedor-limpio.js $_M15
+espera "MED-15 · la web empuja el correo"               FALLO MED-15 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med15-email --contenedor fixtures-lenses/med15-contenedor-limpio.js $_M15
+espera "MED-15 · una etiqueta manda form.email"         FALLO MED-15 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med15-tel --contenedor fixtures-lenses/med15-contenedor-pii.js $_M15
+texto  "MED-15 · y dice cual y como que"                SI "manda la variable «form.email» como «user_email»" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med15-tel --contenedor fixtures-lenses/med15-contenedor-pii.js $_M15
+espera "MED-15 · una etiqueta en pausa no manda nada"   PASA  MED-15 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med15-tel --contenedor fixtures-lenses/med15-contenedor-pausado.js $_M15
+espera "MED-15 · datos de usuario automaticos avisan"   AVISO MED-15 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med15-tel --contenedor fixtures-lenses/med15-contenedor-auto.js $_M15
+# Sin JSON legible en el contenedor no se dice PASA: solo se miro la mitad.
+espera "MED-15 · contenedor sin JSON: aviso, no pasa"   AVISO MED-15 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med15-tel --contenedor fixtures-lenses/contenedor-solo-google.js $_M15
+
+echo
 echo "== MEDICION DE LA CASA · EL CONTENEDOR VIVE EN UN consent.js PROPIO · 26-sep-2026"
 # 🔴 26-sep-2026 · LA LENTE BUSCABA EL CONTENEDOR SOLO EN EL HTML. Nuestras webs
 #    cargan un consent.js propio que declara el Consent Mode v2 en `denied` e

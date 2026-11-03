@@ -289,6 +289,25 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   Threshold: `MED-01` **every `data-*` the generator writes has a reader in the runtime** ·
   `MED-02` the thank-you page carries `noindex` **and** the conversion marker · `MED-03`
   the container is on every page. **EXIT 0.**
+- **AND THE BANNER, AS A VISITOR SEES IT** · On the measuring host, never on Windows:
+  `node gates/banner-probe.js <URL> [W H]` (copy it to the host first, as the door does
+  with `run-gate.js`). B0–B8: no tracking cookie before deciding, banner on the first
+  visit, Accept and Reject both in the first layer with the same weight, not a wall, in
+  the page's language, no tracking cookie after Reject, the choice remembered on reload,
+  and a control that reopens it. **It never clicks Accept**: a probe that accepts is a
+  visit in the client's analytics. Exit 1 on a FAIL. Bench: `gates/banner-probe-tests/tests.sh`.
+  `MED-15` in the master gate checks the other side: no event and no tag sends an email,
+  a phone or a name.
+- **AND THE PROPERTY ITSELF** · The site can emit every event and the analytics property
+  still lose it. Before calling measurement done, read the property's settings through the
+  Admin API (read-only scope is enough): event data retention at 14 months, not the default
+  2 · time zone and currency of the client's market · one key event for the lead, in
+  snake_case, never `page_view` · enhanced measurement on, with form interactions and page
+  changes · email redaction on · and, by hand, an internal-traffic filter (the API does not
+  expose it). **`NO GATE — risk: a property that drops history after 2 months, or sums
+  the wrong currency.`** The check needs the client's credentials, so it lives with the
+  operator, not in this repo. Measured on one agency's 21 properties: 16 kept 2 months, and a
+  European site counted in dollars on Los Angeles time.
 - **IF YOU SKIP IT** · This is the most expensive failure in the whole system and it has
   been live: a generator emitted `<body data-thanks="page_view_thanks">` and grepping the
   runtime for `data-thanks` returned **0**. Three conversion tags that nothing fires: zero

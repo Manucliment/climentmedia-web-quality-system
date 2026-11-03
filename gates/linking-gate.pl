@@ -237,6 +237,31 @@ if (@shells) {
   else { ok('R10 menu acotado', "$maxnav enlaces a $maxuniq destinos distintos ($pct% del sitio)"); }
 }
 
+# --- R11: enlaces internos sin UTM y en minusculas (3-nov-2026)
+# Una UTM en un enlace interno abre una sesion nueva en GA4 con esa fuente: el
+# visitante que llego de Google pasa a contar como «hero / web» y el canal que lo
+# trajo pierde el lead. Lo pedia la lista de calidad de datos de una auditoria de
+# medicion, y solo se habia mirado en las portadas. Las mayusculas en la ruta son
+# AVISO: el servidor puede servir las dos, pero GA4 y los buscadores cuentan dos
+# paginas. La clave del rastreador conserva la consulta y la caja de la ruta.
+{
+  my (@utm, @may);
+  for my $u (@ok200) {
+    for my $t (@{ $p->{$u}{out_targets} || [] }) {
+      push @utm, "$u -> $t" if $t =~ /[?&]utm_[a-z]+=/i;
+      my ($ruta) = $t =~ m{^https?://[^/]+([^?#]*)};
+      push @may, "$u -> $t" if defined $ruta && $ruta =~ /[A-Z]/;
+    }
+  }
+  my %v; @utm = grep { !$v{$_}++ } @utm; %v = (); @may = grep { !$v{$_}++ } @may;
+  if (@utm) { bad('R11 enlaces internos sin UTM', scalar(@utm).' enlace(s) internos con utm_: parten la sesion en GA4');
+              print "         - $_\n" for @utm[0 .. ($#utm < 9 ? $#utm : 9)]; }
+  else { ok('R11 enlaces internos sin UTM'); }
+  if (@may) { avis('R11b rutas en minusculas', scalar(@may).' enlace(s) internos con mayusculas en la ruta');
+              print "         - $_\n" for @may[0 .. ($#may < 9 ? $#may : 9)]; }
+  else { ok('R11b rutas en minusculas'); }
+}
+
 my $nvtxt = $nover ? ", $nover sin verificar" : '';
 print "\n>>> VEREDICTO: ",
       ($fail  ? "FALLA ($fail regla(s) rotas, $warn aviso(s)$nvtxt)"

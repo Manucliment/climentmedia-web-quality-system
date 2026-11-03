@@ -521,6 +521,29 @@ caso_regla('R9 · 25%, pasa', 'R9', 'PASA', {
     "https://$HOST/blog/" => { out_chrome => 15, out_body => 5 },
 });
 
+print "\n== R11 · UTM Y MAYUSCULAS EN ENLACES INTERNOS · 3-nov-2026\n";
+# Una UTM en un enlace interno parte la sesion en GA4 y el canal que trajo al
+# visitante pierde el lead. Medido el 3-nov en 8 webs reales: 0 en todas, asi que
+# sin estos casos la regla no se habia visto nunca en rojo.
+caso_regla('R11 · enlace interno con utm_, FALLA', 'R11', 'FALLA', {
+    "https://$HOST/"          => { out_targets => [ "https://$HOST/precios?utm_source=home&utm_medium=hero" ] },
+    "https://$HOST/precios"   => {},
+});
+# Una consulta sin utm_ (un filtro, una pagina 2) no es una campana.
+caso_regla('R11 · ?page=2 no es una UTM, pasa', 'R11', 'PASA', {
+    "https://$HOST/"          => { out_targets => [ "https://$HOST/blog?page=2" ] },
+    "https://$HOST/blog"      => {},
+});
+caso_regla('R11b · ruta con mayusculas, AVISA', 'R11b', 'AVISO', {
+    "https://$HOST/"          => { out_targets => [ "https://$HOST/Contacto" ] },
+    "https://$HOST/contacto"  => {},
+});
+# El host lo pone en minusculas el rastreador: solo cuenta la ruta.
+caso_regla('R11b · mayusculas solo en la consulta, pasa', 'R11b', 'PASA', {
+    "https://$HOST/"          => { out_targets => [ "https://$HOST/buscar?q=Madrid" ] },
+    "https://$HOST/buscar"    => {},
+});
+
 printf "\n-----------------------------------------------------------------\n";
 printf "  OK %-3d  ·  MAL %d\n", $ok, $ko;
 print $ko ? "  🔴 HAY FALLOS: no se despliega nada con esto en rojo.\n"

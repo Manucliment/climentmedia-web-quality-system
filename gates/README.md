@@ -1,6 +1,6 @@
 # The gates
 
-39 programs and 36 test batteries. This file is the index: what each program is for,
+40 programs and 37 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -28,23 +28,23 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the ten batteries that need a browser, a host, or the network. On a clean
-install the fast run is **936 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **943 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1569 cases green, 0 red**, with **seven** banks reported as
-`NOT MEASURED`: the five that measure on a Linux host (`measure-screens`, `mobile-gate`,
-`mobile-menu-gate`, `marca-gate`, `form-handler`), the one that needs a client repository this public repository does not
+a clean install it reads **1583 cases green, 0 red**, with **eight** banks reported as
+`NOT MEASURED`: the six that measure on a Linux host (`measure-screens`, `mobile-gate`,
+`mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
 Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
 `structure-gate` later: see below.)
 
-> **A machine with a measurement host reads more, and that is expected.** The five host
+> **A machine with a measurement host reads more, and that is expected.** The six host
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1690**: 1569 plus 119 host cases plus the 2 of the deploy-history bank. `run-all.sh`
-> counts all six banks (the five, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
+> **1728**: 1583 plus 143 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> counts all seven banks (the six, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
 > Until 21-sep-2026 those three banks looked for a placeholder host left behind when this
@@ -95,14 +95,14 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  936 casos en verde · 0 en rojo
+  943 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  1569 casos en verde · 0 en rojo
-  NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler
+  1583 casos en verde · 0 en rojo
+  NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies
 ```
 
 > **The very first run on a clean install also lists `doc-gate(skill)`**, whichever of the two
@@ -369,7 +369,7 @@ a `3` belongs is worse: it lets a gap read as coverage.
 ### Coverage is two questions, and only one of them was being asked
 
 `gate-index.js` has always answered *"does this rule name a check that exists?"* — 257 rules,
-**159 with an instrument (62%)**, the other 98 listed with `--huecos` and split into
+**162 with an instrument (63%)**, the other 95 listed with `--huecos` and split into
 machine-measurable, partial, and human judgement. That half is well kept: the gaps are counted,
 not hidden, and the report refuses to claim a ceiling of 100% because the standard itself marks
 rules no machine will ever measure.
@@ -377,8 +377,8 @@ rules no machine will ever measure.
 **It never asked the reverse: does this check that RUNS have a rule behind it?**
 
 ```
-  checks emitted .......... 158
-  with no rule claiming it .. 90   (57%)
+  checks emitted .......... 160
+  with no rule claiming it .. 92   (57%)
 ```
 
 **That is not a tidiness complaint.** A gate nobody's rule asked for is an opinion with
@@ -507,6 +507,7 @@ without blocking. Why the order changed is trap §89.
 |---|---|
 | `forms-gate.js` | The form in the DOM: labels, consent, a real submit button, a visible honeypot. |
 | `form-handler.php` | The reference handler the gate is written against. |
+| `banner-probe.js` | The cookie banner as a first-time visitor meets it, on the measurement host: nothing tracks before the choice, Accept and Reject in the first layer with the same weight, no wall, the page's language, Reject really rejects and is remembered, and a way to reopen it outside the banner. It never clicks Accept. Bench: `banner-probe-tests/`. |
 
 ### Migration
 
@@ -523,8 +524,8 @@ without blocking. Why the order changed is trap §89.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6), of the coverage (D8) and of one instrument or one bank (D9) must be the last one measured. |
-| `coverage.pl` | How many checks have a test case. Today: **134 of 142 (94%)**. |
-| `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **159 cases.** See below. |
+| `coverage.pl` | How many checks have a test case. Today: **136 of 144 (94%)**. |
+| `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **162 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
 | `history-gate.pl` | Every recorded failure must name the check that accused. |
@@ -535,7 +536,7 @@ without blocking. Why the order changed is trap §89.
 | `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **94% is measured over 4 programs of 39**,
+The coverage figure has a scope you should know: **94% is measured over 4 programs of 40**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
@@ -682,7 +683,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **409 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **416 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until

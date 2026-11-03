@@ -244,6 +244,7 @@ sub gates_de {
                # dejo de casar y WPS-29 volvio a contar como «sin gate» -o sea
                # que renombrar un fichero desato una regla en silencio-. La
                # cadena sin guion casa las DOS formas, que es lo que se quiere.
+               ['banner-probe.js','banner-probe.js'],   # 3-nov-2026 · ME-05 a ME-07, en el navegador del servidor
                ['audit.sh','audit.sh']) {
         push @otros, $n->[1] if index(lc $txt, lc $n->[0]) >= 0;
     }

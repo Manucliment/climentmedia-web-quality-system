@@ -3850,6 +3850,119 @@ sub lente_medicion {
                       hacer=>'puede ser correcto si el disparador es por URL (site-a usa _cn(PATH,"/merci")). Comprobar en GTM que existe ese disparador, y anotarlo: es el mecanismo REAL, no el que documentamos');
             }
 
+            # ── MED-15 · DATOS PERSONALES HACIA LA MEDICION · 3-nov-2026 ──────
+            # MED-03 cruza el NOMBRE de cada evento; nadie miraba lo que el evento
+            # LLEVA. Un `email` en un dataLayer.push, o una etiqueta de GA4 con un
+            # parametro que lee el campo del telefono, mete datos personales en
+            # GA4: sus condiciones lo prohiben y no hay forma de sacarlos despues.
+            # Lo pedian dos listas de auditoria de medicion de una agencia (Data
+            # Quality y Cookie & CMP), y ningun gate lo miraba.
+            # Dos mitades: (1) lo que empuja la propia web (@scan: pagina + JS
+            # servido, sin comentarios) y (2) las variables del contenedor publico:
+            # una variable de la capa de datos, un elemento de la pagina o un JS
+            # propio que lee correo, telefono o nombre, usada en una etiqueta que
+            # no esta en pausa. NO cuenta `user_data` (conversiones mejoradas:
+            # Google lo cifra y es decision de quien lleva los anuncios); la recogida
+            # AUTOMATICA de esos datos sale en AVISO por eso mismo.
+            # 🔴 Una clave se reconoce solo tras `{` o `,`: `link:'tel:+32...'` no es
+            #    una clave `tel`, y leerla asi tumbaba cada web con un clic al telefono.
+            {
+                my $PII = qr/^(?:e-?mail|correo|mail|phone|phone_?number|tel|telefono|tel\x{e9}fono|telephone|t\x{e9}l\x{e9}phone|mobile|movil|m\x{f3}vil|first_?name|last_?name|full_?name|nombre|apellidos?|prenom|pr\x{e9}nom|address|direccion|direcci\x{f3}n|adresse|dni|nif|nie|iban|birth_?date|fecha_?nacimiento)$/i;
+                my $PIISEL = qr/(?:e-?mail|correo|phone|t[e\x{e9}]l[e\x{e9}]?f|telefono|nombre|apellido|\bnom\b|\bname\b|dni|nif)/i;
+                my (@malos, @avisos);
+                for my $s (@scan) {
+                    next unless defined $s;
+                    while ($s =~ /(dataLayer\.push\s*\(|gtag\s*\(\s*['"]event['"]\s*,[^,{)]*,)\s*\{([^{}]{0,600})\}/gi) {
+                        my ($quien, $obj) = ($1, $2);
+                        my @k = $obj =~ /(?:^|[{,])\s*['"]?([A-Za-z_\x{e0}-\x{ff}][\w\x{e0}-\x{ff}-]*)['"]?\s*:/g;
+                        push @malos, map { "la web manda \x{ab}$_\x{bb} en ".($quien =~ /gtag/i ? "gtag('event')" : 'dataLayer.push') } grep { $_ =~ $PII } @k;
+                    }
+                }
+                my $res;
+                # Cada `var data = {` hasta el primero que sea JSON: un comentario puede nombrarlo antes.
+                # (el `while //g` agota la busqueda y deja pos($cjs) sin marca para G9 de abajo)
+                my @desde; push @desde, pos($cjs) while $cjs =~ /var\s+data\s*=\s*(?=\{)/g;
+                PRUEBA: for my $p (@desde) {
+                    for my $j (JSON::PP->new->utf8, JSON::PP->new) {
+                        my ($d) = eval { $j->decode_prefix(substr($cjs, $p)) };
+                        if (ref $d eq 'HASH' && ref $d->{resource} eq 'HASH') { $res = $d->{resource}; last PRUEBA; }
+                    }
+                }
+                my $leido = $res && ref $res->{macros} eq 'ARRAY';
+                my ($nvar, $ntag) = (0, 0);
+                if ($leido) {
+                    my @mac = @{ $res->{macros} };
+                    my $txt = sub { my $v = shift; ref $v eq 'ARRAY' ? join(' ', grep { defined && !ref } @$v) : (defined $v && !ref $v ? $v : '') };
+                    my %pii;
+                    for my $i (0 .. $#mac) {
+                        my $m = $mac[$i]; next unless ref $m eq 'HASH'; $nvar++;
+                        my $f = $m->{function} // '';
+                        if ($f eq '__v') {
+                            my ($ult) = $txt->($m->{vtp_name}) =~ /([^.]+)$/;
+                            $pii{$i} = "la variable \x{ab}".$txt->($m->{vtp_name})."\x{bb}" if defined $ult && $ult =~ $PII;
+                        } elsif ($f eq '__d') {
+                            my $sel = join ' ', map { $txt->($m->{$_}) } qw(vtp_elementId vtp_elementSelector);
+                            $pii{$i} = "el elemento \x{ab}$sel\x{bb}" if $sel =~ $PIISEL;
+                        } elsif ($f eq '__jsm') {
+                            $pii{$i} = 'un JS propio que lee un campo del formulario'
+                                if $txt->($m->{vtp_javascript}) =~ /(?:querySelector|getElementById|getElementsByName)[^;]{0,80}$PIISEL[^;]{0,80}\.value/i;
+                        }
+                    }
+                    my $anda; $anda = sub {
+                        my ($nodo, $ruta, $out) = @_;
+                        if (ref $nodo eq 'ARRAY') {
+                            if (@$nodo == 2 && ($nodo->[0] // '') eq 'macro' && ($nodo->[1] // '') =~ /^\d+$/) { push @$out, [$ruta, $nodo->[1]]; return; }
+                            my $nom = '';
+                            if (@$nodo && ($nodo->[0] // '') eq 'map') {
+                                for (my $k = 1; $k < $#$nodo; $k += 2) { $nom = $nodo->[$k+1] if !ref $nodo->[$k] && $nodo->[$k] =~ /^(?:parameter|name|key)$/ && !ref $nodo->[$k+1]; }
+                            }
+                            $anda->($_, ($nom ne '' ? "$ruta.$nom" : $ruta), $out) for @$nodo;
+                        } elsif (ref $nodo eq 'HASH') {
+                            for my $k (sort keys %$nodo) { next if $k =~ /user_?data|userData|enhanced|cssProvided/i; $anda->($nodo->{$k}, "$ruta.$k", $out); }
+                        }
+                    };
+                    for my $t (@{ $res->{tags} || [] }) {
+                        next unless ref $t eq 'HASH';
+                        my $f = $t->{function} // '';
+                        next if $f eq '__paused';
+                        if ($f eq '__ogt_1p_data_v2') {
+                            push @avisos, 'la etiqueta de Google recoge sola correo, telefono o direccion de los formularios (datos de usuario automaticos)'
+                                if $t->{vtp_isAutoEnabled} && ($t->{vtp_isEnabled} // 1);
+                            next;
+                        }
+                        next if $f =~ /^__(?:ccd_|ogt_)/;
+                        $ntag++;
+                        my @refs; $anda->($t, '', \@refs);
+                        my $ev = $txt->($t->{vtp_eventName}); $ev = $ev ne '' ? " ($ev)" : '';
+                        for my $r (@refs) {
+                            my ($param) = $r->[0] =~ /([^.]+)$/; $param //= '';
+                            next unless $pii{ $r->[1] } || ($param =~ $PII && $r->[0] =~ /EventSettings|eventParameters|fieldsToSet|userProperties/i);
+                            push @malos, "la etiqueta $f$ev manda ".($pii{ $r->[1] } // 'una variable')." como \x{ab}$param\x{bb}";
+                        }
+                    }
+                }
+                my %visto; @malos = grep { !$visto{$_}++ } @malos;
+                if (@malos) {
+                    fallo(lente=>'MEDICION', id=>'MED-15', titulo=>'datos personales hacia la medicion',
+                          donde=>join(' · ', @malos), dato=>scalar(@malos).' envios con correo, telefono, nombre o documento',
+                          umbral=>'0 · ningun evento ni etiqueta lleva datos de la persona',
+                          proc=>'listas de auditoria de medicion (Data Quality, Cookie & CMP) · 3-nov-2026',
+                          hacer=>'quitar el parametro. Si es para conversiones mejoradas, va por user_data, que Google cifra, y lo decide quien lleva los anuncios');
+                } elsif (!$leido) {
+                    aviso(lente=>'MEDICION', id=>'MED-15', titulo=>'datos personales hacia la medicion: solo se miro la web',
+                          dato=>'la pagina y su JS no mandan ninguno; el contenedor no trae un JSON legible',
+                          umbral=>'0 · ningun evento ni etiqueta lleva datos de la persona', proc=>'3-nov-2026',
+                          hacer=>'mirar las variables de las etiquetas en la interfaz de GTM');
+                } elsif (@avisos) {
+                    aviso(lente=>'MEDICION', id=>'MED-15', titulo=>'datos de usuario automaticos en la etiqueta de Google',
+                          dato=>join(' · ', @avisos), umbral=>'decidido y escrito por quien lleva los anuncios; en una web de salud, tambien por el cliente',
+                          proc=>'3-nov-2026', hacer=>'confirmar con quien lleva los anuncios que es a proposito, o apagarlo en la etiqueta de Google');
+                } else {
+                    pasa(lente=>'MEDICION', id=>'MED-15', titulo=>'ningun dato personal hacia la medicion',
+                         dato=>"web y contenedor: $nvar variables, $ntag etiquetas");
+                }
+            }
+
             # G9 · politica de cookies contra los proveedores REALES del contenedor
             # 8-sep-2026 - ESTO MIRABA SOLO EL CONTENEDOR, Y ESA PREMISA ES FALSA.
             # Una web puede cargar un tercero desde su PROPIO JavaScript, y hay un
