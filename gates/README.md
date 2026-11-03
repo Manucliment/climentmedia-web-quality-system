@@ -508,6 +508,7 @@ without blocking. Why the order changed is trap §89.
 | `forms-gate.js` | The form in the DOM: labels, consent, a real submit button, a visible honeypot. |
 | `form-handler.php` | The reference handler the gate is written against. |
 | `banner-probe.js` | The cookie banner as a first-time visitor meets it, on the measurement host: nothing tracks before the choice, Accept and Reject in the first layer with the same weight, no wall, the page's language, Reject really rejects and is remembered, and a way to reopen it outside the banner. It never clicks Accept. Bench: `banner-probe-tests/`. |
+| `consent-count.php` | The anonymous accept/reject counter the banner calls with `sendBeacon`: one line per choice, «date TAB choice», no cookie, no IP, no time of day, outside the docroot. Copied to `_deploy/` of each site. Bench: `consent-count-tests/` (on the measurement host). |
 
 ### Migration
 

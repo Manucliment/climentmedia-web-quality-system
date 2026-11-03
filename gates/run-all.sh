@@ -56,6 +56,7 @@ gate-movil|bash mobile-gate-tests/battery.sh|1|movil: accion sobre el pliegue y 
 gate-menu|bash mobile-menu-gate-tests/battery.sh|1|menu movil a 390: una fila o un boton que abre, aria-expanded, cerrado fuera del Tab (mide en el SERVIDOR)
 gate-marca|bash marca-gate-tests/battery.sh|1|la marca: logo en la cabecera, iconos y manifest que cargan, theme-color, nada fuera de la paleta (mide en el SERVIDOR)
 banner-cookies|bash banner-probe-tests/tests.sh|1|el aviso de cookies como lo ve un visitante: primera capa, mismo peso, sin muro, idioma, Rechazar, recordar y retirar (mide en el SERVIDOR)
+contador-consentimiento|bash consent-count-tests/tests.sh|1|el contador anonimo del aviso de cookies: php -l, ejecucion y nada de la persona en el disco (mide en el SERVIDOR)
 conformidad|perl compliance-selftest.pl|1|la matriz y su alcance (sonda home-only)
 historial|perl history-gate.pl|0|el registro nombra al check que acusa
 form-handler|bash form-handler-tests/tests.sh|1|la plantilla del formulario: php -l y ejecucion
@@ -86,7 +87,7 @@ echo "==========================================================================
 #    `historial` ya enseno a evitar.
 # 3-nov-2026 · banner-cookies mide en el servidor como los otros: si no se aparta, la
 #    instalacion limpia contaria sus 20 casos sin poder correrlos.
-DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil gate-menu gate-marca form-handler banner-cookies"
+DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil gate-menu gate-marca form-handler banner-cookies contador-consentimiento"
 TOT_ESTADO=0
 TOT_OK=0; TOT_MAL=0; ROTOS=""; NO_MEDIDOS=""
 # 28-sep-2026 · para D9: el recuento de cada banco que PASA, los que esta

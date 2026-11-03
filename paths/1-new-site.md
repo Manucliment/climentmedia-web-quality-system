@@ -298,6 +298,13 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   visit in the client's analytics. Exit 1 on a FAIL. Bench: `gates/banner-probe-tests/tests.sh`.
   `MED-15` in the master gate checks the other side: no event and no tag sends an email,
   a phone or a name.
+- **AND HOW MANY ACCEPT** · Without it nobody knows what share of the visits analytics
+  never sees, and a drop in leads cannot be told from a drop in visitors who accept. Copy
+  `gates/consent-count.php` to `_deploy/consent-count.php`, list it in `PHP_EN_PRODUCCION`,
+  and have the banner send `navigator.sendBeacon('/consent-count.php', new URLSearchParams({ e: 'accept' }))`
+  (or `reject`, `partial`) when the visitor chooses. Same origin, no cookie, no IP, no time
+  of day: one line per choice, «date TAB choice», outside the docroot. Say it in the cookie
+  policy. Bench: `gates/consent-count-tests/tests.sh` (on the measuring host, which has PHP).
 - **AND THE PROPERTY ITSELF** · The site can emit every event and the analytics property
   still lose it. Before calling measurement done, read the property's settings through the
   Admin API (read-only scope is enough): event data retention at 14 months, not the default
