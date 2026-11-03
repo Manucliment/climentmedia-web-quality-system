@@ -1248,6 +1248,33 @@ if ($opt{dom} ne '') {
     } else { warn "aviso: no pude abrir $opt{dom}\n" }
 }
 
+# 🔴 3-nov-2026 · EL TESTIGO DEL DOM: ¿lo que se midio es LA PAGINA?
+#  El 28-oct el snippet midio el 403 «Checking your browser» de una CDN y el gate
+#  lo juzgo como la web: 1,0 pantallas y 0 CTA -> FALLO, sin un solo error. Ahora
+#  el JSON trae el codigo HTTP y el titulo, y se recalculan AQUI (no se fia del
+#  `testigo` que trae el propio JSON: se mira el dato crudo). Un JSON sin testigo
+#  es de un snippet anterior y no prueba nada: NO VERIFICADO, no veredicto.
+#  Devuelve '' si vale, o el motivo por el que no.
+sub dom_no_vale {
+    return '' unless %DOM;
+    return 'el JSON no trae testigo (http, titulo): es de un snippet anterior al 3-nov y no prueba que midiera la pagina'
+        unless exists $DOM{testigo} && exists $DOM{titulo};
+    my @m;
+    my $http = $DOM{http};
+    push @m, "HTTP $http" if defined $http && $http =~ /^\d+$/ && ($http < 200 || $http > 299);
+    my $tit = $DOM{titulo} // '';
+    push @m, "titulo de muro anti-bot: $tit"
+        if $tit =~ /checking your browser|just a moment|attention required|verifying you are human|enable javascript|ddos|cloudflare/i;
+    push @m, 'render vacio (sin <main>, sin secciones, menos de 400 caracteres)'
+        if !$DOM{hay_main} && !($DOM{secciones} // 0) && ($DOM{texto_len} // 0) < 400;
+    if (ref $DOM{testigo} eq 'HASH' && !$DOM{testigo}{valido}) {
+        my $propios = join(' · ', @{ $DOM{testigo}{motivos} || [] }) || 'sin motivo';
+        push @m, "el snippet se declaro no valido: $propios" unless @m;
+    }
+    return join(' · ', @m);
+}
+my $DOM_NO_VALE = dom_no_vale();
+
 my $HOME = fetch("$ROOT/");
 if (!$opt{'sin-red'} && ($HOME->{code} == 0 || $HOME->{body} eq '')) {
     $NET_OK = 0;
@@ -2892,7 +2919,13 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
               : pasa(lente=>'RENDIMIENTO', id=>'REN-10', titulo=>'sin scripts bloqueantes');
 
     # PC2 · lo que NO se puede medir sin navegador
-    if (exists $DOM{lcp_ms} || exists $DOM{cls}) {
+    if ($DOM_NO_VALE) {
+        nv(lente=>'RENDIMIENTO', id=>'REN-11', titulo=>'LCP y CLS reales',
+           dato=>"el DOM de $opt{dom} no es la pagina: $DOM_NO_VALE",
+           umbral=>'LCP <=2.500 ms · CLS <=0,1',
+           proc=>'testigo del DOM (3-nov-2026): el 28-oct el snippet midio el 403 de una CDN y dio cifras sin error',
+           hacer=>'volver a capturar con un navegador de agente normal: node gates/run-gate.js <url> 1298 900 snippet.js');
+    } elsif (exists $DOM{lcp_ms} || exists $DOM{cls}) {
         my ($lcp,$cls) = ($DOM{lcp_ms}//0, $DOM{cls}//0);
         ($lcp > 2500 || $cls > 0.1)
           ? fallo(lente=>'RENDIMIENTO', id=>'REN-11', titulo=>'Core Web Vitals de campo',
@@ -2905,7 +2938,7 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
         nv(lente=>'RENDIMIENTO', id=>'REN-11', titulo=>'LCP y CLS reales',
            umbral=>'LCP <=2.500 ms · CLS <=0,1',
            proc=>'PC2 · 0 apariciones de LCP/CLS en toda la documentacion, verificado',
-           hacer=>'perl qa-master.pl --snippet > /tmp/s.js  ·  pegarlo en la consola  ·  guardar su JSON  ·  --dom /tmp/s.json');
+           hacer=>'perl qa-master.pl --snippet > s.js  ·  node gates/run-gate.js <url> 1298 900 s.js | tail -n +2 > s.json (agente de Chrome normal)  ·  --dom s.json');
     }
 }
 
@@ -4914,7 +4947,20 @@ sub lente_estructura {
     }
 
     # ── EST-05..07 · lo que necesita DOM ────────────────────────────────────
-    if (%DOM) {
+    if ($DOM_NO_VALE) {
+        # La medida se tira entera, como con el ancho clampado (PC15), y lo dicen
+        # las tres lineas: una que falta se lee como un PASA.
+        nv(lente=>'ESTRUCTURA', id=>'EST-05', titulo=>'medidas de DOM: lo medido no es la pagina',
+           donde=>$u, dato=>$DOM_NO_VALE,
+           umbral=>'HTTP 2xx, titulo de la web y algo renderizado',
+           proc=>'testigo del DOM (3-nov-2026): el 28-oct el snippet midio el 403 «Checking your browser» de una CDN y dio 1,0 pantallas y 0 CTA en 14 medidas, sin error',
+           hacer=>'volver a capturar con un navegador de agente normal: node gates/run-gate.js <url> 1298 900 snippet.js (y a 390)');
+        for my $id ('EST-06', 'EST-07') {
+            nv(lente=>'ESTRUCTURA', id=>$id, titulo=>'sin medir: el DOM no es la pagina (ver EST-05)',
+               donde=>$u, dato=>$DOM_NO_VALE, proc=>'testigo del DOM (3-nov-2026)',
+               hacer=>'ver EST-05');
+        }
+    } elsif (%DOM) {
         my $iw = $DOM{innerWidth} // 0;
         my $ih = $DOM{innerHeight} // 0;
         # PC15 · la skill repite cuatro veces «imprimir innerWidth» y no menciona
@@ -4979,7 +5025,7 @@ sub lente_estructura {
         nv(lente=>'ESTRUCTURA', id=>'EST-06', titulo=>'densidad, CTAs y estados de contenido (fila coja, titular huerfano, alturas)',
            umbral=>'ningun bloque >1 pantalla · <=2,5 pantallas sin CTA · >=2 CTA · 0 filas cojas',
            proc=>'08-qa-final A-bis/A-ter · G6',
-           hacer=>"perl $0 --snippet > qa.js  ·  pegarlo en la consola a 1298 y a 390  ·  guardar el JSON  ·  volver con --dom qa.json");
+           hacer=>"perl $0 --snippet > qa.js  ·  node gates/run-gate.js <url> 1298 900 qa.js | tail -n +2 > qa.json (y a 390; agente de Chrome normal)  ·  volver con --dom qa.json");
     }
 
     # EST-08 · enlazado (grafo)
@@ -5100,6 +5146,33 @@ sub snippet_js {
 (() => {
   const out = { innerWidth: innerWidth, innerHeight: innerHeight,
                 url: location.href, ts: new Date().toISOString() };
+
+  // ── TESTIGO · ¿lo medido es LA PAGINA? (3-nov-2026) ─────────────────────
+  // 🔴 28-oct-2026 · este snippet, corrido con puppeteer en el servidor contra
+  //    una web de Hostinger, recibio el 403 «Checking your browser» de su CDN
+  //    (el agente decia HeadlessChrome) y devolvio 1,0 pantallas y 0 CTA en las
+  //    14 medidas, SIN ERROR. innerWidth estaba bien: el ancho no dice si lo
+  //    medido es la web o la pagina de error. Por eso viaja el codigo HTTP de la
+  //    carga y el titulo, y qa-master tira la medida si no son los de la web.
+  //    El navegador con agente normal ya existe: gates/run-gate.js (lo mide asi).
+  let http = null;
+  try { const n = performance.getEntriesByType('navigation')[0];
+        http = (n && n.responseStatus) || null; } catch (e) {}
+  out.http = http;                      // null = este navegador no lo expone
+  out.titulo = (document.title || '').slice(0, 90);
+  out.ua_headless = /HeadlessChrome/.test(navigator.userAgent);
+  out.hay_main = !!document.querySelector('main');
+  out.secciones = document.querySelectorAll('section,article').length;
+  out.texto_len = ((document.body && document.body.innerText) || '').length;
+  {
+    const RETO = /checking your browser|just a moment|attention required|verifying you are human|enable javascript|ddos|cloudflare/i;
+    const motivos = [];
+    if (http !== null && (http < 200 || http > 299)) motivos.push('HTTP ' + http);
+    if (RETO.test(out.titulo)) motivos.push('titulo de muro anti-bot: ' + out.titulo);
+    if (!out.hay_main && out.secciones === 0 && out.texto_len < 400) motivos.push('render vacio');
+    out.testigo = { valido: motivos.length === 0, motivos };
+  }
+
   const main = document.querySelector('main') || document.body;
   const vh = innerHeight || 1;
 

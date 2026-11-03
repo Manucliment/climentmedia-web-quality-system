@@ -428,10 +428,16 @@ measures the new site, because the damage is on the old side.
   **Exit 2 = could not run, which is not the same as PASS.**
 - **What the master gate cannot see on its own, and you have to hand back to it:**
   ```bash
-  perl gates/qa-master.pl <url> --snippet     # prints the probe
-  # paste it in the console AT 1298 (for 1280) AND AT 390, save the JSON, come back:
+  perl gates/qa-master.pl <url> --snippet > qa.js     # prints the probe
+  # run it AT 1298 (for 1280) AND AT 390 with the runner, on the measurement host:
+  node gates/run-gate.js <url> 1298 900 qa.js | tail -n +2 > dom-1280.json
   perl gates/qa-master.pl <url> --dom dom-1280.json
   ```
+  > **The probe records the HTTP status and the title of what it measured**, and the master
+  > gate throws the measurement away if they are not the site's. A CDN answered a headless
+  > browser with a 403 "Checking your browser" page, and the probe measured that page —
+  > 1.0 screens, 0 calls to action, no error. `run-gate.js` sends a normal Chrome user agent;
+  > a runner of your own has to as well.
   > **The first thing you read is not the verdict: it is `innerWidth` and `innerHeight`.**
   > If they are not what you asked for, throw the whole measurement away. On Windows,
   > headless Chrome clamps to about 500px — **measure from a Linux host**, and use a probe

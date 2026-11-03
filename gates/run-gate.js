@@ -96,7 +96,12 @@ const fs = require("fs");
                            body: esFichero(e404) ? fs.readFileSync(e404) : "" });
     });
   }
-  await p.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+  // 🔴 3-nov-2026 · EL CODIGO HTTP VIAJA. Antes solo se miraba el titulo y el render:
+  //  un 403 con una pagina de error bien maquetada (titulo propio, un <main>, texto)
+  //  pasaba como la web. Un documento que no contesta 2xx no es la pagina medida.
+  const resp = await p.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+  // Solo en http(s): los bancos miden fixturas por file://, que no tienen codigo.
+  const http = resp && /^https?:/i.test(url) ? resp.status() : null;
   // `anchoPedido` viaja SIEMPRE, lo pida el gate o no. Es la unica forma de que
   // un gate pueda afirmar «lo que medi es lo que se PIDIO» sin cablearse un ancho
   // concreto: `mobile-gate.js` tenia escrito `coincide: vw === 390` y por eso
@@ -137,6 +142,7 @@ const fs = require("fs");
   }));
   const RETO = /checking your browser|just a moment|attention required|verifying you are human|enable javascript|ddos|cloudflare/i;
   const sospechoso = RETO.test(diag.titulo) ||
+                     (http !== null && (http < 200 || http > 299)) ||
                      (!diag.main && diag.secciones === 0 && diag.textoLen < 400);
   let out;
   try { out = await p.evaluate(src); }
@@ -144,9 +150,9 @@ const fs = require("fs");
   console.log(JSON.stringify({
     url, pedido: +w, innerWidth: iw, coincide: iw === +w,
     ...(CAND && SITIO ? { candidato: servidas } : {}),
-    titulo: diag.titulo, secciones: diag.secciones, hayMain: diag.main,
+    http, titulo: diag.titulo, secciones: diag.secciones, hayMain: diag.main,
     sospechoso,
-    ...(sospechoso ? { AVISO: 'esto NO parece la pagina: muro anti-bot o render vacio. La medida NO vale como veredicto.' } : {}),
+    ...(sospechoso ? { AVISO: 'esto NO parece la pagina: HTTP no 2xx, muro anti-bot o render vacio. La medida NO vale como veredicto.' } : {}),
   }));
   console.log(typeof out === "string" ? out : JSON.stringify(out, null, 1));
   await b.close();

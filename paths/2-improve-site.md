@@ -132,7 +132,7 @@ rejects it with exit 2.
 | | |
 |---|---|
 | **What** | The DOM half (density, calls to action, the ragged last row, LCP/CLS) and the link graph |
-| **Command** | `qa-master.pl --snippet > qa.js` → paste it in the console **at 1440 and at 390** → `--dom qa.json` · plus `crawl-links.pl` and `linking-gate.pl` |
+| **Command** | `qa-master.pl --snippet > qa.js` → `node gates/run-gate.js <url> 1440 900 qa.js \| tail -n +2 > qa.json` **at 1440 and at 390** (a normal Chrome user agent: a CDN can serve a headless one its error page, and the gate then refuses the JSON) → `--dom qa.json` · plus `crawl-links.pl` and `linking-gate.pl` |
 | **Gate** | Two structural checks stop being NOT VERIFIED · the measured `innerWidth` written next to the result |
 | **What breaks** | This is the blind half. One check is the only gate that looks at the **graph**: on one site a zones hub linked to none of its five cities, and on another five city pages received zero links from the entire site while sitting in the sitemap. No other gate sees that |
 | **Pointer** | `blueprint/12-internal-linking.md` · `blueprint/11-measurements.md §7` · `blueprint/13-performance.md` |

@@ -1,0 +1,5 @@
+{ "_caso": "FRONTERA · JSON de un snippet anterior al 3-nov: cifras de una pagina sana pero sin http ni titulo. No prueba que midiera la pagina, asi que NO VERIFICADO aunque todo pasaria.",
+  "innerWidth": 1280, "innerHeight": 720, "url": "https://site-c.example/",
+  "screens": 4.0, "blocks": 8, "blocks_over_1screen": 0, "ctas": 4, "buttons_visibles": 0,
+  "max_gap_screens": 1.5, "es_pagina_prosa": false,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0 }
