@@ -1,0 +1,10 @@
+# fixture: un arbol SIN formulario de verdad (5-nov-2026).
+# Ni <form>, ni <textarea>, ni <input> de escribir, en ninguna pagina ni en su JS:
+# A11Y-09/10/11 y MED-09/10/11 NO APLICAN, y se dice con el dato (PASA «NO APLICA»).
+# Lleva a proposito un <input type="file" hidden> (una herramienta que lee un CSV
+# en el navegador): no recoge datos de nadie y no cuenta como formulario.
+# Su contrario es sin-formulario/: campos de texto sueltos en un <div>, que SI
+# recogen datos, y por eso alli sigue NO VERIFICADO.
+# Y lleva las dos cosas que no son formulario y se confundian con uno (medido en
+# esa web el 5-nov): un «<form>» dentro de un comentario /* */ y otro dentro de
+# <!-- -->, y un <textarea> readonly creado en app.js para copiar al portapapeles.

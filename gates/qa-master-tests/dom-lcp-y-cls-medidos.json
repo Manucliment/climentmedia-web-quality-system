@@ -1,0 +1,29 @@
+{
+ "_caso": "5-nov-2026 · LCP y CLS medidos y buenos (el snippet nuevo, con PerformanceObserver): PASA.",
+ "innerWidth": 1280,
+ "innerHeight": 720,
+ "url": "https://shop.site-b.example/a-medida.html",
+ "http": 200,
+ "titulo": "Espelho a medida",
+ "hay_main": true,
+ "secciones": 6,
+ "texto_len": 4200,
+ "testigo": {
+  "valido": true,
+  "motivos": []
+ },
+ "screens": 5.3,
+ "blocks": 9,
+ "blocks_over_1screen": 0,
+ "ctas": 0,
+ "buttons_visibles": 14,
+ "max_gap_screens": 1.2,
+ "es_pagina_prosa": false,
+ "filas_cojas": 0,
+ "titulares_huerfanos": 0,
+ "alturas_desiguales": 0,
+ "listas_de_uno": 0,
+ "lcp_ms": 388,
+ "cls": 0,
+ "overflow_horizontal": false
+}

@@ -664,6 +664,14 @@ espera "ancho clampado: la medida se tira entera (PC15)"  NOVERIF EST-05  perl $
 espera "muro de la CDN (403): la medida no es la web"     NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-muro-403.json --cache "$CACHE"
 espera "muro de la CDN (403): EST-05 dice por que"        NOVERIF EST-05  perl $QA http://site-c.example/ --solo estructura --dom dom-muro-403.json --cache "$CACHE"
 espera "muro de la CDN (403): su LCP tampoco vale"        NOVERIF REN-11  perl $QA http://site-c.example/ --solo rendimiento --dom dom-muro-403.json --cache "$CACHE"
+# 🔴 5-nov-2026 · UN null NO ES 0. El snippet leia el LCP con getEntriesByType, que
+#    Chrome deja vacio; llegaba null y `//0` lo hacia «LCP 0 ms»: PASA sin medir en
+#    todo recibo con --dom. El primero salia PASA con el programa de antes.
+espera "LCP y CLS sin medir (null): no es 0, NO VERIFICADO" NOVERIF REN-11 perl $QA http://site-c.example/ --solo rendimiento --dom dom-lcp-sin-medir.json --cache "$CACHE"
+espera "LCP lento y CLS sin medir: lo medido falla igual"   FALLO   REN-11 perl $QA http://site-c.example/ --solo rendimiento --dom dom-lcp-lento-sin-cls.json --cache "$CACHE"
+espera "LCP y CLS medidos y buenos: PASA"                  PASA    REN-11 perl $QA http://site-c.example/ --solo rendimiento --dom dom-lcp-y-cls-medidos.json --cache "$CACHE"
+texto  "el snippet lee el LCP con PerformanceObserver"     SI "type: 'largest-contentful-paint', buffered: true" perl $QA --snippet
+texto  "...y ya no con getEntriesByType"                   NO "getEntriesByType('largest-contentful-paint')" perl $QA --snippet
 espera "error maquetado con 403 y testigo que miente"     NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-error-maquetado.json --cache "$CACHE"
 espera "JSON sin testigo: no prueba nada"                 NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-sin-testigo.json --cache "$CACHE"
 # 3-nov-2026 · LA DENSIDAD DE UNA SOLA FUENTE: el snippet lleva measure-screens.js dentro
@@ -1644,6 +1652,22 @@ if mide_bloque "MEDIDO A MANO: las siete y sus cerraduras" http://site-d.example
   else
     printf '  MAL   %-46s no hay linea DATO de SEO-17\n' "el informe imprime el DATO de SEO-17"; ko=$((ko+1))
   fi
+  # 9-bis · 🔴 5-nov-2026 · LA OCTAVA, A11Y-03b (contraste en hover y focus): el
+  #    gate lee la hoja y no la pinta, y no habia forma de firmarlo: toda subida
+  #    pedia --aun-asi. Atada a su DATO (cuantas reglas), como SEO-17. Con el
+  #    programa de antes el positivo salia NO VERIFICADO.
+  rm -f "$RM/_deploy/measured.conf"
+  AQA="perl $QA http://site-a.example/ --repo $RM --solo a11y --sin-recibo --cache $CACHE"
+  D03="$($AQA -q 2>&1 | grep -m1 -E '^[[:space:]]+A11Y-03b[[:space:]]+DATO: ' | sed -E 's/^[[:space:]]+A11Y-03b[[:space:]]+DATO: //')"
+  if [ -n "$D03" ]; then
+    printf '  OK    %-46s %s\n' "el informe imprime el DATO de A11Y-03b" "$D03"; ok=$((ok+1))
+    med A11Y-03b PASA "$HOY" "DATO=999 reglas"
+    espera "A11Y-03b · DATO distinto · NO vale"         NOVERIF A11Y-03b $AQA -q
+    med A11Y-03b PASA "$HOY" "DATO=$D03"
+    espera "A11Y-03b · DATO el de hoy · PASA declarado" PASA    A11Y-03b $AQA
+  else
+    printf '  MAL   %-46s no hay linea DATO de A11Y-03b\n' "el informe imprime el DATO de A11Y-03b"; ko=$((ko+1))
+  fi
   # 10 · el nombre en castellano tambien vale
   med MED-14 PASA "$HOY"; mv "$RM/_deploy/measured.conf" "$RM/_deploy/medido.conf"
   espera "medido.conf (castellano) tambien vale"        PASA    MED-14 $MQA
@@ -2263,6 +2287,29 @@ echo "== LA LENTE DE RENDIMIENTO · lo que cuesta y no se ve"
 #    imagenes** sin dimensionar. Y la regla que salio de alli: las medidas se
 #    LEEN del fichero, no se estiman -- una inventada desplaza igual, en otra
 #    direccion.
+# 🔴 5-nov-2026 · UNA WEB SIN FORMULARIO. A11Y-09/10/11 y MED-09/10/11 salian NO
+#    VERIFICADO en cada recibo sin forma de cerrarlo (una web nuestra: 83 de 83
+#    paginas sin <form>). Ahora se lee el ARBOL entero: sin <form> ni campos de
+#    escribir en ninguna pagina ni en su JS, NO APLICA medido. Los dos primeros
+#    salian NO VERIFICADO con el programa de antes; los otros cuatro son los que
+#    NO pueden pasar. Y los seis de sin-formulario/ (mas abajo: campos sueltos
+#    en un <div>, sin <form>) siguen en NO VERIFICADO: recogen datos igual.
+espera "sin formulario en el arbol: A11Y-09 NO APLICA"     PASA    A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/arbol-sin-formulario --candidato --una-sola --solo a11y --sin-recibo
+espera "sin formulario en el arbol: MED-10 NO APLICA"      PASA    MED-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/arbol-sin-formulario --candidato --una-sola --solo medicion --sin-recibo
+espera "form en una pagina NO leida: sigue sin verificar" NOVERIF A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-fuera-de-la-lista --candidato --una-sola --solo a11y --sin-recibo
+espera "...y en MEDICION tambien"                          NOVERIF MED-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-fuera-de-la-lista --candidato --una-sola --solo medicion --sin-recibo
+espera "form creado desde el JS: sigue sin verificar"     NOVERIF A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-solo-en-js --candidato --una-sola --solo a11y --sin-recibo
+espera "...y en MEDICION tambien"                          NOVERIF MED-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-solo-en-js --candidato --una-sola --solo medicion --sin-recibo
+espera "campo de correo creado en JS, sin <form>: tampoco" NOVERIF A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/campo-creado-en-js --candidato --una-sola --solo a11y --sin-recibo
+texto  "NO APLICA dice cuantas paginas leyo del arbol"     SI "0 <form> y 0 campos de escribir en sus 1 paginas" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/arbol-sin-formulario --candidato --una-sola --solo medicion --sin-recibo
 espera "REN-03 · una <img> sin dimensiones, FALLA"    FALLO REN-03 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/ren-pobre --candidato --una-sola --solo rendimiento --sin-recibo
 espera "REN-03 · con width y height, PASA"            PASA  REN-03 \

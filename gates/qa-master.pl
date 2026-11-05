@@ -2925,6 +2925,20 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
            umbral=>'LCP <=2.500 ms · CLS <=0,1',
            proc=>'testigo del DOM (3-nov-2026): el 28-oct el snippet midio el 403 de una CDN y dio cifras sin error',
            hacer=>'volver a capturar con un navegador de agente normal: node gates/run-gate.js <url> 1298 900 snippet.js');
+    } elsif ((exists $DOM{lcp_ms} || exists $DOM{cls})
+             && !(defined $DOM{lcp_ms} && defined $DOM{cls})
+             && !((defined $DOM{lcp_ms} && $DOM{lcp_ms} > 2500) || (defined $DOM{cls} && $DOM{cls} > 0.1))) {
+        # 🔴 5-nov-2026 · UN null NO ES 0. Antes `$DOM{lcp_ms}//0` convertia el
+        #    «no lo pude medir» del snippet en «0 ms» y REN-11 salia PASA en todo
+        #    recibo con --dom (una web nuestra). Lo que falta se dice; lo que se
+        #    midio y pasa del umbral sigue siendo FALLO aunque falte lo otro.
+        nv(lente=>'RENDIMIENTO', id=>'REN-11', titulo=>'LCP y CLS reales',
+           dato=>sprintf('LCP %s · CLS %s',
+                         defined $DOM{lcp_ms} ? sprintf('%.0f ms', $DOM{lcp_ms}) : 'sin medir',
+                         defined $DOM{cls} ? sprintf('%.3f', $DOM{cls}) : 'sin medir'),
+           umbral=>'LCP <=2.500 ms · CLS <=0,1',
+           proc=>'5-nov-2026 · el DOM trae la clave pero vacia: el snippet no lo pudo medir, y vacio no es 0',
+           hacer=>'volver a capturar con el snippet de hoy (perl qa-master.pl --snippet), que lee LCP y CLS con PerformanceObserver');
     } elsif (exists $DOM{lcp_ms} || exists $DOM{cls}) {
         my ($lcp,$cls) = ($DOM{lcp_ms}//0, $DOM{cls}//0);
         ($lcp > 2500 || $cls > 0.1)
@@ -2977,6 +2991,59 @@ sub pagina_del_formulario {
         return ($u, $cuerpo, scalar @cand) if sin_com($cuerpo) =~ /<form\b/i;
     }
     return ('', '', scalar @cand);
+}
+
+# ¿El ARBOL que se va a subir tiene algun formulario? (5-nov-2026)
+#  Una web sin <form> sacaba A11Y-09/10/11 y MED-09/10/11 NO VERIFICADO en cada
+#  recibo, sin forma de decir que no aplican (una web nuestra: 83 de 83 paginas sin
+#  formulario), y la puerta pedia --aun-asi en cada subida. Las paginas leidas no
+#  bastan para afirmarlo (un --max-urls las recorta), pero el ARBOL entero si:
+#  se lee cada .html, .htm, .php y .js que se subiria, sin las carpetas internas
+#  (las que empiezan por «_» o «.»). Un <form> o un createElement('form') en
+#  cualquiera, y ya no se afirma nada. Ni un <textarea> o un <input> de escribir
+#  sueltos: unos campos y un fetch recogen leads sin <form>.
+#  Lo que NO cuenta, medido en esa web el mismo dia: el «<form>» de un comentario
+#  /* ... */ o <!-- ... --> (decia «el sitio no tiene ni un <form>») y el
+#  <textarea> readonly que se crea para copiar al portapapeles. Los comentarios
+#  // de linea NO se quitan: cortarian «https://...» y lo que le siga.
+#  Devuelve N (paginas del arbol, ninguna con formulario), 0 (hay formulario) o
+#  undef (sin --repo o sin paginas: no se puede saber, y sigue NO VERIFICADO).
+sub arbol_sin_formulario {
+    return undef unless defined $opt{repo} && $opt{repo} ne '' && -d $opt{repo};
+    my ($paginas, $con) = (0, 0);
+    no warnings 'once';
+    require File::Find;
+    File::Find::find({ no_chdir => 1, wanted => sub {
+        my $p = $File::Find::name;
+        if (-d $p) {
+            my $b = (split m{[\\/]}, $p)[-1];
+            $File::Find::prune = 1 if $p ne $opt{repo} && $b =~ /^(?:[._]|node_modules$|vendor$)/;
+            return;
+        }
+        return unless $p =~ /\.(?:html?|php|js)$/i;
+        open(my $fh, '<', $p) or return;
+        local $/; my $t = <$fh> // ''; close $fh;
+        $paginas++ if $p =~ /\.(?:html?|php)$/i;
+        $t =~ s{/\*.*?\*/}{ }gs;
+        $t =~ s{<!--.*?-->}{ }gs;
+        # Un formulario no siempre es un <form>: unos campos sueltos y un fetch
+        # recogen leads igual. Cuenta tambien cualquier <textarea> y cualquier
+        # <input> de escribir (sin type, o text/email/tel/number/url/date/password);
+        # no cuentan los file, hidden, checkbox, radio, search ni botones.
+        my $creado = 0;
+        while ($t =~ /createElement\(\s*['"](form|input|textarea)['"]\s*\)(.{0,240})/gis) {
+            my ($que, $tras) = (lc $1, $2);
+            next if $que ne 'form' && $tras =~ /readonly/i;   # el de copiar al portapapeles
+            $creado = 1; last;
+        }
+        $con++ if $creado
+               || $t =~ /<form\b/i
+               || $t =~ /<textarea\b(?![^>]*\breadonly\b)/i
+               || $t =~ /<input\b(?![^>]*\btype\s*=)[^>]*>/i
+               || $t =~ /<input\b[^>]*\btype\s*=\s*["']?(?:text|email|tel|number|url|date|password)\b/i;
+    }}, $opt{repo});
+    return undef unless $paginas;
+    return $con ? 0 : $paginas;
 }
 
 # =============================================================================
@@ -3447,9 +3514,16 @@ sub lente_a11y {
     #   Ahora el formulario SE BUSCA entre las paginas ya leidas (fetch cachea, no
     #   cuesta red) y, si no aparece en ninguna, se DICE en vez de callarse.
     if ($form_de eq '') {
+        my $sin = arbol_sin_formulario();
         for my $f (['A11Y-09','campos con autocomplete'],
                        ['A11Y-10','region viva para los errores del formulario'],
                        ['A11Y-11','honeypot blindado para lector de pantalla']) {
+            if ($sin) {
+                pasa(lente=>'ACCESIBILIDAD', id=>$f->[0], titulo=>"NO APLICA: $f->[1]",
+                     dato=>"el arbol no tiene formulario: 0 <form> y 0 campos de escribir en sus $sin paginas ni en su JS",
+                     proc=>'5-nov-2026 · sin formulario, estas tres salian NO VERIFICADO siempre (una web nuestra, 83 de 83 paginas) y la puerta pedia --aun-asi');
+                next;
+            }
             nv(lente=>'ACCESIBILIDAD', id=>$f->[0], titulo=>$f->[1],
                dato=>'ninguna de las '.$form_cand.' paginas leidas trae un <form>',
                umbral=>'si el sitio tiene formulario, esto TIENE que medirse: es la unica conversion de la mayoria',
@@ -4327,9 +4401,16 @@ sub lente_medicion {
     #    el mismo formulario, en un orden que no sale de la lista.
     my ($cu, $cb, $n_cand) = pagina_del_formulario();
     if ($cu eq '') {
+        my $sin = arbol_sin_formulario();
         for my $f (['MED-10', 'receptor del formulario'],
                    ['MED-11', 'guarda de doble envio'],
                    ['MED-09', 'plazo de conservacion de los datos del formulario']) {
+            if ($sin) {
+                pasa(lente=>'MEDICION', id=>$f->[0], titulo=>"NO APLICA: $f->[1]",
+                     dato=>"el arbol no tiene formulario: 0 <form> y 0 campos de escribir en sus $sin paginas ni en su JS",
+                     proc=>'5-nov-2026 · sin formulario, estas tres salian NO VERIFICADO siempre (una web nuestra, 83 de 83 paginas) y la puerta pedia --aun-asi');
+                next;
+            }
             nv(lente=>'MEDICION', id=>$f->[0], titulo=>$f->[1],
                dato=>'ninguna de las '.$n_cand.' paginas leidas trae un <form>',
                umbral=>'si el sitio tiene formulario, esto TIENE que medirse: es por donde llegan los leads, y sus datos los que hay que purgar',
@@ -5402,15 +5483,33 @@ sub snippet_js_plantilla {
   out.titulares_huerfanos = huerfanos;
 
   // ── Core Web Vitals de esta carga (PC2) ──────────────────────────────────
+  // 🔴 5-nov-2026 · pedir el LCP por tipo (getEntriesByType) sale VACIO en
+  //    Chrome: el LCP solo se entrega a un PerformanceObserver. Asi el snippet
+  //    devolvia lcp_ms null y REN-11 lo leia como 0 ms: PASA sin medir en todo
+  //    recibo hecho con --dom (una web nuestra, 83 paginas). Con buffered:true,
+  //    takeRecords() devuelve en el acto lo que ya paso. Medido en el Chrome del
+  //    servidor: por tipo 0 entradas; por observador, 388 ms y 764 ms.
   try {
-    const lcp = performance.getEntriesByType('largest-contentful-paint');
+    const po = new PerformanceObserver(() => {});
+    po.observe({ type: 'largest-contentful-paint', buffered: true });
+    const lcp = po.takeRecords(); po.disconnect();
     out.lcp_ms = lcp.length ? Math.round(lcp[lcp.length-1].startTime) : null;
   } catch (e) { out.lcp_ms = null; }
-  // El CLS NO se puede reconstruir despues: hay que observarlo desde el inicio.
-  // Para medirlo, pegar ESTO ANTES de recargar la pagina, y luego el snippet:
-  //   window.__cls_qa=0; new PerformanceObserver(l=>{for(const e of l.getEntries())
-  //     if(!e.hadRecentInput) window.__cls_qa+=e.value;}).observe({type:'layout-shift',buffered:true});
-  out.cls = (typeof window.__cls_qa === 'number') ? +window.__cls_qa.toFixed(4) : null;
+  // El CLS, igual: los desplazamientos de la carga quedan en el bufer y se suman
+  // sin input reciente. Es la SUMA de todos, no la peor ventana: una cota por
+  // arriba del CLS de Google, que puede acusar de mas y nunca de menos. Si se
+  // pego antes el observador de siempre (window.__cls_qa), manda ese.
+  let cls = (typeof window.__cls_qa === 'number') ? window.__cls_qa : null;
+  if (cls === null) {
+    try {
+      const po2 = new PerformanceObserver(() => {});
+      po2.observe({ type: 'layout-shift', buffered: true });
+      const ls = po2.takeRecords(); po2.disconnect();
+      if ((PerformanceObserver.supportedEntryTypes || []).includes('layout-shift'))
+        cls = ls.reduce((s, e) => s + (e.hadRecentInput ? 0 : e.value), 0);
+    } catch (e) { cls = null; }
+  }
+  out.cls = (cls === null) ? null : +cls.toFixed(4);
   if (out.cls === null) out.cls_nota = 'CLS sin observador: queda NO VERIFICADO, que no es lo mismo que 0';
 
   // ── desbordamiento horizontal REAL ───────────────────────────────────────
@@ -5800,7 +5899,7 @@ sub lee_aceptados {
 #
 #  LAS CERRADURAS, mismas ideas que ACEPTADO y por los mismos motivos
 #  ------------------------------------------------------------------
-#   1 · SOLO ESTAS SIETE. La lista vive AQUI, no en el fichero: un check que el
+#   1 · SOLO ESTAS OCHO (siete hasta el 5-nov, mas A11Y-03b). La lista vive AQUI, no en el fichero: un check que el
 #       gate SI mide no se puede «declarar medido» para callarlo.
 #   2 · CINCO CAMPOS (seis con DATO). Si falta uno, la entrada no vale, se dice,
 #       y el check sigue NO VERIFICADO.
@@ -5814,7 +5913,12 @@ sub lee_aceptados {
 #  NO es `--aun-asi` (eso sigue siendo para lo que nadie ha mirado) y NO es
 #  ACEPTADO (eso es para un FALLO medido que es decision de otro).
 # =============================================================================
-my %MEDIBLE_A_MANO = map { $_ => 1 } qw(SEO-17 A11Y-13 A11Y-14 MED-13 MED-14 EST-08 EST-12f);
+#  🔴 5-nov-2026 · Y LA OCTAVA, A11Y-03b: el contraste en hover, en focus y
+#     sobre un degradado. Este programa lee la hoja, no la pinta, y el snippet no
+#     pasa el raton por encima: salia NO VERIFICADO en cada recibo (una web nuestra)
+#     sin forma de cerrarlo. Va atada a su DATO («N reglas»): si cambian las
+#     reglas, la firma ya no vale.
+my %MEDIBLE_A_MANO = map { $_ => 1 } qw(SEO-17 A11Y-13 A11Y-14 MED-13 MED-14 EST-08 EST-12f A11Y-03b);
 use constant MEDIDO_DIAS => 90;
 
 sub lee_medidos {

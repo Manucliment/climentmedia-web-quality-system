@@ -5,7 +5,7 @@
 #
 #  WHAT IT IS
 #  ----------
-#  Seven checks can never be answered by a script, so they always came out
+#  Eight checks can never be answered by a script, so they always came out
 #  NOT VERIFIED, and every deploy of every site needed the "anyway" flag:
 #
 #    SEO-17   the language decision (monolingual on purpose, or reciprocal hreflang)
@@ -15,6 +15,8 @@
 #    MED-14   what happens when the visitor presses REJECT
 #    EST-08   the link graph (another gate measures it, in its own run)
 #    EST-12f  the authorship anchor compared against your OTHER sites
+#    A11Y-03b contrast on hover, on focus and over a gradient (added 2026-11-05:
+#             the gate reads the stylesheet, it does not paint it)
 #
 #  A person or an agent measures one of them once, and signs it here. The check
 #  then takes the RESULT you declare, and appears in the report and in the
@@ -70,5 +72,5 @@ RESULT:       PASS
 HOW:          monolingual on purpose: the decision is written in the project's CLAUDE.md
 MEASURED-BY:  Firstname Lastname
 DATE:         2026-10-28
-# SEO-17 and EST-12f print a DATA line: copy it verbatim from the report.
+# SEO-17, EST-12f and A11Y-03b print a DATA line: copy it verbatim from the report.
 DATA:         ninguna etiqueta hreflang

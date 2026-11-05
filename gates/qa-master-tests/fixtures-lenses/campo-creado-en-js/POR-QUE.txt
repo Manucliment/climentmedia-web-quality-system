@@ -1,0 +1,3 @@
+# fixture: un campo de escribir creado con createElement('input'), sin <form>
+# en ninguna pagina (5-nov-2026). Recoge un correo y lo manda con fetch: NO puede
+# salir «NO APLICA». Es el negativo del arreglo de arbol-sin-formulario/.
