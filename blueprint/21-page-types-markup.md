@@ -37,7 +37,7 @@ sections are not, until four pages of other businesses are measured for each, th
 | `servicio` | | 09 §2.2 | WebPage | yes | `BreadcrumbList` + `Service` |
 | `ciudad` | zona | 09 §2.3 | WebPage | yes | `BreadcrumbList` + `Service` or `LocalBusiness` |
 | `ficha` | pdp, producto | 09 §2.4 | ItemPage | yes | `BreadcrumbList` + `Product` or `ProductGroup` |
-| `hub` | | 09 §2.5 | CollectionPage | yes | `BreadcrumbList` + `ItemList` |
+| `hub` | | 09 §2.5 | CollectionPage | yes | `BreadcrumbList` + `CollectionPage` or `ItemList` |
 | `guia` | blog, articulo | 09 §2.6 | WebPage | yes | `BreadcrumbList` + `Article` (or a subtype) |
 | `comparativa` | | 09 §2.6 | WebPage | yes | `BreadcrumbList` + `Article` |
 | `precios` | | 09 §2.8 | WebPage | yes | `BreadcrumbList` + `Service`, `Product` or `SoftwareApplication` |
@@ -86,9 +86,15 @@ when it lists what the page shows.
 ## 3 · The markup: what schema.org says, and what Google reads
 
 The vocabulary used by the gate is generated from schema.org's own release file
-(`schemaorg-current-https.jsonld`) into `gates/schemaorg-vocab.tsv`: 939 types, 546 enumeration
+(`schemaorg-current-https.jsonld`) into `gates/schemaorg-vocab.tsv`: 961 types, 546 enumeration
 members and 1,538 properties of the core, each with its supertypes or domains and whether it is
 `pending` or superseded. Regenerate it with `--vocab-desde` when schema.org publishes a release.
+
+**A type is anything with a superclass, not only what is declared `rdfs:Class`.** 22 medical entries
+(`Physiotherapy`, `Dermatology`, `Pediatric`…) are members of the `MedicalSpecialty` enumeration
+*and* subtypes of `MedicalBusiness`. The first vocabulary read them only as members, and the gate
+called `"@type":"Physiotherapy"` a type that does not exist, on a physiotherapist's own service page
+(5-nov-2026). `Dentistry` is only a member: as a `@type` it still fails.
 
 Four facts the rules rest on, each checked at the source on 5-nov-2026:
 

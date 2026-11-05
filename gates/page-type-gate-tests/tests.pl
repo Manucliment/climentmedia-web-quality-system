@@ -79,6 +79,14 @@ caso('una errata de tipo (Prodcut) y de propiedad (mainEntiryOfPage): FALLO',
 caso('un nombre pendiente (gtin) es AVISO, no FALLO',
      fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"Product","name":"Lampara de mesa Nube","image":"i.jpg","gtin":"8412345678905","offers":{"@type":"Offer","price":"49.95","priceCurrency":"EUR","availability":"https://schema.org/InStock"}}'], $FICHA_CUERPO)), [],
      ['^PASA\s+PT-02', '^AVISO\s+PT-02.*gtin \(pending\)'], ['^FALLO'], 0);
+# 5-nov-2026 · Physiotherapy es miembro de MedicalSpecialty Y tipo (subClassOf MedicalBusiness): el vocabulario lo leia
+#  solo como miembro y el gate lo daba por inexistente en la pagina de un fisioterapeuta.
+caso('un tipo medico que tambien es especialidad (Physiotherapy) existe: PASA',
+     fichero(pagina('legal', ['{"@context":"https://schema.org","@type":"Physiotherapy","name":"Kine Nube","telephone":"+32 2 000 00 00","address":"Rue Nube 1, Bruxelles"}'], '<h1>Aviso legal</h1>')), [],
+     ['^PASA\s+PT-02'], ['tipo «Physiotherapy»'], 0);
+caso('una especialidad que NO es tipo (Dentistry) usada como @type: FALLO',
+     fichero(pagina('legal', ['{"@context":"https://schema.org","@type":"Dentistry","name":"x"}'], '<h1>Aviso legal</h1>')), [],
+     ['^FALLO\s+PT-02.*tipo «Dentistry»'], [], 1);
 
 print "\n== PT-03 / PT-04 · LO QUE PIDE EL TIPO, Y LO QUE NO\n";
 my $FICHA_BIEN = fichero(pagina('ficha', [$MIGA, $ITEMPAGE, producto('49.95')], $FICHA_CUERPO));
@@ -107,6 +115,12 @@ caso('un listado con migas y CollectionPage, sin ItemList: PASA (Google no la pi
      fichero(pagina('plp', [$MIGA, $COLL], '<h1>Lamparas</h1>')), [], ['^PASA\s+PT-03'], ['^FALLO'], 0);
 caso('un listado solo con migas: FALLO, nada dice que es un listado',
      fichero(pagina('plp', [$MIGA], '<h1>Lamparas</h1>')), [], ['^FALLO\s+PT-03.*falta CollectionPage/ItemList'], [], 1);
+# 5-nov-2026 · un hub (la pagina que reparte a los servicios o a las zonas) igual que un listado: lo que dice que es un
+#  listado es CollectionPage o ItemList, no las dos. Pedia ItemList siempre (2 hubs de una web real en FALLO con CollectionPage).
+caso('un hub con migas y CollectionPage: PASA',
+     fichero(pagina('hub', [$MIGA, $COLL], '<h1>Servicios</h1>')), [], ['^PASA\s+PT-03'], ['^FALLO'], 0);
+caso('un hub solo con migas: FALLO',
+     fichero(pagina('hub', [$MIGA], '<h1>Servicios</h1>')), [], ['^FALLO\s+PT-03.*falta CollectionPage/ItemList'], [], 1);
 caso('un listado con un Product suelto: FALLO',
      fichero(pagina('plp', [$MIGA, $COLL, $LISTA, producto('49.95')], '<h1>Lamparas</h1>')), [],
      ['^FALLO\s+PT-04.*Product.*elementos de la ItemList'], [], 1);

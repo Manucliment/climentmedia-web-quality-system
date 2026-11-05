@@ -1,6 +1,6 @@
-# schemaorg-vocab.tsv Â· GENERADO por page-type-gate.pl --vocab-desde Â· no editar a mano
+# schemaorg-vocab.tsv · GENERADO por page-type-gate.pl --vocab-desde · no editar a mano
 # Fuente: https://schema.org/version/latest/schemaorg-current-https.jsonld
-# Licencia del vocabulario: CC BY-SA 3.0, schema.org. C tipo supertipos marca Â· P propiedad dominios marca Â· E miembro enumeracion marca
+# Licencia del vocabulario: CC BY-SA 3.0, schema.org. C tipo supertipos marca · P propiedad dominios marca · E miembro enumeracion marca
 C	3DModel	MediaObject	
 C	AMRadioChannel	RadioChannel	
 C	APIReference	TechArticle	
@@ -54,6 +54,7 @@ C	Audience	Intangible
 C	AudioObject	MediaObject	
 C	AudioObjectSnapshot	AudioObject	
 C	Audiobook	AudioObject,Book	
+C	Audiology	MedicalBusiness	
 C	AuthenticateAction	ControlAction	pending
 C	AuthorizeAction	AllocateAction	
 C	AutoBodyShop	AutomotiveBusiness	
@@ -164,6 +165,7 @@ C	ComicStory	CreativeWork
 C	Comment	CreativeWork	
 C	CommentAction	CommunicateAction	
 C	CommunicateAction	InteractAction	
+C	CommunityHealth	MedicalBusiness	
 C	CompleteDataFeed	DataFeed	
 C	CompoundPriceSpecification	PriceSpecification	
 C	ComputerLanguage	Intangible	
@@ -231,9 +233,11 @@ C	Dentist	LocalBusiness,MedicalBusiness,MedicalOrganization
 C	DepartAction	MoveAction	
 C	DepartmentStore	Store	
 C	DepositAccount	BankAccount,InvestmentOrDeposit	
+C	Dermatology	MedicalBusiness	
 C	DiagnosticLab	MedicalOrganization	
 C	DiagnosticProcedure	MedicalProcedure	
 C	Diet	CreativeWork,LifestyleModification	
+C	DietNutrition	MedicalBusiness	
 C	DietarySupplement	Product,Substance	
 C	DigitalDocument	CreativeWork	
 C	DigitalDocumentPermission	Intangible	
@@ -275,6 +279,7 @@ C	ElectronicsStore	Store
 C	ElementarySchool	EducationalOrganization	
 C	EmailMessage	Message	
 C	Embassy	GovernmentBuilding	
+C	Emergency	MedicalBusiness	
 C	EmergencyService	LocalBusiness	
 C	EmployeeRole	OrganizationRole	
 C	EmployerAggregateRating	AggregateRating	
@@ -343,6 +348,7 @@ C	GeoCircle	GeoShape
 C	GeoCoordinates	StructuredValue	
 C	GeoShape	StructuredValue	
 C	GeospatialGeometry	Intangible	pending
+C	Geriatric	MedicalBusiness	
 C	GiveAction	TransferAction	
 C	GolfCourse	SportsActivityLocation	
 C	GovernmentBenefitsType	Enumeration	
@@ -354,6 +360,7 @@ C	GovernmentService	Service
 C	Grant	Intangible	
 C	GroceryStore	Store	
 C	Guide	CreativeWork	
+C	Gynecologic	MedicalBusiness	
 C	HVACBusiness	HomeAndConstructionBusiness	
 C	Hackathon	Event	
 C	HairSalon	HealthAndBeautyBusiness	
@@ -528,6 +535,7 @@ C	MerchantReturnPolicy	Intangible
 C	MerchantReturnPolicySeasonalOverride	Intangible	
 C	Message	CreativeWork	
 C	MiddleSchool	EducationalOrganization	
+C	Midwifery	MedicalBusiness	
 C	MobileApplication	SoftwareApplication	
 C	MobilePhoneStore	Store	
 C	MolecularEntity	BioChemEntity	pending
@@ -577,8 +585,10 @@ C	NonprofitType	Enumeration
 C	Notary	LegalService	
 C	NoteDigitalDocument	DigitalDocument	
 C	Number		
+C	Nursing	MedicalBusiness	
 C	NutritionInformation	StructuredValue	
 C	Observation	Intangible,QuantitativeValue	
+C	Obstetric	MedicalBusiness	
 C	Occupation	Intangible	
 C	OccupationalExperienceRequirements	Intangible	pending
 C	OccupationalTherapy	MedicalTherapy	
@@ -591,13 +601,16 @@ C	OfferItemCondition	Enumeration
 C	OfferShippingDetails	StructuredValue	
 C	OfficeEquipmentStore	Store	
 C	OnDemandEvent	PublicationEvent	
+C	Oncologic	MedicalBusiness	
 C	OnlineBusiness	Organization	
 C	OnlineMarketplace	OnlineStore	
 C	OnlineStore	OnlineBusiness	
 C	OpeningHoursSpecification	StructuredValue	
 C	OperatingSystem	SoftwareApplication	pending
+C	Ophthalmology	MedicalBusiness	
 C	OpinionNewsArticle	NewsArticle	
 C	Optician	MedicalBusiness	
+C	Optometric	MedicalBusiness	
 C	Order	Intangible	
 C	OrderAction	TradeAction	
 C	OrderItem	StructuredValue	
@@ -605,6 +618,7 @@ C	OrderStatus	StatusEnumeration
 C	Organization	Thing	
 C	OrganizationRole	Role	
 C	OrganizeAction	Action	
+C	Otolaryngologic	MedicalBusiness	
 C	OutletStore	Store	
 C	OwnershipInfo	StructuredValue	
 C	PaintAction	CreateAction	
@@ -624,6 +638,7 @@ C	PaymentMethod	Intangible
 C	PaymentMethodType	Enumeration	
 C	PaymentService	FinancialProduct,PaymentMethod	
 C	PaymentStatusType	StatusEnumeration	
+C	Pediatric	MedicalBusiness	
 C	PeopleAudience	Audience	
 C	PerformAction	PlayAction	
 C	PerformanceRole	Role	
@@ -643,9 +658,11 @@ C	PhysicalExam	MedicalEnumeration,MedicalProcedure
 C	PhysicalTherapy	MedicalTherapy	
 C	Physician	MedicalBusiness,MedicalOrganization	
 C	PhysiciansOffice	Physician	
+C	Physiotherapy	MedicalBusiness	
 C	Place	Thing	
 C	PlaceOfWorship	CivicStructure	
 C	PlanAction	OrganizeAction	
+C	PlasticSurgery	MedicalBusiness	
 C	Play	CreativeWork	
 C	PlayAction	Action	
 C	PlayGameAction	ConsumeAction	
@@ -654,6 +671,7 @@ C	Plumber	HomeAndConstructionBusiness
 C	PodcastEpisode	Episode	pending
 C	PodcastSeason	CreativeWorkSeason	pending
 C	PodcastSeries	CreativeWorkSeries	pending
+C	Podiatric	MedicalBusiness	
 C	PoliceStation	CivicStructure,EmergencyService	
 C	PoliticalParty	Organization	
 C	Pond	BodyOfWater	
@@ -669,6 +687,7 @@ C	PreventionIndication	MedicalIndication
 C	PriceComponentTypeEnumeration	Enumeration	
 C	PriceSpecification	StructuredValue	
 C	PriceTypeEnumeration	Enumeration	
+C	PrimaryCare	MedicalBusiness	
 C	Product	Thing	
 C	ProductCollection	Collection,Product	pending
 C	ProductGroup	Product	
@@ -684,7 +703,9 @@ C	Property	Intangible
 C	PropertyValue	StructuredValue	
 C	PropertyValueSpecification	Intangible	
 C	Protein	BioChemEntity	pending
+C	Psychiatric	MedicalBusiness	
 C	PsychologicalTreatment	TherapeuticProcedure	
+C	PublicHealth	MedicalBusiness	
 C	PublicSwimmingPool	SportsActivityLocation	
 C	PublicToilet	CivicStructure	
 C	PublicationEvent	Event	
@@ -741,6 +762,7 @@ C	Reservoir	BodyOfWater
 C	ResetPasswordAction	ControlAction	pending
 C	Residence	Place	
 C	Resort	LodgingBusiness	
+C	RespiratoryTherapy	MedicalTherapy	
 C	Restaurant	FoodEstablishment	
 C	RestrictedDiet	Enumeration	
 C	ResumeAction	ControlAction	

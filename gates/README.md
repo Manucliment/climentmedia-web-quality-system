@@ -28,7 +28,7 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the fourteen slow batteries: the ones that need a browser, a host, or the network. On a clean
-install the fast run is **998 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **1002 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-1000, not 998, because that machine has deployed. `run-all.sh`
+1004, not 1002, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,7 +95,7 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  998 casos en verde · 0 en rojo
+  1002 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 

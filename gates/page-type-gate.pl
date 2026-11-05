@@ -92,7 +92,11 @@ if (defined $O{vocab}) {
         $flag = (grep { /attic/ } $arr->($n->{'schema:isPartOf'})) ? 'attic' : $flag;
         my @sup = $arr->($n->{'schema:supersededBy'});
         $flag = join ',', grep { $_ ne '' } $flag, (@sup ? 'superseded:' . join('/', @sup) : ());
-        if (grep { $_ eq 'rdfs:Class' } @t) {
+        # 5-nov-2026 · A TYPE IS ANYTHING WITH A SUPERCLASS, not only what says rdfs:Class. Physiotherapy is typed
+        #  schema:MedicalSpecialty (an enumeration member) AND has rdfs:subClassOf MedicalBusiness: schema.org lists it
+        #  as a type. Read only as a member, the gate called "@type":"Physiotherapy" a type that does not exist, on a
+        #  physiotherapist's service page. 22 medical entries are like that (Dentistry is not; Dermatology is).
+        if ((grep { $_ eq 'rdfs:Class' } @t) || $n->{'rdfs:subClassOf'}) {
             my @s = grep { $_ !~ /[:\/]/ } $arr->($n->{'rdfs:subClassOf'});
             push @C, join("\t", 'C', $nombre, join(',', @s), $flag);
         }
