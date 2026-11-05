@@ -5936,7 +5936,7 @@ sub lee_medidos {
         my @faltan = grep { !defined $e{$_} || $e{$_} =~ /^\s*$/ } qw(CHECK RESULTADO COMO MIDE FECHA);
         if (@faltan) { $e{_mal} = 'faltan campos obligatorios: ' . join(', ', @faltan); push @malas, \%e; return }
         unless ($MEDIBLE_A_MANO{$e{CHECK}}) {
-            $e{_mal} = "$e{CHECK} no se puede declarar medido a mano: o lo mide el gate, o no es de los siete ("
+            $e{_mal} = "$e{CHECK} no se puede declarar medido a mano: o lo mide el gate, o no es de los ocho ("
                      . join(' ', sort keys %MEDIBLE_A_MANO) . ')';
             push @malas, \%e; return;
         }

@@ -29,7 +29,7 @@
 #
 #  THE LOCKS
 #  ---------
-#  1 · ONLY THESE SEVEN. The list lives in the gate, not here: a check the gate
+#  1 · ONLY THESE EIGHT. The list lives in the gate, not here: a check the gate
 #      DOES measure cannot be "declared measured" to silence it.
 #  2 · FIVE MANDATORY FIELDS (six when the check prints a DATA line). Missing
 #      one voids the entry, it is said out loud, and the check stays NOT VERIFIED.
@@ -46,7 +46,7 @@
 #  HOW TO FILL IT IN
 #  -----------------
 #    perl gates/qa-master.pl <URL> --repo DIR --candidate
-#  The report lists which of the seven are still unmeasured and, for the ones
+#  The report lists which of the eight are still unmeasured and, for the ones
 #  that carry it, the exact DATA line to copy. The "hacer" line of each check
 #  says how to measure it.
 #  Spanish field names work too ([MEDIDO], RESULTADO, COMO, MIDE, FECHA, DATO),
@@ -54,7 +54,7 @@
 # =============================================================================
 
 [MEASURED]
-# One of the seven ids, exactly as the report prints it.
+# One of the eight ids, exactly as the report prints it.
 CHECK:        MED-14
 # PASS, WARN or FAIL (the report prints them as PASA, AVISO, FALLO; both work).
 RESULT:       PASS
