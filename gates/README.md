@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1831**: 1667 plus 162 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1840**: 1667 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -480,7 +480,7 @@ without blocking. Why the order changed is trap §89.
 |---|---|
 | `structure-gate.js` | Is this laid out, or is it a wall of prose wearing a stylesheet? |
 | `mobile-gate.js` | An action that **converts** whole on the first screen at 360, 390, 1366 and 1440 (a form, a phone, a message app, a booking platform, a contact path of the same site), and calls to action nothing covers. |
-| `mobile-menu-gate.js` | The mobile menu at 390: the menu fits in one row or sits behind a button with `aria-expanded` that opens it; closed, its links are out of the Tab order. Measures the menu half of `A11Y-13`, not the rest. |
+| `mobile-menu-gate.js` | The mobile menu at 390: the menu fits in one row or sits behind a button with `aria-expanded` that opens it; closed, its links are out of the Tab order; open, Tab never sends the focus to a page element the menu covers or that is off screen (WCAG 2.4.11), and Escape closes it when it is modal (`role=dialog`, a scroll lock, an inert page, or 60 % of the screen covered; a warning otherwise). Measures the menu half of `A11Y-13`, not the rest. |
 | `marca-gate.js` | The brand, whole and alone: a logo in the header (a mark made of text and CSS warns), a tab icon in SVG and in PNG or ICO of 32 px or more, an `apple-touch-icon`, a manifest naming 192 and 512, all of them **loading**, `theme-color`, and no colour or typeface outside the site's brand file (`_diseno/MARCA.md`: the `#hex` under «## Colores», the backticked names under «## Tipos»). Without that file the two palette rules say `NOT MEASURED`. The social image is not measured here: S2.9, SEO-06 and SEO-08 already do. |
 | `measure-screens.js` | Density: how much page per screen, measured against the moulds. |
 | `anatomy.pl` | One table of page anatomies, three consumers, and they must agree. |

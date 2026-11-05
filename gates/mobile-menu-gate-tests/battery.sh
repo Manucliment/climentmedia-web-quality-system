@@ -16,6 +16,12 @@
 #    N4   <details>/<summary> nativo (verde) · <div role=button> sin tabindex (rojo)
 #    N5   cajon que se oculta al cerrar (verde) · cajon movido con transform, con
 #         sus enlaces en el orden de Tab (rojo)
+#    N6   capa encima que Escape cierra y devuelve el foco (verde) · capa encima sin
+#         Escape (rojo) · cierra sin devolver el foco (verde con aviso) · menu que
+#         empuja sin Escape (verde con aviso)
+#    N7   foco atrapado en la capa (verde) · capa que se cierra al salir el foco
+#         (verde) · enlaces antes que el boton y la pagina tapada (rojo, el caso
+#         real) · lo tapa el aviso de cookies y no el menu (verde con aviso)
 #    no medible  un cascaron vacio no se juzga
 # =============================================================================
 set -u
@@ -75,6 +81,22 @@ res N4-rojo        div-rol-rojo.html        FALLA 'N4 ·'
 echo "=========== N5 · cerrado, fuera del orden de Tab (A11Y-13) ==========="
 res N5-verde       cajon-inert-verde.html   PASA
 res N5-rojo        cajon-tab-rojo.html      FALLA 'N5 ·'
+echo "=========== N6 y N7 · con el menu ABIERTO: Tab y Escape (5-nov-2026) ==========="
+# Una web nuestra PASABA con el cajon abierto mandando el foco a la pagina tapada
+# (sus enlaces iban antes que el boton) y sin cerrarse con Escape. Los dos rojos
+# salian PASA con el gate de antes; los dos arreglos validos tienen que pasar.
+res N7-atrapa      capa-atrapa-verde.html          PASA  '"focoVuelveAlBoton": true'
+res N7-cierra      capa-cierra-al-salir-verde.html PASA  'el menu se cierra al salir el foco'
+res N7-rojo        capa-enlaces-antes-rojo.html    FALLA 'N7 · con el menu abierto, Tab lleva el foco a 3 elemento(s) de la pagina que no se ven: «Reservar cita», tapado por el menu'
+res N6-rojo        capa-sin-escape-rojo.html       FALLA 'N6 · Escape no cierra el menu abierto, y el menu es modal (tapa el'
+res N6-foco        capa-escape-sin-foco-verde.html PASA  'el foco no vuelve al boton'
+res N6-empuja      details-verde.html              PASA  'Escape no cierra el menu abierto (no es modal'
+# 5-nov · la primera version de N6 daba FALLA a todo menu «encima» (fixed): caia un
+# desplegable de cabecera fija con la pagina a mano (una web nuestra). Modal, si; eso no.
+res N6-fija        desplegable-cabecera-fija-verde.html PASA 'Escape no cierra el menu abierto (no es modal'
+res N6-scroll      cajon-bloquea-scroll-rojo.html  FALLA 'y el menu es modal (bloquea el scroll de la pagina)'
+# Lo que tapa otra cosa (el aviso de cookies) no es del menu: AVISO con su nombre.
+res N7-otro        empuja-bajo-aviso-verde.html    PASA  'tapa OTRA cosa, no el menu: «Reservar cita», tapado por «cookie-bar»'
 echo "=========== Lo que no se juzga ==========="
 res NO-MEDIBLE     no-medible.html          PASA  'NO MEDIBLE'
 echo "-------------------------------------------------------------"

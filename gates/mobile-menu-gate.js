@@ -33,8 +33,34 @@
 //        fuera de pantalla con `transform` sigue en el orden de Tab, y el foco
 //        se va a enlaces que nadie ve. Es la «trampa en el menu movil» de
 //        A11Y-13. FALLA.
-//    N6  Escape cierra el menu abierto. AVISO: es buena practica (patron de
-//        divulgacion), no un criterio que falle.
+//    N6  Escape cierra el menu abierto. Si el menu es MODAL, FALLA: se porta como un
+//        dialogo, y un dialogo se cierra con Escape (patron de dialogo de las APG de
+//        WAI-ARIA). Modal es cualquiera de: role=dialog o aria-modal; bloquea el
+//        scroll de la pagina; deja el <main> inerte; o tapa el 60 % o mas de la
+//        pantalla por debajo del boton (el menu, o un fondo que aparece con el). Un
+//        desplegable que tapa un trozo y deja la pagina a mano, AVISO: es un patron
+//        de divulgacion, y ahi Escape es buena practica, no un criterio. Cierra pero
+//        el foco no vuelve al boton: AVISO.
+//    N7  Con el menu ABIERTO, Tab no lleva el foco a lo que no se ve. Desde el
+//        boton se pulsa Tab tantas veces como paradas tiene el menu, mas dos: si una
+//        parada cae FUERA del menu y no se ve (tapada por el o fuera de la
+//        pantalla), FALLA: el foco se va donde nadie lo ve (WCAG 2.2, 2.4.11). Los
+//        dos arreglos validos pasan: el foco atrapado en el menu mientras esta
+//        abierto, o el menu que se cierra al salir el foco. Si Tab desde el boton
+//        no entra nunca en el menu (sus enlaces van antes en el orden) y no tapa
+//        nada, AVISO.
+//        🔴 5-nov-2026 · POR QUE: una web nuestra PASABA este gate con el cajon
+//        abierto mandando el foco a la pagina tapada: los enlaces del menu iban
+//        antes que el boton en el DOM, y en 6 pulsaciones reales de Tab, 6 paradas
+//        en la pagina, ninguna en el menu, 4 tapadas o fuera de la pantalla. Y
+//        Escape no lo cerraba: N6 era solo un AVISO, y nadie lo leyo.
+//
+//  COMO SE PULSA TAB SIN TECLADO: el gate corre dentro de la pagina y no puede
+//  pulsar teclas de verdad. Por cada Tab manda un keydown de Tab: si un script lo
+//  atiende (una trampa de foco llama a preventDefault y mueve el foco ella), vale
+//  lo que hizo el script; si nadie lo atiende, el foco pasa al siguiente elemento
+//  del orden secuencial del HTML (tabindex positivos primero, luego el DOM). No
+//  entra en shadow DOM ni en iframes.
 //
 //  LO QUE NO MIDE, dicho en cada corrida: el recorrido entero con Tab por la
 //  pagina, el foco visible y un lector de pantalla de verdad. Eso sigue siendo
@@ -91,6 +117,50 @@
   };
   const txt = el => ((el && (el.getAttribute('aria-label') || el.innerText || el.textContent)) || '')
     .replace(/\s+/g, ' ').trim().slice(0, 40);
+
+  // El orden secuencial de Tab del HTML: lo que recibe el foco, con los tabindex
+  // positivos primero (en su orden) y despues los demas, en el orden del DOM.
+  const SEL_FOCO = 'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary, ' +
+    'iframe, [tabindex], [contenteditable=""], [contenteditable="true"], audio[controls], video[controls]';
+  const enOrden = () => {
+    const els = [...document.querySelectorAll(SEL_FOCO)].filter(el => {
+      if (!tabulable(el)) return false;
+      const d = el.parentElement && el.parentElement.closest('details');
+      if (d && !d.open && !(el.tagName === 'SUMMARY' && el.parentElement === d)) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 || r.height > 0;
+    });
+    return els.filter(e => e.tabIndex > 0).sort((a, b) => a.tabIndex - b.tabIndex)
+      .concat(els.filter(e => e.tabIndex === 0));
+  };
+  // Un Tab: primero el keydown (si un script lo atiende, manda el script); si no,
+  // el siguiente del orden. Devuelve el elemento con el foco, o null si sale.
+  const pulsarTab = async () => {
+    const desde = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+    const ev = new KeyboardEvent('keydown', { key: 'Tab', code: 'Tab', keyCode: 9, bubbles: true, cancelable: true });
+    (desde || document.body).dispatchEvent(ev);
+    await esperar(80);
+    if (ev.defaultPrevented) return document.activeElement === document.body ? null : document.activeElement;
+    const orden = enOrden();
+    let i = desde ? orden.indexOf(desde) : -1;
+    if (desde && i < 0) {   // el foco esta en algo fuera del orden (tabindex=-1): el siguiente que le sigue
+      const j = orden.findIndex(e => desde.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING);
+      i = j < 0 ? orden.length : j - 1;
+    }
+    const sig = orden[i + 1];
+    if (!sig) return null;
+    sig.focus();
+    await esperar(80);
+    return document.activeElement === document.body ? null : document.activeElement;
+  };
+  // ¿Va encima de la pagina? El, o un ancestro, sacado del flujo.
+  const encimaDeLaPagina = el => {
+    for (let n = el; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+      const p = getComputedStyle(n).position;
+      if (p === 'fixed' || p === 'absolute') return true;
+    }
+    return false;
+  };
 
   // --- ¿es esto una pagina? (lo mismo que mobile-gate.js) -------------------
   const cuerpoTxt = (document.body.innerText || '').replace(/\s+/g, ' ').trim();
@@ -224,12 +294,24 @@
 
       // N3 · se pulsa y se espera a que aparezca algo
       const antes = new Set([...document.querySelectorAll('a[href]')].filter(seVe));
+      // Para N6: que hay en la pantalla, por debajo del boton, ANTES de abrir, y si la
+      // pagina se podia desplazar. Abierto se compara con esto.
+      const oy = e => getComputedStyle(e).overflowY;
+      const scroll0 = { html: oy(document.documentElement), body: oy(document.body) };
+      const puntos = [];
+      { const y0 = Math.min(vh - 20, Math.max(0, boton.getBoundingClientRect().bottom) + 10);
+        for (let i = 0; i < 8; i++) for (let j = 0; j < 4; j++)
+          puntos.push([Math.round(20 + j * (vw - 40) / 3), Math.round(y0 + i * (vh - 10 - y0) / 7)]); }
+      const enPunto0 = puntos.map(([x, y]) => document.elementFromPoint(x, y));
       const freno = e => { const a = e.target.closest && e.target.closest('a[href]');
         if (a && !/^#/.test(a.getAttribute('href') || '')) e.preventDefault(); };
       addEventListener('click', freno, true);
       let nuevos = [], expandido = null;
       try {
         if (abierto0) { boton.click(); await esperar(400); }   // estaba abierto: se cierra antes de medir
+        // Como lo abre quien usa el teclado: con el foco en el boton. Si al abrir el
+        // script mueve el foco al primer enlace, N7 empieza desde ahi.
+        try { boton.focus(); } catch (e) {}
         boton.click();
         const t0 = Date.now();
         while (Date.now() - t0 < CFG.esperaMs) {
@@ -248,14 +330,119 @@
         const sinTab = nuevos.filter(a => !tabulable(a));
         if (sinTab.length === nuevos.length)
           fallos.push(`N4 · el menu abierto muestra ${nuevos.length} enlace(s) y ninguno se alcanza con Tab`);
-        // N6 · Escape
-        const tecla = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true });
-        (document.activeElement || document.body).dispatchEvent(tecla);
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
+
+        // La capa del menu: su panel (aria-controls) o el padre de sus enlaces, salvo que
+        // ese padre sea la pagina entera (body, o algo que contiene el <main>).
+        const capa0 = panel || nuevos[0].parentElement;
+        const capa = (capa0 === document.body || capa0.querySelector('main')) ? null : capa0;
+        const encima = encimaDeLaPagina(capa || nuevos[0]);
+        const enMenu = el => !!el && (el === boton || boton.contains(el) || (!!capa && capa.contains(el)) ||
+          nuevos.some(a => a === el || a.contains(el)));
+        // Abierto, por su estado y no por lo que se ve: un Tab que hace scroll saca de la
+        // vista un menu que empuja la pagina, y seguiria abierto.
+        const pintado = a => !a.checkVisibility || a.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+        const abierto = () => nativo ? !!boton.parentElement.open
+          : boton.hasAttribute('aria-expanded') ? boton.getAttribute('aria-expanded') === 'true' : nuevos.some(pintado);
+        const reabrir = async () => {
+          if (abierto()) return;
+          try { boton.focus(); } catch (e) {}
+          boton.click(); await esperar(Math.min(CFG.esperaMs, 600));
+        };
+        resumen.menuEncima = encima;
+
+        // ¿Es MODAL? Un desplegable que tapa un trozo no es un dialogo; uno que se pone
+        // delante de la pagina, si. 🔴 5-nov-2026 · la primera version usaba «va
+        // encima» (fixed o absolute, el o un ancestro) y daba FALLA a un desplegable
+        // dentro de una cabecera fija con la pagina a la vista y alcanzable con Tab
+        // (una web nuestra). Ahora, cualquiera de estas cuatro:
+        const modal = [];
+        if (capa && capa.closest('[role="dialog"], [aria-modal="true"]')) modal.push('role=dialog o aria-modal');
+        if ((oy(document.documentElement) === 'hidden' && scroll0.html !== 'hidden') ||
+            (oy(document.body) === 'hidden' && scroll0.body !== 'hidden')) modal.push('bloquea el scroll de la pagina');
+        const main0 = document.querySelector('main');
+        if (main0 && !enMenu(main0) && main0.closest('[inert], [aria-hidden="true"]')) modal.push('deja la pagina inerte');
+        // Cobertura: de los 32 puntos de la pantalla por debajo del boton, cuantos tapa
+        // ahora el menu o una capa que antes no estaba (el fondo oscuro de un cajon).
+        let tapa = 0;
+        puntos.forEach(([x, y], i) => {
+          const h = document.elementFromPoint(x, y);
+          if (!h) return;
+          if (enMenu(h) || (h !== enPunto0[i] && !(main0 && main0.contains(h)) && encimaDeLaPagina(h) &&
+              !(enPunto0[i] && (h.contains(enPunto0[i]) || enPunto0[i].contains(h))))) tapa++;
+        });
+        const cobertura = Math.round(100 * tapa / puntos.length);
+        if (cobertura >= 60) modal.push(`tapa el ${cobertura} % de la pantalla`);
+        resumen.menuModal = modal.length ? modal : false;
+        resumen.coberturaPct = cobertura;
+
+        // N7 · con el menu abierto, ¿adonde va el foco con Tab?
+        //   Por que no se ve, porque no todo es culpa del menu: medido en la web del
+        //   caso, la cuarta parada caia bajo el aviso de cookies. Eso es del aviso
+        //   (banner-probe), no del menu: va como AVISO, nombrando lo que lo tapa.
+        const causa = el => {
+          const r = el.getBoundingClientRect();
+          if (r.bottom <= 0 || r.top >= vh || r.right <= 0 || r.left >= vw) return 'fuera de la pantalla';
+          const hit = document.elementFromPoint(Math.min(Math.max(r.left + r.width / 2, 1), vw - 1),
+                                                Math.min(Math.max(r.top + r.height / 2, 1), vh - 1));
+          if (hit && enMenu(hit)) return 'tapado por el menu';
+          if (hit && !(el === hit || el.contains(hit) || hit.contains(el)))
+            return `tapado por «${(typeof hit.className === 'string' && hit.className.trim().split(/\s+/)[0]) || hit.tagName.toLowerCase()}»`;
+          return 'recortado o transparente';
+        };
+        const delMenu = c => c === 'tapado por el menu' || c === 'fuera de la pantalla' || c === 'recortado o transparente';
+        // Cuantas paradas tiene el menu: las de su capa en el orden de Tab, no solo los
+        // enlaces que se ven al abrir (un menu con desplegables tiene mas paradas que
+        // enlaces a la vista, y con esa cuenta el numero de Tab cambiaba de una corrida a otra).
+        const paradas = capa ? enOrden().filter(e => capa.contains(e)).length : nuevos.filter(tabulable).length;
+        const pasos = [], tapados = [], deOtro = [];
+        let entra = false;
+        for (let k = 0; k < Math.min(40, paradas + 2); k++) {
+          const el = await pulsarTab();
+          if (!el) { pasos.push('(sale de la pagina)'); break; }
+          const dentro = enMenu(el);
+          if (dentro && el !== boton) entra = true;
+          let ve = seVe(el);
+          if (!ve) { await esperar(400); ve = seVe(el); }   // un menu que se cierra al salir el foco tiene su transicion
+          const c = ve ? '' : causa(el);
+          pasos.push(`${txt(el) || el.tagName.toLowerCase()} [${dentro ? 'menu' : 'pagina'}]${ve ? '' : ` (NO SE VE: ${c})`}`);
+          if (!dentro && !ve) (delMenu(c) ? tapados : deOtro).push(`«${txt(el) || el.tagName.toLowerCase()}», ${c}`);
+          if (!abierto()) { pasos.push('(el menu se cierra al salir el foco)'); break; }
+        }
+        resumen.tabConElMenuAbierto = pasos;
+        if (deOtro.length)
+          avisos.push(`N7 · con el menu abierto, Tab lleva el foco a ${deOtro.length} elemento(s) que tapa OTRA cosa, no el menu: ` +
+            `${deOtro.slice(0, 3).join(' · ')}. No es del menu: mira el aviso de cookies o la barra fija que lo tapa`);
+        if (tapados.length)
+          fallos.push(`N7 · con el menu abierto, Tab lleva el foco a ${tapados.length} elemento(s) de la pagina que no se ven: ` +
+            `${tapados.slice(0, 3).join(' · ')}. ` +
+            `Mientras el menu este abierto, el foco se queda en el (Tab del ultimo vuelve al boton) o el menu se cierra al salir el foco (WCAG 2.4.11)`);
+        else if (!entra && pasos.length && pasos[0] !== '(sale de la pagina)')
+          avisos.push('N7 · Tab desde el boton no entra en el menu abierto: sus enlaces van antes que el boton en el orden ' +
+            'y solo se llega con Shift+Tab. Mejor el boton antes que el menu, o llevar el foco al primer enlace al abrir');
+
+        // N6 · Escape. UN solo keydown, en el elemento con el foco, y que suba: antes se
+        // mandaba dos veces (al foco y al documento), y un manejador que alterna
+        // cerraba y volvia a abrir.
+        //    Y se vuelve arriba antes y despues: los Tab de N7 pueden haber bajado la
+        //    pagina, y un menu que empuja, fuera de la vista, pareceria cerrado.
+        scrollTo(0, 0); await esperar(150);
+        await reabrir();
+        const desde = document.activeElement || document.body;
+        desde.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true, cancelable: true }));
         await esperar(500);
-        const sigue = nuevos.filter(seVe).length;
-        resumen.escapeCierra = !sigue;
-        if (sigue) avisos.push('N6 · Escape no cierra el menu abierto (buena practica del patron de divulgacion, no un fallo)');
+        scrollTo(0, 0); await esperar(150);
+        const cierra = !nuevos.some(seVe);
+        const vuelve = document.activeElement === boton || boton.contains(document.activeElement);
+        resumen.escapeCierra = cierra;
+        resumen.focoVuelveAlBoton = cierra ? vuelve : null;
+        if (!cierra && modal.length)
+          fallos.push(`N6 · Escape no cierra el menu abierto, y el menu es modal (${modal.join(', ')}): se porta como un ` +
+            'dialogo, y quien usa el teclado no tiene como quitarlo de delante sin volver al boton');
+        else if (!cierra)
+          avisos.push(`N6 · Escape no cierra el menu abierto (no es modal: tapa el ${cobertura} % de la pantalla y deja la ` +
+            'pagina a mano; patron de divulgacion, buena practica, no un fallo)');
+        else if (!vuelve)
+          avisos.push('N6 · Escape cierra el menu, pero el foco no vuelve al boton: queda en un enlace que ya no se ve');
       }
       removeEventListener('click', freno, true);
     }
@@ -265,8 +452,9 @@
     notas.push(`MEDIDO A ${vw} px cuando se pidieron ${CFG.anchoPedido}. Una medida que no coincide con lo ` +
       `PEDIDO no es un resultado.`);
   }
-  notas.push('A11Y-13 · este gate mide la parte del MENU MOVIL (filas, boton, aria-expanded, que abra, teclado ' +
-    'y Tab con el menu cerrado). NO mide el recorrido entero con Tab, el foco visible ni un lector de pantalla.');
+  notas.push('A11Y-13 · este gate mide la parte del MENU MOVIL (filas, boton, aria-expanded, que abra, teclado, ' +
+    'Tab con el menu cerrado y con el abierto, y Escape). El Tab lo emula: un keydown, y si nadie lo atiende, el ' +
+    'siguiente del orden del HTML. NO mide el recorrido entero con Tab, el foco visible ni un lector de pantalla.');
 
   return JSON.stringify({
     url: location.href,
