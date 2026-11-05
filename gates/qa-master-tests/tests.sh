@@ -628,6 +628,35 @@ texto  "MED-05 · no acusa al HTML del cliente (_migrate)"  NO "_migrate/origen"
        perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo medicion --sin-recibo --cache "$CACHE"
 espera "404 malo servido en local · sin h1 ni enlaces"             FALLO EST-03  perl $QA $U404 --solo estructura
 espera "bc · styles.css del repo NO desplegado (G11)"     FALLO EST-09  perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo estructura --sin-recibo --cache "$CACHE"
+# 🔴 5-nov-2026 · EST-09 PIDE LA URL SELLADA, COMO EL NAVEGADOR. Una tienda servia
+#    la hoja nueva en `styles.css?v=…` (lo que pide cada visitante) y su CDN
+#    guardaba en la URL desnuda la copia de una semana antes. EST-09 quitaba el ?v=
+#    tambien al PEDIR y daba FALLO por un fichero que nadie ve. `sinsello` en el
+#    _prod.txt del sitio reproduce ese CDN. Rojo contra la regla de antes.
+espera "sello · sellada = repo, desnuda vieja (CDN): PASA"  PASA  EST-09  perl $QA http://sello.example/ --repo fixtures-repos/sello-web --solo estructura --una-sola --sin-recibo --cache "$CACHE"
+# El control: si la hoja del repo no es la servida (ni sellada ni desnuda), sigue cazando.
+espera "sello · la hoja del repo sin subir: FALLO"         FALLO EST-09  perl $QA http://sello.example/ --repo fixtures-repos/sello-web-sin-subir --solo estructura --una-sola --sin-recibo --cache "$CACHE"
+texto  "sello · y nombra la hoja"                           SI "/css/styles.css" \
+       perl $QA http://sello.example/ --repo fixtures-repos/sello-web-sin-subir --solo estructura --una-sola --sin-recibo --cache "$CACHE"
+# 🔴 5-nov-2026 · UNA MEDIDA DE PRODUCCION NO PISA UN RECIBO DE CANDIDATO. Una web
+#    midio su produccion con --repo y su recibo de CANDIDATO quedo sustituido por
+#    uno de PRODUCCION, que la puerta acepta en verde. Copia en la cache de la
+#    corrida: el banco no deja recibos en un fixture.
+RCAND="$CACHE/sello-con-recibo"; rm -rf "$RCAND"; cp -r fixtures-repos/sello-web "$RCAND"
+printf 'ARBOL-HASH: 0000\nMEDIDO-CONTRA: CANDIDATO\nVEREDICTO: PASA\n' > "$RCAND/.qa-recibo"
+H_ANTES="$(md5sum "$RCAND/.qa-recibo" | cut -c1-32)"
+texto  "recibo · produccion no pisa el de CANDIDATO: lo dice" SI "es de CANDIDATO, y esta medida es de" \
+       perl $QA http://sello.example/ --repo "$RCAND" --solo estructura --una-sola --cache "$CACHE"
+if [ "$(md5sum "$RCAND/.qa-recibo" | cut -c1-32)" = "$H_ANTES" ]; then
+  printf '  OK    %-46s el fichero no ha cambiado\n' "recibo · y el de CANDIDATO sigue intacto"; ok=$((ok+1))
+else
+  printf '  MAL   %-46s el .qa-recibo de CANDIDATO ha cambiado\n' "recibo · y el de CANDIDATO sigue intacto"; ko=$((ko+1))
+fi
+# El control: uno de PRODUCCION si se sustituye (el flujo de antes no se rompe).
+printf 'ARBOL-HASH: 0000\nMEDIDO-CONTRA: PRODUCCION\nVEREDICTO: PASA\n' > "$RCAND/.qa-recibo"
+texto  "recibo · el de PRODUCCION si se reescribe"        SI "MEDIDO-CONTRA: PRODUCCION (la web ya subida)" \
+       perl $QA http://sello.example/ --repo "$RCAND" --solo estructura --una-sola --cache "$CACHE"
+rm -rf "$RCAND"
 espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA http://site-d.example/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
 espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
 # 8-sep-2026 - LA CARA CONTRARIA, y hacia falta: el caso de arriba solo prueba que

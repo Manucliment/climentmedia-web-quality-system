@@ -1,0 +1,6 @@
+# sello.example · produccion de mentira (fake-production.pl)
+# 5-nov-2026 · el CDN que guarda la copia VIEJA de la hoja en la URL desnuda:
+# los visitantes piden /css/styles.css?v=… (lo que enlaza el HTML) y reciben la
+# de hoy; quien la pida sin ?v= recibe la de hace una semana. EST-09 tiene que
+# pedir la sellada, como el navegador.
+sinsello /css/styles.css _viejo-styles.css

@@ -1,0 +1,1 @@
+POR QUE: el arbol que se sirve en sello.example, tal cual. EST-09 tiene que dar PASA aunque la URL desnuda de la hoja tenga la copia vieja del CDN: ningun visitante la pide.

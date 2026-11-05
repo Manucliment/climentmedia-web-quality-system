@@ -5470,14 +5470,24 @@ sub lente_estructura {
         #    arreglo de contraste de las 11:18 del 10-ago, sin desplegar). Un
         #    md5 solo sobre .html lo habria dado por verde.
         my @comparables = @PAGES;
+        # 🔴 5-nov-2026 · SE PIDE LO QUE PIDE EL NAVEGADOR: LA URL SELLADA. Aqui se
+        #    quitaba el ?v= tambien al PEDIR, y no solo al buscar el fichero en el
+        #    disco. Una tienda servia la hoja nueva en `styles.css?v=…` (lo que pide
+        #    cada visitante) y el CDN guardaba en la URL desnuda la copia de una
+        #    semana antes: EST-09 FALLO por un fichero que ningun visitante ve. G11
+        #    ya pedia la sellada (5-quater); EST-09 no. El ?v= se quita solo para
+        #    encontrar el fichero; se pide la URL tal y como la enlaza el HTML.
+        my %pedir;
         {
             my $hh = fetch($URLS[0])->{body} // '';
             for my $t ($hh =~ /(<link\b[^>]*>|<script\b[^>]*>)/gi) {
                 my $href = attr($t,'href') // attr($t,'src') or next;
                 next if ($t =~ /^<link/i) && (attr($t,'rel')//'') !~ /stylesheet/i;
                 my $a = abs_url($href, base_ef($URLS[0])) or next;
-                $a =~ s/\?.*$//;                    # el sellado ?v= no viaja al disco
-                push @comparables, $a if is_internal($a) && !grep { $_ eq $a } @comparables;
+                (my $sin = $a) =~ s/[?#].*$//;      # el sellado ?v= no viaja al disco
+                next unless is_internal($sin) && !grep { $_ eq $sin } @comparables;
+                push @comparables, $sin;
+                $pedir{$sin} = $a if $a ne $sin;
             }
         }
         for my $u2 (@comparables) {
@@ -5488,7 +5498,7 @@ sub lente_estructura {
             next unless $f;
             $n++;
             open my $fh, '<:raw', $f or next; local $/; my $local = <$fh>; close $fh;
-            my $serv = fetch($u2)->{body} // '';
+            my $serv = fetch($pedir{$u2} // $u2)->{body} // '';
             # se comparan bytes: es barato y binario
             my $m_local = md5_hex($local);
             my $m_serv  = md5_hex($serv);
@@ -6651,7 +6661,26 @@ if ($opt{json} ne '') {
 #     = alguien miro y esta mal. Si solo se escribiera en verde, borrar el
 #     recibo seria la forma facil de saltarse el gate.
 # =============================================================================
-if ($opt{repo} ne '' && -d $opt{repo} && !$opt{'sin-recibo'}) {
+# 🔴 5-nov-2026 · UNA MEDIDA DE PRODUCCION NO PISA UN RECIBO DE CANDIDATO. Una web
+#    midio su produccion con --repo (para contar lo que ya falla servido) y el
+#    recibo de CANDIDATO de su arbol quedo sustituido por uno de PRODUCCION. La
+#    puerta acepta uno de PRODUCCION en verde (con aviso, por el flujo de antes),
+#    asi que un arbol con un defecto nuevo podia subir con un recibo que no lo
+#    habia medido. Ahora, sin --candidato y con un .qa-recibo de CANDIDATO ya
+#    escrito, no se escribe: se dice, y --recibo FICHERO lo deja en otro sitio.
+my $RECIBO_CAND_PREVIO = '';
+if (!$CAND_ON && $opt{repo} ne '' && -d $opt{repo} && !$opt{'sin-recibo'} && $opt{recibo} eq ''
+    && open my $rp, '<', "$opt{repo}/.qa-recibo") {
+    local $/; my $t = <$rp> // ''; close $rp;
+    $RECIBO_CAND_PREVIO = "$opt{repo}/.qa-recibo" if $t =~ /^MEDIDO-CONTRA:\s*CANDIDATO\s*$/m;
+}
+if ($RECIBO_CAND_PREVIO ne '') {
+    print "\n  RECIBO   NO lo escribo: $RECIBO_CAND_PREVIO es de CANDIDATO, y esta medida es de\n";
+    print "           PRODUCCION (sin --candidato). Una medida de la web ya subida no sustituye a\n";
+    print "           la del arbol que se va a subir: la puerta se quedaria con un recibo que no\n";
+    print "           ha medido ese arbol. El veredicto de produccion es el de arriba.\n";
+    print "           Para guardarlo aparte: --recibo FICHERO. Para subir: --candidato.\n";
+} elsif ($opt{repo} ne '' && -d $opt{repo} && !$opt{'sin-recibo'}) {
     my ($midir) = $0 =~ m{^(.*)[\\/][^\\/]+$};
     $midir = '.' unless defined $midir && $midir ne '';
     my $lib = "$midir/receipt.pl";

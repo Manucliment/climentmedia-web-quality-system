@@ -32,7 +32,10 @@
 #                                   cliente lo acepta y el tipo es de texto)
 #     header <ruta> <Nombre: valor> cabecera extra; <ruta> es exacta o termina en *
 #     status <ruta> <codigo>        forzar el codigo (el cuerpo se sirve igual)
-#  Los ficheros que empiezan por `_` no se sirven nunca.
+#     sinsello <ruta> <_fichero>    pedida SIN query (?v=…), <ruta> sirve <_fichero>:
+#                                   el CDN que guarda la copia vieja en la URL desnuda
+#                                   mientras la sellada da la nueva (5-nov-2026)
+#  Los ficheros que empiezan por `_` no se sirven nunca (salvo por un sinsello).
 #
 #  Solo modulos del nucleo: en esta maquina no hay python, y en la de quien
 #  clone esto puede que tampoco.
@@ -75,7 +78,7 @@ sub leer { my ($f) = @_; open my $h, '<:raw', $f or return undef; local $/; my $
 
 sub conf {
     my ($raiz) = @_;
-    my %c = (gzip => 1, header => [], status => {});
+    my %c = (gzip => 1, header => [], status => {}, sinsello => {});
     my $t = leer("$raiz/_prod.txt");
     return \%c unless defined $t;
     for my $l (split /\r?\n/, $t) {
@@ -83,6 +86,7 @@ sub conf {
         if    ($l =~ /^\s*gzip\s+off\s*$/i)                  { $c{gzip} = 0 }
         elsif ($l =~ /^\s*header\s+(\S+)\s+(.+?)\s*$/i)      { push @{$c{header}}, [$1, $2] }
         elsif ($l =~ /^\s*status\s+(\S+)\s+(\d{3})\s*$/i)    { $c{status}{$1} = $2 }
+        elsif ($l =~ /^\s*sinsello\s+(\S+)\s+(_[^\s\/\\]+)\s*$/i) { $c{sinsello}{$1} = $2 }
     }
     return \%c;
 }
@@ -143,6 +147,9 @@ while (my $c = $s->accept) {
         my @cand = $rel eq '' ? ("$raiz/index.html")
                  : ("$raiz/$rel", "$raiz/$rel/index.html", "$raiz/$rel.html");
         ($f) = grep { -f $_ } @cand;
+    }
+    if ($ruta !~ /\?/ && defined $cf->{sinsello}{$sinq} && -f "$raiz/$cf->{sinsello}{$sinq}") {
+        $f = "$raiz/$cf->{sinsello}{$sinq}";
     }
     my ($cod, $cuerpo, $ext);
     if (defined $f) {
