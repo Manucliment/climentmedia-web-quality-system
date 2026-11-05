@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tienda de prueba | Fixture MED-10 y REN-13 rojo</title>
+<meta name="description" content="Fixture de la bateria: una tienda Shopify inventada, con su formulario de boletin nativo y el script de precarga que inyecta la plataforma.">
+<link rel="canonical" href="http://tienda.example/">
+<script>window.Shopify = window.Shopify || {}; Shopify.shop = "tienda.example";</script>
+<script async src="/js/vacio.js"></script>
+</head>
+<body>
+<!-- CASO ROJO (5-nov-2026): la misma tienda, pero su tema manda el formulario a /contacto, que no atiende nadie, y declara un script PROPIO de 0 bytes. Reconocer la plataforma no apaga ninguna de las dos reglas.
+     /contact da 404: el formulario va por POST, y ese receptor lo atiende Shopify.
+     Y FALLO de REN-13 por el preloads.js que inyecta la plataforma desde otro
+     dominio y contesta 200 con 0 bytes: no es un recurso nuestro roto. -->
+<header><a href="/">Tienda de prueba</a></header>
+<main>
+  <section><h1>Tienda de prueba</h1><p>Compost y lombrices inventados.</p></section>
+  <section>
+    <h2>Boletin</h2>
+    <form method="post" action="/contacto#contact_form" id="contact_form" accept-charset="UTF-8">
+      <input type="hidden" name="form_type" value="customer">
+      <input type="hidden" name="utf8" value="✓">
+      <label for="correo">Correo</label>
+      <input type="email" id="correo" name="contact[email]" autocomplete="email" required>
+      <button type="submit">Suscribirme</button>
+    </form>
+  </section>
+</main>
+<footer><a href="/policies/privacy-policy">Privacidad</a></footer>
+</body>
+</html>

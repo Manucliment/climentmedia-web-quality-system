@@ -657,6 +657,22 @@ printf 'ARBOL-HASH: 0000\nMEDIDO-CONTRA: PRODUCCION\nVEREDICTO: PASA\n' > "$RCAN
 texto  "recibo · el de PRODUCCION si se reescribe"        SI "MEDIDO-CONTRA: PRODUCCION (la web ya subida)" \
        perl $QA http://sello.example/ --repo "$RCAND" --solo estructura --una-sola --cache "$CACHE"
 rm -rf "$RCAND"
+
+# 🔴 5-nov-2026 · TRES FALSOS POSITIVOS EN UNA TIENDA SHOPIFY, medidos desde el
+#    servidor. MED-10 pedia GET a /contact (404 por diseño: el formulario va por
+#    POST al receptor de Shopify); REN-13 daba FALLO al preloads.js que inyecta la
+#    plataforma desde otro dominio (200, 0 bytes). Cada uno con su caso que TIENE
+#    que seguir en rojo: un tema que manda a /contacto, el mismo formulario en una
+#    pagina que no es de Shopify, y un script PROPIO de 0 bytes. (EST-10, el cajon
+#    del carrito, va con los demas casos de EST-10.)
+espera "shopify · /contact por POST: el de la plataforma" PASA  MED-10 perl $QA http://tienda.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+texto  "shopify · y dice que no ha enviado nada"          SI "no se ha enviado nada" \
+       perl $QA http://tienda.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+espera "shopify · el tema manda a /contacto: FALLO"       FALLO MED-10 perl $QA http://tienda-mal.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+espera "shopify · /contact sin ser Shopify: FALLO"        FALLO MED-10 perl $QA http://imita.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+espera "shopify · el tercero vacio no es FALLO"           PASA  REN-13 perl $QA http://tienda.example/ --solo rendimiento --una-sola --sin-recibo --cache "$CACHE"
+espera "shopify · y sale como aviso aparte"               AVISO REN-13c perl $QA http://tienda.example/ --solo rendimiento --una-sola --sin-recibo --cache "$CACHE"
+espera "shopify · uno PROPIO a 0 bytes sigue FALLO"       FALLO REN-13 perl $QA http://tienda-mal.example/ --solo rendimiento --una-sola --sin-recibo --cache "$CACHE"
 espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA http://site-d.example/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
 espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
 # 8-sep-2026 - LA CARA CONTRARIA, y hacia falta: el caso de arriba solo prueba que
@@ -2145,6 +2161,19 @@ espera "EST-10 · colapsado a enlace, PASA"            PASA  EST-10 \
 #    FAQ de las 5 webs -- un gate que da falsos positivos se acaba ignorando.
 espera "EST-10 · un acordeon de FAQ NO es un menu"    PASA  EST-10 \
        perl $QA https://climentmedia.com --repo fixtures-menu/faq --candidato --una-sola --solo estructura --sin-recibo
+# 🔴 5-nov-2026 · EL CAJON DEL CARRITO NO ES UN DESPLEGABLE DEL MENU. Una tienda
+#    Shopify daba FALLO: su boton del carrito (aria-haspopup="dialog") vive en la
+#    cabecera y su cajon tiene 2 enlaces. Se saltan los dialogos (por el control o
+#    por el panel); el control rojo es la misma cabecera con el desplegable de
+#    verdad en 2 destinos, que tiene que seguir en FALLO.
+espera "EST-10 · el cajon del carrito y el buscador, no"   PASA  EST-10 \
+       perl $QA https://climentmedia.com --repo fixtures-menu/cajon-carrito --candidato --una-sola --solo estructura --sin-recibo
+texto  "EST-10 · y solo mira el panel del menu"            SI "1 panel(es) mirados" \
+       perl $QA https://climentmedia.com --repo fixtures-menu/cajon-carrito --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-10 · con el cajon, uno de 2 sigue FALLO"       FALLO EST-10 \
+       perl $QA https://climentmedia.com --repo fixtures-menu/cajon-y-pobre --candidato --una-sola --solo estructura --sin-recibo
+texto  "EST-10 · y lo cuenta solo a el"                    SI "1 de 1 paneles mirados" \
+       perl $QA https://climentmedia.com --repo fixtures-menu/cajon-y-pobre --candidato --una-sola --solo estructura --sin-recibo
 texto  "EST-10 · y lo dice: ese sitio no tiene ninguno" SI "no tiene desplegables" \
        perl $QA https://climentmedia.com --repo fixtures-menu/faq --candidato --una-sola --solo estructura --sin-recibo
 
@@ -2552,6 +2581,16 @@ echo "== ESTRUCTURA Y RENDIMIENTO · los cuatro que faltaban"
 #    senalo 12 paginas de site-c -6 mas de las que yo habia contado a mano- en
 #    cuanto empezaron a declarar su tipo.
 espera "EST-02b · 2 secciones para 7 roles, AVISA"       AVISO EST-02b \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/est-02b --candidato --una-sola --solo estructura --sin-recibo
+# 🔴 5-nov-2026 · EST-02 imprimia «(0 de 121 paginas nuestras lo hacen)» y «decidir
+#    de una vez», tres meses despues de que la mayoria de nuestras webs ya emitiera
+#    data-sec: una web pregunto si se decidia o no. Sin data-sec sigue siendo NO
+#    VERIFICADO (nunca PASA), dice el contrato y no lleva cifras de otras webs.
+espera "EST-02 · sin data-sec, NO VERIFICADO"            NOVERIF EST-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/est-02b --candidato --una-sola --solo estructura --sin-recibo
+texto  "EST-02 · y dice el contrato, no lo deja abierto" SI "el contrato esta decidido" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/est-02b --candidato --una-sola --solo estructura --sin-recibo
+texto  "EST-02 · sin la cifra vieja de otras webs"       NO "0 de 121" \
        perl $QA https://climentmedia.com --repo fixtures-lenses/est-02b --candidato --una-sola --solo estructura --sin-recibo
 # EST-10b · un boton que anuncia un panel inexistente no abre nada, y con
 # teclado deja el foco muerto. Nacio con EST-10 y no tenia caso.

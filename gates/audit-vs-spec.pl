@@ -651,8 +651,8 @@ sub bloque_anatomia {
         $opt{modo} eq 'greenfield'
           ? fallo(id=>'ANA-01', titulo=>'ninguna seccion declara su ROL (data-sec)',
                   dato=>"$tot paginas sin data-sec · $m", umbral=>'toda seccion del cuerpo con data-sec="<rol>"',
-                  proc=>'09 §1 lo EXIGE · 0 de 121 paginas nuestras lo cumplen',
-                  hacer=>'la comprobacion de anatomia por rol NUNCA se ha ejecutado sobre ninguna pagina nuestra, y por eso 09 §2 lleva desde el 27-jul sin poder fallar. Se anade en el generador ANTES de la primera tanda: cuesta un atributo ahora y 121 paginas despues')
+                  proc=>'09 §1 lo EXIGE: sin data-sec la anatomia por rol de 09 §2 no se puede comprobar',
+                  hacer=>'se anade en el generador ANTES de la primera tanda, como ya hacen casi todas nuestras webs: cuesta un atributo por seccion ahora y una regeneracion entera despues')
           : nv(id=>'ANA-01', titulo=>'anatomia por ROL: la pagina no declara data-sec',
                dato=>"$tot paginas · $m", umbral=>'data-sec="<rol>" por seccion',
                proc=>'09 §1 · en migracion se hereda el generador y esto se arregla en la siguiente tanda',

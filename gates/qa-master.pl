@@ -21,7 +21,8 @@
 #      sirve 796 bytes con 0 enlaces.
 #    · web-page-standard §1 exige og:image:alt desde el 5-ago · 4 de 5 webs al 0%,
 #      incluida aquella donde vive el estandar.
-#    · 09 §1 exige data-sec · 0 de 121 paginas lo declaran.
+#    · 09 §1 exige data-sec · 0 de 121 paginas lo declaraban (agosto de 2026;
+#      en noviembre ya lo emiten casi todas: ver EST-02).
 #  Cada comprobacion de aqui lleva su PROCEDENCIA escrita, para que se vea de
 #  que linea de que documento sale. Si el documento cambia, el gate cambia.
 #
@@ -2429,7 +2430,7 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
 
     # --- descarga de todo lo del primer render -------------------------------
     my ($total, $terceros, $por_tipo) = (0, 0, {});
-    my (@sin_comprimir, @sellado_nostore, @pesadas, @blocking, @rotos, @fuera_del_arbol);
+    my (@sin_comprimir, @sellado_nostore, @pesadas, @blocking, @rotos, @fuera_del_arbol, @terceros_vacios);
     for my $ru (sort keys %res) {
         my $x = fetch($ru);
         my $t = $res{$ru}{tipo} // '?';
@@ -2483,6 +2484,15 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
             next;
         }
         if ($x->{wire} == 0 && $t ne 'html') {
+            # 5-nov-2026 · Un TERCERO que contesta 200 con 0 bytes no es un recurso
+            #   nuestro roto. Una tienda Shopify daba FALLO por el preloads.js que
+            #   inyecta la plataforma desde shop.app (200, 0 bytes al gate): ni el
+            #   arbol lo declara ni se puede quitar. Se dice aparte, como aviso
+            #   (REN-13c). Uno NUESTRO a 0 bytes sigue siendo FALLO: ese si se arregla.
+            if (!is_internal($x->{url} || $ru)) {
+                push @terceros_vacios, "$ru ($t · 200 pero 0 bytes)";
+                next;
+            }
             push @rotos, "$ru ($t · 200 pero 0 bytes)";
             $res{$ru}{roto} = '0B';
             next;
@@ -2511,6 +2521,13 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
                    proc=>'arreglo 0.6 del 10-ago-2026 · el gate media TAMANO y no ESTADO: el favicon 404 de site-d.example salia como «favicon ligero · 0 KB · PASA»',
                    hacer=>'publicar el fichero o quitar la etiqueta. Un 404 declarado es una peticion perdida en cada visita, y aqui tapaba dos checks de peso (REN-07 y REN-04)')
            : pasa(lente=>'RENDIMIENTO', id=>'REN-13', titulo=>'todos los recursos declarados responden', dato=>scalar(keys %res).' recursos');
+    @terceros_vacios and aviso(lente=>'RENDIMIENTO', id=>'REN-13c', titulo=>'recurso de TERCEROS que contesta 200 con 0 bytes',
+                   donde=>join("\n                 ", @terceros_vacios[0..($#terceros_vacios>3?3:$#terceros_vacios)]),
+                   ev=>[@terceros_vacios],
+                   dato=>scalar(@terceros_vacios).' recurso(s) de otro dominio',
+                   umbral=>'un tercero vacio no es un recurso nuestro roto; puede depender de cookies o cabeceras que el gate no manda',
+                   proc=>'5-nov-2026 · una tienda Shopify: el preloads.js de shop.app, que inyecta la plataforma, salia como FALLO de REN-13',
+                   hacer=>'si lo declara el arbol, mirar en el navegador si llega con contenido y, si no, quitar la etiqueta; si lo inyecta la plataforma, no hay nada que hacer');
 
     # Los que el candidato NO PUEDE contestar se dicen en voz alta, con nombre.
     # Callarlos seria peor que acusarlos: un recurso que nadie ha mirado y que no
@@ -3159,6 +3176,32 @@ sub js_de_la_pagina {
         }
     }
     return @r;
+}
+
+# receptor_de_plataforma(cuerpo, <form ...>, action absoluto): el nombre de la
+#   plataforma si el formulario va al receptor que ella atiende, o ''.
+#   5-nov-2026 · Una tienda Shopify daba FALLO de MED-10: su formulario de
+#   boletin va por POST a /contact (form_type=customer), y Shopify contesta 404
+#   a un GET a esa ruta por diseño. Se reconoce por las TRES cosas a la vez: la
+#   pagina es de Shopify (window.Shopify / Shopify.shop / cdn.shopify.com), el
+#   formulario es POST con el form_type de contacto o de boletin, y el action es
+#   /contact del mismo dominio (con o sin prefijo de idioma, /es o /en-us). Un
+#   tema que manda a otra ruta (/contacto) no la atiende nadie y sigue en FALLO.
+sub receptor_de_plataforma {
+    my ($cb, $fo, $a) = @_;
+    return '' unless $cb =~ /\bwindow\.Shopify\b|\bShopify\.shop\b|cdn\.shopify\.com/;
+    return '' unless lc(attr($fo, 'method') // '') eq 'post';
+    my $i = index($cb, $fo);
+    return '' if $i < 0;
+    my $j = index($cb, '</form>', $i);
+    my $blk = substr($cb, $i, ($j < 0 ? length($cb) : $j) - $i);
+    my ($ft) = $blk =~ /<input\b[^>]*\bname\s*=\s*["']form_type["'][^>]*\bvalue\s*=\s*["']([a-z_]+)["']/i;
+    ($ft) = $blk =~ /<input\b[^>]*\bvalue\s*=\s*["']([a-z_]+)["'][^>]*\bname\s*=\s*["']form_type["']/i unless defined $ft;
+    return '' unless defined $ft && $ft =~ /^(contact|customer)$/;
+    return '' unless is_internal($a);
+    my ($ruta) = $a =~ m{^[a-z]+://[^/]+([^?#]*)}i;
+    return '' unless ($ruta // '') =~ m{^(?:/[a-z]{2}(?:-[a-z]{2})?)?/contact/?$}i;
+    return "Shopify, form_type=$ft";
 }
 
 # receptor_del_js(form_js, mas_js): a donde envia el JS un formulario sin action.
@@ -4662,7 +4705,11 @@ sub lente_medicion {
                         : $ext_a eq ''
                             ? 'el receptor es una ruta sin fichero: la resuelve el servidor (rewrite/router), no el arbol'
                         : '';
-            if ($CAND_ON && $ejecuta) {
+            if (my $plat = receptor_de_plataforma($cb, $fo, $a)) {
+                pasa(lente=>'MEDICION', id=>'MED-10', titulo=>'receptor del formulario: el de la plataforma',
+                     donde=>$cu, dato=>"$via$a por POST ($plat) · no se ha enviado nada: un GET a este receptor da 404 por diseño y no prueba nada; que el envio llegue lo mide MED-13",
+                     proc=>'5-nov-2026 · una tienda Shopify: GET /contact daba 404 y salia FALLO, con el formulario yendo por POST al receptor de Shopify');
+            } elsif ($CAND_ON && $ejecuta) {
                 nv_cand(lente=>'MEDICION', id=>'MED-10', titulo=>'el receptor del formulario responde',
                         donde=>$a, dato=>$via.'medido contra el CANDIDATO: '.$ejecuta,
                         motivo=>$ejecuta,
@@ -4908,19 +4955,30 @@ sub paneles_de_menu {
     return () unless $nav =~ /\S/;
     # 2 · los ids prometidos. Se recogen en UNA pasada y se procesan despues:
     #    los `pos()` de dos //g sobre la misma cadena se pisan.
-    my @ids; my %visto;
-    while ($nav =~ m{\baria-controls\s*=\s*["']([^"']+)["']}gi) {
-        push @ids, $1 unless $visto{$1}++;
+    # 5-nov-2026 · Un control que abre un DIALOGO no abre un desplegable del menu.
+    #   Una tienda Shopify daba FALLO por su cajon del carrito: el boton del
+    #   carrito vive en la cabecera con aria-controls="cart-drawer" y
+    #   aria-haspopup="dialog", y el cajon (2 enlaces) contaba como un panel del
+    #   menu con menos de 3 destinos. Se salta el control con aria-haspopup="dialog"
+    #   y el panel que es un <dialog>, role="dialog" o aria-modal="true". Un
+    #   desplegable de verdad con 2 enlaces sigue saliendo FALLO.
+    my @ids; my %visto; my %dialogo;
+    while ($nav =~ m{(<[a-z][a-z0-9-]*\b[^>]*\baria-controls\s*=\s*["']([^"']+)["'][^>]*>)}gi) {
+        my ($ctl, $id) = ($1, $2);
+        $dialogo{$id} = 1 if $ctl =~ m{\baria-haspopup\s*=\s*["']dialog["']}i;
+        push @ids, $id unless $visto{$id}++;
     }
     my @out;
     for my $id (@ids) {
+        next if $dialogo{$id};
         my $h = $html;
-        unless ($h =~ m{<([a-z][a-z0-9]*)\b[^>]*\bid\s*=\s*["']\Q$id\E["'][^>]*>}i) {
+        unless ($h =~ m{<([a-z][a-z0-9-]*)\b([^>]*)\bid\s*=\s*["']\Q$id\E["']([^>]*)>}i) {
             # El control apunta a un panel que no existe. Es un defecto distinto
             # y peor, asi que se reporta con -1 en vez de callarse.
             push @out, [$id, -1]; next;
         }
-        my ($tag, $ini) = (lc $1, $+[0]);
+        my ($tag, $ini, $atr) = (lc $1, $+[0], "$2 $3");
+        next if $tag eq 'dialog' || $atr =~ m{\brole\s*=\s*["']dialog["']|\baria-modal\s*=\s*["']true["']}i;
         my ($depth, $fin) = (1, undef);
         pos($h) = $ini;
         while ($h =~ m{<(/?)\Q$tag\E\b([^>]*)>}gi) {
@@ -5143,15 +5201,21 @@ sub lente_estructura {
                           proc=>'09-tipos-de-pagina §2',
                           hacer=>'corregir el valor o quitar el atributo: declarar un tipo que el gate no conoce es creer que se declara algo mientras se mide otra cosa');
 
-    # EST-02 · data-sec (PC4 / X2) · 0 de 121 paginas. NUNCA se reporta como PASA.
+    # EST-02 · data-sec (PC4 / X2). NUNCA se reporta como PASA.
+    # 🔴 5-nov-2026 · Hasta hoy el dato llevaba escrito «(0 de 121 paginas nuestras lo
+    #    hacen)» y el proc «ningun generador lo emite»: era verdad en agosto y ya no lo
+    #    es (contado el 5-nov en los arboles: 6 de 9 webs lo emiten en casi todas sus
+    #    paginas). Una web que lo leia preguntaba «¿se decide o no?», y la decision ya
+    #    estaba tomada. Una cifra de otras webs no se escribe en la salida de un gate:
+    #    se queda vieja y nadie la ve. La salida dice el contrato y lo de ESTA web.
     if (@sin_datasec) {
         nv(lente=>'ESTRUCTURA', id=>'EST-02', titulo=>"anatomia por ROL de la pagina$inferido",
            donde=>join(' · ', @sin_datasec[0..($#sin_datasec>2?2:$#sin_datasec)]),
            ev=>[@sin_datasec],
-           dato=>scalar(@sin_datasec).' de '.scalar(@vistas).' paginas no declaran data-sec (0 de 121 paginas nuestras lo hacen) · tipos: '.$resumen_tipos,
+           dato=>scalar(@sin_datasec).' de '.scalar(@vistas).' paginas no declaran data-sec · tipos: '.$resumen_tipos,
            umbral=>'cada seccion con data-sec="<rol>", y los roles OBL del tipo de CADA pagina (09 §2)',
-           proc=>'X2/PC4 · 09 §1 lo EXIGE y ningun generador lo emite: la comprobacion 2 de las 7 de 09 §7 nunca se ha ejecutado sobre ninguna pagina',
-           hacer=>'decidir de una vez: o los generadores emiten data-sec, o el gate infiere el rol por otra via. Hoy hay un contrato que no cumple nadie, que es la peor de las dos opciones');
+           proc=>'X2/PC4 · 09 §1 lo EXIGE: sin data-sec, la comprobacion 2 de las 7 de 09 §7 (anatomia por rol) no se puede hacer en estas paginas',
+           hacer=>'el contrato esta decidido: el generador del sitio escribe data-sec="<rol>" en cada seccion, con los roles de 09 §2, como ya hacen casi todas nuestras webs. Se anade en el generador (un atributo por seccion), no a mano en el HTML. Mientras falte, EST-02b es solo una heuristica y no un aprobado');
         # sustituto honesto, marcado como heuristica: cuenta secciones contra roles
         @heur and aviso(lente=>'ESTRUCTURA', id=>'EST-02b', titulo=>'HEURISTICA: menos secciones que roles obligatorios',
                         donde=>join("\n                 ", @heur[0..($#heur>3?3:$#heur)]),

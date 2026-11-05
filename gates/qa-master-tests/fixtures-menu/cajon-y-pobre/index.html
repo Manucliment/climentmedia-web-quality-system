@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cajon del carrito en la cabecera | Fixture EST-10 rojo</title>
+<meta name="description" content="Fixture de la bateria: una cabecera de tienda con un desplegable de menu que reparte, un boton de carrito que abre un dialogo y un buscador que tambien es un dialogo.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- CASO ROJO de EST-10 (5-nov-2026): el mismo cajon y el mismo buscador, pero el desplegable de "Productos" se queda con 2 destinos, uno el del padre. Saltarse los dialogos no apaga la regla. Una tienda Shopify daba FALLO por su cajon
+     del carrito: el boton vive en la cabecera con aria-controls y
+     aria-haspopup="dialog", y el cajon, con 2 enlaces, contaba como un panel del
+     menu. El buscador no lleva aria-haspopup, pero su panel es role="dialog".
+     Ni uno ni otro son desplegables del menu; el de "Productos" si, y aqui no reparte. -->
+<header>
+  <nav aria-label="Principal">
+    <span class="droplink">
+      <a href="/productos/">Productos</a>
+      <button class="dropbtn" aria-expanded="false" aria-controls="p-productos"><span>Abrir</span></button>
+    </span>
+    <div class="megapanel" id="p-productos" hidden>
+      <ul>
+        <li><a href="/productos/compost/">Compost</a></li>
+        <li><a href="/productos/">Todos</a></li>
+                      </ul>
+    </div>
+  </nav>
+  <button class="header-actions__action" aria-haspopup="dialog" aria-expanded="false" aria-controls="cart-drawer" aria-label="Carrito">Carrito</button>
+  <button class="header-actions__action" aria-expanded="false" aria-controls="buscador" aria-label="Buscar">Buscar</button>
+</header>
+<cart-drawer id="cart-drawer" class="drawer is-empty">
+  <p>Tu carrito esta vacio</p>
+  <a href="/collections/all">Seguir comprando</a>
+  <a href="/account/login">Inicia sesion</a>
+</cart-drawer>
+<div id="buscador" role="dialog" aria-label="Buscar" hidden>
+  <form action="/search"><input type="search" name="q" aria-label="Buscar"></form>
+  <a href="/search">Busqueda avanzada</a>
+</div>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Fixture del cajon del carrito</h1><p>La cabecera de una tienda.</p></section>
+  <section data-sec="catalogo"><h2>Lo que hay</h2><p>Uno, dos y tres.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/otra/">La hoja de ruta</a>.</p></section>
+</main>
+</body>
+</html>
