@@ -116,7 +116,18 @@ printf '404-retocado.html\n' > "$T/servido/_errordoc.txt"
 r "control: la 404 por <title> sigue pasando"     0 g11
 contiene "pero el 404.html NO se da por servido"    "NO HALLADO 404.html"
 no_contiene "ni se inventa la verificacion"         "VERIFICADO-POR-LA-404"
+# 5-nov-2026 · la lista ENTERA de no hallados, con su codigo, para la puerta: la
+#   cruza con las paginas que la subida da de alta o cambia (deploy-tests, altas).
+NH="$T/nohay.tsv"; rm -f "$NH"
+G11_NO_HALLADOS="$NH" perl "$REF/receipt.pl" --servido --repo "$T/repo" >/dev/null 2>&1
+ULTIMA="$(cat "$NH" 2>/dev/null)"
+contiene "G11_NO_HALLADOS: ruta TAB codigo"         "$(printf '404.html\t404')"
+no_contiene "y solo lo que falta"                   "index.html"
 mv "$T/servido/pagina-de-error.html" "$T/servido/404.html"
+rm -f "$NH"
+G11_NO_HALLADOS="$NH" perl "$REF/receipt.pl" --servido --repo "$T/repo" >/dev/null 2>&1
+if [ -f "$NH" ] && [ ! -s "$NH" ]; then OK=$((OK+1)); printf '  PASA  %-52s\n' "sin no hallados: la lista EXISTE y va vacia"
+else MAL=$((MAL+1)); printf '  FALLA %-52s\n' "sin no hallados: la lista EXISTE y va vacia"; fi
 
 echo
 echo "== 4 · soft 404: la pagina de error con 200"

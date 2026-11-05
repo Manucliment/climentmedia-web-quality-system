@@ -294,7 +294,13 @@ export SERVIDO="$T/servido"
 r "sube y verifica lo servido"              0 bash "$REF/deploy.sh" "$T/repo" --subir
 contiene "hizo la subida"                     "subida de pruebas hecha"
 contiene "corrio G11"                         "G11"
-contiene "termina en verde"                   "desplegado y verificado"
+# 🔴 5-nov-2026 · Hasta hoy este caso pedia «desplegado y verificado», y la puerta lo
+#    decia con el enlazado de lo servido en rojo y el navegador sin correr (este
+#    repo declara SIN_NAVEGADOR=1): el banco afirmaba la misma frase que habia que
+#    quitar (P-20261105-4). El veredicto de la subida es el CIERRE, y aqui es FALLA.
+contiene "cierra con su veredicto"            "CIERRE · FALLA · subido, pero en rojo: el enlazado"
+contiene "y nombra lo que no midio"           "sin medir: navegador sobre lo servido (SIN_NAVEGADOR=1)"
+no_contiene "y no dice «verificado»"          "verificado"
 # 🔴 13-ago-2026 · LA PUERTA CORRE EL GATE DE ENLAZADO, y no como consejo.
 #    Antes de hoy invocaba UN gate de los seis (receipt.pl); los otros se
 #    imprimian como texto y dependian de que alguien se acordara de correrlos.

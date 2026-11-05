@@ -251,6 +251,147 @@ else
 fi
 rm -rf "$SEL" "$FREF"
 
+# =============================================================================
+#  EL CERROJO DE SUBIDA (3-ter-0, 5-nov-2026). Medido el 19-oct: dos sesiones con
+#  permiso para la misma subida la hicieron dos veces, con 11 s de diferencia.
+#  Los bytes de la puerta entre sus marcas; el directorio central, uno de prueba.
+# =============================================================================
+CER="$(mktemp -t cerrojo-XXXXXXXX)"; CDIR="$(mktemp -d -t recibos-XXXXXXXX)"
+A5=$(grep -n '^# >>> cerrojo-de-subida' "$PUERTA" | head -1 | cut -d: -f1)
+B5=$(grep -n '^# <<< cerrojo-de-subida' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A5:-}" ] || [ -z "${B5:-}" ] || [ "$A5" -ge "$B5" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque cerrojo-de-subida en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A5},${B5}p" "$PUERTA" > "$CER"
+  T0=100000
+  cerrojo() { # nombre · sesion que sube · OTRA_VEZ · cerrojo que ya hay («» = ninguno) · rc esperado · TIENE · NO
+    local n="$1" rc bien=1
+    rm -rf "$CDIR/subidas"
+    ( QA_RECIBOS_DIR="$CDIR"; CLAUDE_CODE_SESSION_ID="$2"; OTRA_VEZ="$3"
+      SITIO="https://www.ejemplo.test/"; REPO="/repo/ejemplo"; . "$CER"
+      if [ -n "$4" ]; then mkdir -p "$CERROJO_DIR"; printf '%b' "$4" > "$(cerrojo_fichero)"; fi
+      cerrojo_decide "$T0"; r=$?; printf '\nNOTA=%s\n' "$CERROJO_NOTA"; exit $r ) > "$TMP" 2>&1; rc=$?
+    [ "$rc" = "$5" ] || bien=0
+    [ -n "$6" ] && ! grep -qF -- "$6" "$TMP" && bien=0
+    [ -n "$7" ] &&   grep -qF -- "$7" "$TMP" && bien=0
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s (rc %s, esperaba %s)\n' "$n" "$rc" "$5"; sed 's/^/        /' "$TMP"; fi
+  }
+  HACE5="$((T0-300))\tsesion-otra\t/repo/otro\n"
+  cerrojo "sin cerrojo: sube, sin nota"                          sesion-yo "" ""                                      0 "NOTA=" "SE SUBIO"
+  # 🔴 EL CASO DEL 19-OCT: otra sesion acaba de subir el mismo sitio.
+  cerrojo "otra sesion hace 5 min: NO sube"                      sesion-yo "" "$HACE5"                                1 "SE SUBIO HACE 5 MIN DESDE OTRA SESION" ""
+  cerrojo "y dice como repetir a sabiendas"                      sesion-yo "" "$HACE5"                                1 "--otra-vez" ""
+  cerrojo "con --otra-vez: sube y deja la nota con el motivo"    sesion-yo "la otra se paro a medias" "$HACE5"        0 "NOTA=SUBIDA REPETIDA a los 5 min de otra sesion: la otra se paro a medias" "SE SUBIO HACE"
+  cerrojo "la misma sesion repite: sube"                         sesion-otra "" "$HACE5"                              0 "esta misma sesion" "SE SUBIO HACE"
+  cerrojo "otra sesion hace 20 min: sube"                        sesion-yo "" "$((T0-1200))\tsesion-otra\t/repo/otro\n" 0 "NOTA=" "SE SUBIO"
+  cerrojo "a los 14 min aun para"                                sesion-yo "" "$((T0-840))\tsesion-otra\t/repo/otro\n"  1 "HACE 14 MIN" ""
+  cerrojo "un cerrojo ilegible no para (no es una medida)"       sesion-yo "" "basura\tsin\tfecha\n"                  0 "NOTA=" "SE SUBIO"
+  # La escritura y la lectura casan, y el fichero es del SITIO, con o sin barra final.
+  rm -rf "$CDIR/subidas"
+  ( QA_RECIBOS_DIR="$CDIR"; CLAUDE_CODE_SESSION_ID="sesion-a"; SITIO="https://www.ejemplo.test"; REPO="/repo/a"; . "$CER"; cerrojo_escribe "$T0" )
+  ( QA_RECIBOS_DIR="$CDIR"; CLAUDE_CODE_SESSION_ID="sesion-b"; OTRA_VEZ=""; SITIO="https://www.ejemplo.test/"; REPO="/repo/b"; . "$CER"; cerrojo_decide "$((T0+30))" ) > "$TMP" 2>&1; rc=$?
+  if [ "$rc" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "lo que escribe una sesion lo ve la otra (con y sin barra)"
+  else ko=$((ko+1)); printf '  MAL   %s (rc %s)\n' "lo que escribe una sesion lo ve la otra (con y sin barra)" "$rc"; sed 's/^/        /' "$TMP"; fi
+  ( QA_RECIBOS_DIR="$CDIR"; CLAUDE_CODE_SESSION_ID="sesion-b"; OTRA_VEZ=""; SITIO="https://otra-web.test/"; REPO="/repo/b"; . "$CER"; cerrojo_decide "$((T0+30))" ) > "$TMP" 2>&1; rc=$?
+  if [ "$rc" = 0 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "el cerrojo de un sitio no para otro"
+  else ko=$((ko+1)); printf '  MAL   %s (rc %s)\n' "el cerrojo de un sitio no para otro" "$rc"; sed 's/^/        /' "$TMP"; fi
+fi
+# Y la puerta lo escribe ANTES del subidor y DESPUES del sello (un sello que para no ha subido nada).
+LE=$(grep -n 'cerrojo_escribe "\${AHORA_SUBE' "$PUERTA" | head -1 | cut -d: -f1)
+LS=$(grep -n '^if ! SELLO_SAL=' "$PUERTA" | head -1 | cut -d: -f1)
+LC=$(grep -n '^eval "\$CMD"$' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -n "${LE:-}" ] && [ -n "${LS:-}" ] && [ -n "${LC:-}" ] && [ "$LS" -lt "$LE" ] && [ "$LE" -lt "$LC" ]; then
+  ok=$((ok+1)); printf '  PASA  %s\n' "el cerrojo se escribe entre el sello y el subidor"
+else ko=$((ko+1)); printf '  MAL   %s (sello %s · cerrojo %s · subidor %s)\n' "el cerrojo se escribe entre el sello y el subidor" "${LS:-?}" "${LE:-?}" "${LC:-?}"; fi
+rm -rf "$CER" "$CDIR"
+
+# =============================================================================
+#  LAS PAGINAS DE ESTA SUBIDA, ¿SE SIRVEN? (4-0, 5-nov-2026). Medido ese dia: una
+#  subida cerro «G11 lo ha verificado» con sus dos paginas NUEVAS en 404. G11 da
+#  la lista entera (G11_NO_HALLADOS, su banco: recibo-404); aqui se cruza con
+#  CAMBIADAS_TODAS. Los bytes de la puerta entre sus marcas.
+# =============================================================================
+ALT="$(mktemp -t altas-XXXXXXXX)"; ADIR="$(mktemp -d -t altas-XXXXXXXX)"
+A6=$(grep -n '^# >>> altas-servidas' "$PUERTA" | head -1 | cut -d: -f1)
+B6=$(grep -n '^# <<< altas-servidas' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A6:-}" ] || [ -z "${B6:-}" ] || [ "$A6" -ge "$B6" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque altas-servidas en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A6},${B6}p" "$PUERTA" > "$ALT"
+  altas() { # nombre · CAMBIADAS_TODAS · lo que da G11 («-» = no dio fichero) · rc|FALLA|NO MEDIDO esperados
+    local n="$1" got
+    ( . "$ALT"; CAMBIADAS_TODAS="$2"; f="$ADIR/nohay.tsv"; rm -f "$f"
+      [ "$3" = "-" ] || printf '%b' "$3" > "$f"
+      altas_juzga "$f"; r=$?; printf '%s|%s|%s\n' "$r" "$ALTAS_FALLA" "$ALTAS_NM" ) > "$TMP" 2>&1
+    got="$(cat "$TMP")"
+    if [ "$got" = "$4" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s\n' "$n" "$got" "$4"; fi
+  }
+  # 🔴 EL CASO DEL 5-NOV: dos altas en 404.
+  altas "dos altas en 404: FALLA, y las nombra"          "guias/a.html guias/b.html" "guias/a.html\t404\nguias/b.html\t404\n" "1|guias/a.html (404), guias/b.html (404)|"
+  altas "un 410 en una cambiada: FALLA"                  "index.html"                "index.html\t410\n"                     "1|index.html (410)|"
+  altas "un 200 con otros bytes no es servido: FALLA"    "guias/a.html"              "guias/a.html\t200\n"                   "1|guias/a.html (200)|"
+  altas "negado (403) no es ausente: NO MEDIDO"          "guias/a.html"              "guias/a.html\t403\n"                   "0||guias/a.html (403)"
+  altas "sin respuesta (0) y 503: NO MEDIDO"             "a.html b.html"             "a.html\t0\nb.html\t503\n"              "0||a.html (0), b.html (503)"
+  altas "pasado el tope de G11: NO MEDIDO"               "guias/a.html"              "guias/a.html\t-\n"                     "0||guias/a.html (pasado el tope de G11)"
+  altas "uno falta y otro negado: FALLA y NO MEDIDO"     "a.html b.html"             "a.html\t404\nb.html\t403\n"            "1|a.html (404)|b.html (403)"
+  # NEGATIVOS: sin estos, el aviso no valdria nada
+  altas "un 404 en un fichero que NO cambio: no es de esta subida" "guias/a.html"    "viejo.html\t404\n"                     "0||"
+  altas "la ruta entera, no un trozo"                    "a.html"                    "guias/a.html\t404\n"                   "0||"
+  altas "lista vacia: todo servido"                      "guias/a.html"              ""                                      "0||"
+  altas "sin paginas de esta subida: nada que mirar"     ""                          "-"                                     "0||"
+  # 🔴 Sin lista de G11 no es «no falta nada»: es «nadie lo ha dicho».
+  altas "G11 sin lista: NO MEDIDO, no verde"             "guias/a.html"              "-"                                     "0||G11 no dio su lista de no hallados"
+fi
+rm -rf "$ALT" "$ADIR"
+
+# =============================================================================
+#  EL CIERRE (5-nov-2026): una linea al final, que dice lo que se midio. Antes:
+#  «El despliegue esta hecho y G11 lo ha verificado» con el navegador en NO
+#  MEDIDO sobre las paginas nuevas. Los bytes de la puerta entre sus marcas.
+# =============================================================================
+CIE="$(mktemp -t cierre-XXXXXXXX)"
+A7=$(grep -n '^# >>> cierre-de-la-subida' "$PUERTA" | head -1 | cut -d: -f1)
+B7=$(grep -n '^# <<< cierre-de-la-subida' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A7:-}" ] || [ -z "${B7:-}" ] || [ "$A7" -ge "$B7" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque cierre-de-la-subida en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A7},${B7}p" "$PUERTA" > "$CIE"
+  cierra() { # nombre · variables del paso (eval) · el CIERRE TIENE que empezar asi · y decir · y NO decir
+    local n="$1" got bien=1
+    ( unset ENL_RC ENL_NM NAV_FALLOS NAV_CORRIO NAV_BASURA NAV_NM_CAMB URLS_FORM ALTAS_NM REDIR SIN_NAVEGADOR CAMBIADAS_FUERA
+      . "$CIE"; eval "$2"; cierre_dice; printf '%s\n' "$CIERRE" ) > "$TMP" 2>&1
+    got="$(cat "$TMP")"
+    case "$got" in "$3"*) ;; *) bien=0 ;; esac
+    [ -n "$4" ] && ! grep -qF -- "$4" "$TMP" && bien=0
+    [ -n "$5" ] &&   grep -qF -- "$5" "$TMP" && bien=0
+    grep -qi 'verificado' "$TMP" && bien=0      # la palabra no sale nunca del cierre
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s… (%s)\n' "$n" "$got" "$3" "$4"; fi
+  }
+  VERDE="ENL_RC=0; NAV_CORRIO=1; NAV_FALLOS=0; NAV_BASURA=0; URLS_FORM=/contacto"
+  cierra "todo medido y en verde: PASA"                          "$VERDE"                                   "PASA" "medido en lo servido" "formularios"
+  cierra "sin formularios declarados: PASA, y lo dice"           "$VERDE; URLS_FORM="                       "PASA" "el repo no declara ninguno" ""
+  # 🔴 EL CASO DEL 5-NOV: el navegador no midio las paginas nuevas.
+  cierra "paginas de esta subida sin medir: NO MEDIDO, y las nombra" "$VERDE; NAV_BASURA=2; NAV_NM_CAMB='/guias/a /guias/b'" "NO MEDIDO" "paginas de esta subida: /guias/a /guias/b" "PASA"
+  cierra "otra medida sin respuesta: NO MEDIDO"                  "$VERDE; NAV_BASURA=1"                     "NO MEDIDO" "1 medida(s) de navegador sin respuesta" "PASA"
+  cierra "el navegador no corrio (sin host): NO MEDIDO"          "ENL_RC=0; URLS_FORM=/c"                   "NO MEDIDO" "(no corrio)" "PASA"
+  cierra "SIN_NAVEGADOR=1: NO MEDIDO (un hueco declarado sigue siendo un hueco)" "ENL_RC=0; SIN_NAVEGADOR=1" "NO MEDIDO" "SIN_NAVEGADOR=1" "PASA"
+  cierra "el enlazado no pudo rastrear: NO MEDIDO"               "$VERDE; unset ENL_RC; ENL_NM='enlazado (el rastreo fallo)'" "NO MEDIDO" "el rastreo fallo" ""
+  cierra "G11 negado en una pagina nueva: NO MEDIDO"             "$VERDE; ALTAS_NM='guias/a.html (403)'"   "NO MEDIDO" "G11 no pudo mirar: guias/a.html (403)" ""
+  cierra "cambiadas fuera del tope: NO MEDIDO"                   "$VERDE; CAMBIADAS_FUERA=3"                "NO MEDIDO" "3 pagina(s) cambiada(s) fuera del tope" ""
+  cierra "el navegador en rojo: FALLA"                           "$VERDE; NAV_FALLOS=2"                     "FALLA" "2 medida(s) de navegador" ""
+  cierra "el enlazado en rojo: FALLA"                            "$VERDE; ENL_RC=1"                         "FALLA" "el enlazado de lo servido" ""
+  cierra "FALLA y sin medir: manda FALLA y dice lo otro"         "$VERDE; NAV_FALLOS=1; ALTAS_NM='a.html (0)'" "FALLA" "y sin medir: G11 no pudo mirar" ""
+  cierra "arbol de redirecciones: PASA sin navegador ni enlazado" "REDIR=1"                                 "PASA" "redirecciones" "NO MEDIDO"
+fi
+rm -f "$CIE"
+# Y nadie mas en la puerta dice «verificado» de una subida (lo hacian tres lineas).
+VER=$(grep -nE '^[[:space:]]*echo .*(G11 lo ha verificado|desplegado y verificado)' "$PUERTA" | head -3)
+if [ -z "$VER" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "ninguna linea de la puerta dice «verificado» de la subida"
+else ko=$((ko+1)); printf '  MAL   %s\n' "ninguna linea de la puerta dice «verificado» de la subida"; printf '%s\n' "$VER" | sed 's/^/        /'; fi
+
 rm -f "$TMP" "$VACIO" "$ANT" "$RET"
 echo
 printf '  %d bien · %d mal\n' "$ok" "$ko"

@@ -43,7 +43,7 @@ recibo-cdn|perl receipt-tests/cdn-controls.pl|0|G11 detras de un CDN que reescri
 recibo-sello|bash receipt-tests/tests-sealing.sh|0|el asset sellado con ?v= y el cache de la URL desnuda
 recibo-404|bash receipt-tests/tests-404-host.sh|0|G11 le pregunta al host por su 404 (EST-03): generica, soft 404, sin 404.html
 redirecciones|bash redirects-gate-tests/tests.sh|0|el arbol que solo redirige: el .htaccess simulado, sus destinos, lo servido y la puerta
-puerta-sobras|bash deploy-tests/tests.sh|0|4-bis: lo retirado del arbol que el tar dejo vivo en el destino; 1-quater: el navegador sobre el candidato para la subida
+puerta-sobras|bash deploy-tests/tests.sh|0|4-bis: lo retirado del arbol que el tar dejo vivo en el destino; 1-quater: el navegador sobre el candidato para la subida; el cerrojo, las paginas de la subida servidas y el cierre
 audit-vs-spec|perl audit-vs-spec-tests/tests.pl|0|la spec contra el arbol
 audit-vs-origen|bash audit-vs-source-tests/tests.sh|0|el gate de migracion (medios)
 gate-formularios|bash forms-gate-tests/tests.sh|1|el formulario en el DOM (paso 10)

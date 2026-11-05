@@ -26,6 +26,9 @@
 #    deploy.sh REPO --sin-commit "..."  permite subir ficheros del arbol que no
 #                                      estan commiteados (paso 1-ter, G1), dejando
 #                                      la lista y el motivo en el historial
+#    deploy.sh REPO --otra-vez "..."  permite subir un SITIO que otra sesion ha
+#                                      subido hace menos de 15 min (paso 3-ter-0),
+#                                      dejando el motivo en el historial
 #
 #  🔴 EL FLUJO, Y SON DOS MOMENTOS (11-ago-2026)
 #  ---------------------------------------------
@@ -85,7 +88,7 @@
 set -u
 
 REF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0; SIN_COMMIT=""
+REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0; SIN_COMMIT=""; OTRA_VEZ=""
 
 while [ $# -gt 0 ]; do
   # English aliases. Additive: they cannot break an existing invocation.
@@ -98,6 +101,7 @@ while [ $# -gt 0 ]; do
     --loses-text)  set -- "--pierde-texto" "${@:2}" ;;
     --uncommitted) set -- "--sin-commit" "${@:2}" ;;
     --hours)       set -- "--horas" "${@:2}" ;;
+    --again)       set -- "--otra-vez" "${@:2}" ;;
   esac
   case "$1" in
     --subir)    SUBIR=1 ;;
@@ -106,6 +110,7 @@ while [ $# -gt 0 ]; do
     --aun-asi)  shift; AUN_ASI="${1:-}" ;;
     --pierde-texto) shift; PIERDE_TEXTO="${1:-}" ;;
     --sin-commit) shift; SIN_COMMIT="${1:-}" ;;
+    --otra-vez) shift; OTRA_VEZ="${1:-}" ;;
     --horas)    shift; HORAS="${1:-12}" ;;
     -h|--help)  sed -n '2,/^set -u$/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 2 ;;
     -*)         echo "opcion desconocida: $1"; exit 2 ;;
@@ -397,7 +402,7 @@ HUELLAS_ANT="$REPO/_deploy/.desplegado-huellas.txt"
 # por la manana llevaban el ?v= dentro) no se comparan: daria la web entera por cambiada.
 HUELLAS_VERSION="# huellas-v2 (html sin sellos ?v=)"
 URLS_CAMBIADAS_MAX="${URLS_CAMBIADAS_MAX:-${CHANGED_URLS_MAX:-8}}"
-URLS_CAMBIADAS=""; CAMBIADAS_ALTAS=0; CAMBIADAS_N=0; CAMBIADAS_FUERA=0; CAMBIADAS_NOTA=""
+URLS_CAMBIADAS=""; CAMBIADAS_ALTAS=0; CAMBIADAS_N=0; CAMBIADAS_FUERA=0; CAMBIADAS_NOTA=""; CAMBIADAS_TODAS=""
 #    🔴 EL SELLO ?v= NO ES UN CAMBIO DE PAGINA (1-nov, el mismo dia): cambiar el CSS
 #    reescribe `styles.css?v=…` en TODAS las paginas, y con el hash del fichero cada
 #    subida «cambiaba» la web entera, llenaba el tope con las primeras por orden
@@ -436,6 +441,8 @@ paginas_cambiadas() {   # -> URLS_CAMBIADAS, CAMBIADAS_ALTAS, CAMBIADAS_N, CAMBI
     [ -n "$rel" ] || continue
     case "/$rel" in */_*|*/.*|/404.html) continue ;; esac
     [[ "$rel" =~ ^google[0-9a-f]+\.html$ ]] && continue   # verificacion de Search Console
+    # todas, sin tope y tambien las declaradas: el cierre mira que se sirva CADA una (5-nov-2026)
+    CAMBIADAS_TODAS="${CAMBIADAS_TODAS:+$CAMBIADAS_TODAS }$rel"
     r="$(pagina_ruta "$rel")"; d="${r%/}"
     case "$decl" in *" $d| "*) continue ;; esac
     if [ "$CAMBIADAS_N" -lt "$URLS_CAMBIADAS_MAX" ]; then
@@ -1318,6 +1325,57 @@ if [ -s "$LISTA_ANT" ] && [ -s "$LISTA_HOY" ]; then
   rm -f "$LISTA_ANT.orden.tmp"
 fi
 
+# >>> cerrojo-de-subida (marca del banco deploy-tests: no la muevas sin moverlo)
+# ── 3-ter-0 · ¿LO HA SUBIDO OTRA SESION HACE NADA? (5-nov-2026) ──────────────
+#    Dos sesiones con permiso para la misma subida la hicieron dos veces: una web
+#    subio dos veces con 11 s de diferencia (19-oct). Nada lo paraba: cada una
+#    tenia su recibo valido. Ahora, al llegar aqui, se mira la ultima subida de
+#    este SITIO en esta maquina. Si fue hace menos de 15 min y desde OTRA sesion,
+#    no se sube sin `--otra-vez "motivo"`, que queda anotado. La misma sesion si
+#    puede repetir (arreglar algo y volver a subir es lo normal).
+#    La sesion es CLAUDE_CODE_SESSION_ID; sin ella (una persona en su terminal),
+#    usuario@maquina. El cerrojo se escribe ANTES de subir: quien llegue detras ya
+#    lo ve. ⚠️ LIMITE, declarado: solo ve las subidas de esta maquina (el
+#    directorio central, ~/.qa-receipts/subidas/, o QA_RECIBOS_DIR).
+CERROJO_DIR="${QA_RECIBOS_DIR:-${HOME:-${USERPROFILE:-.}}/.qa-receipts}/subidas"
+CERROJO_MIN="${CERROJO_MIN:-15}"
+cerrojo_sesion() { printf '%s\n' "${CLAUDE_CODE_SESSION_ID:-${USER:-${USERNAME:-alguien}}@$(hostname 2>/dev/null || echo maquina)}"; }
+cerrojo_fichero() { printf '%s/%s\n' "$CERROJO_DIR" "$(printf '%s' "$SITIO" | sed -E 's#^[a-z]+://##; s#[/:]+$##; s#[^A-Za-z0-9._-]#_#g')"; }
+cerrojo_decide() {  # $1 = ahora (epoch) · usa SITIO, REPO, OTRA_VEZ · 1 = no se sube · deja CERROJO_NOTA
+  local f ant ses rep edad min yo
+  CERROJO_NOTA=""
+  f="$(cerrojo_fichero)"; yo="$(cerrojo_sesion)"
+  [ -s "$f" ] || return 0
+  IFS="$(printf '\t')" read -r ant ses rep < "$f"
+  case "$ant" in ''|*[!0-9]*) return 0 ;; esac
+  edad=$(( $1 - ant )); min=$(( (edad + 59) / 60 ))
+  [ "$edad" -lt $((CERROJO_MIN * 60)) ] || return 0
+  [ "$ses" = "$yo" ] && { echo "  (esta misma sesion subio $SITIO hace $min min: se repite)"; return 0; }
+  if [ -n "${OTRA_VEZ:-}" ]; then
+    echo "  ⚠ $SITIO se subio hace $min min desde otra sesion (${ses:0:13}…, $rep)."
+    echo "    Se vuelve a subir a sabiendas: $OTRA_VEZ"
+    CERROJO_NOTA="SUBIDA REPETIDA a los $min min de otra sesion: $OTRA_VEZ"
+    return 0
+  fi
+  echo "  🔴 $SITIO SE SUBIO HACE $min MIN DESDE OTRA SESION: no se sube otra vez."
+  echo "     Esa subida: sesion ${ses:0:13}…, repo $rep."
+  echo "     Dos sesiones con la misma subida la hacen dos veces (19-oct, 11 s de diferencia)."
+  echo "     Si es a proposito -la otra se paro, o hace falta repetir-:"
+  echo "         --otra-vez \"el motivo\""
+  return 1
+}
+cerrojo_escribe() {  # $1 = ahora (epoch)
+  mkdir -p "$CERROJO_DIR" 2>/dev/null
+  printf '%s\t%s\t%s\n' "$1" "$(cerrojo_sesion)" "$REPO" > "$(cerrojo_fichero)" 2>/dev/null
+}
+# <<< cerrojo-de-subida
+AHORA_SUBE="$(date +%s)"
+if ! cerrojo_decide "$AHORA_SUBE"; then
+  perl "$REF/receipt.pl" --anotar "subida parada: $SITIO subido hace menos de $CERROJO_MIN min desde otra sesion" --repo "$REPO" >/dev/null 2>&1
+  exit 1
+fi
+[ -n "$CERROJO_NOTA" ] && perl "$REF/receipt.pl" --anotar "$CERROJO_NOTA" --repo "$REPO" >/dev/null 2>&1
+
 # >>> sello-antes-de-subir (marca del banco deploy-tests: no la muevas sin moverlo)
 # ── 3-ter · ¿ES ESTE EL ARBOL DEL RECIBO? (1-nov-2026) ───────────────────────
 #    El recibo se comprueba en el paso 1 y el subidor empaqueta el arbol de AHORA,
@@ -1338,6 +1396,8 @@ if ! SELLO_SAL="$(perl "$REF/receipt.pl" --verificar --repo "$REPO" 2>&1)"; then
 fi
 echo "  el arbol sigue siendo el del recibo (comprobado justo antes de subir)"
 echo "  $CMD"
+# el cerrojo, justo antes del subidor (y no antes del sello: un sello que para no ha subido nada)
+declare -F cerrojo_escribe >/dev/null && cerrojo_escribe "${AHORA_SUBE:-$(date +%s)}"
 eval "$CMD"
 RC=$?
 # <<< sello-antes-de-subir
@@ -1355,7 +1415,8 @@ linea; echo "  4 · G11 · lo servido frente al recibo"; linea
 # ha CONTESTADO G11 leyendolo de lo que G11 ha dicho, no de una lista fija.
 # `tee` lee hasta el final, asi que no hay SIGPIPE; el codigo es el de perl.
 G11_LOG="${TEMP:-/tmp}/g11-puerta-$$.log"
-perl "$REF/receipt.pl" --servido --repo "$REPO" --sitio "$SITIO" | tee "$G11_LOG"
+G11_NOHAY="${TEMP:-/tmp}/g11-nohay-$$.tsv"; rm -f "$G11_NOHAY"
+G11_NO_HALLADOS="$G11_NOHAY" perl "$REF/receipt.pl" --servido --repo "$REPO" --sitio "$SITIO" | tee "$G11_LOG"
 G11=${PIPESTATUS[0]}
 if [ "$G11" != 0 ]; then
   echo
@@ -1365,9 +1426,53 @@ if [ "$G11" != 0 ]; then
   echo "     Y si lo que falla es la 404 del host (EST-03), el arbol esta bien subido:"
   echo "     lo que no sirve el 404.html es la configuracion del host (su .htaccess)."
   echo "     No lo des por hecho hasta que esto salga en verde."
-  rm -f "$G11_LOG"
+  rm -f "$G11_LOG" "$G11_NOHAY"
   exit 1
 fi
+# >>> altas-servidas (marca del banco deploy-tests: no la muevas sin moverlo)
+# ── 4-0 · LAS PAGINAS QUE ESTA SUBIDA DA DE ALTA O CAMBIA, ¿SE SIRVEN? ───────
+#    5-nov-2026 · Una subida cerro «El despliegue esta hecho y G11 lo ha
+#    verificado» con G11 diciendo «no hallados 2 (ausentes 2), 404 x2»: eran justo
+#    sus dos paginas NUEVAS. G11 sale 0 con no hallados (INCOMPLETO: puede ser su
+#    mapeo ruta->URL), y en una web entera eso es prudente. En una pagina que ESTA
+#    subida da de alta o cambia no lo es: es lo que se venia a publicar.
+#    Se cruza la lista entera de G11 (G11_NO_HALLADOS) con CAMBIADAS_TODAS (todas,
+#    sin el tope del navegador). Un 404 o un 410, o cualquier codigo que no sea de
+#    «me lo han negado», en una de ellas: FALLA, y no se guarda la lista de esta
+#    subida (la proxima la vuelve a mirar como alta). Negado (0, 401, 403, 407, 408,
+#    429, 5xx) o pasado el tope de G11 («-»): NO MEDIDO, y el cierre lo dice. Sin
+#    la lista de G11: NO MEDIDO.
+altas_juzga() {  # $1 = fichero de G11 · usa CAMBIADAS_TODAS · deja ALTAS_FALLA y ALTAS_NM · 1 = FALLA
+  local rel cod c
+  ALTAS_FALLA=""; ALTAS_NM=""
+  [ -n "${CAMBIADAS_TODAS:-}" ] || return 0
+  if [ ! -f "$1" ]; then ALTAS_NM="G11 no dio su lista de no hallados"; return 0; fi
+  while IFS="$(printf '\t')" read -r rel cod; do
+    [ -n "$rel" ] || continue
+    for c in $CAMBIADAS_TODAS; do
+      [ "$c" = "$rel" ] || continue
+      case "$cod" in
+        -) ALTAS_NM="${ALTAS_NM:+$ALTAS_NM, }$rel (pasado el tope de G11)" ;;
+        0|000|401|403|407|408|429|5[0-9][0-9]) ALTAS_NM="${ALTAS_NM:+$ALTAS_NM, }$rel ($cod)" ;;
+        *) ALTAS_FALLA="${ALTAS_FALLA:+$ALTAS_FALLA, }$rel ($cod)" ;;
+      esac
+    done
+  done < "$1"
+  [ -z "$ALTAS_FALLA" ]
+}
+# <<< altas-servidas
+if ! altas_juzga "$G11_NOHAY"; then
+  echo
+  echo "  🔴 FALLA · SUBIDO, PERO PRODUCCION NO SIRVE LO QUE ESTA SUBIDA PUBLICA."
+  echo "     Paginas que da de alta o cambia y G11 no encuentra: $ALTAS_FALLA"
+  echo "     Causas ya vistas: la ruta publica de la pagina no esta en el mapa del"
+  echo "     subidor (una lista escrita a mano), o el host la reescribe a otra parte."
+  echo "     No se guarda la lista de esta subida: la proxima las vuelve a medir."
+  perl "$REF/receipt.pl" --anotar "CIERRE FALLA: paginas de la subida no servidas: $ALTAS_FALLA" --repo "$REPO" >/dev/null 2>&1
+  rm -f "$G11_LOG" "$G11_NOHAY"
+  exit 1
+fi
+rm -f "$G11_NOHAY"
 echo
 # ── 4-bis · LO QUE SE RETIRO DEL ARBOL, ¿SIGUE SERVIDO? ──────────────────────
 #    G11 acaba de decir que lo del recibo se sirve. Esta es la OTRA mitad: que no
@@ -1425,7 +1530,11 @@ if [ -s "$LISTA_HOY" ]; then
 fi
 
 echo
-echo "  PASA · desplegado y verificado contra el recibo."
+# 5-nov-2026 · aqui ponia «PASA · desplegado y verificado contra el recibo», y lo
+#   decia tambien con paginas de la subida en 404. Es lo que dice G11, y se dice
+#   asi; el veredicto de la subida es el CIERRE, al final, tras enlazado y navegador.
+echo "  G11 · PASA: lo del recibo se sirve${CAMBIADAS_TODAS:+, y tambien cada pagina que esta subida da de alta o cambia}."
+echo "  (el veredicto de la subida es el CIERRE, al final)"
 if [ "$MEDIDO" = "CANDIDATO" ]; then
   echo "  Los dos momentos cerrados: el candidato se midio ANTES y lo servido AHORA."
   # 🔴 26-sep-2026 · AQUI PONIA «Las N que el candidato no podia medir (...) ya
@@ -1501,11 +1610,13 @@ if [ "$REDIR" = 1 ]; then
 elif [ "${SIN_ENLAZADO:-0}" = 1 ]; then
   echo
   echo "  5 · enlazado: $CONF declara SIN_ENLAZADO=1, no se mide."
+  ENL_NM="enlazado (SIN_ENLAZADO=1)"
   perl "$REF/receipt.pl" --anotar "ENLAZADO no medido: SIN_ENLAZADO=1 en deploy.conf" \
        --repo "$REPO" >/dev/null 2>&1
 elif [ ! -f "$REF/crawl-links.pl" ] || [ ! -f "$REF/linking-gate.pl" ]; then
   echo
   echo "  5 · enlazado: no encuentro crawl-links.pl o linking-gate.pl. NO MEDIDO."
+  ENL_NM="enlazado (falta el programa)"
   perl "$REF/receipt.pl" --anotar "ENLAZADO no medido: falta el programa" \
        --repo "$REPO" >/dev/null 2>&1
 else
@@ -1527,12 +1638,13 @@ else
          --repo "$REPO" >/dev/null 2>&1
     if [ "$ENL_RC" != 0 ]; then
       echo
-      echo "  El despliegue esta hecho y G11 lo ha verificado: los ficheros estan."
+      echo "  Subido, y G11 da servidos los ficheros del recibo."
       echo "  Lo que falla es el ENLAZADO de lo servido, y queda anotado. No se"
       echo "  deshace nada por esto, pero tampoco se puede decir que salio limpio."
     fi
   else
     echo "  no he podido rastrear $SITIO. El enlazado queda NO MEDIDO."
+    ENL_NM="enlazado (el rastreo fallo)"
     perl "$REF/receipt.pl" --anotar "ENLAZADO no medido: el rastreo fallo" \
          --repo "$REPO" >/dev/null 2>&1
   fi
@@ -1650,7 +1762,7 @@ else
   # sin formulario es un FALLO, no un «no aplica».
   URLS_NAV="$(urls_navegador)"   # las declaradas y las que cambio esta subida (calculadas antes de subir)
   URLS_FORM="${URLS_FORMULARIO:-}"
-  NAV_FALLOS=0; NAV_MIRADAS=0; NAV_BASURA=0
+  NAV_FALLOS=0; NAV_MIRADAS=0; NAV_BASURA=0; NAV_NM_CAMB=""
   NAV_DIR="$(mktemp -d -t navserv-XXXXXXXX)"; : > "$NAV_DIR/lista"; n=0
   for r in $URLS_NAV; do
     # 🔴 20-ago-2026 · EL GATE DE MOVIL. Se cableo aqui el mismo dia que se
@@ -1668,12 +1780,15 @@ else
   done
   nav_corre "$NAV_DIR" "$NAV_DIR/lista"
   NAV_N=$n   # el while de abajo deja n vacio: los formularios siguen la cuenta desde aqui
+  NAV_CORRIO=1
   while read -r n r g w h c; do
     nav_lee "$NAV_DIR/$n.out" "$g" "$r" "$w"
     case "$NAV_R" in
       PASA)  NAV_MIRADAS=$((NAV_MIRADAS+1)) ;;
       FALLA) NAV_MIRADAS=$((NAV_MIRADAS+1)); NAV_FALLOS=$((NAV_FALLOS+1)) ;;
-      *)     NAV_BASURA=$((NAV_BASURA+1)) ;;
+      *)     NAV_BASURA=$((NAV_BASURA+1))
+             # una pagina de ESTA subida sin medir la nombra el cierre (5-nov-2026)
+             case " $URLS_CAMBIADAS " in *" $r "*) case " $NAV_NM_CAMB " in *" $r "*) ;; *) NAV_NM_CAMB="${NAV_NM_CAMB:+$NAV_NM_CAMB }$r" ;; esac ;; esac ;;
     esac
   done < "$NAV_DIR/lista"
   # Los formularios, en serie y con su propia configuracion: forms-gate exige el
@@ -1705,10 +1820,50 @@ else
        --repo "$REPO" >/dev/null 2>&1
   if [ "$NAV_FALLOS" != 0 ]; then
     echo
-    echo "  El despliegue esta hecho y G11 lo ha verificado: los ficheros estan."
+    echo "  Subido, y G11 da servidos los ficheros del recibo."
     echo "  Lo que falla es lo que solo se ve con un navegador EN LO SERVIDO, y queda"
     echo "  anotado. Si el 1-quater dio verde sobre el candidato, la diferencia la pone"
     echo "  el host (cache, CDN, cabeceras) o un formulario: se mira alli, no en el arbol."
   fi
 fi
+
+# >>> cierre-de-la-subida (marca del banco deploy-tests: no la muevas sin moverlo)
+# ── EL CIERRE · una linea, y dice lo que se midio (5-nov-2026) ───────────────
+#    Antes se cerraba con «El despliegue esta hecho y G11 lo ha verificado» aunque
+#    el navegador hubiera dejado en NO MEDIDO las paginas nuevas («no parece la
+#    pagina»). Ahora el cierre es UNO, al final, y sale de lo que paso:
+#      FALLA      el enlazado o el navegador de lo servido en rojo
+#      NO MEDIDO  el navegador no midio lo servido, o dejo sin medir una pagina
+#                 que esta subida da de alta o cambia, o G11 no pudo mirarla
+#      PASA       todo lo de arriba medido y en verde
+#    No cambia el codigo de salida (lo subido, subido esta: 0); lo que cambia es
+#    que nada que no se haya medido sale escrito como verificado.
+cierre_dice() {  # usa ENL_RC, ENL_NM, NAV_FALLOS, NAV_CORRIO, NAV_BASURA, NAV_NM_CAMB, URLS_FORM, ALTAS_NM, REDIR, SIN_NAVEGADOR, CAMBIADAS_FUERA · deja CIERRE
+  local fallos="" nm=""
+  [ -n "${ENL_RC:-}" ] && [ "$ENL_RC" != 0 ] && fallos="el enlazado de lo servido"
+  [ "${NAV_FALLOS:-0}" != 0 ] && fallos="${fallos:+$fallos y }$NAV_FALLOS medida(s) de navegador sobre lo servido"
+  if [ "${REDIR:-0}" != 1 ]; then
+    [ -n "${ENL_NM:-}" ] && nm="$ENL_NM"
+    if [ "${SIN_NAVEGADOR:-0}" = 1 ]; then nm="${nm:+$nm; }navegador sobre lo servido (SIN_NAVEGADOR=1)"
+    elif [ "${NAV_CORRIO:-0}" != 1 ]; then nm="${nm:+$nm; }navegador sobre lo servido (no corrio)"
+    elif [ "${NAV_BASURA:-0}" != 0 ]; then
+      nm="${nm:+$nm; }$NAV_BASURA medida(s) de navegador sin respuesta${NAV_NM_CAMB:+, entre ellas paginas de esta subida: $NAV_NM_CAMB}"
+    fi
+    [ "${CAMBIADAS_FUERA:-0}" -gt 0 ] 2>/dev/null && nm="${nm:+$nm; }$CAMBIADAS_FUERA pagina(s) cambiada(s) fuera del tope del navegador"
+  fi
+  [ -n "${ALTAS_NM:-}" ] && nm="${nm:+$nm; }G11 no pudo mirar: $ALTAS_NM"
+  if [ -n "$fallos" ]; then CIERRE="FALLA · subido, pero en rojo: $fallos${nm:+ · y sin medir: $nm}"
+  elif [ -n "$nm" ]; then CIERRE="NO MEDIDO · subido y servido segun G11, pero sin medir: $nm"
+  elif [ "${REDIR:-0}" = 1 ]; then CIERRE="PASA · subido y servido segun G11 (arbol de redirecciones: enlazado y navegador no aplican)"
+  else
+    # una web sin URLS_FORMULARIO puede no tener formulario: no se juzga, pero se dice
+    CIERRE="PASA · subido, servido segun G11 y medido en lo servido"
+    [ -z "${URLS_FORM:-}" ] && CIERRE="$CIERRE (formularios: el repo no declara ninguno)"
+  fi
+}
+# <<< cierre-de-la-subida
+cierre_dice
+echo
+linea; echo "  CIERRE · $CIERRE"; linea
+perl "$REF/receipt.pl" --anotar "CIERRE $CIERRE" --repo "$REPO" >/dev/null 2>&1
 exit 0

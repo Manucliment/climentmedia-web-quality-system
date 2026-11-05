@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the fourteen slow batteries: the ones that need a browser, a host, or the network. On a clean
-install the fast run is **1005 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **1045 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1697 cases green, 0 red**, with **nine** banks reported as
+a clean install it reads **1739 cases green, 0 red**, with **nine** banks reported as
 `NOT MEASURED`: the seven that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1870**: 1697 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1912**: 1739 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-1007, not 1005, because that machine has deployed. `run-all.sh`
+1047, not 1045, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,13 +95,13 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  1005 casos en verde · 0 en rojo
+  1045 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  1697 casos en verde · 0 en rojo
+  1739 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
@@ -464,6 +464,28 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
+**Three more since 2026-11-05**, all from one week of real deploys:
+
+- **Upload lock (step 3-ter-0).** Two sessions holding permission for the same upload ran
+  it twice, 11 seconds apart. The door now records each upload of a site in
+  `~/.qa-receipts/subidas/` (or `QA_RECIBOS_DIR`). If **another** session uploaded the same
+  site less than 15 minutes ago (`CERROJO_MIN`), it stops; `--again "reason"` goes through
+  and the reason is recorded. The same session may repeat. The lock is written after the
+  seal check and right before the uploader runs. Limit, declared: it only sees uploads
+  made from this machine.
+- **The pages this upload adds or changes must be served (step 4-0).** G11 exits 0 when
+  files are *not found* (its route-to-URL mapping can be wrong on a whole site), and one
+  deploy closed with "verified" while its two **new** pages answered 404. G11 now writes
+  its full not-found list, with codes, to `G11_NO_HALLADOS`; the door crosses it with every
+  page the upload adds or changes. A 404 or 410 there is a FAIL (exit 1, and the deployed
+  list is not saved, so the next upload measures them again). Refused, unreachable or
+  beyond G11's 400-file cap is NOT MEASURED.
+- **One closing line (CIERRE), at the very end.** It says FAIL (linking or the browser on
+  the served site in red), NOT MEASURED (the browser did not run, left a measurement
+  blank, missed changed pages over its cap, linking could not crawl, or G11 could not
+  look), or PASS. The word "verified" no longer appears about an upload. The exit code
+  does not change: what is uploaded is uploaded.
+
 ---
 
 ## What each program is for
@@ -473,7 +495,7 @@ without blocking. Why the order changed is trap §89.
 | Program | What it does |
 |---|---|
 | `qa-master.pl` | The master gate. Five lenses over a page or a tree, and it writes the receipt. |
-| `deploy.sh` | The door. No valid receipt, no upload. Before the upload line it runs the browser gates on the candidate (step 1-quater) and a FAIL stops it; after, it checks what is served. |
+| `deploy.sh` | The door. No valid receipt, no upload. Before the upload line it runs the browser gates on the candidate (step 1-quater) and a FAIL stops it, and it will not repeat another session's upload of the same site within 15 minutes; after, it checks what is served, page by page for the pages it added or changed, and closes with one line: PASS, FAIL or NOT MEASURED. |
 | `receipt.pl` | Writes, verifies and records receipts; owns the deploy history. |
 | `redirects-gate.pl` | The gate of a tree that only redirects: a retired domain whose docroot is a `robots.txt` and an `.htaccess` sending every mapped path to its new page and everything else to the home page, with 301. `--candidate` simulates the rules in order (RED-01..08: every WordPress and PHP path ends in a redirect, nothing it lets through is outside the tree, no rule is shadowed, the last one is an unconditional catch-all), asks every target for a 200 (RED-09) and writes a receipt of `TIPO: REDIRECCIONES` whose five page lenses read `NO APLICA`. `--served` asks the domain itself (RED-10); the door runs it after the upload (step 4-ter) and a wrong answer stops it. Declared with `ARBOL=redirecciones` (`TREE=redirects`) in `deploy.conf`. Fail-closed: `RewriteCond`, mod_alias and internal rewrites are failures, not warnings. |
 
@@ -602,6 +624,7 @@ and neither can break an existing invocation.
 | `--served` | `--servido` |
 | `--show-upload` | `--ver-subida` |
 | `--anyway` | `--aun-asi` |
+| `--again` | `--otra-vez` |
 | `--loses-text` | `--pierde-texto` |
 | `--hours` | `--horas` |
 

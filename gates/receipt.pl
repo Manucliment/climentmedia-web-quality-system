@@ -1774,6 +1774,7 @@ sub servido {
 
     my $max = $o{max} || 400;
     my (@mal, @nohay, @ok, @solo_fecha, @transformadas, @sellados, @por_404);
+    my @nohay_cod;   # «ruta TAB codigo» de cada no hallado, ENTERA (la pantalla corta a 10)
     my (%codigos, $bloqueados, $ausentes);
     $bloqueados = $ausentes = 0;
     # ═════════════════════════════════════════════════════════════════════════
@@ -1846,7 +1847,9 @@ sub servido {
     my $n = 0;
     for my $f (@{ $R->{_manifiesto} }) {
         my ($rel, $md5) = @$f;
-        last if $n >= $max;
+        # 5-nov-2026 · pasado el tope no se mira, y la lista de la puerta lo dice
+        #   con «-»: una pagina nueva mas alla del 400 no es una pagina servida.
+        if ($n >= $max) { push @nohay_cod, "$rel\t-"; next; }
         $n++;
         my $hallado = 0;
         my $ultimo  = '';
@@ -1906,6 +1909,7 @@ sub servido {
         if ($ultimo =~ /md5 distinto/) { push @mal,   "$rel  ·  $ultimo" }
         else {
             push @nohay, "$rel  ·  $ultimo";
+            push @nohay_cod, "$rel\t" . ($ucode // 0);
             $codigos{$ucode}++;
             # 🔴 «No lo encuentro» y «me lo han negado» NO son lo mismo, y hasta
             #    hoy caian en el mismo saco. Un 404 puede significar que ese
@@ -2000,7 +2004,7 @@ sub servido {
         arbol => scalar @{ $R->{_manifiesto} }, veredicto => $veredicto,
         rec_mal => \@rec_mal, rec_ok => \@rec_ok,
         e404_mal => \@e404_mal, e404_ok => \@e404_ok, e404_nv => $e404_nv,
-        por_404 => \@por_404,
+        por_404 => \@por_404, nohay_cod => \@nohay_cod,
     );
     return (((@mal || @rec_mal || @e404_mal) ? 1 : 0), \@mal, \@nohay, \@ok, $R, \%diag);
 }
@@ -2286,6 +2290,15 @@ sub main {
         }
         print "  NO HALLADO $_\n" for @$nohay[0 .. ($#$nohay > 9 ? 9 : $#$nohay)];
         print "  ... y " . (@$nohay - 10) . " no hallados mas\n" if @$nohay > 10;
+        # 5-nov-2026 · la lista ENTERA, para la puerta: una subida cerro «verificado»
+        #   con sus dos paginas NUEVAS en 404 («no hallados 2 (ausentes 2)»). La
+        #   puerta cruza esto con las paginas que la subida da de alta o cambia. Se
+        #   escribe siempre que se pida, vacia si no falta nada: un fichero que no
+        #   existe se lee como «G11 no lo dijo», no como «no falta nada».
+        if (($ENV{G11_NO_HALLADOS} // '') ne '' && open my $nh, '>:raw', $ENV{G11_NO_HALLADOS}) {
+            print $nh "$_\n" for @{ $D->{nohay_cod} || [] };
+            close $nh;
+        }
         historial(sitio => ($R->{SITIO} // ''), accion => 'SERVIDO',
                   veredicto => $D->{veredicto},
                   hash => ($R->{'ARBOL-HASH'} // ''), nv => '',
