@@ -4827,14 +4827,43 @@ sub lente_medicion {
         #    control mide algo ADYACENTE a lo que afirma», y aqui el sesgo iba
         #    hacia el falso ROJO: caro igual, porque un rojo que no se puede
         #    arreglar es un rojo que alguien acaba tapando.
-        my @expuestas;
-        for my $p (qw(/_leads/ /_secrets/ /check-smtp.php)) {
+        # 🔴 5-nov-2026 · Y CON TODO CERRADO, CALLABA. Este bloque solo hablaba si
+        #    una ruta daba 200: con las tres cerradas no salia NADA, ni PASA, y una
+        #    web lo leyo al subir como «nadie lo mide» (G11 tampoco: compara lo
+        #    sellado con lo servido). Y una ruta que no contesta (sin red, un 5xx)
+        #    tampoco es una ruta cerrada. Ahora salen los tres estados: FALLO si
+        #    alguna se sirve, NO VERIFICADO si alguna no se pudo mirar, PASA si
+        #    todas estan cerradas, con cuantas y con que codigo.
+        #    Y se miran tambien las carpetas y ficheros internos de NUESTROS repos
+        #    (la spec, el despliegue, el SEO, el QA, el recibo, las instrucciones
+        #    del agente, el .git y el .env): si el subidor se los lleva por error,
+        #    se sirven, y ahi esta como se construye la web y a veces sus claves.
+        my (@expuestas, @cerradas, @sin_medir);
+        my @RUTAS = qw(/_leads/ /_secrets/ /check-smtp.php /_spec/ /_deploy/ /_seo/ /_qa/
+                       /.qa-recibo /CLAUDE.md /.git/HEAD /.env);
+        for my $p (@RUTAS) {
             my $c = codigo_sin_seguir("$ROOT$p");
-            push @expuestas, "$ROOT$p (HTTP $c)" if defined $c && $c == 200;
+            if (!defined $c || $c == 0 || $c == 429 || $c >= 500) { push @sin_medir, "$ROOT$p (" . (defined $c ? "HTTP $c" : 'sin respuesta') . ')' }
+            elsif ($c == 200) { push @expuestas, "$ROOT$p (HTTP 200)" }
+            else              { push @cerradas, "$p $c" }
         }
-        @expuestas and fallo(lente=>'MEDICION', id=>'MED-12', titulo=>'ruta interna expuesta por web',
-                             donde=>join(' · ', @expuestas), umbral=>'403 o 404', proc=>'qa-final.sh §5',
-                             hacer=>'bloquear en el servidor. Ahi dentro hay nombres, telefonos e IPs');
+        if (@expuestas) {
+            fallo(lente=>'MEDICION', id=>'MED-12', titulo=>'ruta interna expuesta por web',
+                  donde=>join(' · ', @expuestas), ev=>[@expuestas],
+                  dato=>scalar(@expuestas).' de '.scalar(@RUTAS).' rutas internas se sirven',
+                  umbral=>'403, 404 o una redireccion en cada una', proc=>'qa-final.sh §5',
+                  hacer=>'bloquear en el servidor, y si es una carpeta del repo, sacarla del paquete de subida (deploy.conf). En _leads/ hay nombres, telefonos e IPs');
+        } elsif (@sin_medir) {
+            nv(lente=>'MEDICION', id=>'MED-12', titulo=>'rutas internas: alguna no se ha podido mirar',
+               donde=>join(' · ', @sin_medir), ev=>[@sin_medir],
+               dato=>scalar(@sin_medir).' de '.scalar(@RUTAS).' sin respuesta valida; '.scalar(@cerradas).' cerradas',
+               umbral=>'403, 404 o una redireccion en cada una',
+               proc=>'qa-final.sh §5 · sin respuesta no es cerrada',
+               hacer=>'volver a medir; si sigue, mirar esa ruta a mano en el servidor');
+        } else {
+            pasa(lente=>'MEDICION', id=>'MED-12', titulo=>'rutas internas cerradas',
+                 dato=>scalar(@cerradas).' de '.scalar(@RUTAS).' cerradas: '.join(' · ', @cerradas));
+        }
     }
 
     # ── PC1 · el punto ciego mas caro que tenemos ───────────────────────────

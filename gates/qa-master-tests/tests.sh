@@ -673,6 +673,20 @@ espera "shopify · /contact sin ser Shopify: FALLO"        FALLO MED-10 perl $QA
 espera "shopify · el tercero vacio no es FALLO"           PASA  REN-13 perl $QA http://tienda.example/ --solo rendimiento --una-sola --sin-recibo --cache "$CACHE"
 espera "shopify · y sale como aviso aparte"               AVISO REN-13c perl $QA http://tienda.example/ --solo rendimiento --una-sola --sin-recibo --cache "$CACHE"
 espera "shopify · uno PROPIO a 0 bytes sigue FALLO"       FALLO REN-13 perl $QA http://tienda-mal.example/ --solo rendimiento --una-sola --sin-recibo --cache "$CACHE"
+# 🔴 5-nov-2026 · MED-12 CONTRA PRODUCCION, LOS TRES ESTADOS. Hasta hoy solo hablaba
+#    si una ruta interna daba 200: con todo cerrado no decia nada y una web lo leyo
+#    como «no lo mide nadie». Una que sirve sus instrucciones de agente y su spec
+#    (FALLO, y las nombra), una que lo cierra todo (PASA) y una cuya carpeta de
+#    leads contesta 503 (NO VERIFICADO: sin respuesta no es cerrada).
+espera "MED-12 · sirve lo interno del repo: FALLO"        FALLO MED-12 perl $QA http://fuga.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+texto  "MED-12 · y nombra lo que sirve"                   SI "http://fuga.example/CLAUDE.md (HTTP 200)" \
+       perl $QA http://fuga.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+texto  "MED-12 · tambien la carpeta de spec"              SI "http://fuga.example/_spec/ (HTTP 200)" \
+       perl $QA http://fuga.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+espera "MED-12 · todo cerrado: PASA, no silencio"         PASA  MED-12 perl $QA http://cerrado.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+espera "MED-12 · una ruta que da 503: NO VERIFICADO"      NOVERIF MED-12 perl $QA http://a-medias.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+texto  "MED-12 · y no la cuenta como cerrada"             SI "1 de 11 sin respuesta valida; 10 cerradas" \
+       perl $QA http://a-medias.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
 espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA http://site-d.example/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
 espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
 # 8-sep-2026 - LA CARA CONTRARIA, y hacia falta: el caso de arriba solo prueba que
@@ -1453,7 +1467,11 @@ if mide_bloque "falsos positivos de site-a (copias del repo)" "$KREPO"; then
   #    NO VERIFICADO de arriba seria un check apagado del todo.
   espera "MED-10 · produccion SI mide el receptor"         PASA MED-10 \
          perl $QA "$KURL/" --contacto /contact --solo medicion --cache "$CACHE"
-  espera "MED-12 · en produccion no sale NO VERIFICADO"    AUSENTE MED-12 \
+  # 🔴 5-nov-2026 · Este caso pedia AUSENTE: el banco fijaba el silencio. Con todo
+  #    cerrado MED-12 no decia nada, y una web lo leyo al subir como «nadie lo mide».
+  espera "MED-12 · en produccion, todo cerrado: PASA"      PASA MED-12 \
+         perl $QA "$KURL/" --solo medicion --cache "$CACHE"
+  texto  "MED-12 · y dice cuantas y con que codigo"        SI "11 de 11 cerradas: /_leads/ 404" \
          perl $QA "$KURL/" --solo medicion --cache "$CACHE"
   # 🔴 CONTROL NEGATIVO 2b · el NV NO es un interruptor general: un receptor
   #    ESTATICO que no existe sigue siendo FALLO contra el candidato.

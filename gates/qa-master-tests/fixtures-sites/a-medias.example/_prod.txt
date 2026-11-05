@@ -1,0 +1,5 @@
+# a-medias.example · produccion de mentira (fake-production.pl)
+# 5-nov-2026 · MED-12: una ruta interna que no contesta (un 503) no es una ruta
+# cerrada. Sin poder mirarla, MED-12 es NO VERIFICADO, no PASA.
+gzip off
+status /_leads/ 503

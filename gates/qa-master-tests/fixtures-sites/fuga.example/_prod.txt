@@ -1,0 +1,6 @@
+# fuga.example · produccion de mentira (fake-production.pl)
+# 5-nov-2026 · MED-12: un sitio que sirve por web lo interno del repo. El
+# servidor de mentira nunca sirve una ruta que empiece por `_`, asi que la carpeta
+# de spec se finge con su codigo; CLAUDE.md es un fichero de verdad, y se sirve.
+gzip off
+status /_spec/ 200
