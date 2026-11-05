@@ -223,7 +223,7 @@ ever overflows. There the structure gate rules, with its prose-page answer. **Bo
 | title · description · canonical · OG | no | `qa-master.pl --only seo` |
 | title ↔ h1 ↔ description saying the same thing | no | `qa-master.pl --only seo` · `SEO-05`/`SEO-05b`, **AVISO: they do not block, so they have to be read** |
 | Adding `og:image` + `og:image:alt` | no | `--only seo,performance` (the image is new weight) |
-| JSON-LD / schema | no | `--only seo` |
+| JSON-LD / schema | no | `qa-master.pl --only seo`, and `page-type-gate.pl <URL> --tipo <type>` (with `--sondear` if it touches the `SearchAction`) |
 | Rewriting a paragraph, changing a heading's text | no | `--only seo` |
 | **Adding a section** (FAQ, capsule, comparison table) | **yes** | `measure-screens.js` + `structure-gate.js` (verdict **and** prose-page), **at 1440 and 390** |
 | **Adding a table** | **yes** | the above + horizontal overflow at 390 |

@@ -227,6 +227,10 @@ cost nothing**:
   HTML gate detects it: the page validates just as well without it.
 - **`BreadcrumbList` on every page** — and a **visible** breadcrumb, or the linking rule
   fails. On one site 36 pages emitted the structured data and **none of them painted it.**
+- **The markup of the TYPE you decided in step 1**, judged by `perl gates/page-type-gate.pl <URL> --tipo <type>`
+  (`blueprint/21-page-types-markup.md`): what the type must carry, what it must not carry loose, and
+  the markup against the page. `SEO-11` only asks whether JSON-LD exists; this asks whether it is the
+  right one and whether it says the truth.
 - **If it is a thank-you page**: `noindex` **and** the conversion event here. On one site
   the conversion fires from a pageview of a specific path: if that path ever changes,
   measurement stops **without anything failing.**

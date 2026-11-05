@@ -183,6 +183,11 @@ promise two different pages. Do not read it as the voice contract being live. It
 > another file, this one wins and the other goes: **a question with two answers is worse than one
 > with none.**
 
+> **The markup and the indexing of each type are not here: `21-page-types-markup.md` and
+> `gates/page-types.tsv`**, which also declares the shop types (PLP, PCP, checkout, search results)
+> whose sections are not measured yet. `page-type-gate.pl --tabla` fails if a type of this table has
+> no row there.
+
 > **And this table has a machine-readable twin: `gates/anatomy.tsv`.** It is not a second source —
 > it is this one, in a format the gates can read, and the anatomy gate checks it by counting the
 > required markers of each subsection here. Before that, the table was copied by hand into three

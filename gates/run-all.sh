@@ -66,6 +66,7 @@ huecos|bash holes-tests/tests.sh|0|lo que falta y no es nuestro, declarado
 bots-ia|perl ai-crawlers-tests/tests.pl|0|los rastreadores de IA: si pueden entrar o no
 canibalizacion|perl cannibalization-tests/tests.pl|0|dos paginas peleando por el mismo termino
 citable|perl citable-tests/tests.pl|0|el parrafo sobrevive a que lo saquen de la pagina
+tipo-de-pagina|perl page-type-gate-tests/tests.pl|0|el marcado de cada tipo de pagina: schema.org, lo que pide y prohibe el tipo, la pagina contra el marcado y la cadena de busqueda
 extractor-wordpress|bash extract-wordpress-tests/tests.sh|0|la migracion de WordPress no se deja datos (necesita python3)
 "
 

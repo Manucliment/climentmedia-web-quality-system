@@ -34,6 +34,7 @@ my @PARES = (
     ['linking-gate.pl',  'crawl-links-tests', 'las reglas de enlazado'],
     ['audit-vs-spec.pl',  'audit-vs-spec-tests', 'la spec contra el arbol'],
     ['doc-gate.pl',       'doc-gate-tests',      'la documentacion'],
+    ['page-type-gate.pl', 'page-type-gate-tests', 'el marcado por tipo de pagina'],
 );
 
 sub slurp { my $f = shift; open my $h, '<:raw', $f or return ''; local $/; my $c = <$h>; close $h; $c }
@@ -78,6 +79,8 @@ for my $par (@PARES) {
     #  libre mas que D0, y un D10 no habria contado como comprobacion -- ni en el
     #  denominador ni sin caso --, en silencio.
     $ids{$1} = 1 while $src =~ /\b(?:ok|bad|avis|nv)\(['"](D[0-9]+)['"]/g;
+    # 5-nov-2026 · y los de page-type-gate, que se declaran fallo('PT-03', ...).
+    $ids{$1} = 1 while $src =~ /\b(?:fallo|aviso|pasa|nv)\('(PT-[0-9]+)'/g;
 
     my @ids = sort keys %ids;
     unless (@ids) { printf "  %-20s no emite IDs que sepa leer\n", $prog; next }

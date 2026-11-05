@@ -99,7 +99,7 @@ They are folded in here.
 - **WPS-26** · gate — `author`: the complete canonical block (name, jobTitle, worksFor, sameAs)
   <br>`no instrument`
 - **WPS-27** · gate — Do NOT use `SearchAction`, `Review`/`AggregateRating`, `LocalBusiness`, `Product`, `speakable` or `HowTo` (a rule for YOUR site, not the client's: a client that is a local business marks itself up as `LocalBusiness` or its real subtype, `03-content-and-seo.md`; why the rule does not transfer, `docs/traps/1-19.md §6`)
-  <br>`qa-final.sh (SearchAction with no search function)`
+  <br>`qa-final.sh (SearchAction with no search function)` · `page-type-gate.pl PT-07/PT-08`: on a site that HAS a search (a shop), a `SearchAction` on the home is allowed, its search string wired right and its results page probed (`21-page-types-markup.md` §4)
 
 ## Weight and delivery
 
