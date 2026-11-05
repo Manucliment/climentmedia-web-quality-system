@@ -248,6 +248,29 @@ else
   sella "el arbol cambio despues del recibo: NO se ejecuta el subidor" 1 1 "NO se sube" "SUBIDOR-EJECUTADO"
   sella "y dice que fichero"                                           1 1 "CAMBIADO  estilo.css" ""
   sella "el arbol es el del recibo: sube"                              0 0 "SUBIDOR-EJECUTADO" "NO se sube"
+  # 🔴 5-nov-2026 · EL CASO DE ESA NOCHE: a media puerta otro qa-master, sobre otro
+  #    commit, reescribio el recibo en FALLA; aqui solo se comparaba el arbol con el
+  #    recibo (el nuevo: cuadraba) y subio. Contra la puerta de antes, los dos «NO
+  #    sube» de aqui salen en rojo: subia.
+  RREC="$(mktemp -d -t recibo-XXXXXXXX)"
+  printf 'SELLO: bbbb\nVEREDICTO: FALLA\nFECHA: 2026-11-05T22:17:00\n' > "$RREC/.qa-recibo"
+  recibo() { # nombre · SELLO que leyo el paso 1 · condicion perl de «no vale» · rc esperado · TIENE · NO
+    local n="$1" rc bien=1
+    printf 'if (%s) { print "  VEREDICTO: FALLA - EN ROJO NO SE DESPLIEGA\\n"; exit 1 } exit 0;\n' "$3" > "$FREF/receipt.pl"
+    ( REF="$FREF"; REPO="$RREC"; RECIBO_SELLO_1="$2"; CMD="echo SUBIDOR-EJECUTADO"; . "$SEL"; exit "$RC" ) > "$TMP" 2>&1; rc=$?
+    [ "$rc" = "$4" ] || bien=0
+    [ -n "$5" ] && ! grep -qF -- "$5" "$TMP" && bien=0
+    [ -n "$6" ] &&   grep -qF -- "$6" "$TMP" && bien=0
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s (rc %s, esperaba %s)\n' "$n" "$rc" "$4"; sed 's/^/        /' "$TMP"; fi
+  }
+  PARA_DESP='grep { $_ eq "--para-desplegar" } @ARGV'
+  recibo "el recibo cambio a media puerta: NO sube"          "SELLO: aaaa" 0 1 "EL RECIBO YA NO ES EL QUE DEJO PASAR EL PASO 1" "SUBIDOR-EJECUTADO"
+  recibo "y dice el veredicto y la hora del recibo nuevo"    "SELLO: aaaa" 0 1 "VEREDICTO: FALLA · FECHA: 2026-11-05T22:17:00" ""
+  recibo "el mismo recibo del paso 1: sube"                  "SELLO: bbbb" 0 0 "SUBIDOR-EJECUTADO" "YA NO ES"
+  recibo "vuelto a verificar ENTERO: en FALLA no sube"       "SELLO: bbbb" "$PARA_DESP" 1 "ya no deja subir: NO se sube" "SUBIDOR-EJECUTADO"
+  recibo "y ensena el veredicto que lo para"                 "SELLO: bbbb" "$PARA_DESP" 1 "VEREDICTO: FALLA" ""
+  rm -rf "$RREC"
 fi
 rm -rf "$SEL" "$FREF"
 
@@ -305,6 +328,90 @@ if [ -n "${LE:-}" ] && [ -n "${LS:-}" ] && [ -n "${LC:-}" ] && [ "$LS" -lt "$LE"
   ok=$((ok+1)); printf '  PASA  %s\n' "el cerrojo se escribe entre el sello y el subidor"
 else ko=$((ko+1)); printf '  MAL   %s (sello %s · cerrojo %s · subidor %s)\n' "el cerrojo se escribe entre el sello y el subidor" "${LS:-?}" "${LE:-?}" "${LC:-?}"; fi
 rm -rf "$CER" "$CDIR"
+
+# =============================================================================
+#  UNA PUERTA QUE SE PARA DE VERDAD (0-ter, 5-nov-2026). Medido esa noche: el chat
+#  paro la puerta con TaskStop a las 22:12 («parada, produccion sin cambiar») y
+#  subio a las 22:25: en Windows TaskStop mata la orden, no a la puerta. Los bytes
+#  de la puerta entre sus marcas; procesos de verdad (uno vivo, uno muerto).
+# =============================================================================
+PEC="$(mktemp -t encurso-XXXXXXXX)"; PDIR="$(mktemp -d -t recibos-XXXXXXXX)"
+A7=$(grep -n '^# >>> puerta-en-curso' "$PUERTA" | head -1 | cut -d: -f1)
+B7=$(grep -n '^# <<< puerta-en-curso' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A7:-}" ] || [ -z "${B7:-}" ] || [ "$A7" -ge "$B7" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque puerta-en-curso en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A7},${B7}p" "$PUERTA" > "$PEC"
+  sleep 120 & VIVO=$!
+  ( exit 0 ) & MUERTO=$!; wait "$MUERTO" 2>/dev/null
+  AHORA="$(date +%s)"
+  SUB="$PDIR/subidas"; ENC="$SUB/www.ejemplo.test.en-curso"; PAR="$SUB/www.ejemplo.test.parar"
+  encurso() { local t; t="$(date +%s)"; mkdir -p "$SUB"; printf '%s\t1\tsesion-otra\t%s\t%s\t%s\n' "$1" "$((t-600))" "$2" "$((t-${3:-60}))" > "$ENC"; }
+  pc() { # nombre · rc esperado · TIENE · NO · orden (tras cargar el bloque)
+    local n="$1" want="$2" tiene="$3" no="$4" rc bien=1; shift 4
+    ( QA_RECIBOS_DIR="$PDIR"; SITIO="https://www.ejemplo.test/"; . "$PEC"; eval "$*" ) > "$TMP" 2>&1; rc=$?
+    [ "$rc" = "$want" ] || bien=0
+    [ -n "$tiene" ] && ! grep -qF -- "$tiene" "$TMP" && bien=0
+    [ -n "$no" ]    &&   grep -qF -- "$no" "$TMP" && bien=0
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s (rc %s, esperaba %s)\n' "$n" "$rc" "$want"; sed 's/^/        /' "$TMP"; fi
+  }
+  hay() { # nombre · 0|1 (se espera que la condicion se cumpla) · condicion
+    if eval "$3"; then r=1; else r=0; fi
+    if [ "$r" = "$2" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"; else ko=$((ko+1)); printf '  MAL   %s\n' "$1"; fi
+  }
+  # --parar: dice la verdad en los cinco estados
+  rm -rf "$SUB"
+  pc "--parar sin puerta ni subida: 4, y lo dice"            4 "no hay ninguna puerta de https://www.ejemplo.test/ en curso" "YA SUBIO" 'puerta_parar "m"'
+  mkdir -p "$SUB"; printf '%s\tsesion-otra\t/repo/x\n' "$(( $(date +%s) - 180 ))" > "$SUB/www.ejemplo.test"
+  # 🔴 EL CASO DE ESA NOCHE, visto desde quien para: la puerta ya habia acabado.
+  pc "--parar tarde: ninguna en curso, y que la ultima subida fue hace 3 min" 4 "fue hace 3 min" "" 'puerta_parar "m"'
+  rm -f "$SUB/www.ejemplo.test"
+  encurso "$VIVO" MIDIENDO
+  pc "--parar una puerta viva midiendo: 0, NO subira"        0 "NO subira" "YA SUBIO" 'puerta_parar "el revisor dijo VUELVE"'
+  hay "y la orden de parar es para ESE proceso, con su motivo" 1 '[ "$(cut -f1,3 "$PAR" 2>/dev/null)" = "$VIVO$(printf "\t")el revisor dijo VUELVE" ]'
+  rm -f "$PAR"; encurso "$VIVO" SUBIENDO 20
+  pc "--parar mientras sube: 3, produccion YA esta cambiando" 3 "ESTA SUBIENDO desde hace 2" "NO subira" 'puerta_parar "m"'
+  rm -f "$PAR"; encurso "$VIVO" "SUBIDO rc=0" 120
+  pc "--parar cuando ya subio: 3, y lo dice"                 3 "YA SUBIO hace 2 min" "NO subira" 'puerta_parar "m"'
+  rm -f "$PAR"; encurso "$MUERTO" MIDIENDO
+  pc "--parar una puerta que ya no existe: 4"                4 "ya no existe" "produccion ha cambiado" 'puerta_parar "m"'
+  hay "y borra su fichero" 0 '[ -e "$ENC" ]'
+  encurso "$MUERTO" SUBIENDO
+  pc "muerta tras empezar a subir: 4, y que produccion cambio" 4 "produccion ha cambiado" "" 'puerta_parar "m"'
+  # la puerta, justo antes del subidor
+  rm -rf "$SUB"
+  pc "con la orden de parar para ESTA puerta: no sube"       1 "PUERTA PARADA con --parar" "" 'mkdir -p "$SUB"; printf "%s\tsesion-x\tel revisor dijo VUELVE\n" "$$" > "$PAR"; puerta_sigue'
+  pc "y dice el motivo de quien la paro"                     1 "el revisor dijo VUELVE" "" 'mkdir -p "$SUB"; printf "%s\tsesion-x\tel revisor dijo VUELVE\n" "$$" > "$PAR"; puerta_sigue'
+  pc "una orden de parar para OTRA puerta no la para"        0 "" "PARADA" 'mkdir -p "$SUB"; printf "%s\tsesion-x\tm\n" "$VIVO" > "$PAR"; puerta_sigue'
+  rm -rf "$SUB"
+  # 🔴 EL CASO DE ESA NOCHE, visto desde la puerta: la orden que la lanzo murio (TaskStop).
+  pc "huerfana (la orden que la lanzo murio): no sube"       1 "LA ORDEN QUE LANZO ESTA PUERTA YA NO EXISTE" "" "PUERTA_PADRE=$MUERTO; puerta_sigue"
+  pc "con la orden que la lanzo viva: sube"                  0 "" "YA NO EXISTE" "PUERTA_PADRE=$VIVO; puerta_sigue"
+  pc "padre 1 (no es de esta shell): no se puede mirar, no para" 0 "" "YA NO EXISTE" "PUERTA_PADRE=1; puerta_sigue"
+  # de punta a punta: lo que escribe --parar lo ve la puerta
+  pc "--parar escribe y la puerta en curso lo ve: no sube"   1 "PUERTA PARADA" "" 'PUERTA_PADRE=1; en_curso_escribe MIDIENDO; puerta_parar "a mano" >/dev/null; puerta_sigue'
+  rm -rf "$SUB"
+  pc "al salir se borra lo suyo"                             0 "" "" 'en_curso_escribe MIDIENDO; en_curso_fin; [ ! -e "$ENC" ]'
+  encurso "$VIVO" MIDIENDO
+  pc "y no lo de otra puerta"                                0 "" "" 'en_curso_fin; [ -e "$ENC" ]'
+  kill "$VIVO" 2>/dev/null; wait "$VIVO" 2>/dev/null
+fi
+# Y en la puerta, el orden: SUBIENDO antes de mirar la orden de parar, las dos antes
+# del subidor; el recibo del paso 1 apuntado tras el paso 1; --parar antes de medir nada.
+L_SUB=$(grep -n '^declare -F en_curso_escribe >/dev/null && en_curso_escribe SUBIENDO$' "$PUERTA" | head -1 | cut -d: -f1)
+L_SIG=$(grep -n '^if declare -F puerta_sigue >/dev/null && ! puerta_sigue; then$' "$PUERTA" | head -1 | cut -d: -f1)
+L_EVA=$(grep -n '^eval "\$CMD"$' "$PUERTA" | head -1 | cut -d: -f1)
+L_GAT=$(grep -n '^GATE=\$?$' "$PUERTA" | head -1 | cut -d: -f1)
+L_PIN=$(grep -n '^RECIBO_SELLO_1=' "$PUERTA" | head -1 | cut -d: -f1)
+L_REV=$(grep -n '^RECIBO_SELLO_AHORA=' "$PUERTA" | head -1 | cut -d: -f1)
+L_PAR=$(grep -n '^  puerta_parar "\$PARAR"; exit \$?$' "$PUERTA" | head -1 | cut -d: -f1)
+L_PA1=$(grep -n '^linea; echo "  1 · el recibo"; linea$' "$PUERTA" | head -1 | cut -d: -f1)
+hay "en la puerta: SUBIENDO, despues la orden de parar, despues el subidor" 1 '[ -n "$L_SUB" ] && [ -n "$L_SIG" ] && [ -n "$L_EVA" ] && [ "$L_SUB" -lt "$L_SIG" ] && [ "$L_SIG" -lt "$L_EVA" ]'
+hay "el recibo del paso 1 se apunta tras el paso 1 y se compara antes de subir" 1 '[ -n "$L_GAT" ] && [ -n "$L_PIN" ] && [ -n "$L_REV" ] && [ "$L_GAT" -lt "$L_PIN" ] && [ "$L_PIN" -lt "$L_REV" ] && [ "$L_REV" -lt "$L_EVA" ]'
+hay "--parar se atiende antes de medir nada" 1 '[ -n "$L_PAR" ] && [ -n "$L_PA1" ] && [ "$L_PAR" -lt "$L_PA1" ]'
+hay "la trampa de salida de 3-bis no pisa la de la puerta en curso" 1 'grep -q "^trap .*en_curso_fin.* EXIT$" "$PUERTA"'
+rm -rf "$PEC" "$PDIR"
 
 # =============================================================================
 #  LAS PAGINAS DE ESTA SUBIDA, ¿SE SIRVEN? (4-0, 5-nov-2026). Medido ese dia: una

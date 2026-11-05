@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the fourteen slow batteries: the ones that need a browser, a host, or the network. On a clean
-install the fast run is **1045 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **1072 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1739 cases green, 0 red**, with **nine** banks reported as
+a clean install it reads **1766 cases green, 0 red**, with **nine** banks reported as
 `NOT MEASURED`: the seven that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1912**: 1739 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **1939**: 1766 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-1047, not 1045, because that machine has deployed. `run-all.sh`
+1074, not 1072, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,13 +95,13 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  1045 casos en verde · 0 en rojo
+  1072 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  1739 casos en verde · 0 en rojo
+  1766 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
@@ -464,7 +464,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Three more since 2026-11-05**, all from one week of real deploys:
+**Five more since 2026-11-05**, all from one week of real deploys:
 
 - **Upload lock (step 3-ter-0).** Two sessions holding permission for the same upload ran
   it twice, 11 seconds apart. The door now records each upload of a site in
@@ -485,6 +485,25 @@ without blocking. Why the order changed is trap §89.
   blank, missed changed pages over its cap, linking could not crawl, or G11 could not
   look), or PASS. The word "verified" no longer appears about an upload. The exit code
   does not change: what is uploaded is uploaded.
+- **The whole receipt again, right before the upload (step 3-ter).** Mid-door, another
+  `qa-master` run on a different commit rewrote the receipt with a FAIL; the door only
+  compared the tree with that new receipt (it matched: it was that receipt's tree) and
+  uploaded a tree the reviewer had sent back. Now the receipt must be the same one step 1
+  let through (its `SELLO`), and it is verified in full again, as in step 1: verdict, age,
+  tree and seal.
+- **A door that really stops, and says whether it uploaded (`--stop` / `--parar`).** On
+  Windows, stopping the command that launched the door does not stop the door: its
+  children went on and uploaded 13 minutes after the session wrote "stopped, production
+  unchanged". While it runs, the door records who it is and where it is (`MEASURING`,
+  `UPLOADING`, `UPLOADED`) next to the lock. `deploy.sh REPO --stop "reason"` leaves a stop
+  order for that door and tells the truth: it had not uploaded and will not (0), it is
+  uploading or already uploaded (3), or there was no door running (4, with this
+  machine's last upload of the site). Right before the uploader the door checks for a stop
+  order and whether the command that launched it is still alive: an orphaned door does not
+  upload. Limits, declared: `--stop` kills nothing (an uploader cut halfway leaves a
+  half-written docroot), so the door finishes the long step it is in and stops at the
+  upload; and a door launched by a process outside this shell cannot be checked for
+  orphanhood.
 
 ---
 
@@ -625,6 +644,7 @@ and neither can break an existing invocation.
 | `--show-upload` | `--ver-subida` |
 | `--anyway` | `--aun-asi` |
 | `--again` | `--otra-vez` |
+| `--stop` | `--parar` |
 | `--loses-text` | `--pierde-texto` |
 | `--hours` | `--horas` |
 

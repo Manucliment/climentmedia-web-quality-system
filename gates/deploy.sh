@@ -29,6 +29,11 @@
 #    deploy.sh REPO --otra-vez "..."  permite subir un SITIO que otra sesion ha
 #                                      subido hace menos de 15 min (paso 3-ter-0),
 #                                      dejando el motivo en el historial
+#    deploy.sh REPO --parar "..."     para la puerta de ese SITIO que esta en curso
+#                                      en esta maquina, y dice la verdad: si no llego
+#                                      a subir (0), si ya subio o esta subiendo (3)
+#                                      o si no habia ninguna (4). TaskStop NO la para
+#                                      en Windows: los procesos hijos siguen
 #
 #  🔴 EL FLUJO, Y SON DOS MOMENTOS (11-ago-2026)
 #  ---------------------------------------------
@@ -88,7 +93,7 @@
 set -u
 
 REF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0; SIN_COMMIT=""; OTRA_VEZ=""
+REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0; SIN_COMMIT=""; OTRA_VEZ=""; PARAR=""
 
 while [ $# -gt 0 ]; do
   # English aliases. Additive: they cannot break an existing invocation.
@@ -102,6 +107,7 @@ while [ $# -gt 0 ]; do
     --uncommitted) set -- "--sin-commit" "${@:2}" ;;
     --hours)       set -- "--horas" "${@:2}" ;;
     --again)       set -- "--otra-vez" "${@:2}" ;;
+    --stop)        set -- "--parar" "${@:2}" ;;
   esac
   case "$1" in
     --subir)    SUBIR=1 ;;
@@ -111,6 +117,7 @@ while [ $# -gt 0 ]; do
     --pierde-texto) shift; PIERDE_TEXTO="${1:-}" ;;
     --sin-commit) shift; SIN_COMMIT="${1:-}" ;;
     --otra-vez) shift; OTRA_VEZ="${1:-}" ;;
+    --parar)    shift; PARAR="${1:-parada a mano, sin motivo}" ;;
     --horas)    shift; HORAS="${1:-12}" ;;
     -h|--help)  sed -n '2,/^set -u$/p' "${BASH_SOURCE[0]}" | sed '$d'; exit 2 ;;
     -*)         echo "opcion desconocida: $1"; exit 2 ;;
@@ -180,6 +187,114 @@ if [ "$REDIR" = 1 ]; then
   MEDIR_CMD="perl \"$REF/redirects-gate.pl\" --repo \"$REPO\" --sitio $SITIO --candidato"
 else
   MEDIR_CMD="perl \"$REF/qa-master.pl\" $SITIO --repo \"$REPO\" --candidato"
+fi
+
+# >>> puerta-en-curso (marca del banco deploy-tests: no la muevas sin moverlo)
+# ── 0-ter · UNA PUERTA QUE SE PARA DE VERDAD, Y QUE DICE SI YA SUBIO (5-nov-2026) ─
+#    Medido esa noche en una web: el chat paro la puerta con TaskStop a las 22:12 y
+#    escribio «parada, produccion sin cambiar». En Windows TaskStop mata la orden
+#    que la lanzo, no a la puerta: siguio midiendo y subio a las 22:25. Nadie lo supo
+#    hasta mirar produccion. Ahora:
+#      · la puerta apunta, mientras corre, quien es y en que paso esta (MIDIENDO,
+#        SUBIENDO, SUBIDO), en ~/.qa-receipts/subidas/<sitio>.en-curso;
+#      · `deploy.sh REPO --parar "motivo"` deja una orden de parar para ESA puerta
+#        y dice la verdad: no llego a subir (0), ya subio o esta subiendo (3), o no
+#        habia ninguna en curso (4, con la ultima subida de esta maquina);
+#      · justo antes del subidor, la puerta mira si se la ha mandado parar, y si la
+#        orden que la lanzo sigue viva: una puerta huerfana (TaskStop) NO sube.
+#    El orden importa: la puerta escribe SUBIENDO y despues mira la orden de parar;
+#    --parar escribe la orden y despues mira el estado. Asi uno de los dos ve al otro.
+#    ⚠️ LIMITES, declarados: --parar NO mata procesos (un subidor cortado a medias
+#    deja el docroot a medio escribir); la puerta termina el paso largo en que este
+#    y para al llegar a la subida. Si la lanzo un proceso que no es de esta shell
+#    (padre 1), la comprobacion de huerfana no se puede hacer. Solo esta maquina.
+PUERTA_DIR="${QA_RECIBOS_DIR:-${HOME:-${USERPROFILE:-.}}/.qa-receipts}/subidas"
+PUERTA_TAB="$(printf '\t')"
+puerta_slug() { printf '%s' "$SITIO" | sed -E 's#^[a-z]+://##; s#[/:]+$##; s#[^A-Za-z0-9._-]#_#g'; }
+puerta_fichero() { printf '%s/%s.%s\n' "$PUERTA_DIR" "$(puerta_slug)" "$1"; }   # en-curso | parar
+puerta_sesion() { printf '%s\n' "${CLAUDE_CODE_SESSION_ID:-${USER:-${USERNAME:-alguien}}@$(hostname 2>/dev/null || echo maquina)}"; }
+puerta_hace() { local s=$(( $(date +%s) - ${1:-0} )); [ "$s" -lt 120 ] && echo "$s s" || echo "$(( s / 60 )) min"; }
+en_curso_escribe() {  # $1 = estado · pid, padre, sesion, inicio, estado, cuando
+  mkdir -p "$PUERTA_DIR" 2>/dev/null
+  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$$" "${PUERTA_PADRE:-0}" "$(puerta_sesion)" "${PUERTA_INICIO:-$(date +%s)}" "$1" "$(date +%s)" \
+    > "$(puerta_fichero en-curso)" 2>/dev/null
+}
+en_curso_fin() {  # al salir: se borra lo de ESTA puerta, no lo de otra
+  local f pid resto
+  for f in "$(puerta_fichero en-curso)" "$(puerta_fichero parar)"; do
+    [ -s "$f" ] || continue
+    IFS="$PUERTA_TAB" read -r pid resto < "$f"
+    [ "$pid" = "$$" ] && rm -f "$f"
+  done
+  return 0
+}
+puerta_sigue() {  # justo antes del subidor · 1 = no se sube (y deja PUERTA_PARADA)
+  local f pid quien motivo
+  PUERTA_PARADA=""
+  f="$(puerta_fichero parar)"
+  if [ -s "$f" ]; then
+    IFS="$PUERTA_TAB" read -r pid quien motivo < "$f"
+    if [ "$pid" = "$$" ]; then
+      echo "  🔴 PUERTA PARADA con --parar (${quien:0:13}…): $motivo"
+      echo "     NO se sube: produccion sin cambiar."
+      PUERTA_PARADA="parada con --parar: $motivo"; return 1
+    fi
+  fi
+  case "${PUERTA_PADRE:-1}" in ''|*[!0-9]*|0|1) return 0 ;; esac
+  if ! kill -0 "$PUERTA_PADRE" 2>/dev/null; then
+    echo "  🔴 LA ORDEN QUE LANZO ESTA PUERTA YA NO EXISTE (proceso $PUERTA_PADRE): alguien la paro"
+    echo "     (TaskStop, una ventana cerrada) y la puerta siguio viva. NO se sube: produccion sin cambiar."
+    echo "     Si de verdad hay que subir, se lanza otra vez."
+    PUERTA_PARADA="huerfana: la orden que la lanzo ($PUERTA_PADRE) ya no existe"; return 1
+  fi
+  return 0
+}
+puerta_parar() {  # $1 = motivo · 0 parada antes de subir · 3 ya subio o esta subiendo · 4 ninguna en curso
+  local f c pid padre ses ini est cuando t cses crep
+  f="$(puerta_fichero en-curso)"; c="$PUERTA_DIR/$(puerta_slug)"
+  if [ ! -s "$f" ]; then
+    echo "  no hay ninguna puerta de $SITIO en curso en esta maquina."
+    if [ -s "$c" ] && IFS="$PUERTA_TAB" read -r t cses crep < "$c" && case "$t" in ''|*[!0-9]*) false ;; esac; then
+      echo "  🔴 la ultima subida de $SITIO desde esta maquina fue hace $(puerta_hace "$t") (sesion ${cses:0:13}…, $crep):"
+      echo "     si era la que querias parar, YA SUBIO. Lo servido: deploy.sh REPO --servido"
+    else
+      echo "  y ninguna subida de $SITIO apuntada desde esta maquina."
+    fi
+    return 4
+  fi
+  IFS="$PUERTA_TAB" read -r pid padre ses ini est cuando < "$f"
+  if ! kill -0 "$pid" 2>/dev/null; then
+    echo "  la puerta $pid de $SITIO ya no existe: su ultimo estado apuntado fue $est, hace $(puerta_hace "$cuando")."
+    case "$est" in SUBIENDO*|SUBIDO*) echo "  🔴 y ese estado es de DESPUES de empezar a subir: produccion ha cambiado." ;; esac
+    rm -f "$f"; return 4
+  fi
+  # primero la orden, despues el estado (ver arriba: asi uno de los dos ve al otro)
+  mkdir -p "$PUERTA_DIR" 2>/dev/null
+  printf '%s\t%s\t%s\n' "$pid" "$(puerta_sesion)" "$1" > "$(puerta_fichero parar)" 2>/dev/null
+  IFS="$PUERTA_TAB" read -r pid padre ses ini est cuando < "$f" 2>/dev/null
+  case "$est" in
+    SUBIENDO*) echo "  🔴 la puerta de $SITIO (proceso $pid) ESTA SUBIENDO desde hace $(puerta_hace "$cuando"):"
+               echo "     produccion YA esta cambiando. No se corta un subidor a medias."
+               echo "     Cuando acabe, lo servido: deploy.sh REPO --servido"
+               return 3 ;;
+    SUBIDO*)   echo "  🔴 la puerta de $SITIO (proceso $pid) YA SUBIO hace $(puerta_hace "$cuando") ($est): produccion ha cambiado."
+               return 3 ;;
+  esac
+  echo "  parada la puerta de $SITIO: proceso $pid, en $est desde hace $(puerta_hace "$cuando"), sesion ${ses:0:13}…"
+  echo "  NO subira: termina el paso en que esta y para al llegar a la subida. Produccion sin cambiar."
+  return 0
+}
+# <<< puerta-en-curso
+if [ -n "$PARAR" ]; then
+  linea; echo "  PARAR la puerta de $SITIO"; linea
+  puerta_parar "$PARAR"; exit $?
+fi
+if [ "$SUBIR" = 1 ]; then
+  PUERTA_PADRE="$PPID"; PUERTA_INICIO="$(date +%s)"
+  trap en_curso_fin EXIT
+  en_curso_escribe MIDIENDO
+  echo "  esta puerta es el proceso $$. Para pararla de verdad (TaskStop no la para en Windows):"
+  echo "      deploy.sh \"$REPO\" --parar \"el motivo\""
 fi
 
 # ── modo «enseñame que subirias» ─────────────────────────────────────────────
@@ -270,6 +385,9 @@ if [ "$GATE" != 0 ]; then
   fi
   exit 1
 fi
+# El recibo que ha dejado pasar el paso 1, por su SELLO: en el paso 3-ter, justo
+# antes de subir, tiene que seguir siendo ESTE (5-nov-2026, ver alli).
+RECIBO_SELLO_1="$(grep -m1 '^SELLO:' "$REPO/.qa-recibo" 2>/dev/null | tr -d '\r')"
 
 # ── 1-bis-b · EL RECIBO Y EL deploy.conf DICEN LO MISMO DEL ARBOL ────────────
 #    Un recibo de redirecciones vale sin lentes de pagina; uno de paginas, sin
@@ -1314,7 +1432,7 @@ fi
 LISTA_HOY="$(mktemp -t desplegado-XXXXXXXX)"
 RETIRADAS="$(mktemp -t retiradas-XXXXXXXX)"
 LISTA_ANT="$REPO/_deploy/.desplegado.txt"
-trap 'rm -f "$LISTA_HOY" "$RETIRADAS"' EXIT
+trap 'rm -f "$LISTA_HOY" "$RETIRADAS"; declare -F en_curso_fin >/dev/null && en_curso_fin' EXIT
 perl "$REF/receipt.pl" --arbol --listar --repo "$REPO" 2>/dev/null \
   | sed -nE 's/^[0-9a-f]+[[:space:]]+[0-9]+[[:space:]]+//p' \
   | LC_ALL=C sort > "$LISTA_HOY"
@@ -1386,20 +1504,46 @@ fi
 #    ⚠️ LIMITE, declarado: el subidor es de cada repo y empaqueta el disco. Entre
 #    esta comprobacion y su `tar` quedan segundos, no minutos: durante una subida,
 #    el repo no se toca.
-if ! SELLO_SAL="$(perl "$REF/receipt.pl" --verificar --repo "$REPO" 2>&1)"; then
-  echo "  🔴 el arbol ya no es el que sello el recibo: NO se sube."
-  printf '%s\n' "$SELLO_SAL" | grep -E 'CAMBIADO|recibo:|NUEVO|RETIRADO|SELLO|DISTINTO|ahora' | head -8 | sed 's/^ */     /'
-  echo "     Algo toco el repo durante la puerta. Vuelve a medir el candidato y repite,"
-  echo "     sin tocar el repo mientras sube."
-  perl "$REF/receipt.pl" --anotar "subida parada: el arbol cambio despues del recibo" --repo "$REPO" >/dev/null 2>&1
+# 🔴 5-nov-2026 · Y EL RECIBO ENTERO, NO SOLO EL ARBOL. Medido esa noche en una web:
+#    la puerta leyo a las 22:08 un recibo verde; a las 22:17, a media puerta, un
+#    qa-master sobre OTRO commit reescribio el recibo, en FALLA; aqui solo se
+#    comparo el arbol con ese recibo nuevo (cuadraba: era su arbol) y subio un arbol
+#    en rojo que el revisor habia devuelto. Ahora, antes de subir: (1) el recibo
+#    tiene que ser el MISMO que dejo pasar el paso 1 (su SELLO), y (2) se vuelve a
+#    verificar entero, como en el paso 1: veredicto, edad, arbol y sello.
+RECIBO_SELLO_AHORA="$(grep -m1 '^SELLO:' "$REPO/.qa-recibo" 2>/dev/null | tr -d '\r')"
+if [ -n "${RECIBO_SELLO_1:-}" ] && [ "$RECIBO_SELLO_AHORA" != "$RECIBO_SELLO_1" ]; then
+  echo "  🔴 EL RECIBO YA NO ES EL QUE DEJO PASAR EL PASO 1: alguien volvio a medir durante"
+  echo "     la puerta y lo reescribio. NO se sube: el veredicto que vale es el de un recibo"
+  echo "     que esta puerta no ha leido."
+  echo "     $(grep -m1 '^VEREDICTO:' "$REPO/.qa-recibo" 2>/dev/null | tr -d '\r') · $(grep -m1 '^FECHA:' "$REPO/.qa-recibo" 2>/dev/null | tr -d '\r')"
+  echo "     Una puerta y un qa-master a la vez sobre el mismo repo no: que acabe uno, y se repite."
+  perl "$REF/receipt.pl" --anotar "subida parada: el recibo cambio a media puerta" --repo "$REPO" >/dev/null 2>&1
   exit 1
 fi
-echo "  el arbol sigue siendo el del recibo (comprobado justo antes de subir)"
+if ! SELLO_SAL="$(perl "$REF/receipt.pl" --verificar --repo "$REPO" --para-desplegar --horas "${HORAS:-12}" 2>&1)"; then
+  echo "  🔴 el recibo, vuelto a verificar justo antes de subir, ya no deja subir: NO se sube."
+  printf '%s\n' "$SELLO_SAL" | grep -E 'CAMBIADO|recibo:|NUEVO|RETIRADO|SELLO|DISTINTO|ahora|VEREDICTO|FALLA|CADUC|caduc' | head -8 | sed 's/^ */     /'
+  echo "     O algo toco el repo durante la puerta, o el recibo ya no vale. Vuelve a medir"
+  echo "     el candidato y repite, sin tocar el repo mientras sube."
+  perl "$REF/receipt.pl" --anotar "subida parada: el recibo ya no deja subir al volver a verificarlo" --repo "$REPO" >/dev/null 2>&1
+  exit 1
+fi
+echo "  el recibo sigue siendo el del paso 1 y el arbol el suyo (comprobado justo antes de subir)"
+# ¿se la ha mandado parar, o la orden que la lanzo ya no existe? (0-ter). SUBIENDO
+# se escribe ANTES de mirar: asi un --parar que llegue a la vez ve uno u otro.
+declare -F en_curso_escribe >/dev/null && en_curso_escribe SUBIENDO
+if declare -F puerta_sigue >/dev/null && ! puerta_sigue; then
+  en_curso_escribe "PARADA antes de subir"
+  perl "$REF/receipt.pl" --anotar "subida parada: $PUERTA_PARADA" --repo "$REPO" >/dev/null 2>&1
+  exit 1
+fi
 echo "  $CMD"
 # el cerrojo, justo antes del subidor (y no antes del sello: un sello que para no ha subido nada)
 declare -F cerrojo_escribe >/dev/null && cerrojo_escribe "${AHORA_SUBE:-$(date +%s)}"
 eval "$CMD"
 RC=$?
+declare -F en_curso_escribe >/dev/null && en_curso_escribe "SUBIDO rc=$RC"
 # <<< sello-antes-de-subir
 if [ "$RC" != 0 ]; then
   echo
