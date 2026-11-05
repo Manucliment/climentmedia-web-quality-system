@@ -413,6 +413,10 @@ if (!defined $TIPO_DECL) {
 my @REGLAS = (
     # tipo, exigidas (cada una puede ser a|b), avisadas, de donde
     ['Product',        ['name', 'offers|aggregateRating|review'], ['image'],                   'Google, fragmentos de producto'],
+    # 5-nov-2026 · un ProductGroup de Shopify sin offers salia FALLO por la regla de
+    #   Product: Google pone las ofertas en CADA variante de hasVariant, y cada
+    #   variante es un Product que sigue pasando por la regla de arriba.
+    ['ProductGroup',   ['name', 'hasVariant'],                   ['productGroupID', 'variesBy'], 'Google, variantes de producto: las ofertas van en cada variante'],
     ['Offer',          ['price|priceSpecification', 'priceCurrency|priceSpecification'], ['availability'], 'Google, fichas de comerciante'],
     ['AggregateOffer', ['lowPrice', 'priceCurrency'],            ['offerCount'],               'Google, fragmentos de producto'],
     ['BreadcrumbList', ['itemListElement'],                      [],                           'Google, migas'],

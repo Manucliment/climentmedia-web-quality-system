@@ -147,6 +147,18 @@ caso('un AggregateOffer con lowPrice (variantes): PASA, no se le pide el price d
 caso('un AggregateOffer sin lowPrice: FALLO, su propia regla',
      fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"Product","name":"Lampara de mesa Nube","image":"i.jpg","offers":{"@type":"AggregateOffer","priceCurrency":"EUR","offerCount":3}}'], $FICHA_CUERPO)), [],
      ['^FALLO\s+PT-05.*AggregateOffer.*sin lowPrice'], ['sin price\|priceSpecification'], 1);
+# 5-nov-2026 · un ProductGroup de Shopify: las ofertas en cada variante, no en el grupo.
+#   Contra la regla de antes (la de Product) el primero salia FALLO «sin offers».
+my $VAR = sub { my ($o) = @_; '{"@type":"Product","name":"Lampara de mesa Nube","image":"i.jpg","sku":"L1"' . ($o ? ',"offers":{"@type":"Offer","price":"49.95","priceCurrency":"EUR","availability":"https://schema.org/InStock"}' : '') . '}' };
+caso('un ProductGroup sin offers, con sus variantes ofertadas: PASA',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"ProductGroup","name":"Lampara de mesa Nube","image":"i.jpg","productGroupID":"G1","variesBy":"https://schema.org/size","hasVariant":[' . $VAR->(1) . ',' . $VAR->(1) . ']}'], $FICHA_CUERPO)), [],
+     ['^PASA\s+PT-05'], ['^FALLO\s+PT-05'], 0);
+caso('un ProductGroup sin hasVariant ni offers: FALLO, su propia regla',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"ProductGroup","name":"Lampara de mesa Nube","image":"i.jpg"}'], $FICHA_CUERPO)), [],
+     ['^FALLO\s+PT-05.*ProductGroup.*sin hasVariant'], ['sin offers'], 1);
+caso('una variante sin offers: FALLO, la de Product sigue mirando cada variante',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"ProductGroup","name":"Lampara de mesa Nube","image":"i.jpg","productGroupID":"G1","variesBy":"https://schema.org/size","hasVariant":[' . $VAR->(1) . ',' . $VAR->(0) . ']}'], $FICHA_CUERPO)), [],
+     ['^FALLO\s+PT-05.*Product.*sin offers'], [], 1);
 
 print "\n== PT-06 · EL MARCADO CONTRA LA PAGINA\n";
 caso('el precio del marcado (39.95) no es el de la pagina (49,95): FALLO',
