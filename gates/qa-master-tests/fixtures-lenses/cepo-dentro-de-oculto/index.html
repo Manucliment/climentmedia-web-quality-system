@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture: el cepo dentro de un bloque oculto | Climent Media</title>
+<meta name="description" content="Un formulario servido cuyo cepo esta oculto al lector de pantalla por el parrafo que lo contiene, no por el propio campo.">
+<link rel="canonical" href="https://climentmedia.com/">
+</head>
+<body>
+<!-- 5-nov-2026 · el aria-hidden lo lleva el <p> que CONTIENE el cepo, no el
+     campo. El lector de pantalla no anuncia nada de lo que hay dentro: esta
+     blindado. Con el programa de antes salia AVISO: solo miraba el campo. -->
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Pide cita</h1><p>Texto de la portada, suficientemente largo para que ninguna lente se queje de que la pagina esta vacia.</p></section>
+  <section data-sec="catalogo">
+    <h2>Formulario</h2>
+    <form action="/contacto.php" method="post">
+      <label for="n">Nombre</label><input id="n" name="nombre" type="text" autocomplete="name">
+      <p class="trampa" aria-hidden="true"><label>No rellenar<input name="website" type="text" tabindex="-1" autocomplete="off"></label></p>
+      <p role="status" aria-live="polite"></p>
+      <button type="submit">Enviar</button>
+    </form>
+  </section>
+</main>
+</body>
+</html>

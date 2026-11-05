@@ -1,0 +1,10 @@
+# fixture: el formulario de leads lo escribe el JS (5-nov-2026)
+# Ninguna pagina servida trae un <form>: lo inserta /js/app.js desde una cadena,
+# como el configurador de una tienda nuestra. Esta bien hecho de punta a punta:
+# autocomplete, region viva, cepo dentro de un <p aria-hidden="true">, boton que
+# se deshabilita y destino en CONFIG.LEAD_ENDPOINT (/js/config.js).
+# Con el programa de antes, las seis salian NO VERIFICADO. Ahora se miden:
+# A11Y-09/10/11, MED-09 y MED-11 PASA; MED-10 NO VERIFICADO por candidato
+# (/api/lead es una ruta sin fichero: la contesta el servidor, no el arbol).
+# El fetch de /data/medidas.json va ANTES del manejador de submit a proposito:
+# el destino es el primer fetch DESPUES del submit, no el primero del fichero.

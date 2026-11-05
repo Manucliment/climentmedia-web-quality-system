@@ -1,0 +1,4 @@
+# fixture: el formulario que el JS arma A TROZOS (5-nov-2026)
+# '<form class="trozos">' en una cadena y el cierre construido con '</' + 'form>':
+# no hay un <form>...</form> entero que leer. Tiene que seguir NO VERIFICADO y
+# decir que va a trozos; leerlo hasta donde se pueda seria medir medio formulario.

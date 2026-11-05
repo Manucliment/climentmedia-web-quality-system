@@ -3008,9 +3008,12 @@ sub pagina_del_formulario {
 #  // de linea NO se quitan: cortarian «https://...» y lo que le siga.
 #  Devuelve N (paginas del arbol, ninguna con formulario), 0 (hay formulario) o
 #  undef (sin --repo o sin paginas: no se puede saber, y sigue NO VERIFICADO).
+my @ARBOL_FORM_JS;   # .js del arbol con un <form> en su texto (lo rellena arbol_sin_formulario)
+my $ARBOL_FORM_HECHO;
 sub arbol_sin_formulario {
     return undef unless defined $opt{repo} && $opt{repo} ne '' && -d $opt{repo};
     my ($paginas, $con) = (0, 0);
+    @ARBOL_FORM_JS = ();
     no warnings 'once';
     require File::Find;
     File::Find::find({ no_chdir => 1, wanted => sub {
@@ -3041,9 +3044,166 @@ sub arbol_sin_formulario {
                || $t =~ /<textarea\b(?![^>]*\breadonly\b)/i
                || $t =~ /<input\b(?![^>]*\btype\s*=)[^>]*>/i
                || $t =~ /<input\b[^>]*\btype\s*=\s*["']?(?:text|email|tel|number|url|date|password)\b/i;
+        if ($p =~ /\.js$/i && $t =~ /<form\b|createElement\(\s*['"]form['"]/i) {
+            (my $rel = substr($p, length $opt{repo})) =~ s{\\}{/}g;
+            $rel =~ s{^/*}{/};
+            push @ARBOL_FORM_JS, $rel;
+        }
     }}, $opt{repo});
+    @ARBOL_FORM_JS = sort @ARBOL_FORM_JS;
+    $ARBOL_FORM_HECHO = 1;
     return undef unless $paginas;
     return $con ? 0 : $paginas;
+}
+
+# ── EL FORMULARIO QUE CREA EL JS · 5-nov-2026 ────────────────────────────────
+#  Una tienda nuestra monta su formulario de leads dentro de su configurador
+#  (`<form class="...">` en una cadena de su JS, que la pagina inserta al elegir
+#  el producto). Ninguna pagina servida trae un <form>, asi que A11Y-09/10/11 y
+#  MED-09/10/11 salian NO VERIFICADO en cada recibo, con el formulario entero
+#  escrito en el JS: el autocomplete, la region viva, el cepo, el boton que se
+#  deshabilita y el destino del envio. Eran seis preguntas con la respuesta
+#  delante.
+#  Ahora, si ninguna pagina leida trae un <form>, se miran los scripts de esas
+#  paginas (los PROPIOS y los que van en linea: los mismos que `trozos_de_script`
+#  da a MEDICION) y el primero que trae el marcado entero, de <form a </form>,
+#  es el formulario. Se mide con las MISMAS reglas que uno servido. Lo que se lee
+#  es lo que `fetch` trae: en candidato el ARBOL, en red lo SERVIDO.
+#  Lo que NO entra, y sigue NO VERIFICADO diciendo por que:
+#   · un form hecho con createElement (no hay marcado que leer);
+#   · un <form> sin su </form> en el mismo texto (va a trozos: se leeria a medias);
+#   · un .js con <form> que ninguna pagina leida carga: un fichero que no se
+#     carga no recoge nada, y medirlo seria aprobar lo que no se sirve.
+#  Devuelve { pagina, cuerpo, marcado, js, txt, n } o { n, nota } sin marcado.
+my $FORM_JS;
+sub formulario_del_js {
+    return $FORM_JS if $FORM_JS;
+    my @contacto = sort { length($a) <=> length($b) or $a cmp $b }
+                   grep {  m{/(contact|contacto|kontakt)} } @PAGES;
+    my @resto    = sort { length($a) <=> length($b) or $a cmp $b }
+                   grep { !m{/(contact|contacto|kontakt)} } @PAGES;
+    my %visto;
+    my @cand = grep { !$visto{$_}++ } (@contacto, @resto);
+    my $a_trozos = '';
+    for my $u (@cand) {
+        my $cuerpo = sin_com(fetch($u)->{body} // '');
+        my @js = js_de_la_pagina($u, $cuerpo);
+        my $todo = join "\n", map { $_->{txt} } @js;
+        for my $x (@js) {
+            next unless $x->{txt} =~ /<form\b/i;
+            if ($x->{txt} =~ /(<form\b.*?<\/form\s*>)/is) {
+                return $FORM_JS = { pagina => $u, cuerpo => $cuerpo, marcado => $1,
+                                    js => $x->{donde}, txt => $x->{txt}, todo => $todo,
+                                    n => scalar @cand };
+            }
+            $a_trozos ||= $x->{donde};
+        }
+    }
+    my $nota = '';
+    if ($a_trozos ne '') {
+        $nota = "$a_trozos trae un <form> sin su </form> en el mismo texto: va a trozos y se leeria a medias";
+    } else {
+        arbol_sin_formulario() unless $ARBOL_FORM_HECHO;
+        $nota = 'el arbol lo crea en el JS ('.join(', ', @ARBOL_FORM_JS[0 .. ($#ARBOL_FORM_JS < 2 ? $#ARBOL_FORM_JS : 2)])
+              .'), pero ninguna pagina leida trae el marcado entero: o se hace con createElement, o lo carga una pagina que no se leyo'
+            if @ARBOL_FORM_JS;
+    }
+    return $FORM_JS = { n => scalar @cand, nota => $nota };
+}
+
+# js_de_la_pagina(url, html_sin_comentarios): el JavaScript que esa pagina
+#   ejecuta y es suyo, en orden: sus <script> en linea y propios
+#   (`trozos_de_script`) y, detras, los MODULOS que importan, siguiendo cada
+#   `import ... from './x.js'`, `export ... from`, `import './x.js'` e
+#   `import('./x.js')` con ruta relativa o desde la raiz. Una pagina que carga
+#   `<script type="module">import {...} from './js/configurator.js'</script>`
+#   no tiene ningun src: sin seguir los import, su formulario no existia
+#   (medido en una tienda nuestra el 5-nov-2026: 11 paginas leidas, 0 formularios,
+#   y el formulario entero en un modulo importado). Un especificador sin ruta
+#   (`'lit'`) es de un paquete: no es de la pagina y no se sigue.
+#   Cada uno: { donde, txt }. Tope de 40 ficheros por pagina.
+sub js_de_la_pagina {
+    my ($pag, $html) = @_;
+    my (@cola, @r, %visto);
+    for my $x (trozos_de_script($pag, $html)) {
+        next unless $x->{propio} || $x->{src} eq '';
+        next if $x->{src} ne '' && $visto{$x->{src}}++;
+        push @cola, { base => ($x->{src} eq '' ? base_ef($pag) : $x->{src}),
+                      donde => ($x->{src} eq '' ? 'un <script> en linea' : ruta_corta($x->{src})),
+                      txt => $x->{txt} };
+    }
+    while (my $m = shift @cola) {
+        push @r, $m;
+        last if @r >= 40;
+        my @spec = grep { defined } ($m->{txt} =~
+            /\b(?:import|export)\b[^'";]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/g);
+        for my $s (@spec) {
+            next unless $s =~ m{^(?:\.{1,2}/|/)};
+            my $a = abs_url($s, $m->{base}) or next;
+            # abs_url pega `./x.js` tal cual: se quitan los «.» y «..» del camino
+            # para que /js/./config.js y /js/config.js sean el mismo fichero.
+            if (my ($ori, $cam, $q) = $a =~ m{^(https?://[^/]+)(/[^?#]*)(.*)\z}s) {
+                my @seg;
+                for my $p (split m{/}, $cam, -1) {
+                    if ($p eq '..') { pop @seg if @seg > 1 } elsif ($p ne '.') { push @seg, $p }
+                }
+                $a = $ori . join('/', @seg) . $q;
+                $a = "$ori/" if $a eq $ori;
+            }
+            next unless is_internal($a);
+            next if $visto{$a}++;
+            my $r = fetch($a);
+            next unless $r->{code} == 200 && ($r->{ctype} // '') !~ /html/i
+                     && ($r->{body} // '') !~ /\A\s*</;
+            push @cola, { base => $a, donde => ruta_corta($a), txt => js_sin_com($r->{body}) };
+        }
+    }
+    return @r;
+}
+
+# receptor_del_js(form_js, mas_js): a donde envia el JS un formulario sin action.
+#   Busca el manejador de submit (addEventListener('submit'...) u onsubmit) y,
+#   DESPUES de el, el primer fetch( / sendBeacon( / .open('POST', . Si el destino
+#   es una cadena, es ese; si es un nombre (CONFIG.LEAD_ENDPOINT), se busca su
+#   valor -`LEAD_ENDPOINT: '/api/lead'`- en los scripts propios de la pagina.
+#   Devuelve (destino, expresion): destino '' si no se resuelve; expresion ''
+#   si no hay manejador de submit que envie nada.
+sub receptor_del_js {
+    my ($txt, $mas) = @_;
+    return ('', '') unless $txt =~ /addEventListener\(\s*['"]submit['"]|\bonsubmit\s*=/gi;
+    my $desde = pos($txt);
+    my $tras = substr($txt, $desde);
+    my ($expr) = $tras =~ /(?:\bfetch|\bsendBeacon)\(\s*([^,)]+?)\s*[,)]/i;
+    ($expr) = $tras =~ /\.open\(\s*['"]POST['"]\s*,\s*([^,)]+?)\s*[,)]/i unless defined $expr;
+    return ('', '') unless defined $expr && $expr ne '';
+    return ($1, $expr) if $expr =~ /^['"`]([^'"`\$]+)['"`]$/;
+    if ($expr =~ /^[A-Za-z_\$][\w\$]*(?:\.[A-Za-z_\$][\w\$]*)*$/) {
+        my ($nombre) = $expr =~ /([A-Za-z_\$][\w\$]*)$/;
+        for my $t ($txt, $mas // '') {
+            return ($1, $expr) if $t =~ /\b\Q$nombre\E\s*[:=]\s*['"`]([^'"`\$\s]+)['"`]/;
+        }
+    }
+    return ('', $expr);
+}
+
+# ancestro_oculto(fuente, posicion): ¿hay un elemento ABIERTO con
+#   aria-hidden="true" antes de esa posicion? Un cepo dentro de un
+#   <p aria-hidden="true"> esta oculto al lector de pantalla igual que si lo
+#   llevara el propio campo (el arbol de accesibilidad hereda el aria-hidden).
+#   Un elemento ya cerrado antes del campo (un icono <svg aria-hidden>) no cuenta,
+#   ni uno vacio (img, input...), que no puede contener nada.
+sub ancestro_oculto {
+    my ($src, $pos) = @_;
+    my $antes = substr($src, 0, $pos);
+    while ($antes =~ /<([a-z][a-z0-9-]*)\b[^>]*\baria-hidden\s*=\s*["']?true\b[^>]*>/gi) {
+        my $tag = lc $1;
+        next if $tag =~ /^(?:img|input|br|hr|meta|link|source|wbr|area|col|embed|track)$/;
+        my $resto  = substr($antes, pos($antes));
+        my $abre   = () = $resto =~ /<\Q$tag\E\b/gi;
+        my $cierra = () = $resto =~ /<\/\Q$tag\E\s*>/gi;
+        return 1 if $cierra <= $abre;
+    }
+    return 0;
 }
 
 # =============================================================================
@@ -3125,7 +3285,7 @@ sub lente_a11y {
     #    justo el fallo que este fichero existe para no cometer.
     my $leidas = scalar(@vistas) - scalar(@no_leidas);
     alcance('ACCESIBILIDAD', [@leidas], undef,
-            'A11Y-01/02/05/06/07/08 sobre todas las leidas · la PALETA sobre la union de sus hojas · A11Y-09/10/11 la pagina del formulario, la misma que MEDICION (orden fijo, no el de la lista)');
+            'A11Y-01/02/05/06/07/08 sobre todas las leidas · la PALETA sobre la union de sus hojas · A11Y-09/10/11 la pagina del formulario, la misma que MEDICION (orden fijo, no el de la lista), o el <form> que escribe el JS de una de ellas, siguiendo sus import');
     @no_leidas and nv(lente=>'ACCESIBILIDAD', id=>'A11Y-0x', titulo=>'paginas que no he podido leer',
                       donde=>join(' · ', @no_leidas[0..($#no_leidas>3?3:$#no_leidas)]),
                       ev=>[@no_leidas],
@@ -3513,6 +3673,13 @@ sub lente_a11y {
     #   nada. El veredicto dependia de que alguien se acordara de una bandera.
     #   Ahora el formulario SE BUSCA entre las paginas ya leidas (fetch cachea, no
     #   cuesta red) y, si no aparece en ninguna, se DICE en vez de callarse.
+    # 5-nov-2026 · Y si ninguna lo trae, el que escribe el JS de una de ellas
+    #   (`formulario_del_js`): se mide con las mismas reglas que uno servido.
+    my $fjs = $form_de eq '' ? formulario_del_js() : {};
+    if ($form_de eq '' && $fjs->{marcado}) {
+        $form_de = "$fjs->{pagina} (el <form> lo crea $fjs->{js})";
+        $formsrc = $fjs->{marcado};
+    }
     if ($form_de eq '') {
         my $sin = arbol_sin_formulario();
         for my $f (['A11Y-09','campos con autocomplete'],
@@ -3525,15 +3692,19 @@ sub lente_a11y {
                 next;
             }
             nv(lente=>'ACCESIBILIDAD', id=>$f->[0], titulo=>$f->[1],
-               dato=>'ninguna de las '.$form_cand.' paginas leidas trae un <form>',
+               dato=>'ninguna de las '.$form_cand.' paginas leidas trae un <form>'
+                     .($fjs->{nota} ? "; $fjs->{nota}" : ''),
                umbral=>'si el sitio tiene formulario, esto TIENE que medirse: es la unica conversion de la mayoria',
                proc=>'G8 - antes del 19-ago estas tres se saltaban en silencio cuando no habia --contacto',
-               hacer=>'si hay formulario y no sale aqui, pasar --contacto /ruta/ y volver a correr: el gate no lo esta viendo');
+               hacer=>($fjs->{nota}
+                   ? 'el <form> lo crea el JS: si su marcado va entero en una cadena (<form ...>...</form>) de un script que carga una pagina leida, este check lo mide solo; si no, abrirlo en el navegador y medirlo a mano'
+                   : 'si hay formulario y no sale aqui, pasar --contacto /ruta/ y volver a correr: el gate no lo esta viendo'));
         }
     }
     if ($formsrc =~ /<form\b/i) {
         my (@sin_ac, $honeypot_ok, $honeypot);
-        for my $inp ($formsrc =~ /(<input\b[^>]*>|<textarea\b[^>]*>)/gi) {
+        while ($formsrc =~ /(<input\b[^>]*>|<textarea\b[^>]*>)/gi) {
+            my ($inp, $en) = ($1, $-[0]);
             my $type = lc(attr($inp,'type') // 'text');
             next if $type =~ /^(hidden|submit|button|checkbox|radio)$/;
             my $name = lc(attr($inp,'name') // attr($inp,'id') // '');
@@ -3552,7 +3723,12 @@ sub lente_a11y {
                 || $inp =~ /tabindex=["']?-1/i
                 || ($inp =~ /style=["'][^"']*(display:\s*none|left:\s*-9)/i)) {
                 $honeypot = 1;
-                $honeypot_ok = 1 if $inp =~ /aria-hidden/i && $inp =~ /tabindex=["']?-1/i && $inp =~ /autocomplete=["']off/i;
+                # 5-nov-2026 · el aria-hidden vale en el campo o en un elemento
+                #   que lo contiene (`<p aria-hidden="true"><label>...<input>`):
+                #   el lector de pantalla no anuncia nada de lo que hay dentro.
+                #   Solo en el campo, ese cepo -bien hecho- salia AVISO.
+                $honeypot_ok = 1 if ($inp =~ /aria-hidden/i || ancestro_oculto($formsrc, $en))
+                                 && $inp =~ /tabindex=["']?-1/i && $inp =~ /autocomplete=["']off/i;
                 next;
             }
             next unless $name =~ /(nom|name|mail|tel|phone|apellido|surname|prenom)/;
@@ -3563,7 +3739,7 @@ sub lente_a11y {
                         umbral=>'given-name / family-name / email / tel en todo campo de identidad',
                         proc=>'G8 · WCAG 1.3.5 (AA) · lo hace bien site-c (3/3); site-a 18 campos sin el, site-d 3',
                         hacer=>'autocomplete="given-name|family-name|email|tel". Ahorra teclear en movil, que es donde llega el lead')
-                : pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-09', titulo=>'campos con autocomplete');
+                : pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-09', titulo=>'campos con autocomplete', donde=>$form_de);
 
         ($formsrc =~ /aria-live=|role=["']alert["']/i)
           ? pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-10', titulo=>'region viva para los errores del formulario',
@@ -3575,7 +3751,7 @@ sub lente_a11y {
                   hacer=>'quien no ve la pantalla no se entera de que el formulario ha fallado: se queda esperando');
 
         if ($honeypot) {
-            $honeypot_ok ? pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-11', titulo=>'honeypot accesible')
+            $honeypot_ok ? pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-11', titulo=>'honeypot accesible', donde=>$form_de)
                          : aviso(lente=>'ACCESIBILIDAD', id=>'A11Y-11', titulo=>'honeypot sin blindar para lector de pantalla',
                                  umbral=>'aria-hidden="true" + tabindex="-1" + autocomplete="off"',
                                  proc=>'buena practica sin documentar: la hacen TRES webs nuestras y no esta escrita en ningun sitio',
@@ -3733,7 +3909,7 @@ sub lente_medicion {
     #    miden en la home; pero el orden del consent y las casillas premarcadas
     #    son de CADA pagina, y aqui se miraba solo una. Se declara que mira que.
     alcance('MEDICION', [@vistas], undef,
-            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-09/10/11 la primera de las leidas con <form> (--contacto, las que nombran contacto, el resto; orden fijo, no el de la lista) · el contenedor y el consent default se buscan en el HTML Y en los scripts PROPIOS que carga cada pagina');
+            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-09/10/11 la primera de las leidas con <form> (--contacto, las que nombran contacto, el resto; orden fijo, no el de la lista) o, si ninguna, el <form> que escribe el JS de una de ellas · el contenedor y el consent default se buscan en el HTML Y en los scripts PROPIOS que carga cada pagina');
 
     # El contenedor: home primero, luego cada pagina; en cada una el HTML y sus
     # scripts propios. Gana el primer id REAL; un marcador de plantilla solo se
@@ -4400,6 +4576,15 @@ sub lente_medicion {
     #    funcion que usa ACCESIBILIDAD (22-sep, mas tarde): las dos lentes miden
     #    el mismo formulario, en un orden que no sale de la lista.
     my ($cu, $cb, $n_cand) = pagina_del_formulario();
+    # 5-nov-2026 · el formulario que escribe el JS de una pagina leida (ver
+    #   `formulario_del_js`). La pagina es la que lo carga, y su cuerpo va con el
+    #   marcado detras: sus scripts dan la guarda de doble envio (MED-11) y su
+    #   pie el enlace de privacidad (MED-09).
+    my $fjs = $cu eq '' ? formulario_del_js() : {};
+    if ($cu eq '' && $fjs->{marcado}) {
+        $cu = $fjs->{pagina};
+        $cb = $fjs->{cuerpo} . "\n" . $fjs->{marcado};
+    }
     if ($cu eq '') {
         my $sin = arbol_sin_formulario();
         for my $f (['MED-10', 'receptor del formulario'],
@@ -4412,16 +4597,42 @@ sub lente_medicion {
                 next;
             }
             nv(lente=>'MEDICION', id=>$f->[0], titulo=>$f->[1],
-               dato=>'ninguna de las '.$n_cand.' paginas leidas trae un <form>',
+               dato=>'ninguna de las '.$n_cand.' paginas leidas trae un <form>'
+                     .($fjs->{nota} ? "; $fjs->{nota}" : ''),
                umbral=>'si el sitio tiene formulario, esto TIENE que medirse: es por donde llegan los leads, y sus datos los que hay que purgar',
                proc=>'G8 · PC3 · antes del 22-sep estas tres se saltaban en silencio si la primera URL de la lista no tenia formulario',
-               hacer=>'si hay formulario y no sale aqui, pasar --contacto /ruta/ y volver a correr: el gate no lo esta viendo');
+               hacer=>($fjs->{nota}
+                   ? 'el <form> lo crea el JS: si su marcado va entero en una cadena (<form ...>...</form>) de un script que carga una pagina leida, este check lo mide solo; si no, abrirlo en el navegador y medirlo a mano'
+                   : 'si hay formulario y no sale aqui, pasar --contacto /ruta/ y volver a correr: el gate no lo esta viendo'));
         }
     }
     if ($cu ne '') {
         my ($fo) = $cb =~ /(<form\b[^>]*>)/i;
         my $act = attr($fo,'action');
-        if (!defined $act || $act eq '') {
+        # 5-nov-2026 · Un formulario que crea el JS no lleva action: lo envia su
+        #   manejador de submit con fetch. El destino se lee del JS (cadena, o el
+        #   valor del nombre que usa: `LEAD_ENDPOINT: '/api/lead'`) y se mide como
+        #   un action. Si no se resuelve, NO VERIFICADO con la expresion: un
+        #   «SIN action» seria acusarlo de algo que no puede tener.
+        my $via = '';
+        if ($fjs->{marcado} && (!defined $act || $act eq '')) {
+            my ($dest, $expr) = receptor_del_js($fjs->{txt}, $fjs->{todo});
+            if ($dest ne '') {
+                $act = $dest;
+                $via = "lo envia $fjs->{js} por JS".($expr =~ /^['"`]/ ? '' : " ($expr)").' · ';
+            } elsif ($expr ne '') {
+                nv(lente=>'MEDICION', id=>'MED-10', titulo=>'receptor del formulario',
+                   donde=>"$cu (el <form> lo crea $fjs->{js})",
+                   dato=>"lo envia el JS a «$expr», y su valor no esta escrito en los scripts de la pagina",
+                   umbral=>'no 404 · el destino del envio, medido',
+                   proc=>'5-nov-2026 · formulario creado por el JS: sin action, lo envia fetch',
+                   hacer=>'enviar una prueba desde la pagina y ver que llega al receptor; o escribir el destino como cadena en el JS para que se mida solo');
+                $act = undef; $via = 'NV';
+            }
+        }
+        if ($via eq 'NV') {
+            # ya dicho arriba
+        } elsif (!defined $act || $act eq '') {
             $cb =~ /mailto:/i
               ? fallo(lente=>'MEDICION', id=>'MED-10', titulo=>'formulario SIN action y con mailto',
                       donde=>$cu, umbral=>'action a un receptor propio', proc=>'qa-final.sh §4 (el fallo de Site A y el de BC)',
@@ -4453,7 +4664,7 @@ sub lente_medicion {
                         : '';
             if ($CAND_ON && $ejecuta) {
                 nv_cand(lente=>'MEDICION', id=>'MED-10', titulo=>'el receptor del formulario responde',
-                        donde=>$a, dato=>'medido contra el CANDIDATO: '.$ejecuta,
+                        donde=>$a, dato=>$via.'medido contra el CANDIDATO: '.$ejecuta,
                         motivo=>$ejecuta,
                         umbral=>'no 404 · y el metodo real es POST: un GET a un receptor bien puesto suele dar 405, que NO es un fallo',
                         proc=>'qa-final.sh §4 · site-a 11-ago-2026: el candidato daba 404 a /contact.php y produccion devuelve 405',
@@ -4462,8 +4673,8 @@ sub lente_medicion {
                 my $x = fetch($a);
                 $x->{code} == 404
                   ? fallo(lente=>'MEDICION', id=>'MED-10', titulo=>'el receptor del formulario devuelve 404',
-                          donde=>$a, umbral=>'no 404', proc=>'qa-final.sh §4', hacer=>'desplegar el receptor, o corregir el action')
-                  : pasa(lente=>'MEDICION', id=>'MED-10', titulo=>'receptor del formulario', donde=>$cu, dato=>"$a (HTTP $x->{code})");
+                          donde=>$a, dato=>$via, umbral=>'no 404', proc=>'qa-final.sh §4', hacer=>'desplegar el receptor, o corregir el action')
+                  : pasa(lente=>'MEDICION', id=>'MED-10', titulo=>'receptor del formulario', donde=>$cu, dato=>"$via$a (HTTP $x->{code})");
             }
         }
         # MED-11 · guarda de doble envio
@@ -4473,6 +4684,7 @@ sub lente_medicion {
             next unless is_internal($au); my $x = fetch($au); $js .= $x->{body} if $x->{code}==200;
         }
         $js .= $cb;
+        $js .= "\n$fjs->{todo}" if $fjs->{marcado};   # sus modulos importados: no tienen src
         ($js =~ /disabled\s*=\s*(true|!0)|\.disabled\s*=|enviando|sending|isSubmitting|aria-busy/i)
           ? pasa(lente=>'MEDICION', id=>'MED-11', titulo=>'guarda de doble envio', donde=>$cu)
           : fallo(lente=>'MEDICION', id=>'MED-11', titulo=>'sin guarda de doble envio',

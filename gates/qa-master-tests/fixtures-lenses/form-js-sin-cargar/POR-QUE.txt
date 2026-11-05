@@ -1,0 +1,4 @@
+# fixture: un .js con un formulario entero que NINGUNA pagina carga (5-nov-2026)
+# Un fichero que no se carga no recoge nada: medirlo seria aprobar lo que no se
+# sirve. Tiene que seguir NO VERIFICADO, y decir que el arbol lo crea en el JS
+# (/js/viejo.js) sin que una pagina leida traiga el marcado.

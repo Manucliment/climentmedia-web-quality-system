@@ -1,0 +1,9 @@
+# fixture: el formulario en un MODULO importado (5-nov-2026)
+# La pagina no tiene ningun <script src>: un <script type="module"> en linea
+# importa ./js/main.js, que importa ./ui/formulario.js (el <form>), que importa
+# ../config.js (el destino del envio). Es como carga su JS una tienda nuestra, y
+# con solo los src el gate leia 11 paginas y 0 formularios.
+# Tiene que salir: A11Y-09/10/11 y MED-11 PASA, y MED-10 NO VERIFICADO por
+# candidato con el destino resuelto (CONFIG.LEAD_ENDPOINT = /api/lead). El
+# `import 'lit'` es de un paquete y no se sigue; el import en varias lineas y el
+# `../` son a proposito.

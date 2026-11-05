@@ -1,0 +1,10 @@
+# fixture: el formulario que escribe el JS, MAL hecho (5-nov-2026)
+# El negativo de form-marcado-en-js/. Lo que TIENE que salir, y con el programa
+# de antes salia NO VERIFICADO las seis:
+#   A11Y-09 FALLO  nombre y correo sin autocomplete
+#   A11Y-10 FALLO  sin aria-live ni role=alert
+#   A11Y-11 AVISO  el cepo lleva tabindex y autocomplete pero NO esta oculto: el
+#                  <span aria-hidden="true"> va DELANTE y cerrado, no lo contiene
+#   MED-11  FALLO  el boton no se deshabilita mientras envia
+#   MED-10  NO VERIFICADO  fetch(window.DESTINO_LEADS) y ese nombre no tiene
+#                  valor escrito en ningun script: no se acusa de «SIN action»

@@ -2310,6 +2310,61 @@ espera "campo de correo creado en JS, sin <form>: tampoco" NOVERIF A11Y-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/campo-creado-en-js --candidato --una-sola --solo a11y --sin-recibo
 texto  "NO APLICA dice cuantas paginas leyo del arbol"     SI "0 <form> y 0 campos de escribir en sus 1 paginas" \
        perl $QA https://climentmedia.com --repo fixtures-lenses/arbol-sin-formulario --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 5-nov-2026 · EL FORMULARIO QUE ESCRIBE EL JS. Una tienda nuestra monta su
+#    formulario de leads en una cadena de su configurador, y sus paginas cargan el
+#    JS como modulos (`import ... from './js/configurator.js'` en un <script
+#    type="module"> en linea, sin un solo src). Las seis salian NO VERIFICADO en
+#    cada recibo con el formulario entero escrito delante. Ahora se lee el marcado
+#    de <form a </form> en el JS de la pagina, siguiendo sus import, y se mide con
+#    las mismas reglas. Los casos ROJOS (-pobre) salian NO VERIFICADO con el
+#    programa de antes: comprobado contra el. Y siguen NO VERIFICADO, diciendo por
+#    que, el createElement de arriba, el formulario a trozos y el .js que nadie carga.
+espera "form escrito en el JS, bien hecho: A11Y-09 PASA"   PASA    A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js --candidato --una-sola --solo a11y --sin-recibo
+espera "...A11Y-10 PASA (aria-live en la cadena)"          PASA    A11Y-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js --candidato --una-sola --solo a11y --sin-recibo
+espera "...A11Y-11 PASA (cepo dentro de un aria-hidden)"   PASA    A11Y-11 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js --candidato --una-sola --solo a11y --sin-recibo
+espera "...MED-11 PASA (el boton se deshabilita)"          PASA    MED-11 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js --candidato --una-sola --solo medicion --sin-recibo
+espera "...MED-09 PASA (la politica del pie)"              PASA    MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js --candidato --una-sola --solo medicion --sin-recibo
+texto  "...MED-10 lee el destino del JS, no el del primer fetch" SI "lo envia /js/app.js por JS (CONFIG.LEAD_ENDPOINT)" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js --candidato --una-sola --solo medicion --sin-recibo
+texto  "...y lo mide contra /api/lead"                     SI "https://climentmedia.com/api/lead" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js --candidato --una-sola --solo medicion --sin-recibo
+espera "form escrito en el JS, MAL: A11Y-09 FALLA"         FALLO   A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js-pobre --candidato --una-sola --solo a11y --sin-recibo
+espera "...A11Y-10 FALLA"                                  FALLO   A11Y-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js-pobre --candidato --una-sola --solo a11y --sin-recibo
+espera "...A11Y-11 AVISA (el aria-hidden va delante, cerrado)" AVISO A11Y-11 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js-pobre --candidato --una-sola --solo a11y --sin-recibo
+espera "...MED-11 FALLA"                                   FALLO   MED-11 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js-pobre --candidato --una-sola --solo medicion --sin-recibo
+espera "...MED-10 sin destino legible: NO VERIFICADO, no «SIN action»" NOVERIF MED-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js-pobre --candidato --una-sola --solo medicion --sin-recibo
+texto  "...y dice la expresion que no resolvio"            SI "«window.DESTINO_LEADS»" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-marcado-en-js-pobre --candidato --una-sola --solo medicion --sin-recibo
+espera "form en un MODULO importado (sin src): A11Y-09 PASA" PASA  A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-en-modulo --candidato --una-sola --solo a11y --sin-recibo
+espera "...MED-11 PASA (la guarda esta en el modulo)"      PASA    MED-11 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-en-modulo --candidato --una-sola --solo medicion --sin-recibo
+texto  "...y el destino sale de ../config.js"              SI "lo envia /js/ui/formulario.js por JS (CONFIG.LEAD_ENDPOINT)" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-en-modulo --candidato --una-sola --solo medicion --sin-recibo
+espera "un .js con form que NINGUNA pagina carga: sin verificar" NOVERIF A11Y-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-js-sin-cargar --candidato --una-sola --solo a11y --sin-recibo
+texto  "...y dice cual"                                    SI "el arbol lo crea en el JS (/js/viejo.js)" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-js-sin-cargar --candidato --una-sola --solo a11y --sin-recibo
+espera "form a trozos (sin su </form>): sin verificar"     NOVERIF MED-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-js-a-trozos --candidato --una-sola --solo medicion --sin-recibo
+texto  "...y dice que va a trozos"                         SI "/app.js trae un <form> sin su </form> en el mismo texto" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/form-js-a-trozos --candidato --una-sola --solo medicion --sin-recibo
+# El cepo dentro de un <p aria-hidden="true"> esta oculto al lector igual que si
+# lo llevara el campo. Con el programa de antes salia AVISO en un formulario
+# SERVIDO: el arreglo no es solo del JS. Su negativo es el -pobre de arriba: el
+# aria-hidden de un <span> cerrado antes del campo no lo oculta, y sigue AVISO.
+espera "cepo dentro de un bloque aria-hidden: A11Y-11 PASA" PASA   A11Y-11 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/cepo-dentro-de-oculto --candidato --una-sola --solo a11y --sin-recibo
 espera "REN-03 · una <img> sin dimensiones, FALLA"    FALLO REN-03 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/ren-pobre --candidato --una-sola --solo rendimiento --sin-recibo
 espera "REN-03 · con width y height, PASA"            PASA  REN-03 \
