@@ -161,12 +161,16 @@
     // tiene 2 o mas hijos DIRECTOS que son secciones (<section>, <article> o
     // [data-sec]). Asi una <section> sola llena de tarjetas -f4, doce unidades en
     // cinco pantallas- sigue siendo un bloque y sigue cayendo por el tope.
-    const visibles = el => [...el.children].filter(c => c.getBoundingClientRect().height > 40);
     const esSeccion = c => /^(SECTION|ARTICLE)$/.test(c.tagName) || c.hasAttribute('data-sec');
-    const deMain = visibles(main);
-    const envoltorio = deMain.length === 1 && !esSeccion(deMain[0]) &&
-                       [...deMain[0].children].filter(esSeccion).length >= 2;
-    const hijosReales = (envoltorio ? [...deMain[0].children] : [...main.children]).flatMap(c =>
+    // 🔴 5-nov-2026 · Y CON UN HERMANO. La misma ficha con un bloque de texto propio
+    // al lado (<main><div id="product">…</div><section>…</section></main>, fuera
+    // del envoltorio para que la hidratacion no lo pise) volvia a dar UN bloque de
+    // 3,4 pantallas a 1298: la regla exigia que el envoltorio fuera el UNICO hijo de
+    // <main>. Lo que hace envoltorio a un hijo es no ser seccion y tener 2 o mas
+    // secciones directas, no estar solo: se baja un nivel en CADA hijo asi. Una
+    // <section> sola llena de tarjetas sigue siendo un bloque (f4, f20, f22).
+    const esEnvoltorio = c => !esSeccion(c) && [...c.children].filter(esSeccion).length >= 2;
+    const hijosReales = [...main.children].flatMap(c => esEnvoltorio(c) ? [...c.children] : [c]).flatMap(c =>
       (!c.hasAttribute('data-sec') && c.querySelectorAll('[data-sec]').length >= 2)
         ? [...c.children] : [c]);
     const bloques = hijosReales

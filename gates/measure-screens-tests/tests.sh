@@ -102,6 +102,8 @@ espera f4-seccion-gigante.html FALLA "limite del contenedor"         "doce unida
 # 3-nov-2026 · bajar a un envoltorio no puede apagar el tope: el mismo <div id="product">
 # que f19, con doce unidades en una seccion, sigue cayendo por su hijo.
 espera f20-envoltorio-con-seccion-gigante.html FALLA "limite del contenedor" "envoltorio con una seccion gigante dentro"
+# 5-nov-2026 · y con un hermano al lado del envoltorio, igual: sigue cayendo por su hijo.
+espera f22-envoltorio-con-hermano-y-seccion-gigante.html FALLA "limite del contenedor" "envoltorio con hermano y seccion gigante"
 # 20-ago-2026 (07-trampas §66). f8 y f9 llevan EXACTAMENTE el mismo texto
 # visible: lo unico que cambia es si la pregunta es <p> o <h3>. Si alguien
 # mete <p> en la lista de PARADA, f8 se pone verde y este par lo canta.
@@ -123,6 +125,9 @@ espera f10-cita-en-medio.html  PASA  ""                              "una cita e
 # un contenedor dentro). El tope de 3 pantallas es para una seccion, no para la pagina.
 # Visto en ROJO contra el gate anterior: «limite del contenedor».
 espera f19-envoltorio-de-ficha.html PASA ""                          "un envoltorio de toda la ficha no es una seccion"
+# 5-nov-2026 · la misma ficha con su bloque de texto propio FUERA del envoltorio (una ficha
+# real cuya hidratacion pisaria lo de dentro). Visto en ROJO contra la regla del 3-nov.
+espera f21-envoltorio-con-hermano.html PASA ""                        "el envoltorio no deja de serlo por tener un hermano"
 
 # 19-ago-2026 - EL LIMITE DE ALTURA CUENTA PALABRAS. Antes era un 6 fijo anclado
 #   a una portada de 206 palabras, y por eso suspendia a la pagina MAS DENSA del
