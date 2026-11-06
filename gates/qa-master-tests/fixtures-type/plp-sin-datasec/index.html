@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listado de productos | Fixture de un plp sin data-sec</title>
+<meta name="description" content="Fixture de la bateria: un listado de tienda que declara data-tipo=plp y no marca sus secciones. plp no tiene anatomia medida: no hay roles que declarar.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- 6-nov-2026 · un tipo sin anatomia medida (EST-02e) no tiene roles contra los que
+     medir data-sec. Contarlo en EST-02 dejaba el sitio en NO VERIFICADO por una
+     comprobacion que no existe para ese tipo. EST-02e lo sigue diciendo. -->
+<main data-tipo="plp">
+  <section><h1>Todos los productos</h1><p>Un listado de mentira para el banco.</p></section>
+  <section><h2>Productos</h2><ul><li><a href="/p/uno/">Uno</a></li><li><a href="/p/dos/">Dos</a></li></ul></section>
+</main>
+</body>
+</html>

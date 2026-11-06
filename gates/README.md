@@ -483,7 +483,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Twenty-three more since 2026-11-05**, all from one week of real deploys:
+**Thirty-one more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -654,6 +654,42 @@ without blocking. Why the order changed is trap §89.
   tree is checked: an `AW-` id, `googleadservices.com` or `googleads.g.doubleclick.net` outside a
   comment makes it a FAIL. And a signature made on a DATO no longer counts for a check that
   carries none today, so the day the line is removed the GA4 signature stops counting by itself.
+- **The cookie banner is measured before the upload (`banner-probe.js`, step 1-quater).** It
+  only measured what was online, so a change that lost the way to reopen the banner was seen
+  after the upload. It now runs on the candidate's home page at 1298 and 390, served by the same
+  function as the other gates, and only warns until `BANNER_GATE=para`. No probe counts as a
+  visit any more (the consent counter and GA4 hits are aborted, and counted), and a menu that
+  "does not open" on a loaded host is measured once more, with the load next to it.
+- **The home page of a language needs no breadcrumb (`linking-gate.pl`, R6).** `/es/` is one
+  click from the root, so a site in two languages warned on every upload. A one-segment page
+  that is an hreflang version of the root is left out; an inner page of the language still warns.
+- **`d057.pl` stops filling the door's output, and reads the owner where it is written.** A row
+  of a table outside `_seo/BASE.md` printed a Perl warning per row; and "espera X" anywhere in
+  the Estado cell made an owner of "espera la". Only at the start of the cell now.
+- **One visible variant price is enough for a `ProductGroup` (`page-type-gate.pl`, PT-06).** A
+  shop whose variants carry their own URL and price shows the selected one; PT-06 asked for all
+  of them on one page. A group with none visible still fails, and a plain `Product` is still
+  checked offer by offer.
+- **Four false findings on a hosted shop theme (`qa-master.pl`).** A 200 with an HTML page on
+  `/.env` or `/.git/HEAD` is the host's catch-all page, not the file (MED-12); `data-tipo` takes
+  the types and aliases of `page-types.tsv`, and a type with no anatomy says so (EST-02d, the new
+  EST-02e); Portuguese number words count as a deadline (MED-09); a `data-*` read through a
+  constant counts as read (MED-05).
+- **Contrast over a CSS gradient is measured, and compared unrounded (`structure-gate.js`).** A
+  gradient counted as a photo: a white-on-green lead button at 2.1:1 went through the door. The
+  gate now reads the colour under the text on the gradient line, and 4.495 no longer prints 4.50
+  and passes.
+- **The header, the breadcrumb and the footer are measured too, opacity included
+  (`structure-gate.js`, `deploy.sh`).** Nothing measured text outside `<main>`, and the gate
+  ignored opacity: a breadcrumb read 13.9:1 where the eye sees 3.6:1. The chrome is measured
+  with the same rule, apart from the verdict; the door prints it as an `aviso:` line, and it
+  stops the upload once `CROMO_GATE=para`.
+- **A legal page is prose, not a page without roles (`qa-master.pl`, EST-02f).** `anatomy.tsv`
+  gives legal and 404 no roles, and EST-02 counted a legal page without `data-sec` as undeclared,
+  so no site with legal pages could close it; marked with a role to get out, EST-02c called it
+  complete. Neither counts them now, and EST-02f says how many. A type with no anatomy and no
+  `data-sec` is out of EST-02 too (EST-02e names it); a service page without it is still NOT
+  VERIFIED.
 
 ---
 

@@ -2307,6 +2307,29 @@ texto  "data-tipo · un alias (preguntas) es su tipo"   SI "tipos: faq x1" \
 espera "data-tipo · un tipo CON anatomia no avisa"     AUSENTE EST-02e \
        perl $QA https://climentmedia.com --repo fixtures-type/declarado --candidato --una-sola --solo estructura --sin-recibo
 
+# 🔴 6-nov-2026 · UNA LEGAL NO TIENE ROLES, Y EST-02 SE LOS PEDIA. anatomy.tsv da 0
+#    roles a legal y a 404 (09 §2.11: prosa a proposito), y EST-02 contaba una legal sin
+#    data-sec como «no declara data-sec»: el sitio entero quedaba en NO VERIFICADO y
+#    ninguna web con legales podia cerrarlo. Cuatro webs marcaban su prosa legal con
+#    data-sec="contexto" («quien hay detras») para esquivarlo, y entonces EST-02c la
+#    daba por «anatomia completa»: un 0 de 0 · PASA. Ahora legal y 404 no cuentan en
+#    EST-02 ni en EST-02c, y lo dice EST-02f. Un tipo sin anatomia medida (plp) sin
+#    data-sec tampoco cuenta: no hay roles contra los que medirlo, y EST-02e lo dice.
+#    La frontera: una pagina de servicio sin data-sec sigue en NO VERIFICADO (est-02b).
+espera "EST-02 · una legal sin data-sec no lo deja abierto" AUSENTE EST-02 \
+       perl $QA https://climentmedia.com --repo fixtures-type/legal-prosa --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-02f · y dice que no hay roles que declarar"    PASA EST-02f \
+       perl $QA https://climentmedia.com --repo fixtures-type/legal-prosa --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-02c · una legal con roles no es un 0 de 0"     AUSENTE EST-02c \
+       perl $QA https://climentmedia.com --repo fixtures-type/legal-con-roles --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-02f · y la cuenta como prosa"                  PASA EST-02f \
+       perl $QA https://climentmedia.com --repo fixtures-type/legal-con-roles --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-02 · un plp sin data-sec no lo deja abierto"   AUSENTE EST-02 \
+       perl $QA https://climentmedia.com --repo fixtures-type/plp-sin-datasec --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-02e · y el plp sigue a la vista"               AVISO EST-02e \
+       perl $QA https://climentmedia.com --repo fixtures-type/plp-sin-datasec --candidato --una-sola --solo estructura --sin-recibo
+espera "EST-02 · un servicio sin data-sec SIGUE abierto"   NOVERIF EST-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/est-02b --candidato --una-sola --solo estructura --sin-recibo
 echo
 echo "== LOS TIPOS nosotros Y empleo (09 §2.13 y §2.14) · 26-sep-2026"
 # 🔴 EL HUECO: una «a propos» y una pagina de empleo no tenian tipo. Sin

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aviso legal | Fixture de una legal sin roles</title>
+<meta name="description" content="Fixture de la bateria: una pagina legal que declara su tipo y es prosa, sin data-sec, como pide 09 §2.11. No hay roles que declarar.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- 6-nov-2026 · 09 §2.11: una legal es prosa a proposito, sin anatomia y sin CTAs.
+     anatomy.tsv le da 0 roles. Sin data-sec, EST-02 la contaba como «no declara
+     data-sec» y dejaba el sitio entero en NO VERIFICADO: ninguna web con legales
+     llegaba a cerrarlo. Esta en la RAIZ, que se inferiria «home». -->
+<main data-tipo="legal">
+  <h1>Aviso legal</h1>
+  <p>Titular del sitio: una empresa de mentira para el banco de pruebas.</p>
+  <h2>Condiciones de uso</h2>
+  <p>El uso de este sitio implica aceptar estas condiciones, que no existen.</p>
+  <h2>Responsabilidad</h2>
+  <p>Nada de lo que hay aqui es verdad: es un fixture.</p>
+</main>
+</body>
+</html>

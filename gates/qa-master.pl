@@ -5583,6 +5583,7 @@ sub lente_estructura {
     my @vistas = @PAGES;
     my (@sin_sec, @sin_datasec, @anat_mal, @heur, %tipos, $con_datasec, @no_leidas, @leidas_est);
     my $datasec_sin_anat = 0;   # paginas con data-sec y un tipo sin anatomia (EST-02e)
+    my @prosa_sin_roles;        # legal y 404: 0 roles en anatomy.tsv (EST-02f)
     my (@drop_pobres, @drop_rotos, $drop_mirados);
     my (@sin_pie, @pie_sin_legal, @nap_discrepa, @sin_autoria, @autoria_marca, %anclas_autoria);
     my (@legales_pagina, @capta_por);   # EST-12b: [pagina, n legales] y lo que delata que capta
@@ -5681,7 +5682,20 @@ sub lente_estructura {
         push @sin_sec, "$p ($ns <section>, tipo $tp)" if $tp !~ /^(legal|404|gracias)$/ && $ns < 2;
 
         my @secs = $mp =~ /data-sec\s*=\s*["']([a-z-]+)["']/gi;
-        if (!@secs) {
+        # 🔴 6-nov-2026 · UNA LEGAL NO TIENE ROLES, Y EST-02 SE LOS PEDIA. anatomy.tsv da 0
+        #    roles a legal y a 404 (09 §2.11: prosa a proposito). Sin data-sec, una legal
+        #    entraba en @sin_datasec y dejaba el sitio entero en NO VERIFICADO: ninguna
+        #    web con legales podia cerrarlo, y cuatro marcaban su prosa legal con
+        #    data-sec="contexto" («quien hay detras») para esquivarlo. Con data-sec,
+        #    EST-02c la daba por «anatomia completa»: un 0 de 0 · PASA. Ni una cosa ni la
+        #    otra: no cuenta en EST-02 ni en EST-02c, y EST-02f dice cuantas son.
+        #    Un tipo sin anatomia medida (plp, faq) sin data-sec tampoco cuenta en EST-02:
+        #    no hay roles contra los que medirlo, y EST-02e ya lo dice a la vista.
+        if (exists $ANATOMIA{$tp} && !@{$ANATOMIA{$tp}}) {
+            push @prosa_sin_roles, "$p ($tp".(@secs ? ', con data-sec' : '').')';
+        } elsif (!@secs && $TIPO_SIN_ANAT{$tp}) {
+            # fuera de EST-02; EST-02e la nombra
+        } elsif (!@secs) {
             push @sin_datasec, $p;
             my $need = scalar @{$ANATOMIA{$tp} // []};
             push @heur, "$p ($ns <section> para $need roles OBL de «$tp»)" if $need && $ns < $need;
@@ -5769,7 +5783,7 @@ sub lente_estructura {
            donde=>join(' · ', @sin_datasec[0..($#sin_datasec>2?2:$#sin_datasec)]),
            ev=>[@sin_datasec],
            dato=>scalar(@sin_datasec).' de '.scalar(@vistas).' paginas no declaran data-sec · tipos: '.$resumen_tipos,
-           umbral=>'cada seccion con data-sec="<rol>", y los roles OBL del tipo de CADA pagina (09 §2)',
+           umbral=>'cada seccion con data-sec="<rol>", y los roles OBL del tipo de CADA pagina (09 §2) · legal y 404 no cuentan (EST-02f), ni un tipo sin anatomia (EST-02e)',
            proc=>'X2/PC4 · 09 §1 lo EXIGE: sin data-sec, la comprobacion 2 de las 7 de 09 §7 (anatomia por rol) no se puede hacer en estas paginas',
            hacer=>'el contrato esta decidido: el generador del sitio escribe data-sec="<rol>" en cada seccion, con los roles de 09 §2, como ya hacen casi todas nuestras webs. Se anade en el generador (un atributo por seccion), no a mano en el HTML. Mientras falte, EST-02b es solo una heuristica y no un aprobado');
         # sustituto honesto, marcado como heuristica: cuenta secciones contra roles
@@ -5791,6 +5805,15 @@ sub lente_estructura {
                   : pasa(lente=>'ESTRUCTURA', id=>'EST-02c', titulo=>'anatomia completa en las paginas que declaran data-sec',
                          dato=>"$con_datasec pagina(s) con data-sec juzgada(s)" . ($datasec_sin_anat ? " · $datasec_sin_anat de un tipo sin anatomia, fuera (EST-02e)" : ''));
     }
+    # EST-02f · legal y 404 son prosa (09 §2.11): 0 roles, nada que declarar ni que juzgar.
+    # Una linea propia, y no un silencio: una pagina que no cuenta en ningun sitio se lee
+    # como un aprobado. Con data-sec se dice tambien: sus roles no significan nada aqui.
+    @prosa_sin_roles and pasa(lente=>'ESTRUCTURA', id=>'EST-02f',
+          titulo=>'NO APLICA: legal y 404 son prosa, sin roles que declarar (09 §2.11)',
+          donde=>join("\n                 ", @prosa_sin_roles[0..($#prosa_sin_roles>3?3:$#prosa_sin_roles)]),
+          ev=>[@prosa_sin_roles],
+          dato=>scalar(@prosa_sin_roles).' pagina(s) fuera de EST-02 y EST-02c'
+                .((grep { /con data-sec\)$/ } @prosa_sin_roles) ? ' · '.scalar(grep { /con data-sec\)$/ } @prosa_sin_roles).' con data-sec, que aqui no significa nada' : ''));
 
     # ── EST-10 · un desplegable con menos de 3 destinos no es un desplegable ──
     # El umbral es 3 y no 2 a proposito: con dos entradas, el desplegable cuesta
