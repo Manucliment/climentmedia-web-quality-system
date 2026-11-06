@@ -399,8 +399,9 @@ perl gates/audit-vs-spec.pl --mode greenfield --repo <site-repo>
 
 ## Step 11b · MIGRATION — moving a URL, a domain, or retiring the old CMS
 
-Four things that have each taken a live site down. None of them shows up in a gate that
-measures the new site, because the damage is on the old side.
+Four things that have each taken a live site down, and the way to retire a whole old site.
+None of them shows up in a gate that measures the new site, because the damage is on the
+old side.
 
 - **WHO ELSE WROTE AT THAT URL** · A CMS URL is its HTML **plus** whatever the CMS attaches
   to it: schema from a plugin, a rewrite rule in `.htaccess`, a per-page script, the endpoint
@@ -434,6 +435,25 @@ measures the new site, because the damage is on the old side.
   touched; a blocking `wp-config.php` **one level above** the docroot; and watch it.
   `GATE · ` `/wp-login.php`, `/wp-admin/install.php` and `/xmlrpc.php` return 404 two hours
   later and again the next day.
+- **RETIRING A WHOLE OLD SITE** · Retiring is the owner's call, because it cannot be
+  undone; the steps after that are yours. The old site goes through the door like any
+  other tree, only the tree redirects:
+  1. the inventory is two lists, not one: every URL in the old sitemaps, and every URL
+     with impressions in Search Console over the last 90 days (old pages keep impressions
+     long after they leave a sitemap);
+  2. the map is a file in the repo, one row per path to its equivalent page on the new
+     site; the home page is only for what has no equivalent;
+  3. the tree is a `robots.txt` and an `.htaccess` (the mapped paths, then one catch-all
+     last), declared `ARBOL=redirecciones` in `deploy.conf`;
+  4. `redirects-gate.pl --candidate` simulates the rules in order and asks every target
+     for its 200, and the door, after the upload, asks the old domain itself.
+  When the host takes no files and only offers per-URL redirects in its panel or API, the
+  gate cannot see them: create them in batches, list them back (as many listed as rows in
+  the map), and measure every row from outside. Those redirects cover only the paths you
+  gave them: anything else on the old domain answers whatever the host answers.
+  `GATE · ` `redirects-gate.pl --candidate` and the door (step 4-ter, `--served`). With
+  per-URL redirects: `NO GATE — method:` `curl -s -o /dev/null -w '%{http_code} %{redirect_url}'`
+  (without `-L`) for every row of the map: a 301, to the map's target, and that target 200.
 - **IF YOU SKIP IT** · Each of these has already happened, and each looked fine from the new
   site: the leads stopped, or the old domain stopped resolving, or a login screen came back.
 
