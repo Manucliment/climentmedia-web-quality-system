@@ -64,6 +64,15 @@ criterion so it can be argued with the standard open, not with an opinion.
 measurable** (text over a photo or a gradient) and **1,094 skipped as invisible.** Read §4
 before using any of these numbers.
 
+> **6-nov-2026 · a CSS gradient is no longer "not measurable".** Its colours are in the CSS.
+> `structure-gate.js` now reads the gradient under the text: on a `linear-gradient`, the colour
+> at 9 points of the text's own box, placed on the gradient line; on radial, conic, repeating,
+> fixed or sized layers, the worst of its stops. Layers stack in paint order, and the **worst**
+> point is the verdict, not the median. Only a `url()` (or a layer it cannot read, or text
+> painted by its own background) stays NOT MEASURED. The ratio is also compared unrounded:
+> 4.497:1 used to print 4.50 and pass. What slipped through before this: a white-on-green
+> WhatsApp button at 2.1:1, on a lead CTA.
+
 ---
 
 ## 2 · The failure that is worth all the others: ONE token, not 136 pages

@@ -122,6 +122,30 @@ echo "=========== CONTRASTE · control positivo Y negativo en la misma pagina ==
 # verde no prueba nada.
 res C1-contraste contrast-control.html https://climentmedia.com/control-contraste/                 '{"tipo":"guia"}'            FALLA
 echo
+echo "=========== CONTRASTE SOBRE UN DEGRADADO DE CSS (6-nov-2026) ==="
+# Un degradado ya no es una foto: se mide el color que cae debajo del texto.
+# 3 que DEBEN fallar (verde claro de WhatsApp; el que solo falla a un lado; un
+# azul plano a 4,4973:1 que redondeado daba 4,50), 6 que deben pasar MIDIENDOSE
+# (verde oscuro; banda partida; tarjeta sobre seccion oscura; dos capas con velo;
+# un verde plano a 4,5004:1) y 2 que siguen NO MEDIBLES (letra pintada por su
+# degradado; una url()). Se cuentan los tres numeros, no el veredicto: un FALLA
+# por otra regla no prueba nada de esta. Rojos vistos el 6-nov: el gate viejo
+# (SobreFoto=9, sin Fallan), el peor color de las paradas (Fallan=5), solo el
+# punto del centro (2), las capas apiladas al reves (5), redondear antes de
+# comparar (2) y comparar con <= (4).
+cuenta(){
+  local id="$1" f="$2" esp="$3" j obt
+  j=$("$D/run-gate.sh" "$id" "$D/$f" - '{"tipo":"guia"}' 2>/dev/null)
+  if ! printf '%s' "$j" | grep -q '"innerWidth"'; then
+    MAL=$((MAL+1)); printf "  REVISAR %-16s el gate no ha corrido (sin innerWidth)\n" "$id"; return
+  fi
+  obt=$(printf '%s' "$j" | grep -o '"contraste\(SobreFoto\|SobreDegradado\|Fallan\)": *[0-9]*' \
+        | sed 's/"contraste//; s/": */=/' | tr '\n' ' ' | sed 's/ $//')
+  if [ "$obt" = "$esp" ]; then OK=$((OK+1)); printf "  OK      %-16s %s\n" "$id" "$obt";
+  else MAL=$((MAL+1)); printf "  REVISAR %-16s %s y se esperaba %s\n" "$id" "${obt:-(nada)}" "$esp"; fi
+}
+cuenta G1-degradado contrast-gradient.html "SobreFoto=2 SobreDegradado=7 Fallan=3"
+echo
 echo "=========== FRONTERA (textual legitima: NO acusar) ======"
 # 27-oct-2026 · la legal es la privacidad de una web propia (la de site-d no se publica), congelada con su CSS.
 res F1-legal     own-legal.html           https://manucliment.com/privacy/                          '{}'                         PASA

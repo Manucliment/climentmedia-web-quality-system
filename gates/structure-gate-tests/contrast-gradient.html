@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control de CONTRASTE sobre DEGRADADO — ratios conocidos</title>
+<style>
+body{margin:0;background:#fff;color:#16181d;font:400 17px/1.6 system-ui,sans-serif}
+main{max-width:1120px;margin-inline:auto;padding:2rem}
+section{margin-block:2rem}
+.btn{display:inline-block;padding:.8rem 1.4rem;border-radius:999px;font-weight:600;text-decoration:none}
+
+/* ---- LOS QUE DEBEN FALLAR (2) ---- */
+/* blanco sobre un verde claro de WhatsApp: ~2:1 en todo el boton */
+.malo-wa     {background:linear-gradient(135deg,#2bd36e 0%,#25d366 100%);color:#fff}
+/* tinta #333 sobre blanco -> #555 de izquierda a derecha: en el centro pasa (5,4:1),
+   a la derecha no (~2:1). Mide el PEOR punto, no el del medio. */
+.malo-lado   {background:linear-gradient(90deg,#fff,#555);color:#333;padding:1rem}
+
+/* ---- LOS QUE DEBEN PASAR, Y SE MIDEN (5) ---- */
+/* blanco sobre un verde oscuro */
+.ok-wa       {background:linear-gradient(135deg,#0b5d2a,#06401c);color:#fff}
+/* banda partida: arriba negro, abajo blanco. El texto blanco esta solo en la mitad de
+   arriba y el oscuro solo en la de abajo. El peor COLOR de las paradas acusaria a los dos. */
+.banda       {height:260px;position:relative;
+              background:linear-gradient(to bottom,#111 0%,#111 50%,#fff 50%,#fff 100%)}
+.banda .arriba{position:absolute;top:16px;left:16px;margin:0;color:#fff}
+.banda .abajo {position:absolute;bottom:16px;left:16px;margin:0;color:#16181d}
+/* tarjeta casi blanca encima de una seccion oscura: se apila en su orden */
+.oscura      {background:linear-gradient(160deg,#0f172a,#1e293b);padding:2rem}
+.tarjeta     {background:rgba(255,255,255,.92);color:#16181d;padding:1rem;margin:0}
+/* dos capas: un velo negro al 60 % encima de un magenta -> cian. Sin el velo, blanco sobre
+   cian no llega a 1,3:1; con el velo pasa en todo el ancho. */
+.velo        {background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.6)),linear-gradient(90deg,#f0f,#0ff);
+              color:#fff;padding:1rem}
+
+/* ---- EL REDONDEO (color plano, 1 que falla y 1 que pasa) ----
+   #0180aa sobre blanco = 4,4973:1, que con dos decimales «es» 4,50 y pasaba. #068a22 = 4,5004:1. */
+.malo-redondeo{color:#0180aa}
+.ok-justo    {color:#068a22}
+
+/* ---- NO MEDIBLES (2): se cuentan aparte, no se aprueban ni se acusan ---- */
+.letra-degr  {background:linear-gradient(90deg,#ff5c00,#ffb800);-webkit-background-clip:text;
+              background-clip:text;color:transparent;font-size:20px;font-weight:700}
+.foto        {background:#777 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23888'/%3E%3C/svg%3E");
+              color:#fff;padding:1rem}
+</style>
+</head>
+<body>
+<nav><a href="/">Inicio</a></nav>
+<main>
+<section>
+  <h1>Control de contraste sobre degradado</h1>
+  <p><a class="btn malo-wa" href="https://wa.me/">FALLA escribenos por WhatsApp</a></p>
+  <div class="malo-lado">FALLA tinta 333 sobre un degradado de blanco a 555 de izquierda a derecha. En el centro
+    el fondo es aaa y pasa con 5,4:1, pero a la derecha el fondo llega a 555 y la letra se queda en 2:1. Esta
+    frase es larga a proposito, para que sus lineas lleguen de un lado al otro de la caja.</div>
+</section>
+<section>
+  <p><a class="btn ok-wa" href="https://wa.me/">PASA blanco sobre verde oscuro</a></p>
+  <div class="banda">
+    <p class="arriba">PASA blanco en la mitad negra de la banda</p>
+    <p class="abajo">PASA tinta en la mitad blanca de la banda</p>
+  </div>
+  <div class="oscura"><p class="tarjeta">PASA tinta en una tarjeta casi blanca sobre la seccion oscura.</p></div>
+  <div class="velo">PASA blanco sobre el velo negro que tapa el magenta y el cian, de un lado al otro de la caja.</div>
+</section>
+<section>
+  <p class="malo-redondeo">FALLA azul 0180aa sobre blanco, a 4,4973:1: redondeado daria 4,50.</p>
+  <p class="ok-justo">PASA verde 068a22 sobre blanco, a 4,5004:1: justo en el minimo.</p>
+</section>
+<section>
+  <p class="letra-degr">NO MEDIBLE letra pintada por su degradado</p>
+  <div class="foto">NO MEDIBLE blanco sobre una imagen</div>
+</section>
+</main>
+<footer><a href="/legal/">Aviso legal</a></footer>
+</body>
+</html>

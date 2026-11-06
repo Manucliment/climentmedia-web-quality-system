@@ -85,7 +85,19 @@ prove the gate sees two defects it used to miss.
   returns `oklch(...)` rather than `rgb(...)`: without resolving the colour first, the rule
   measures nonsense. Two values are pinned to published references (`#999999` = 2.85:1 and
   `#6b7280` = 4.83:1, Tailwind's gray-500) so it is visible that the arithmetic is WCAG's and
-  not somebody's own.
+  not somebody's own. Its "not measurable" case is a `url()` image since 6-nov-2026: a gradient
+  is measured now (next item).
+- **`contrast-gradient.html`** (6-nov-2026) is text over CSS gradients, with the counts
+  asserted, not the verdict: `SobreFoto=2 SobreDegradado=7 Fallan=3`. Three must fail (a
+  light-green WhatsApp button at ~2:1; dark text that only fails at one end of a left-to-right
+  gradient; a flat `#0180aa` at 4.4973:1, which rounded to two decimals used to pass), six must
+  pass while being measured (a split band whose white text sits only on the black half; a card
+  over a dark section; a black veil over a magenta-to-cyan layer; a flat `#068a22` at
+  4.5004:1…), and two stay NOT MEASURED (text painted by its own gradient; a `url()`). Seen red
+  against the old gate and five mutants: worst stop instead of the colour under the text,
+  centre point only, layers stacked upside down, rounding before comparing, and `<=`.
+  **Not done:** the moulds' own contrast bench (`measure-layout.js`) still counts a gradient as
+  an image. The verdict at the door is this gate's.
 
 ## The gates on the MOULDS
 

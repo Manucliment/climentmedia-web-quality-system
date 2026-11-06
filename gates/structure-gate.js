@@ -933,26 +933,191 @@ const componer = (frente, fondo) => ({
 const luminancia = c => { const f = x => x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
                           return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
 const contraste = (a, b) => { const L1 = luminancia(a), L2 = luminancia(b);
-                              return +((Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05)).toFixed(2); };
+                              return (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05); };
+// 🔴 6-nov-2026 · SIN REDONDEAR ANTES DE COMPARAR. Devolvia toFixed(2): todo lo que cae entre
+// 4,495 y 4,4999 salia 4,5 y pasaba el minimo de 4,5, y WCAG no deja redondear hacia arriba. Se vio
+// al cuadrar un antetitulo de hero: 4,504 aqui y 4,49 en un detector de fuera (esa diferencia era el
+// sitio del texto en el degradado, no esto; el agujero estaba igual). Se compara el valor entero; al
+// informe va truncado (4,49), nunca subido. Banco: .malo-redondeo y .ok-justo de contrast-gradient.html.
+const dosDec = x => Math.floor(x * 100) / 100;
 
-// Fondo efectivo: se sube apilando fondos translucidos hasta el primero opaco.
-// Si por el camino hay imagen o degradado, NO ES MEDIBLE — y no medible NO es
-// aprobado: se cuenta aparte y se dice.
-function fondoDe (el) {
-  const pila = [];
+/* 🔴 6-nov-2026 · UN DEGRADADO DE CSS NO ES UNA FOTO: SUS COLORES ESTAN EN EL CSS.
+ * Hasta hoy cualquier background-image contaba como foto: NO MEDIBLE, una nota y
+ * no un FALLO. Por ahi pasaron la puerta un boton de WhatsApp blanco sobre verde
+ * a 2,1:1 (un CTA del lead) y un antetitulo a 4,49:1 sobre el degradado del hero,
+ * en las 5 paginas de una web. Lo vio un detector de fuera, no la puerta.
+ * Ahora se lee el degradado: en un linear-gradient, el color que cae debajo del
+ * texto (9 puntos de la caja del texto, en su sitio de la linea del degradado);
+ * en radial, conic, repeating, fixed o con un tamano propio, el peor de sus
+ * colores. Se apila como un fondo mas (capas de arriba abajo, sobre el color de
+ * fondo y los de debajo) y se queda el PEOR punto, no la media.
+ * Sigue siendo NO MEDIBLE: una url() (o image-set, o lo que no se sabe leer) y
+ * el texto pintado con su fondo (background-clip:text, o un relleno transparente).
+ * Banco: structure-gate-tests/contrast-gradient.html (y sus mutantes, en el README). */
+function trocear (s) {                 // comas de nivel 0: las de rgb(...) no cortan
+  const out = []; let d = 0, cur = '';
+  for (const ch of s) {
+    if (ch === '(') d++; else if (ch === ')') d--;
+    if (ch === ',' && d === 0) { out.push(cur.trim()); cur = ''; } else cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+// Una parada «color [pos [pos]]» -> { c, pos:[...], raras } o null si no empieza por un color.
+function leerParada (arg) {
+  const m = arg.match(/^([a-z-]+\([^()]*\)|#[0-9a-f]{3,8}\b|[a-z]+\b)\s*(.*)$/i);
+  if (!m) return null;
+  const c = aSRGB(m[1]); if (!c) return null;
+  const pos = m[2] ? m[2].trim().split(/\s+/) : [];
+  return { c, pos, raras: pos.some(p => !/^-?[\d.]+(?:%|px)?$/.test(p)) };
+}
+const LADO = { top:[0, -1], bottom:[0, 1], left:[-1, 0], right:[1, 0] };
+// Una capa de background-image -> { tipo:'lineal'|'peor', ... } o null (no se sabe leer).
+function leerCapa (capa, talla, fija) {
+  const m = capa.match(/^(repeating-)?(linear|radial|conic)-gradient\(([\s\S]*)\)$/i);
+  if (!m) return null;
+  const args = trocear(m[3]);
+  const paradas = [];
+  let dir = null;
+  args.forEach((a, i) => {
+    const p = leerParada(a);
+    if (p) paradas.push(p);
+    else if (i === 0) dir = a;          // direccion, forma o «from … at …»; si no, es una pista de color
+  });
+  if (paradas.length < 1) return null;
+  const peor = { tipo:'peor', colores: paradas.map(p => p.c) };
+  if (m[1] || m[2].toLowerCase() !== 'linear' || fija || paradas.some(p => p.raras) ||
+      !/^(?:auto|auto auto|100% 100%|cover|contain)$/.test(talla)) return peor;
+  let ang = 180, esquina = null;
+  if (dir) {
+    const a = dir.match(/^(-?[\d.]+)(deg|rad|turn|grad)\b/i);
+    const t = dir.match(/^to\s+([a-z]+)(?:\s+([a-z]+))?/i);
+    if (a) ang = +a[1] * ({ deg:1, rad:180 / Math.PI, turn:360, grad:0.9 })[a[2].toLowerCase()];
+    else if (t) {
+      const v = [t[1], t[2]].filter(Boolean).map(w => LADO[w.toLowerCase()]);
+      if (v.some(x => !x)) return peor;
+      if (v.length === 1) ang = ({ '0,-1':0, '1,0':90, '0,1':180, '-1,0':270 })[v[0].join()];
+      else esquina = [v[0][0] + v[1][0], v[0][1] + v[1][1]];
+    } else if (!/^in\s/i.test(dir)) return peor;
+  }
+  return { tipo:'lineal', ang, esquina, paradas };
+}
+// El color de un linear-gradient en el punto P (coordenadas de la ventana).
+function colorLineal (g, caja, P) {
+  const W = caja.w, H = caja.h;
+  let dx, dy;
+  if (g.esquina) { const L = Math.hypot(W, H) || 1; dx = g.esquina[0] * H / L; dy = g.esquina[1] * W / L; }
+  else { const a = g.ang * Math.PI / 180; dx = Math.sin(a); dy = -Math.cos(a); }
+  const len = Math.abs(W * dx) + Math.abs(H * dy) || 1;
+  const x = len / 2 + (P.x - (caja.x + W / 2)) * dx + (P.y - (caja.y + H / 2)) * dy;
+  // Paradas en px a lo largo de la linea, con el arreglo de la especificacion:
+  // primera sin sitio = 0, ultima = largo, nunca hacia atras, las de en medio a partes iguales.
+  const L = [];
+  for (const s of g.paradas) {
+    if (!s.pos.length) L.push({ c:s.c, p:null });
+    for (const v of s.pos) L.push({ c:s.c, p: v.endsWith('%') ? parseFloat(v) / 100 * len : parseFloat(v) });
+  }
+  if (L[0].p === null) L[0].p = 0;
+  if (L[L.length - 1].p === null) L[L.length - 1].p = len;
+  let max = -Infinity;
+  for (const s of L) if (s.p !== null) { if (s.p < max) s.p = max; max = s.p; }
+  for (let i = 1; i < L.length; i++) if (L[i].p === null) {
+    let j = i; while (L[j].p === null) j++;
+    for (let k = i; k < j; k++) L[k].p = L[i - 1].p + (L[j].p - L[i - 1].p) * (k - i + 1) / (j - i + 1);
+    i = j;
+  }
+  if (x <= L[0].p) return L[0].c;
+  if (x >= L[L.length - 1].p) return L[L.length - 1].c;
+  let i = 0; while (i < L.length - 2 && x > L[i + 1].p) i++;
+  const a = L[i], b = L[i + 1], f = b.p > a.p ? (x - a.p) / (b.p - a.p) : 1;
+  const al = a.c.a + (b.c.a - a.c.a) * f;            // premultiplicado, como pinta Chrome
+  const mez = k => al > 0 ? (a.c[k] * a.c.a + (b.c[k] * b.c.a - a.c[k] * a.c.a) * f) / al : 0;
+  return { r:mez('r'), g:mez('g'), b:mez('b'), a:al };
+}
+// La caja del texto propio del elemento (sus nodos de texto, no su caja entera).
+function cajaDelTexto (el) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const n of el.childNodes) {
+    if (n.nodeType !== 3 || !n.textContent.trim()) continue;
+    const rg = document.createRange(); rg.selectNodeContents(n);
+    for (const r of rg.getClientRects()) {
+      if (r.width < 1 || r.height < 1) continue;
+      x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top); x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom);
+    }
+  }
+  if (x0 === Infinity) { const r = el.getBoundingClientRect(); return { x0:r.left, y0:r.top, x1:r.right, y1:r.bottom }; }
+  return { x0, y0, x1, y1 };
+}
+const TOPE_CANDIDATOS = 64;
+
+// Fondo efectivo: se sube apilando fondos hasta el primero opaco. Devuelve los
+// fondos posibles debajo del texto (uno si es color plano; uno por punto, o por
+// color de parada, si hay un degradado), o { foto:true } si no es medible — y no
+// medible NO es aprobado: se cuenta aparte y se dice.
+function fondosDe (el) {
+  const cadena = [];
+  let degradado = false;
   for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
     const cs = getComputedStyle(n);
-    if (cs.backgroundImage && cs.backgroundImage !== 'none') return { foto:true };
-    const c = aSRGB(cs.backgroundColor);
-    if (c && c.a > 0.02) { pila.push(c); if (c.a >= 0.99) break; }
+    const ent = { n, cs, capas:[], bg: aSRGB(cs.backgroundColor) };
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') {
+      if (/\btext\b/.test(cs.backgroundClip + ' ' + (cs.webkitBackgroundClip || ''))) return { foto:true };
+      const tallas = trocear(cs.backgroundSize || 'auto');
+      const fija = /\bfixed\b/.test(cs.backgroundAttachment || '');
+      const capas = trocear(cs.backgroundImage);
+      for (let i = 0; i < capas.length; i++) {
+        if (capas[i] === 'none') continue;
+        const g = leerCapa(capas[i], (tallas[i % tallas.length] || 'auto').trim(), fija);
+        if (!g) return { foto:true };
+        ent.capas.push(g);
+      }
+      if (ent.capas.length) degradado = true;
+    }
+    cadena.push(ent);
+    if (ent.bg && ent.bg.a >= 0.99) break;
+    if (ent.capas.some(g => g.tipo === 'lineal'
+          ? g.paradas.every(p => p.c.a >= 0.99) : g.colores.every(c => c.a >= 0.99))) break;
   }
-  let f = BLANCO;                       // el lienzo del navegador es blanco
-  for (let i = pila.length - 1; i >= 0; i--) f = componer(pila[i], f);
-  return { color:f };
+  const apilar = lista => {           // lista de arriba abajo -> color sobre el lienzo blanco
+    let f = BLANCO;
+    for (let i = lista.length - 1; i >= 0; i--) if (lista[i] && lista[i].a > 0.02) f = componer(lista[i], f);
+    return f;
+  };
+  if (!degradado) return { colores:[apilar(cadena.map(e => e.bg))], degradado:false };
+  const t = cajaDelTexto(el), puntos = [];
+  for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.15, 0.5, 0.85])
+    puntos.push({ x: t.x0 + (t.x1 - t.x0) * fx, y: t.y0 + (t.y1 - t.y0) * fy });
+  const colores = [];
+  for (const P of puntos) {
+    let cands = [[]];
+    for (const e of cadena) {
+      let caja = null;
+      for (const g of e.capas) {
+        let vals;
+        if (g.tipo === 'lineal') {
+          if (!caja) {               // la caja de pintura: background-origin (padding-box por defecto)
+            const r = e.n.getBoundingClientRect(), px = k => parseFloat(e.cs[k]) || 0;
+            const o = e.cs.backgroundOrigin || 'padding-box';
+            const bl = o === 'border-box' ? 0 : px('borderLeftWidth') + (o === 'content-box' ? px('paddingLeft') : 0);
+            const br = o === 'border-box' ? 0 : px('borderRightWidth') + (o === 'content-box' ? px('paddingRight') : 0);
+            const bt = o === 'border-box' ? 0 : px('borderTopWidth') + (o === 'content-box' ? px('paddingTop') : 0);
+            const bb = o === 'border-box' ? 0 : px('borderBottomWidth') + (o === 'content-box' ? px('paddingBottom') : 0);
+            caja = { x: r.left + bl, y: r.top + bt, w: Math.max(1, r.width - bl - br), h: Math.max(1, r.height - bt - bb) };
+          }
+          vals = [colorLineal(g, caja, P)];
+        } else vals = g.colores;
+        cands = cands.flatMap(c => vals.map(v => c.concat([v])));
+        if (cands.length > TOPE_CANDIDATOS) return { foto:true };
+      }
+      cands = cands.map(c => c.concat([e.bg]));
+    }
+    for (const c of cands) colores.push(apilar(c));
+  }
+  return { colores, degradado:true };
 }
 
 const malContraste = [];
-let contrasteSobreFoto = 0, contrasteMedidos = 0;
+let contrasteSobreFoto = 0, contrasteMedidos = 0, contrasteSobreDegradado = 0;
 for (const el of raiz.querySelectorAll('*')) {
   if (esCromo(el) || !visible(el) || !textoPropio(el)) continue;
   const cs = getComputedStyle(el);
@@ -962,16 +1127,24 @@ for (const el of raiz.querySelectorAll('*')) {
   if (t.length < 3) continue;
   const r = el.getBoundingClientRect();
   if (r.height < 6 || r.width < 12) continue;          // sr-only / recortado
-  const fg0 = aSRGB(cs.color); if (!fg0) continue;
-  const f = fondoDe(el);
+  // Lo que pinta la letra es -webkit-text-fill-color si esta puesto, no `color`.
+  const relleno = aSRGB(cs.webkitTextFillColor);
+  const fg0 = relleno || aSRGB(cs.color); if (!fg0) continue;
+  if (fg0.a < 0.02) { contrasteSobreFoto++; continue; }  // letra transparente: la pinta su fondo
+  const f = fondosDe(el);
   if (f.foto) { contrasteSobreFoto++; continue; }
   contrasteMedidos++;
-  const fg = fg0.a >= 0.99 ? fg0 : componer(fg0, f.color);
+  if (f.degradado) contrasteSobreDegradado++;
   const px = parseFloat(cs.fontSize), peso = parseInt(cs.fontWeight, 10) || 400;
   // WCAG 2.1 SC 1.4.3: texto grande (>=24px, o >=18,66px en negrita) baja a 3:1.
   const min = (px >= 24 || (px >= 18.66 && peso >= 700)) ? 3 : 4.5;
-  const cr = contraste(fg, f.color);
-  if (cr < min) malContraste.push({ ratio:cr, min, px:Math.round(px), sel:mote(el), txt:t.slice(0, 32) });
+  let cr = Infinity;
+  for (const fondo of f.colores) {
+    const fg = fg0.a >= 0.99 ? fg0 : componer(fg0, fondo);
+    cr = Math.min(cr, contraste(fg, fondo));
+  }
+  if (cr < min) malContraste.push({ ratio:dosDec(cr), min, px:Math.round(px), sel:mote(el), txt:t.slice(0, 32),
+                                    degradado: f.degradado });
 }
 malContraste.sort((a, b) => a.ratio - b.ratio);
 sonda.remove();
@@ -1140,7 +1313,7 @@ if (juzgaAncho) {
 /* --- E9 · CONTRASTE (AA) -------------------------------------------------- */
 if (malContraste.length)
   fallos.push(`CONTRASTE · ${malContraste.length} elemento(s) de texto por debajo de AA ` +
-              `(peor: ${malContraste[0].ratio}:1 en ${malContraste[0].sel}, ` +
+              `(peor: ${malContraste[0].ratio}:1 en ${malContraste[0].sel}${malContraste[0].degradado ? ' sobre un degradado' : ''}, ` +
               `${malContraste[0].px}px, minimo ${malContraste[0].min}:1, «${malContraste[0].txt}»)`);
 
 /* --- E6 · anatomia -------------------------------------------------------- */
@@ -1251,8 +1424,11 @@ if (juzgaAncho && nCifras)
   notas.push(`ANCHO-MIN: ${nCifras} celda(s) de CIFRA (la mas estrecha a ` +
              `${Math.min(...anchoBloques.filter(a => a.cifras).map(a => a.cifraMin))}px) se juzgan por su ` +
              `cifra entera en una linea, no por el suelo de ${CELDA_MIN}px de las tarjetas`);
+if (contrasteSobreDegradado)
+  notas.push(`CONTRASTE: ${contrasteSobreDegradado} elemento(s) sobre un degradado de CSS, medidos con el color ` +
+             `del degradado debajo de su texto (el peor de 9 puntos; en radial o conic, el peor de sus colores)`);
 if (contrasteSobreFoto)
-  notas.push(`CONTRASTE: ${contrasteSobreFoto} elemento(s) sobre imagen o degradado, NO MEDIBLES sin ` +
+  notas.push(`CONTRASTE: ${contrasteSobreFoto} elemento(s) sobre una imagen (o un fondo que no se sabe leer, o letra pintada por su fondo), NO MEDIBLES sin ` +
              `leer el pixel (measure-contrast-on-photo.py). No medible NO es aprobado`);
 // ENLACES: un minimo acotado se DICE, con la lista que lo acoto; y si fallo sin
 // acotar, se dice por que no se acoto. Un tope que no deja rastro se lee como
@@ -1308,7 +1484,7 @@ return JSON.stringify({
                                     (m === null || a.celdaMin < m) ? a.celdaMin : m, null),
     celdasDeCifra: nCifras,
     cifrasPartidas: anchoBloques.reduce((s, a) => s + a.partidas.length, 0),
-    contrasteMedidos, contrasteSobreFoto,
+    contrasteMedidos, contrasteSobreFoto, contrasteSobreDegradado, contrasteFallan: malContraste.length,
     peoresContrastes: malContraste.slice(0, 3),
     tamanosDeFuenteEnBanda: banda.length, saltosCiegos, valoresDeEspaciado: espaciados.size,
     pliegue: innerHeight,

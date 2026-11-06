@@ -27,8 +27,10 @@ p{max-width:var(--texto)}
 .ok-oklch    {color:oklch(45% 0.15 258)}         /* oscuro en oklch: debe PASAR */
 .ok-grande   {color:#949494;font-size:30px;font-weight:400}  /* 3,03:1 con umbral 3:1 por texto grande */
 
-/* ---- NO MEDIBLE: texto sobre imagen ---- */
-.sobre-foto  {background-image:linear-gradient(90deg,#333,#ddd);color:#fff;padding:1rem}
+/* ---- NO MEDIBLE: texto sobre imagen ----
+   6-nov-2026: era un linear-gradient; desde hoy un degradado se mide
+   (contrast-gradient.html), asi que el no medible es una url() de verdad. */
+.sobre-foto  {background:#555 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23666'/%3E%3C/svg%3E");color:#fff;padding:1rem}
 </style>
 </head>
 <body>
@@ -49,7 +51,7 @@ p{max-width:var(--texto)}
   <p class="ok-grande">PASA por ser texto grande: 30px baja el umbral de 4,5 a 3:1 (WCAG 2.1 SC 1.4.3).</p>
 </section>
 <section>
-  <p class="sobre-foto">NO MEDIBLE: esto va sobre un degradado. No medible no es aprobado.</p>
+  <p class="sobre-foto">NO MEDIBLE: esto va sobre una imagen. No medible no es aprobado.</p>
 </section>
 </main>
 <footer><a href="/legal/">Aviso legal</a></footer>
