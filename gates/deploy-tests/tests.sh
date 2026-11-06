@@ -594,6 +594,94 @@ cfg "CROMO_GATE=avisa no toca nada"           avisa '{"ecommerce":true}'        
 cfg "sin CROMO_GATE, avisa"                   ''    ''                                          ''
 rm -f "$CCF"
 
+# =============================================================================
+#  D-057 EN EL 1-QUATER (6-nov-2026). Una pieza de 5 lineas en el <head> de 89 paginas
+#  paso el paso 1-D057 y la paro el 1-quater: 5 FALLA en 4 paginas, iguales en produccion
+#  y con su fila al 16/17-dic. Al navegador solo le quedaba el --aun-asi, que es de
+#  Manuel. Primero d057.pl --navegador (las salidas de run-gate.js, de mentira, y una
+#  web inventada con su BASE.md); luego los bytes de nav_d057_aplica entre sus marcas.
+#  Todos, en ROJO contra la puerta y el d057.pl de antes (no conocian --navegador).
+# =============================================================================
+N57="$(mktemp -d -t d057nav-XXXXXXXX)"
+CAB='| Capa | Que | Fuente | Estado | Fecha | Fila del plan |\n|---|---|---|---|---|---|\n'
+F_OK='| 2 · Puerta | `structure-gate`, `/servicios/`: 3 avisos | medido | pendiente (grupo B) | 16/17-dic | x |\n'
+jc() { printf '{"coincide":true,"candidato":12,\n "VEREDICTO": "FALLA",\n "fallos": [\n  %s\n ]}' "$1"; }
+jp() { printf '{"coincide":true,"candidato":0,\n "VEREDICTO": "%s",\n "fallos": [\n  %s\n ]}' "${2:-FALLA}" "$1"; }
+AV3='"AVISOS · 3 avisos simultaneos (2 bastan para fallar)"'
+AV5='"AVISOS · 5 avisos simultaneos (2 bastan para fallar)"'
+AV2='"AVISOS · 2 avisos simultaneos (2 bastan para fallar)"'
+HERO='"HERO · sin ninguna accion en la primera altura de viewport"'
+nav57() { # nombre · rc · literal que TIENE que salir · filas de BASE.md (printf %b) · gate · ruta · candidato · produccion («-» = sin fichero)
+  local rc bien=1
+  rm -rf "$N57/r"; mkdir -p "$N57/r/_seo"
+  printf "%b%b" "$CAB" "$4" > "$N57/r/_seo/BASE.md"
+  printf '%s\n' "$7" > "$N57/c.out"; rm -f "$N57/p.out"; [ "$8" = - ] || printf '%s\n' "$8" > "$N57/p.out"
+  printf '%s %s 1298 720 %s %s\n' "$5" "$6" "$N57/c.out" "$N57/p.out" > "$N57/lista"
+  perl ../d057.pl --repo "$N57/r" --navegador "$N57/lista" --hoy 2026-11-06 > "$TMP" 2>&1; rc=$?
+  [ "$rc" = "$2" ] || bien=0
+  grep -qF -- "$3" "$TMP" || bien=0
+  if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+  else ko=$((ko+1)); printf '  MAL   %s (rc %s, esperaba %s y «%s»)\n' "$1" "$rc" "$2" "$3"; sed 's/^/          /' "$TMP" | head -8; fi
+}
+S1=structure-gate.js
+# 🔴 EL CASO DEL 6-NOV: igual en produccion y con fila con fecha: no para.
+nav57 "igual en produccion y con fila: D-057"                0 "D057-NAV: 1 D-057"  "$F_OK" $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "arregla parte (2 avisos donde produccion tiene 3): D-057" 0 "D057-NAV: 1 D-057" "$F_OK" $S1 /servicios/ "$(jc "$AV2")" "$(jp "$AV3")"
+nav57 "la fila nombra el gate con .js y la ruta sin barra"   0 "D057-NAV: 1 D-057"  '| 2 | `structure-gate.js` en `/servicios` | m | pendiente | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "una fila de grupo nombra el trozo suelto: D-057"     0 "D057-NAV: 1 D-057"  '| 2 | `structure-gate`, guias (3: ai-max, servicios-web, faq): VARIEDAD | m | pendiente | 17-dic | x |\n' $S1 /guias/ai-max/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "la portada se nombra «portada»: D-057"               0 "D057-NAV: 1 D-057"  '| 2 | `structure-gate`, la portada: 3 avisos | m | pendiente | 17-dic | x |\n' $S1 / "$(jc "$AV3")" "$(jp "$AV3")"
+# NUEVO: nada nuevo pasa en rojo
+nav57 "produccion PASA: es NUEVO, PARA"                      1 "D057-NAV: 1 PARA"   "$F_OK" $S1 /servicios/ "$(jc "$AV3")" "$(jp "" PASA)"
+nav57 "un fallo que produccion no tiene: PARA"              1 "D057-NAV: 1 PARA"   "$F_OK" $S1 /servicios/ "$(jc "$AV3, $HERO")" "$(jp "$AV3")"
+nav57 "mas que en produccion (5 avisos donde hay 3): PARA"   1 "D057-NAV: 1 PARA"   "$F_OK" $S1 /servicios/ "$(jc "$AV5")" "$(jp "$AV3")"
+# LA FILA: abierta, con fecha y de ESA pagina y ESE gate
+nav57 "fila vencida: PARA"                                   1 "su fila vencio"     '| 2 | `structure-gate`, `/servicios/` | m | pendiente | 1-nov | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "fila cerrada que sigue fallando: PARA"                1 "su fila esta cerrada" '| 2 | `structure-gate`, `/servicios/` | m | hecho | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "/servicios/precios/ no es /servicios/: PARA"          1 "D057-NAV: 1 PARA"   '| 2 | `structure-gate`, `/servicios/precios/` | m | pendiente | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "/es/servicios/ no es /servicios/: PARA"               1 "D057-NAV: 1 PARA"   '| 2 | `structure-gate`, `/es/servicios/` | m | pendiente | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "la fila de otro gate no vale: PARA"                   1 "D057-NAV: 1 PARA"   '| 2 | `mobile-gate`, `/servicios/` a 360 | m | pendiente | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "el gate sin la pagina no vale: PARA"                  1 "ninguna fila"       '| 2 | `structure-gate`, 29 paginas | m | pendiente | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+nav57 "la ruta tachada no cuenta: PARA"                      1 "D057-NAV: 1 PARA"   '| 2 | `structure-gate`, ~~`/servicios/`~~ `/blog/` | m | pendiente | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
+# SIN MEDIR: ni viejo ni nuevo
+nav57 "produccion sin medida: NO MEDIDO"                     2 "D057-NAV: 1 NO-MEDIDO" "$F_OK" $S1 /servicios/ "$(jc "$AV3")" -
+nav57 "produccion sospechosa (un muro): NO MEDIDO"           2 "D057-NAV: 1 NO-MEDIDO" "$F_OK" $S1 /servicios/ "$(jc "$AV3")" '{"coincide":true,"sospechoso":true,"VEREDICTO":"FALLA","fallos":[]}'
+nav57 "produccion a otro ancho: NO MEDIDO"                   2 "D057-NAV: 1 NO-MEDIDO" "$F_OK" $S1 /servicios/ "$(jc "$AV3")" '{"coincide":false,"VEREDICTO":"FALLA","fallos":["AVISOS · 3 avisos simultaneos (2 bastan para fallar)"]}'
+nav57 "«produccion» que sirvio el candidato: NO MEDIDO"     2 "D057-NAV: 1 NO-MEDIDO" "$F_OK" $S1 /servicios/ "$(jc "$AV3")" "$(jc "$AV3")"
+# Y la puerta: un gate sale de NAVC_ROJOS solo si TODAS sus FALLA son D-057.
+APL="$(mktemp -t navd057-XXXXXXXX)"
+A9=$(grep -n '^# >>> nav_d057' "$PUERTA" | head -1 | cut -d: -f1)
+B9=$(grep -n '^# <<< nav_d057' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A9:-}" ] || [ -z "${B9:-}" ] || [ "$A9" -ge "$B9" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque nav_d057 en $PUERTA (marcas movidas o borradas)"
+else
+  sed -n "${A9},${B9}p" "$PUERTA" > "$APL"
+  aplica() { # nombre · NAVC_ROJOS de antes · NAVC_FALLOS de antes · rojas (printf %b) · salida de d057.pl (printf %b) · «ROJOS|FALLOS|N» esperado
+    local got
+    printf '%b' "$4" > "$N57/rojas"; printf '%b' "$5" > "$N57/d057.txt"
+    got="$( . "$APL"; NAVC_ROJOS="$2"; NAVC_FALLOS="$3"; nav_d057_aplica "$N57/rojas" "$N57/d057.txt" >/dev/null
+            printf '%s|%s|%s' "$NAVC_ROJOS" "$NAVC_FALLOS" "$NAVC_D057_N" )"
+    if [ "$got" = "$6" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s\n' "$1" "$got" "$6"; fi
+  }
+  R5='3 /a/ structure-gate.js 1298 720 c\n15 /a/ mobile-gate.js 360 740 c\n27 /a/b/ structure-gate.js 1298 720 c\n39 /c/ structure-gate.js 1298 720 c\n51 /d/ structure-gate.js 1298 720 c\n'
+  # 🔴 EL CASO DEL 6-NOV: las cinco viejas y con fila: ningun gate en rojo, ni --aun-asi.
+  aplica "las 5 FALLA viejas y con fila: nada en rojo"     "structure-gate mobile-gate" 5 "$R5" 'D057-NAV: 1 D-057\nD057-NAV: 2 D-057\nD057-NAV: 3 D-057\nD057-NAV: 4 D-057\nD057-NAV: 5 D-057\n' "|0|5"
+  # NEGATIVOS: uno que no es viejo deja su gate en rojo, entero
+  aplica "1 de 4 de structure-gate nueva: sigue en rojo"   "structure-gate mobile-gate" 5 "$R5" 'D057-NAV: 1 D-057\nD057-NAV: 2 D-057\nD057-NAV: 3 PARA\nD057-NAV: 4 D-057\nD057-NAV: 5 D-057\n' "structure-gate|4|1"
+  aplica "NO MEDIDO no es viejo: sigue en rojo"            "mobile-gate" 1 '15 /a/ mobile-gate.js 360 740 c\n' 'D057-NAV: 1 NO-MEDIDO\n' "mobile-gate|1|0"
+  aplica "d057.pl no contesto: todo sigue en rojo"         "structure-gate mobile-gate" 5 "$R5" '' "structure-gate mobile-gate|5|0"
+  aplica "un gate sin medida en la lista (botones-sitio) sigue" "mobile-gate botones-sitio" 2 '15 /a/ mobile-gate.js 360 740 c\n' 'D057-NAV: 1 D-057\n' "botones-sitio|1|1"
+fi
+rm -rf "$APL" "$N57"
+# Y en el 1-quater: produccion se mide DESPUES de quitar el candidato (NAV_ENV vacio), con
+# la lista de las FALLA, y d057.pl --navegador decide antes de nav_decide.
+L_ENV=$(grep -n '^      NAV_ENV=""$' "$PUERTA" | head -1 | cut -d: -f1)
+L_PRO=$(grep -n '^        nav_corre "\$NAVC_DIR/prod" "\$NAVC_DIR/rojas"$' "$PUERTA" | head -1 | cut -d: -f1)
+L_D5N=$(grep -n -- '--navegador "\$NAVC_DIR/d057-lista"' "$PUERTA" | head -1 | cut -d: -f1)
+L_APL=$(grep -n '^        nav_d057_aplica "\$NAVC_DIR/rojas" "\$NAVC_DIR/d057-nav.txt"$' "$PUERTA" | head -1 | cut -d: -f1)
+L_DEC=$(grep -n '^  nav_decide || exit 1$' "$PUERTA" | head -1 | cut -d: -f1)
+hay "D-057 en el 1-quater: produccion sin el candidato, d057.pl y luego nav_decide" 1 '[ -n "$L_ENV" ] && [ -n "$L_PRO" ] && [ -n "$L_D5N" ] && [ -n "$L_APL" ] && [ -n "$L_DEC" ] && [ "$L_ENV" -lt "$L_PRO" ] && [ "$L_PRO" -lt "$L_D5N" ] && [ "$L_D5N" -lt "$L_APL" ] && [ "$L_APL" -lt "$L_DEC" ]'
+
 # Y nadie mas en la puerta dice «verificado» de una subida (lo hacian tres lineas).
 VER=$(grep -nE '^[[:space:]]*echo .*(G11 lo ha verificado|desplegado y verificado)' "$PUERTA" | head -3)
 if [ -z "$VER" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "ninguna linea de la puerta dice «verificado» de la subida"

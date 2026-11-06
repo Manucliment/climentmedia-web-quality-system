@@ -828,6 +828,43 @@ nav_decide() {
 }
 # <<< nav_decide
 
+# >>> nav_d057 · D-057 en el 1-quater (deploy-tests/tests.sh ejecuta estos bytes)
+# 🔴 6-nov-2026 · Una pieza de 5 lineas en el <head> de 89 paginas paso el paso 1-D057
+#    y la paro el 1-quater: 5 FALLA en 4 paginas, las cinco iguales en produccion y con
+#    su fila al 16/17-dic. La regla de D-057 solo se aplicaba a qa-master; al navegador
+#    le quedaba el --aun-asi, que es de Manuel. Entra <rojas> (n ruta gate ancho alto c,
+#    una FALLA por linea, en el orden de la lista que se le dio a d057.pl --navegador) y
+#    la salida de d057.pl. Un gate sale de NAVC_ROJOS solo si TODAS sus FALLA son D-057;
+#    lo que d057.pl no conteste (no corrio, NO MEDIDO, PARA) sigue en rojo. Deja en
+#    NAVC_D057 las medidas que pasan por viejas y resta su cuenta de NAVC_FALLOS.
+nav_d057_aplica() {
+  local k=0 n r g w h c est quedan="" g2 tod
+  NAVC_D057=""; NAVC_D057_N=0
+  tod="$(while read -r n r g w h c; do
+           k=$((k+1))
+           est="$(grep -m1 "^D057-NAV: $k " "$2" 2>/dev/null | cut -d' ' -f3)"
+           printf '%s %s %s %s\n' "${g%.js}" "$r" "$w" "${est:-NADA}"
+         done < "$1")"
+  for g in $NAVC_ROJOS; do
+    if printf '%s\n' "$tod" | grep -q "^$g " && ! printf '%s\n' "$tod" | grep "^$g " | grep -qv ' D-057$'; then
+      while read -r g2 r w est; do
+        [ "$g2" = "$g" ] || continue
+        NAVC_D057="${NAVC_D057:+$NAVC_D057, }$g $r ${w}px"; NAVC_D057_N=$((NAVC_D057_N+1))
+      done <<EOF
+$tod
+EOF
+      echo "  $g: sus FALLA son viejas, iguales en produccion y con fila: no paran (D-057)"
+    else
+      quedan="${quedan:+$quedan }$g"
+      printf '%s\n' "$tod" | grep -q "^$g " && echo "  $g: sigue en rojo (no todas sus FALLA son viejas con fila)"
+    fi
+  done
+  NAVC_ROJOS="$quedan"
+  NAVC_FALLOS=$(( ${NAVC_FALLOS:-0} - NAVC_D057_N ))
+  return 0
+}
+# <<< nav_d057
+
 # ── 1-quater · LOS GATES DE NAVEGADOR, SOBRE EL CANDIDATO, ANTES DE SUBIR ─────
 # 🔴 1-nov-2026 · POR QUE. Una web nueva subio con 10 FALLA de 16-18 medidas en los
 #    gates de navegador: el paso 6 los corria DESPUES de subir y no bloqueaba («ya
@@ -844,7 +881,7 @@ nav_decide() {
 #    la web SI declara URLS_NAVEGADOR, no medirla pide --aun-asi con «navegador».
 #    Medir no se pregunta: el ensayo (sin --subir) mide igual, y dice lo que pararia.
 NAVC_ROJOS=""; NAVC_HUECOS=""; NAVC_EXIGE=0; NAVC_MIRADAS=0; NAVC_FALLOS=0
-NAVC_MENU_PASA=0; NAVC_MENU_TOTAL=0; NAVC_MARCA_AVISOS=0
+NAVC_MENU_PASA=0; NAVC_MENU_TOTAL=0; NAVC_MARCA_AVISOS=0; NAVC_D057=""; NAVC_D057_N=0
 [ -n "$URLS_NAVEGADOR" ] && NAVC_EXIGE=1
 paginas_cambiadas   # antes del 1-quater y de la subida: despues, la lista anterior ya es esta
 if [ "$REDIR" = 1 ]; then
@@ -900,12 +937,14 @@ else
       NAV_ENV="GATE_CANDIDATO='$NAVC_R/arbol' GATE_SITIO='${SITIO%/}' "
       nav_corre "$NAVC_DIR" "$NAVC_DIR/lista"
       NAV_ENV=""
+      : > "$NAVC_DIR/rojas"   # las FALLA, una por linea, para medirlas sobre produccion (D-057)
       while read -r n r g w h c; do
         nav_lee "$NAVC_DIR/$n.out" "$g" "$r" "$w"
         case "$NAV_R" in
           PASA)  NAVC_MIRADAS=$((NAVC_MIRADAS+1)) ;;
           AVISO) NAVC_MIRADAS=$((NAVC_MIRADAS+1)); NAVC_MARCA_AVISOS=$((NAVC_MARCA_AVISOS+1)) ;;
           FALLA) NAVC_MIRADAS=$((NAVC_MIRADAS+1)); NAVC_FALLOS=$((NAVC_FALLOS+1))
+                 printf '%s %s %s %s %s %s\n' "$n" "$r" "$g" "$w" "$h" "$c" >> "$NAVC_DIR/rojas"
                  case " $NAVC_ROJOS " in *" ${g%.js} "*) ;; *) NAVC_ROJOS="${NAVC_ROJOS:+$NAVC_ROJOS }${g%.js}" ;; esac ;;
           *)     NAVC_HUECOS="${NAVC_HUECOS:+$NAVC_HUECOS, }${g%.js} $r ${w}px" ;;
         esac
@@ -975,8 +1014,26 @@ else
           fi
         done
       fi
+      # 6-nov-2026 · D-057 EN EL 1-QUATER. Cada FALLA de arriba se mide otra vez sobre
+      #    PRODUCCION con el mismo gate, ruta, ancho, alto y configuracion (NAV_ENV vacio:
+      #    lo publicado), y d057.pl --navegador hace la pregunta del paso 1-D057: ¿igual en
+      #    produccion, y con fila abierta con fecha y dueño que nombre el gate y la pagina?
+      #    nav_d057_aplica saca de NAVC_ROJOS el gate cuyas FALLA lo son todas. El aviso
+      #    de cookies (banner-probe) y botones-sitio no entran: no son de run-gate.js, y
+      #    el consentimiento es una lente que D-057 no cubre.
+      if [ -s "$NAVC_DIR/rojas" ] && [ -f "$REF/d057.pl" ]; then
+        echo
+        echo "  D-057 · $(grep -c . "$NAVC_DIR/rojas") FALLA, medidas otra vez sobre PRODUCCION (mismo gate, ruta y tamano)"
+        mkdir -p "$NAVC_DIR/prod"
+        nav_corre "$NAVC_DIR/prod" "$NAVC_DIR/rojas"
+        awk -v d="$NAVC_DIR" '{ printf "%s %s %s %s %s/%s.out %s/prod/%s.out\n", $3, $2, $4, $5, d, $1, d, $1 }' \
+            "$NAVC_DIR/rojas" > "$NAVC_DIR/d057-lista"
+        perl "$REF/d057.pl" --repo "$REPO" --navegador "$NAVC_DIR/d057-lista" > "$NAVC_DIR/d057-nav.txt" 2>&1
+        grep -v '^D057-NAV: \|^  D-057 · lo viejo' "$NAVC_DIR/d057-nav.txt" | grep . | sed 's/^/  /'
+        nav_d057_aplica "$NAVC_DIR/rojas" "$NAVC_DIR/d057-nav.txt"
+      fi
       echo
-      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca, botones o aviso de cookies (no paran)" )}"
+      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir$( [ "$NAVC_D057_N" -gt 0 ] && echo " · $NAVC_D057_N FALLA viejas por D-057 (no paran)" )${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca, botones o aviso de cookies (no paran)" )}"
     fi
     ssh -n -o BatchMode=yes "$NAV_HOST" "rm -rf '$NAVC_R'" >/dev/null 2>&1
     rm -rf "$NAVC_DIR"
@@ -986,7 +1043,9 @@ if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ "$REDIR" != 1 ]; then
   echo
   nav_decide || exit 1
   if [ "$SUBIR" = 1 ]; then
-    perl "$REF/receipt.pl" --anotar "NAVEGADOR-CANDIDATO $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA${NAVC_HUECOS:+ · sin medir: $NAVC_HUECOS}${URLS_CAMBIADAS:+ · cambiadas: $URLS_CAMBIADAS}" \
+    perl "$REF/receipt.pl" --anotar "NAVEGADOR-CANDIDATO $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA$( [ "$NAVC_D057_N" -gt 0 ] && echo " · $NAVC_D057_N viejas por D-057")${NAVC_HUECOS:+ · sin medir: $NAVC_HUECOS}${URLS_CAMBIADAS:+ · cambiadas: $URLS_CAMBIADAS}" \
+         --repo "$REPO" >/dev/null 2>&1
+    [ -n "$NAVC_D057" ] && perl "$REF/receipt.pl" --anotar "NAVEGADOR D-057 [$NAVC_D057] igual en produccion y con fila (gates/d057.pl --navegador)" \
          --repo "$REPO" >/dev/null 2>&1
     [ "$CAMBIADAS_FUERA" -gt 0 ] && perl "$REF/receipt.pl" --anotar "CAMBIADAS sin medir por el tope: $CAMBIADAS_FUERA (URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX)" \
          --repo "$REPO" >/dev/null 2>&1
@@ -2211,6 +2270,8 @@ cierre_dice() {  # usa ENL_RC, ENL_NM, NAV_FALLOS, NAV_CORRIO, NAV_BASURA, NAV_N
 cierre_dice
 # D-057: lo que subio por viejo va en el cierre, para que la fila de 14 dias lo diga
 [ -n "${D057_NOTA:-}" ] && CIERRE="$CIERRE · D-057: $D057_NOTA"
+# y lo del navegador que subio por viejo: el paso 6 lo vuelve a ver en rojo en lo servido
+[ -n "${NAVC_D057:-}" ] && CIERRE="$CIERRE · D-057 en el navegador (viejas, con fila): $NAVC_D057"
 echo
 linea; echo "  CIERRE · $CIERRE"; linea
 perl "$REF/receipt.pl" --anotar "CIERRE $CIERRE" --repo "$REPO" >/dev/null 2>&1

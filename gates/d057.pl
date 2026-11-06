@@ -47,13 +47,17 @@
 #                  <url> ANCHO ALTO qa.js), para volver a medir lo del DOM
 #    --produccion  el JSON de una corrida de produccion ya hecha (en vez de medir)
 #    --hoy         la fecha contra la que vence una fila (por defecto, hoy)
-#    En ingles: --no-ga4-or-ads · --out · --production-dom · --production · --today
+#    perl d057.pl --repo DIR --navegador LISTA [--hoy AAAA-MM-DD] [--salida FICHERO]
+#    --navegador   el 1-quater de la puerta: las FALLA de los gates de navegador sobre
+#                  el candidato, cada una con la misma medida sobre produccion (ver «N»)
+#    En ingles: --no-ga4-or-ads · --out · --production-dom · --production · --today · --browser
 #
 #  SALIDA (lineas que lee deploy.sh)
 #    D057-RESULTADO: PASA | PARA | NO MEDIDO
 #    D057-FALLO / D057-NV / D057-NO-APLICA / D057-PARA / D057-SIGUE: ids
 #    D057-QUITA: N
 #    D057-RECIBO: el SELLO del recibo juzgado (lo comprueba apuntar-seguimiento)
+#    D057-NAV: <n> D-057 | PARA | NO-MEDIDO   (solo con --navegador: la linea n de la lista)
 #  exit 0 = ningun FALLO que pare · 1 = alguno para · 2 = no se ha podido medir.
 #  Un sin mirar que D-057 no cubre no para aqui: sigue su camino de siempre en la
 #  puerta (paso 2), y sale como SIGUE.
@@ -70,11 +74,11 @@ require "$MIDIR57/receipt.pl";   # lee_recibo, hash_estandar, solo_ascii
 # ya son UTF-8: sin esto, cada «·» sale «Â·».
 binmode(STDOUT, ':raw');
 
-my %o = (repo => '', ga4 => '', salida => '', produccion => '', hoy => '', dom => '');
+my %o = (repo => '', ga4 => '', salida => '', produccion => '', hoy => '', dom => '', nav => '');
 {
     my %AL = ('--no-ga4-or-ads' => '--sin-ga4-ni-ads', '--out' => '--salida',
               '--production' => '--produccion', '--today' => '--hoy',
-              '--production-dom' => '--dom-produccion');
+              '--production-dom' => '--dom-produccion', '--browser' => '--navegador');
     my @a = map { $AL{$_} // $_ } @ARGV;
     while (@a) {
         my $x = shift @a;
@@ -84,6 +88,7 @@ my %o = (repo => '', ga4 => '', salida => '', produccion => '', hoy => '', dom =
         elsif ($x eq '--produccion')      { $o{produccion} = shift(@a) // '' }
         elsif ($x eq '--dom-produccion')  { $o{dom} = shift(@a) // '' }
         elsif ($x eq '--hoy')             { $o{hoy} = shift(@a) // '' }
+        elsif ($x eq '--navegador')       { $o{nav} = shift(@a) // '' }
         elsif ($x eq '-h' || $x eq '--help') {
             open my $f, '<', $0 or exit 2;
             while (<$f>) { next if $. == 1; last unless /^#/; print substr($_, 2) }
@@ -113,6 +118,210 @@ sub d57_des { my $s = shift; $s =~ s/%([0-9A-F]{2})/chr hex $1/ge; return $s }
 d57_di("  D-057 · lo viejo igual en produccion (gates/d057.pl)");
 d57_no_medido("falta --repo") unless $o{repo} ne '' && -d $o{repo};
 my $REPO = $o{repo};
+
+# ── 4 · la fila del plan ──────────────────────────────────────────────────────
+my %MES = (ene=>1, feb=>2, mar=>3, abr=>4, may=>5, jun=>6, jul=>7, ago=>8, sep=>9, oct=>10, nov=>11, dic=>12);
+sub d57_fecha {
+    my ($s) = @_;
+    return sprintf('%04d-%02d-%02d', $1, $2, $3) if $s =~ /(\d{4})-(\d{2})-(\d{2})/;
+    if ($s =~ /\b(\d{1,2})-(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z]*\.?(?:-(\d{4}))?/i) {
+        my ($d, $m, $a) = ($1, $MES{lc $2}, $3);
+        unless (defined $a) {   # sin año: el de hoy, o el siguiente si el mes ya quedo muy atras
+            my ($ah, $mh) = $HOY =~ /^(\d{4})-(\d{2})/;
+            $a = $ah + ($m < $mh - 6 ? 1 : 0);
+        }
+        return sprintf('%04d-%02d-%02d', $a, $m, $d);
+    }
+    return undef;
+}
+sub d57_celdas { my $t = shift; $t =~ s/^\s*\|//; $t =~ s/\|\s*$//; return map { s/^\s+|\s+$//gr } split /\|/, $t }
+my @FILAS;
+{
+    my %visto;
+    my @f = grep { -f $_ && !$visto{lc $_}++ }
+            ("$REPO/_seo/BASE.md", sort(glob("$REPO/_seo/plan*.md")), sort(glob("$REPO/_seo/PLAN*.md")),
+             "$REPO/_diseno/PLAN.md");
+    for my $f (@f) {
+        open my $fh, '<:raw', $f or next;
+        my @l = <$fh>; close $fh;
+        s/\r?\n\z// for @l;
+        (my $rel = $f) =~ s{^\Q$REPO\E[\\/]?}{};
+        my %col;
+        for my $i (0 .. $#l) {
+            my $t = $l[$i];
+            if ($t !~ /^\s*\|/) { %col = (); next }
+            next if $t =~ /^\s*\|\s*:?-{3,}/;
+            if ($i < $#l && $l[$i + 1] =~ /^\s*\|\s*:?-{3,}/) {
+                %col = ();
+                my @c = d57_celdas($t);
+                for my $k (0 .. $#c) {
+                    my $n = lc $c[$k]; $n =~ s/[*_`]//g; $n =~ s/\xC3\xB1/n/g; $n =~ s/^\s+|\s+$//g;
+                    $col{$n} //= $k;
+                }
+                next;
+            }
+            next unless %col;
+            push @FILAS, { rel => $rel, linea => $i + 1, texto => $t, c => [ d57_celdas($t) ],
+                           # `? 1 : 0`: en lista, un match que falla no da NADA, y el hash
+                           # quedaba impar («Odd number of elements», una vez por fila de
+                           # una tabla que no es BASE.md: 19 en una web el 6-nov)
+                           col => { %col }, base => ($rel =~ m{^_seo[\\/]BASE\.md$} ? 1 : 0) };
+        }
+    }
+}
+sub d57_fila_de {
+    my ($id) = @_;
+    return d57_fila_por($id, sub { $_[0] =~ /(?<![A-Za-z0-9])\Q$id\E(?![A-Za-z0-9])/ });
+}
+# La misma fila, con otra pregunta de «me nombra» (el navegador: el gate Y la pagina).
+sub d57_fila_por {
+    my ($id, $nombra) = @_;
+    my (@vencida, @cerrada, @sin_fecha, @sin_dueno);
+    for my $f (@FILAS) {
+        (my $s = $f->{texto}) =~ s/~~.*?~~//g;
+        next unless $nombra->($s);
+        my $donde = "$f->{rel}:$f->{linea}";
+        my %c = %{ $f->{col} };
+        my $cel = sub { my $k = shift; defined $c{$k} ? ($f->{c}[$c{$k}] // '') : undef };
+        my $estado = $cel->('estado');
+        if (defined $estado) {
+            (my $e = $estado) =~ s/[*_`~]//g;
+            if ($e =~ /^\W*(?:hech[oa]|cerrad[oa]|resuelt[oa]|arreglad[oa]|descartad[oa])\b/i || $e =~ /^\s*\xE2\x9C\x85/) {
+                push @cerrada, $donde; next;
+            }
+        }
+        my $fc = $cel->('fecha');
+        my $fecha = defined $fc ? d57_fecha($fc) : undef;
+        unless (defined $fecha) { push @sin_fecha, $donde; next }
+        my $dueno = $cel->('dueno');
+        $dueno = '' if defined $dueno && $dueno =~ /^[\s\-\x{2014}]*$|^\xE2\x80\x94$/;
+        if (!defined $dueno || $dueno eq '') {
+            # 6-nov: «espera X» da dueño solo al PRINCIPIO del Estado. En cualquier sitio, «la portada
+            # espera la lectura…» daba «dueño: espera la» (una web, 6-nov). «espera a X» vale.
+            (my $e0 = $estado // '') =~ s/[*_`~]//g;
+            if ($e0 =~ /^\W*espera\s+(?:al?\s+)?([^\s(,;.]+)/i) { $dueno = "espera $1" }
+            elsif ($f->{base}) { $dueno = 'el chat de la web (BASE.md)' }
+            else { push @sin_dueno, $donde; next }
+        }
+        if ($fecha lt $HOY) { push @vencida, "$donde (vencio el $fecha)"; next }
+        return (1, sprintf('fila %s · %s · dueno: %s', $donde, $fecha, solo_ascii($dueno)));
+    }
+    return (0, "su fila vencio: $vencida[0]; se arregla o se cambia la fecha en el plan") if @vencida;
+    return (0, "su fila no tiene fecha: $sin_fecha[0]")                                    if @sin_fecha;
+    return (0, "su fila no tiene dueno: $sin_dueno[0]")                                     if @sin_dueno;
+    return (0, "su fila esta cerrada ($cerrada[0]) y sigue fallando: la fila no dice la verdad") if @cerrada;
+    return (0, "ninguna fila de _seo/BASE.md ni del plan nombra $id");
+}
+
+# ── N · el navegador del 1-quater (--navegador) ───────────────────────────────
+#  6-nov-2026 · POR QUE. Una pieza de 5 lineas en el <head> de 89 paginas paso el
+#  paso 1-D057 y la paro el 1-quater: 5 FALLA de structure-gate y mobile-gate en 4
+#  paginas, los cinco iguales en produccion y con su fila al 16/17-dic. La regla era
+#  la de D-057 y la puerta solo la aplicaba a qa-master: para el navegador quedaba el
+#  --aun-asi, que es de Manuel. Aqui la misma pregunta, medida con el mismo gate.
+#  Entra una lista, una medida por linea:  gate ruta ancho alto candidato.out produccion.out
+#  (las salidas de run-gate.js de la puerta: el candidato servido del disco y la
+#  misma medida sin el, sobre produccion, hecha AHORA). Cada FALLA pasa si:
+#    · produccion se midio de verdad: el ancho pedido, la pagina (no un muro) y sin
+#      servir el candidato. Si no, NO MEDIDO: ni viejo ni nuevo.
+#    · cada fallo del candidato esta en produccion: mismo texto con los numeros fuera
+#      (60 caracteres) y su numero no mayor (el primero: 5 elementos donde produccion
+#      tiene 3 son 2 NUEVOS). Produccion en PASA = todo NUEVO.
+#    · una fila abierta, con fecha de hoy en adelante y dueño, nombra el gate (con o
+#      sin .js) Y la pagina: su ruta entera (`/a/` no es `/a/b/` ni `/es/a/`), su
+#      ultimo trozo suelto (una fila «guias (8: ai-max, …)») o, la portada, «`/`»,
+#      «portada», «home» o «inicio».
+#  Sale una linea por medida, D057-NAV: <n de la lista> <D-057|PARA|NO-MEDIDO>, y el
+#  D057-RESULTADO de siempre. El aviso de cookies (banner-probe) no entra: es la
+#  lente de consentimiento, que D-057 no cubre.
+sub d57_nav_lee {
+    my ($f) = @_;
+    return { mal => 'no hay medida' } unless defined $f && -s $f;
+    open my $h, '<:raw', $f or return { mal => "no puedo abrir $f" };
+    local $/; my $t = <$h> // ''; close $h;
+    return { mal => 'no parece la pagina (sospechoso)' } if $t =~ /"sospechoso"\s*:\s*true/;
+    return { mal => 'el ancho no coincide o no cargo' } unless $t =~ /"coincide"\s*:\s*true/;
+    my ($v) = $t =~ /"VEREDICTO"\s*:\s*"([A-Z ]+)"/;
+    return { mal => 'el gate no dio veredicto' } unless defined $v;
+    my ($cand) = $t =~ /"candidato"\s*:\s*(\d+)/;
+    my @fallos;
+    if ($t =~ /"fallos"\s*:\s*\[((?:\s*"(?:[^"\\]|\\.)*"\s*,?)*)\s*\]/s) {
+        my $lista = $1;
+        while ($lista =~ /"((?:[^"\\]|\\.)*)"/g) { (my $m = $1) =~ s/\\(["\\\/])/$1/g; push @fallos, $m }
+    }
+    return { v => $v, fallos => \@fallos, candidato => $cand // 0 };
+}
+sub d57_huella {
+    my ($m) = @_;
+    my ($n) = $m =~ /(\d+(?:[.,]\d+)?)/;
+    $n =~ tr/,/./ if defined $n;
+    (my $h = $m) =~ s/\d+(?:[.,]\d+)?/#/g;
+    $h =~ s/\s+/ /g; $h =~ s/^\s+|\s+$//g;
+    return (substr($h, 0, 60), $n);
+}
+sub d57_nombra_pagina {
+    my ($s, $gate, $ruta) = @_;
+    (my $g = $gate) =~ s/\.js$//;
+    return 0 unless $s =~ /(?<![A-Za-z0-9_-])\Q$g\E(?![A-Za-z0-9_-])/;
+    (my $r = $ruta) =~ s{/+$}{};
+    if ($r eq '') { return $s =~ /`\/`|\b(?:portada|home|inicio)\b/i ? 1 : 0 }
+    $r = "/$r" unless $r =~ m{^/};
+    # la ruta entera, sin nada de ruta delante ni detras (`/a/` no es `/es/a/` ni `/a/b/`)
+    return 1 if $s =~ m{(?<![A-Za-z0-9_./-])\Q$r\E(?:/(?![A-Za-z0-9_-])|(?![A-Za-z0-9_/-]))};
+    my ($slug) = $r =~ m{([^/]+)$};
+    return 1 if defined $slug && length $slug >= 3
+             && $s =~ m{(?<![A-Za-z0-9_./-])\Q$slug\E(?![A-Za-z0-9_/-])};
+    return 0;
+}
+if ($o{nav} ne '') {
+    open my $l, '<:raw', $o{nav} or d57_no_medido("no puedo abrir la lista del navegador $o{nav}");
+    my @med = grep { /\S/ } map { s/\r?\n\z//r } <$l>;
+    close $l;
+    d57_di("  el navegador del 1-quater: " . scalar(@med) . " medida(s) en FALLA, contra produccion");
+    my %cuenta;
+    my $k = 0;
+    for my $linea (@med) {
+        $k++;
+        my ($gate, $ruta, $ancho, $alto, $fc, $fp) = split ' ', $linea;
+        my ($r, $por);
+        my $c = d57_nav_lee($fc);
+        my $p = d57_nav_lee($fp);
+        if (!defined $fp) { ($r, $por) = ('NO-MEDIDO', 'la lista no trae la medida de produccion') }
+        elsif ($c->{mal}) { ($r, $por) = ('NO-MEDIDO', "el candidato: $c->{mal}") }
+        elsif ($c->{v} ne 'FALLA') { ($r, $por) = ('NO-MEDIDO', "el candidato dio $c->{v}, no FALLA: no hay nada que decidir aqui") }
+        elsif (!@{ $c->{fallos} }) { ($r, $por) = ('NO-MEDIDO', 'el gate dio FALLA sin lista de fallos: no se puede comparar') }
+        elsif ($p->{mal}) { ($r, $por) = ('NO-MEDIDO', "produccion no medida: $p->{mal}") }
+        elsif ($p->{candidato} > 0) { ($r, $por) = ('NO-MEDIDO', "lo medido como produccion sirvio $p->{candidato} respuesta(s) del candidato") }
+        elsif ($p->{v} ne 'FALLA') { ($r, $por) = ('PARA', "en produccion $p->{v}: es NUEVO") }
+        else {
+            my %prod;
+            for my $m (@{ $p->{fallos} }) { my ($hh, $n) = d57_huella($m); push @{ $prod{$hh} }, $n }
+            my @nuevos;
+            for my $m (@{ $c->{fallos} }) {
+                my ($hh, $n) = d57_huella($m);
+                my $esta = grep { !defined $n || (defined $_ && $n <= $_) } @{ $prod{$hh} || [] };
+                push @nuevos, $m unless $esta;
+            }
+            if (@nuevos) {
+                ($r, $por) = ('PARA', sprintf('%d de %d NUEVO en el candidato (o mas que en produccion): %s', scalar(@nuevos),
+                              scalar(@{ $c->{fallos} }), solo_ascii(substr($nuevos[0], 0, 90))));
+            } else {
+                my ($ok, $fila) = d57_fila_por("$gate y la pagina $ruta", sub { d57_nombra_pagina($_[0], $gate, $ruta) });
+                ($r, $por) = $ok ? ('D-057', sprintf('igual en produccion (%d de %d) · %s', scalar(@{ $c->{fallos} }),
+                                    scalar(@{ $c->{fallos} }), $fila))
+                                 : ('PARA', $fila);
+            }
+        }
+        $cuenta{$r}++;
+        d57_di(sprintf('    %-9s %-20s %-30s %5spx  %s', $r, $gate // '?', $ruta // '?', $ancho // '?', $por));
+        d57_di("D057-NAV: $k $r");
+    }
+    my $rc = $cuenta{PARA} ? 1 : $cuenta{'NO-MEDIDO'} ? 2 : 0;
+    d57_di('    (ninguna medida en FALLA que decidir)') unless @med;
+    d57_di('', 'D057-RESULTADO: ' . ($rc == 1 ? 'PARA' : $rc == 2 ? 'NO MEDIDO' : 'PASA'));
+    d57_fin($rc);
+}
+
 
 # ── 1 · el recibo ─────────────────────────────────────────────────────────────
 my ($R, $err) = main::lee_recibo("$REPO/.qa-recibo");
@@ -266,95 +475,7 @@ if ((grep { !$_->{dom} || $dom_mal eq '' } @pendientes) && !$para_ya) {
     }
 }
 
-# ── 4 · la fila del plan ──────────────────────────────────────────────────────
-my %MES = (ene=>1, feb=>2, mar=>3, abr=>4, may=>5, jun=>6, jul=>7, ago=>8, sep=>9, oct=>10, nov=>11, dic=>12);
-sub d57_fecha {
-    my ($s) = @_;
-    return sprintf('%04d-%02d-%02d', $1, $2, $3) if $s =~ /(\d{4})-(\d{2})-(\d{2})/;
-    if ($s =~ /\b(\d{1,2})-(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z]*\.?(?:-(\d{4}))?/i) {
-        my ($d, $m, $a) = ($1, $MES{lc $2}, $3);
-        unless (defined $a) {   # sin año: el de hoy, o el siguiente si el mes ya quedo muy atras
-            my ($ah, $mh) = $HOY =~ /^(\d{4})-(\d{2})/;
-            $a = $ah + ($m < $mh - 6 ? 1 : 0);
-        }
-        return sprintf('%04d-%02d-%02d', $a, $m, $d);
-    }
-    return undef;
-}
-sub d57_celdas { my $t = shift; $t =~ s/^\s*\|//; $t =~ s/\|\s*$//; return map { s/^\s+|\s+$//gr } split /\|/, $t }
-my @FILAS;
-{
-    my %visto;
-    my @f = grep { -f $_ && !$visto{lc $_}++ }
-            ("$REPO/_seo/BASE.md", sort(glob("$REPO/_seo/plan*.md")), sort(glob("$REPO/_seo/PLAN*.md")),
-             "$REPO/_diseno/PLAN.md");
-    for my $f (@f) {
-        open my $fh, '<:raw', $f or next;
-        my @l = <$fh>; close $fh;
-        s/\r?\n\z// for @l;
-        (my $rel = $f) =~ s{^\Q$REPO\E[\\/]?}{};
-        my %col;
-        for my $i (0 .. $#l) {
-            my $t = $l[$i];
-            if ($t !~ /^\s*\|/) { %col = (); next }
-            next if $t =~ /^\s*\|\s*:?-{3,}/;
-            if ($i < $#l && $l[$i + 1] =~ /^\s*\|\s*:?-{3,}/) {
-                %col = ();
-                my @c = d57_celdas($t);
-                for my $k (0 .. $#c) {
-                    my $n = lc $c[$k]; $n =~ s/[*_`]//g; $n =~ s/\xC3\xB1/n/g; $n =~ s/^\s+|\s+$//g;
-                    $col{$n} //= $k;
-                }
-                next;
-            }
-            next unless %col;
-            push @FILAS, { rel => $rel, linea => $i + 1, texto => $t, c => [ d57_celdas($t) ],
-                           # `? 1 : 0`: en lista, un match que falla no da NADA, y el hash
-                           # quedaba impar («Odd number of elements», una vez por fila de
-                           # una tabla que no es BASE.md: 19 en una web el 6-nov)
-                           col => { %col }, base => ($rel =~ m{^_seo[\\/]BASE\.md$} ? 1 : 0) };
-        }
-    }
-}
-sub d57_fila_de {
-    my ($id) = @_;
-    my (@vencida, @cerrada, @sin_fecha, @sin_dueno);
-    for my $f (@FILAS) {
-        (my $s = $f->{texto}) =~ s/~~.*?~~//g;
-        next unless $s =~ /(?<![A-Za-z0-9])\Q$id\E(?![A-Za-z0-9])/;
-        my $donde = "$f->{rel}:$f->{linea}";
-        my %c = %{ $f->{col} };
-        my $cel = sub { my $k = shift; defined $c{$k} ? ($f->{c}[$c{$k}] // '') : undef };
-        my $estado = $cel->('estado');
-        if (defined $estado) {
-            (my $e = $estado) =~ s/[*_`~]//g;
-            if ($e =~ /^\W*(?:hech[oa]|cerrad[oa]|resuelt[oa]|arreglad[oa]|descartad[oa])\b/i || $e =~ /^\s*\xE2\x9C\x85/) {
-                push @cerrada, $donde; next;
-            }
-        }
-        my $fc = $cel->('fecha');
-        my $fecha = defined $fc ? d57_fecha($fc) : undef;
-        unless (defined $fecha) { push @sin_fecha, $donde; next }
-        my $dueno = $cel->('dueno');
-        $dueno = '' if defined $dueno && $dueno =~ /^[\s\-\x{2014}]*$|^\xE2\x80\x94$/;
-        if (!defined $dueno || $dueno eq '') {
-            # 6-nov: «espera X» da dueño solo al PRINCIPIO del Estado. En cualquier sitio, «la portada
-            # espera la lectura…» daba «dueño: espera la» (una web, 6-nov). «espera a X» vale.
-            (my $e0 = $estado // '') =~ s/[*_`~]//g;
-            if ($e0 =~ /^\W*espera\s+(?:al?\s+)?([^\s(,;.]+)/i) { $dueno = "espera $1" }
-            elsif ($f->{base}) { $dueno = 'el chat de la web (BASE.md)' }
-            else { push @sin_dueno, $donde; next }
-        }
-        if ($fecha lt $HOY) { push @vencida, "$donde (vencio el $fecha)"; next }
-        return (1, sprintf('fila %s · %s · dueno: %s', $donde, $fecha, solo_ascii($dueno)));
-    }
-    return (0, "su fila vencio: $vencida[0]; se arregla o se cambia la fecha en el plan") if @vencida;
-    return (0, "su fila no tiene fecha: $sin_fecha[0]")                                    if @sin_fecha;
-    return (0, "su fila no tiene dueno: $sin_dueno[0]")                                     if @sin_dueno;
-    return (0, "su fila esta cerrada ($cerrada[0]) y sigue fallando: la fila no dice la verdad") if @cerrada;
-    return (0, "ninguna fila de _seo/BASE.md ni del plan nombra $id");
-}
-
+# ── 4 · la fila del plan, para cada uno (las filas se leen arriba, antes del recibo) ──
 for my $h (@pendientes) {
     my $es_f = $h->{estado} eq 'FALLO';
     if ($para_ya) { $h->{r} = $es_f ? 'PARA' : 'SIGUE'; $h->{por} = 'no se mide: otro FALLO ya para la subida'; next }

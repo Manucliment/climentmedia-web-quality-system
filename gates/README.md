@@ -483,7 +483,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Thirty-one more since 2026-11-05**, all from one week of real deploys:
+**Thirty-two more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -521,6 +521,21 @@ without blocking. Why the order changed is trap §89.
   that does not answer, another `qa-master` or an older receipt is NOT MEASURED, never
   "old" and never "new". Each finding let through is written to the history and the
   closing line signed "D-057", with how many production FAILs the upload removes.
+- **The same rule for the browser gates of step 1-quater (`d057.pl --browser`).** A
+  five-line change to the `<head>` of 89 pages passed step 1-D057 and was stopped by step
+  1-quater: 5 FAILs of `structure-gate` and `mobile-gate` on 4 pages, all five the same on
+  the published site and each with its dated row. D-057 only covered `qa-master`, so the
+  browser was left with `--anyway`, which is not the uploading chat's to use. Now every
+  FAIL of step 1-quater is measured again on production with the same gate, route, width,
+  height and configuration, and `d057.pl --browser` lets it through only if production
+  measured for real (the width asked for, the page and not a wall, not the candidate
+  served), every candidate failure is in production with a number no higher (5 where
+  production has 3 is 2 new; production in PASS is all new), and an open row with a date
+  and an owner names the gate **and** the page: its whole route (`/a/` is not `/a/b/` nor
+  `/es/a/`), its last segment standing alone (a row for a group of guides), or, for the
+  home page, "`/`". A gate leaves the red list only when all of its FAILs pass; the
+  history and the closing line name each one. The cookie banner probe is not covered:
+  consent is a lens D-057 does not cover.
 
 - **Upload lock (step 3-ter-0).** Two sessions holding permission for the same upload ran
   it twice, 11 seconds apart. The door now records each upload of a site in
@@ -702,7 +717,7 @@ without blocking. Why the order changed is trap §89.
 | `qa-master.pl` | The master gate. Five lenses over a page or a tree, and it writes the receipt. |
 | `deploy.sh` | The door. No valid receipt, no upload. Before the upload line it runs the browser gates on the candidate (step 1-quater) and a FAIL stops it, and it will not repeat another session's upload of the same site within 15 minutes; after, it checks what is served, page by page for the pages it added or changed, and closes with one line: PASS, FAIL or NOT MEASURED. |
 | `receipt.pl` | Writes, verifies and records receipts; owns the deploy history. |
-| `d057.pl` | The door's question for a red receipt of the CANDIDATE: is each FAIL and NOT VERIFIED old (the same in production, measured now with the same `qa-master`, instance by instance) and does a dated row with an owner fix it? PASS, STOP or NOT MEASURED, finding by finding, signed "D-057" (since 2026-11-06). |
+| `d057.pl` | The door's question for a red receipt of the CANDIDATE: is each FAIL and NOT VERIFIED old (the same in production, measured now with the same `qa-master`, instance by instance) and does a dated row with an owner fix it? PASS, STOP or NOT MEASURED, finding by finding, signed "D-057" (since 2026-11-06). With `--browser`, the same question for each FAIL of the browser gates in step 1-quater, against the same measurement on production. |
 | `redirects-gate.pl` | The gate of a tree that only redirects: a retired domain whose docroot is a `robots.txt` and an `.htaccess` sending every mapped path to its new page and everything else to the home page, with 301. `--candidate` simulates the rules in order (RED-01..08: every WordPress and PHP path ends in a redirect, nothing it lets through is outside the tree, no rule is shadowed, the last one is an unconditional catch-all), asks every target for a 200 (RED-09) and writes a receipt of `TIPO: REDIRECCIONES` whose five page lenses read `NO APLICA`. `--served` asks the domain itself (RED-10); the door runs it after the upload (step 4-ter) and a wrong answer stops it. Declared with `ARBOL=redirecciones` (`TREE=redirects`) in `deploy.conf`. Fail-closed: `RewriteCond`, mod_alias and internal rewrites are failures, not warnings. |
 
 ### Structure, layout and type
@@ -844,7 +859,7 @@ and neither can break an existing invocation.
 | Program | English | Spanish |
 |---|---|---|
 | `qa-diff.pl` | `--rule` · `--common` · `--force` | `--regla` · `--comunes` · `--forzar` |
-| `d057.pl` | `--no-ga4-or-ads` · `--out` · `--production-dom` · `--production` · `--today` | `--sin-ga4-ni-ads` · `--salida` · `--dom-produccion` · `--produccion` · `--hoy` |
+| `d057.pl` | `--no-ga4-or-ads` · `--out` · `--production-dom` · `--production` · `--today` · `--browser` | `--sin-ga4-ni-ads` · `--salida` · `--dom-produccion` · `--produccion` · `--hoy` · `--navegador` |
 | `audit-vs-spec.pl` | `--mode` · `--only` | `--modo` · `--solo` |
 | `coverage.pl` | `--which` | `--cuales` |
 | `run-all.sh` | `--fast` | `--rapido` |
