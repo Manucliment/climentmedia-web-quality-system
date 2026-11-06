@@ -225,6 +225,54 @@ caso('una potentialAction que no es una Action (Offer): FALLO',
      fichero(pagina('servicio', [$MIGA, '{"@context":"https://schema.org","@type":"Service","name":"Montaje","potentialAction":{"@type":"Offer","target":"https://tienda.example/"}}'], '<h1>Montaje</h1>')), [],
      ['^FALLO\s+PT-07.*Offer no es una Action'], [], 1);
 
+# 6-nov-2026 · LAS POLITICAS DE UNA TIENDA (envios, garantia y devoluciones). No tenian tipo: legal no
+#  admite botones y la pagina lleva los suyos (una tienda de banos con tres, una de Shopify con /pages/envios).
+#  Lo que Google pide, mirado ese dia en su fuente: devolucion con pais y categoria, o con el enlace; con
+#  plazo, sus dias; envio con sus condiciones. Y en la pagina que la cuenta, los dias del marcado se ven.
+print "\n== EL TIPO envios · LAS POLITICAS DE UNA TIENDA\n";
+my $DEV30 = '{"@type":"MerchantReturnPolicy","applicableCountry":"ES","returnPolicyCategory":"https://schema.org/MerchantReturnFiniteReturnWindow",'
+          . '"merchantReturnDays":30,"returnMethod":"https://schema.org/ReturnByMail","returnFees":"https://schema.org/FreeReturn"}';
+my $ENVIO = '{"@type":"ShippingService","shippingConditions":{"@type":"ShippingConditions","shippingDestination":{"@type":"DefinedRegion","addressCountry":"ES"},'
+          . '"transitTime":{"@type":"ServicePeriod","duration":{"@type":"QuantitativeValue","minValue":2,"maxValue":4,"unitCode":"DAY"}}}}';
+sub tienda_org { my ($dev, $env) = @_;
+    return '{"@context":"https://schema.org","@type":"OnlineStore","@id":"https://tienda.example/#org","name":"Tienda","url":"https://tienda.example/"'
+         . (defined $dev ? qq{,"hasMerchantReturnPolicy":$dev} : '') . (defined $env ? qq{,"hasShippingService":$env} : '') . '}' }
+my $ENVIOS_CUERPO = '<h1>Envios, garantia y devoluciones</h1><p>Enviamos a toda Espana en 2 a 4 dias.</p>'
+                  . '<p>Tienes 30 dias para devolverlo, sin coste.</p><a class="btn" href="/tienda/">Ver la tienda</a>';
+caso('una pagina de envios con migas y su politica en la Organization: PASA',
+     fichero(pagina('envios', [$MIGA, tienda_org($DEV30, $ENVIO)], $ENVIOS_CUERPO)), [],
+     ['^PASA\s+PT-03\s+lleva lo que pide una pagina envios', '^PASA\s+PT-05', '^PASA\s+PT-06'], ['^FALLO'], 0);
+caso('el alias devoluciones vale por envios',
+     fichero(pagina(undef, [$MIGA, tienda_org($DEV30, $ENVIO)], $ENVIOS_CUERPO)), ['--tipo', 'devoluciones'],
+     ['^PASA\s+PT-03\s+lleva lo que pide una pagina envios'], ['^FALLO'], 0);
+caso('una pagina de envios sin migas: FALLO',
+     fichero(pagina('envios', [tienda_org($DEV30, $ENVIO)], $ENVIOS_CUERPO)), [], ['^FALLO\s+PT-03.*falta BreadcrumbList'], [], 1);
+caso('una pagina de envios con un Product suelto: FALLO',
+     fichero(pagina('envios', [$MIGA, tienda_org($DEV30, $ENVIO), producto('49.95')], $ENVIOS_CUERPO)), [], ['^FALLO\s+PT-04.*Product'], [], 1);
+(my $DEV_SIN_DIAS = $DEV30) =~ s/"merchantReturnDays":30,//;
+caso('una devolucion con plazo y sin sus dias: FALLO',
+     fichero(pagina('envios', [$MIGA, tienda_org($DEV_SIN_DIAS, $ENVIO)], $ENVIOS_CUERPO)), [],
+     ['^FALLO\s+PT-05.*MerchantReturnFiniteReturnWindow\) y sin merchantReturnDays'], [], 1);
+caso('una devolucion solo con el enlace a la pagina que la cuenta: PASA (Google lo admite)',
+     fichero(pagina('envios', [$MIGA, tienda_org('{"@type":"MerchantReturnPolicy","merchantReturnLink":"https://tienda.example/pagina/"}', $ENVIO)], $ENVIOS_CUERPO)), [],
+     ['^PASA\s+PT-05'], ['^FALLO'], 0);
+caso('una devolucion sin pais, ni categoria, ni enlace: FALLO',
+     fichero(pagina('envios', [$MIGA, tienda_org('{"@type":"MerchantReturnPolicy","merchantReturnDays":30}', $ENVIO)], $ENVIOS_CUERPO)), [],
+     ['^FALLO\s+PT-05.*MerchantReturnPolicy en \S+ sin applicableCountry\|merchantReturnLink'], [], 1);
+caso('un envio sin sus condiciones: FALLO',
+     fichero(pagina('envios', [$MIGA, tienda_org($DEV30, '{"@type":"ShippingService","name":"Estandar"}')], $ENVIOS_CUERPO)), [],
+     ['^FALLO\s+PT-05.*ShippingService en \S+ sin shippingConditions'], [], 1);
+(my $CUERPO_14 = $ENVIOS_CUERPO) =~ s/30 dias/14 dias/;
+caso('el marcado dice 30 dias y la pagina 14: FALLO',
+     fichero(pagina('envios', [$MIGA, tienda_org($DEV30, $ENVIO)], $CUERPO_14)), [],
+     ['^FALLO\s+PT-06.*plazo de devolucion del marcado \(30 dias\)'], [], 1);
+caso('un 30 dentro de 130 no es el 30 del marcado: FALLO',
+     fichero(pagina('envios', [$MIGA, tienda_org($DEV30, $ENVIO)], $CUERPO_14 . '<p>130 opiniones</p>')), [],
+     ['^FALLO\s+PT-06.*\(30 dias\)'], [], 1);
+caso('la misma Organization en la portada, sin los dias: PT-06 no lo cruza (solo en envios)',
+     fichero(pagina('home', ['{"@context":"https://schema.org","@type":"WebSite","name":"Tienda","url":"https://tienda.example/"}', tienda_org($DEV30, $ENVIO)],
+                    '<h1>Tienda</h1>')), [], [], ['^FALLO\s+PT-06'], undef);
+
 print "\n== PT-09 · LA INDEXACION POR TIPO\n";
 caso('un pago sin noindex: AVISO', fichero(pagina('checkout', [], '<h1>Pago</h1>')), [], ['^AVISO\s+PT-09.*sin noindex'], [], undef);
 caso('un pago con noindex: PASA', fichero(pagina('checkout', [], '<h1>Pago</h1>', '<meta name="robots" content="noindex, nofollow">')), [], ['^PASA\s+PT-09'], ['^AVISO\s+PT-09'], undef);

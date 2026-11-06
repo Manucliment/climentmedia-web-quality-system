@@ -36,6 +36,7 @@ precios||precios|WebPage|BreadcrumbList;Service/Product/SoftwareApplication|Offe
 contacto|contact|contacto|ContactPage|Organization|ContactPoint|Product|-|index|the Organization may be a reference by @id to the one on the home
 gracias|thank-you||WebPage|-|-|Product FAQPage Article|-|noindex|a page after converting: nothing to rank
 legal|||WebPage|-|-|Product FAQPage|-|libre|
+envios|devoluciones garantia politica-tienda shipping returns|-|WebPage|BreadcrumbList|MerchantReturnPolicy:en-la-Organization ShippingService:en-la-Organization|Product|-|index|a shop's shipping, warranty and returns page: unlike a legal page it carries buttons, because it answers the last objection before buying; the policy goes in the markup once, on the Organization (hasMerchantReturnPolicy, hasShippingService), and the days it gives are the days on the page
 404|||WebPage|-|-|Product FAQPage Article|-|noindex|served with status 404
 landing|quiz|landing|WebPage|-|BreadcrumbList|Product|-|libre|
 nosotros|about|nosotros|AboutPage|Organization|Person:equipo-real|Product|-|index|Google reads Organization on the home or on one page that describes the organisation

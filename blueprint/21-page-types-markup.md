@@ -25,10 +25,10 @@ never made.
 
 ---
 
-## 1 · The catalogue: 22 types
+## 1 · The catalogue: 23 types
 
-Fifteen come from `anatomy.tsv` and have measured sections. Seven are new on 5-nov-2026 and have
-**no measured anatomy yet** (column "Sections"): their markup and indexing are judged, their
+Fifteen come from `anatomy.tsv` and have measured sections. Seven are new on 5-nov-2026 and one on
+6-nov (`envios`); the eight have **no measured anatomy yet** (column "Sections"): their markup and indexing are judged, their
 sections are not, until four pages of other businesses are measured for each, the rule of 09 §2.
 
 | Type | Also called | Sections | Page node | Indexed | Must carry |
@@ -55,6 +55,7 @@ sections are not, until four pages of other businesses are measured for each, th
 | `faq` | preguntas | **not measured** | FAQPage | yes | `FAQPage`, every question on the page |
 | `busqueda` | search, resultados | **not measured** | SearchResultsPage | **no** | nothing |
 | `perfil` | autor, profile | **not measured** | ProfilePage | yes | `Person` or `Organization` |
+| `envios` | devoluciones, garantia, politica-tienda, shipping, returns | **not measured** | WebPage | yes | `BreadcrumbList`; the policy itself on the `Organization` is recommended, not required |
 
 **PLP and PCP, the difference.** A PLP is the grid of products with filters and sort (one category
 or a search of the catalogue). A PCP is the parent category above them: it lists subcategories, often
@@ -76,6 +77,7 @@ when it lists what the page shows.
 | `home` | `WebSite` with `name` and `url` (it is what gives the site name in Google); `Organization` with `@id`, logo, `sameAs` that answer 200; a `SearchAction` **only** if the site has a search, and probed (§4) |
 | `ficha` / pdp | `Product` with `name`, `image`, `offers`; the price in the markup is the price on the page; variants as `ProductGroup` + `hasVariant` + `variesBy`, each variant with its own URL and price (the page shows the selected one, so the gate asks for at least one variant price on the page, not all of them); shipping and returns at `Organization` level (`hasMerchantReturnPolicy`, `hasShippingService`) unless a product overrides them; an `AggregateOffer` carries `lowPrice` |
 | `plp` / `pcp` | products only as items of the `ItemList`, never loose `Product` nodes (Google's product markup is for one product, not a list); filter and sort URLs are not indexed; page 2 of a series is its own canonical, never page 1 |
+| `envios` | a shop's shipping, warranty and returns page. **It is not a `legal` page:** a legal page is prose with no buttons, and this one answers the last objection before buying, so it carries its way back to the catalogue or to the lead. The return and shipping policy go in the markup once, on the `Organization` (`hasMerchantReturnPolicy`, `hasShippingService`), and on this page the days of the return window in the markup are days the page shows (PT-06). What Google requires, checked at the source on 6-nov-2026: a return policy with `applicableCountry` and `returnPolicyCategory`, or only `merchantReturnLink`; with a finite window, `merchantReturnDays`; a shipping policy with its `shippingConditions` (PT-05) |
 | `faq` | each `Question` in the markup is on the page; Google no longer shows FAQ results to anyone (7-may-2026), so this is description, not a win |
 | `contacto` / `nosotros` | the `Organization` is the same one as the home's (same `@id`), not a second copy that drifts |
 | `carrito`, `checkout`, `busqueda`, `gracias` | `noindex`: they have nothing to rank and spend crawl; no rich markup |

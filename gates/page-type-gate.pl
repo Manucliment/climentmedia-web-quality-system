@@ -431,6 +431,11 @@ my @REGLAS = (
     ['Person',         ['name'],                                 [],                           'schema.org'],
     ['JobPosting',     ['title', 'datePosted', 'hiringOrganization', 'description'], ['validThrough'], 'Google, ofertas de empleo'],
     ['Service',        ['name|serviceType'],                     ['provider'],                 '02-estandar §7'],
+    # 6-nov-2026 · the policies of a shop (page type envios). Google, checked at the source that day:
+    #   a return policy needs applicableCountry and returnPolicyCategory, OR merchantReturnLink
+    #   (a URL to the page that tells it); a shipping policy needs its shippingConditions.
+    ['MerchantReturnPolicy', ['applicableCountry|merchantReturnLink', 'returnPolicyCategory|merchantReturnLink'], [], 'Google, politica de devoluciones: pais y categoria, o el enlace a la pagina que la cuenta'],
+    ['ShippingService', ['shippingConditions'],                  [],                           'Google, politica de envio'],
 );
 {
     my (@mal, @avi, $mirados);
@@ -447,6 +452,13 @@ my @REGLAS = (
             for my $alt (@$obl) { push @mal, "$donde sin $alt" unless grep { tiene($n, $_) } split /\|/, $alt }
             for my $k (@$rec)   { push @avi, "$donde sin $k" unless tiene($n, $k) }
         }
+    }
+    # Google: a return window with a limit (MerchantReturnFiniteReturnWindow) needs its days.
+    for my $nd (nodos_de('MerchantReturnPolicy')) {
+        next unless texto($nd->{n}{returnPolicyCategory}) =~ /MerchantReturnFiniteReturnWindow\s*$/;
+        push @mal, 'MerchantReturnPolicy' . ($nd->{ruta} ne '' ? " en $nd->{ruta}" : '')
+                 . ' con plazo (MerchantReturnFiniteReturnWindow) y sin merchantReturnDays'
+            unless tiene($nd->{n}, 'merchantReturnDays');
     }
     # The lists: each element with its position, and a crumb (but the last) with its URL.
     for my $nd (nodos_de('ItemList')) {
@@ -537,12 +549,25 @@ my @REGLAS = (
             push @mal, "el precio $p del marcado no aparece en la pagina" unless $s;
         }
     }
+    # 6-nov-2026 · ON THE PAGE THAT TELLS THE POLICY, the days of the markup are the days on
+    #    the page. Google takes the policy from the markup and shows it next to the price; a
+    #    shop that changes «30 días» to «14 días» on the page and not in the markup promises
+    #    in Google what it no longer gives. Only on an envios page: the same Organization,
+    #    carried site-wide, does not have to repeat its days on every page.
+    if ($TIPO && $TIPO eq 'envios') {
+        for my $nd (nodos_de('MerchantReturnPolicy')) {
+            my $d = texto($nd->{n}{merchantReturnDays}); next unless $d =~ /^\s*(\d+)\s*$/;
+            my $dias = $1; $mirado++;
+            push @mal, "el plazo de devolucion del marcado ($dias dias) no aparece en la pagina"
+                unless $VISC =~ /(?<![\d.,])\Q$dias\E(?![\d.,])/;
+        }
+    }
     for my $nd (grep { $_->{suelto} } nodos_de('Article')) {
         my $h = norm(texto($nd->{n}{headline})); next if $h eq ''; $mirado++;
         push @avi, "el headline no es el h1 ni el title" unless ($H1 ne '' && (index($H1, $h) >= 0 || index($h, $H1) >= 0))
                                                           || ($TITLE ne '' && index($TITLE, $h) >= 0);
     }
-    if (!$mirado) { nv('PT-06', 'el marcado contra la pagina', 'no hay preguntas, producto, precio ni articulo que cruzar') }
+    if (!$mirado) { nv('PT-06', 'el marcado contra la pagina', 'no hay preguntas, producto, precio, plazo de devolucion ni articulo que cruzar') }
     elsif (@mal)  { fallo('PT-06', 'el marcado dice algo que la pagina no ensena', join(' · ', @mal) . ' · el marcado solo describe lo que se ve') }
     else          { pasa('PT-06', 'lo marcado esta en la pagina', join(' · ', @NOTA_VAR)) }
     aviso('PT-06', 'el marcado y la pagina no dicen lo mismo', join(' · ', @avi)) if @avi;
