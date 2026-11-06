@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contacto | Fixture del vocabulario de forms-gate</title>
+<meta name="description" content="Fixture de la bateria: un formulario por pasos con un atributo que se parece a una declaracion de forms-gate.js y no lo es: la exencion va por nombre exacto.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<!-- `data-pasos`, `data-envio-js` y `data-guarda-doble` los pide forms-gate.js (medir por pasos, dejar de avisar
+     del envio por JS y del doble guardado). Ningun .js del arbol los lee, y no es un defecto: los lee el gate. -->
+<body>
+<main data-tipo="contacto">
+  <section data-sec="hero"><h1>Cuentanos tu caso</h1><p>Dos pasos y te escribimos en 24 horas.</p></section>
+  <section data-sec="formulario">
+    <form action="/enviar.php" method="post" data-pasos="2" data-envio="fetch a /enviar.php" data-guarda-doble="copia en el servidor">
+      <fieldset><legend>Tu caso</legend><label for="c">Que necesitas</label><input id="c" name="caso" required></fieldset>
+      <fieldset hidden><legend>Tus datos</legend><label for="e">Email</label><input id="e" name="email" type="email" required></fieldset>
+      <button type="submit">Enviar</button>
+    </form>
+  </section>
+</main>
+<script src="script.js"></script>
+</body>
+</html>

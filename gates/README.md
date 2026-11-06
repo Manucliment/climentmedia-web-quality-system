@@ -32,7 +32,7 @@ install the fast run is **1077 cases green, 0 red**, with the deploy-history ban
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1838 cases green, 0 red**, with **nine** banks reported as
+a clean install it reads **1849 cases green, 0 red**, with **nine** banks reported as
 `NOT MEASURED`: the seven that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **2014**: 1838 plus 174 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **2025**: 1849 plus 174 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,7 +101,7 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  1838 casos en verde · 0 en rojo
+  1849 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
@@ -464,7 +464,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Eight more since 2026-11-05**, all from one week of real deploys:
+**Eleven more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -541,6 +541,22 @@ without blocking. Why the order changed is trap §89.
   half-written docroot), so the door finishes the long step it is in and stops at the
   upload; and a door launched by a process outside this shell cannot be checked for
   orphanhood.
+- **A form that goes step by step is measured step by step (`forms-gate.js`, `data-pasos`).**
+  A quiz hides the steps that are not on screen yet, on purpose, so measured on load its
+  required fields and its submit button "could not be seen": six forms of one site in a
+  false F8 and F5 while the real submission worked. Declared with `data-pasos` on the
+  `<form>` (a `[data-paso]` or a `<fieldset>` per step), the gate shows each step in turn,
+  measures it and puts everything back; the real defects still fail (a shown step hiding a
+  required field, a last step without the button), and so does the same quiz undeclared.
+  `qa-master` MED-05 accepts that declaration and its two siblings (`data-envio-js`,
+  `data-guarda-doble`) as gate vocabulary, by exact name: a near name (`data-envio`) is
+  still an orphan.
+- **MED-09 hears a retention period in English.** None of the trigger words was English,
+  so "we keep them for 12 months" came out "no retention period".
+- **SEO-13 does not ask the root for breadcrumbs, whatever type it declares.** A home that
+  declares `data-tipo="nosotros"` or `"hub"` was asked for a `BreadcrumbList` it cannot
+  have, since nothing sits above it. The exemption goes by the path; the same page at
+  `/sobre/` still warns.
 
 ---
 
@@ -772,7 +788,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **535 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **541 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until

@@ -2091,6 +2091,15 @@ espera "MED-05 · data-sec no cuenta como huerfano"     PASA  MED-05 \
 #    (script.js:203 lo lee) y el rojo venia del `_migrate/` del cliente.
 espera "MED-05 · un huerfano de verdad SIGUE cazandose" FALLO MED-05 \
        perl $QA https://climentmedia.com --repo fixtures-med05/huerfano --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 6-nov-2026 · Y LAS DECLARACIONES DE forms-gate.js (data-pasos, data-envio-js, data-guarda-doble). Las lee ese gate,
+#    no el JS del sitio. Visto en ROJO contra el gate anterior: FALLO con 3 atributos. Y el control negativo es un
+#    nombre CASI igual (data-envio): la exencion es por nombre exacto, asi que sigue saltando y se nombra.
+espera "MED-05 · las declaraciones de forms-gate no son huerfanos" PASA MED-05 \
+       perl $QA https://climentmedia.com --repo fixtures-med05/vocabulario-forms --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-05 · un nombre casi igual (data-envio) SIGUE cazandose" FALLO MED-05 \
+       perl $QA https://climentmedia.com --repo fixtures-med05/vocabulario-forms-casi --candidato --una-sola --solo medicion --sin-recibo
+texto  "MED-05 · y lo nombra"                          SI "data-envio (escrito" \
+       perl $QA https://climentmedia.com --repo fixtures-med05/vocabulario-forms-casi --candidato --una-sola --solo medicion --sin-recibo
 
 echo
 echo "== LA PAGINA DECLARA SU TIPO (data-tipo) · 11-ago-2026"
@@ -2537,8 +2546,16 @@ espera "SEO-11 · sin JSON-LD, FALLA"                  FALLO SEO-11 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/seo-pobre --candidato --una-sola --solo seo --sin-recibo
 espera "SEO-11 · con JSON-LD, PASA"                   PASA  SEO-11 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/seo-bueno --candidato --una-sola --solo seo --sin-recibo
-espera "SEO-13 · sin BreadcrumbList, AVISA"           AVISO SEO-13 \
+# 🔴 6-nov-2026 · LA RAIZ NO PIDE MIGAS AUNQUE DECLARE OTRO TIPO. Este caso esperaba AVISO en seo-pobre, que es la
+#    RAIZ con data-tipo="hub": era el mismo falso positivo, porque el umbral es «todas menos la home» y la home es la
+#    raiz. Una portada con data-tipo="nosotros" salia AVISO igual (visto en ROJO contra el gate anterior). El aviso
+#    de verdad se prueba ahora donde vive, en una pagina interior: la MISMA pagina en /sobre/ sigue avisando.
+espera "SEO-13 · la raiz (data-tipo hub) no pide migas" AUSENTE SEO-13 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/seo-pobre --candidato --una-sola --solo seo --sin-recibo
+espera "SEO-13 · la raiz con otro data-tipo no pide migas" AUSENTE SEO-13 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/seo-raiz-otro-tipo --candidato --una-sola --solo seo --sin-recibo
+espera "SEO-13 · la misma pagina en /sobre/, AVISA"     AVISO SEO-13 \
+       perl $QA https://climentmedia.com/sobre/ --repo fixtures-lenses/seo-raiz-otro-tipo --candidato --una-sola --solo seo --sin-recibo
 
 echo
 echo "== LA LENTE DE ACCESIBILIDAD · cinco defectos que son HTML valido"

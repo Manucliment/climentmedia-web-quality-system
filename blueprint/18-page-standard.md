@@ -60,7 +60,7 @@ They are folded in here.
 
 ## Navigation and accessibility
 
-- **WPS-10** · gate — `BreadcrumbList` JSON-LD on EVERY page
+- **WPS-10** · gate — `BreadcrumbList` JSON-LD on every page except the home, which is the root whatever type it declares
   <br>`qa-master SEO-13 (WARN only)`
 - **WPS-11** · gate — Real `<a href>` links, never JavaScript-only navigation
   <br>`qa-master SEO-14`

@@ -414,7 +414,7 @@
       "doc": "blueprint/18-page-standard.md",
       "linea": 44,
       "ref": "web-page-standard/SKILL.md:87",
-      "texto": "BreadcrumbList JSON-LD en TODAS",
+      "texto": "BreadcrumbList JSON-LD en todas menos la home (la raiz, declare el tipo que declare)",
       "tipo": "binaria",
       "comprobable_maquina": "si",
       "gate": "qa-maestro SEO-13 (solo AVISO)",

@@ -1786,7 +1786,13 @@ sub lente_seo {
         # del indice es peso muerto: la regla ya lo decia y el check no.
         my $noindex = $h =~ /<meta[^>]+name=["']robots["'][^>]*content=["'][^"']*noindex/i;
         push @sin_jsonld, $u if $ld !~ /\S/ && !$noindex;
-        push @sin_bread,  $u if $tipo ne 'home' && $ld !~ /BreadcrumbList/ && !$noindex;
+        # 6-nov-2026 · LA HOME ES LA RAIZ, LA DECLARE COMO LA DECLARE. Una portada con <main data-tipo="nosotros">
+        #    (la de una marca que se presenta) hacia que tipo_de() dijera «nosotros», y SEO-13 le pedia migas a la
+        #    raiz, que no tiene nada por encima: un AVISO falso en cada QA de esa web (nota del 31-oct). La exencion
+        #    va por la RUTA, no por el tipo: una pagina interior del mismo tipo sigue avisando.
+        #    Control: seo-raiz-otro-tipo, la raiz (ausente) y /sobre/ (AVISO).
+        my ($ruta_b) = $u =~ m{^https?://[^/?#]+(/[^?#]*)?}; $ruta_b //= '/';
+        push @sin_bread,  $u if $tipo ne 'home' && $ruta_b ne '/' && $ld !~ /BreadcrumbList/ && !$noindex;
 
         # G10 · el HTML SERVIDO frente al DOM. produto.html de site-b pesa 1.503
         # bytes en vivo: mismo <title> para 52 SKU, sin h1, sin JSON-LD. El JS lo
