@@ -25,10 +25,11 @@
 //         arriba, la barra de llamar abajo. Quien usa el teclado no ve donde esta.
 //         El gate recorre el orden de Tab dos veces, hacia delante y hacia atras
 //         (Shift+Tab), y en cada parada desplaza como Chrome: si la caja ya esta
-//         entera dentro de la pantalla menos el scroll-padding, no la mueve (asi
-//         se queda debajo de la cabecera pegada: es el fallo, y sale sobre todo
-//         hacia atras); si no, la centra. Asi el arreglo bueno (scroll-padding-top
-//         con la altura de la cabecera) pasa. Contrastado con Tab de verdad. Mira 9
+//         entera dentro de la pantalla menos el scroll-padding, no la mueve; si
+//         asoma en parte, la lleva al borde mas cercano; si esta fuera, la centra.
+//         Las dos primeras la dejan debajo de la cabecera pegada (es el fallo, y
+//         sale hacia atras). El arreglo bueno (scroll-padding-top con la altura de
+//         la cabecera) pasa. Contrastado con Tab de verdad, pulsacion a pulsacion. Mira 9
 //         puntos de la caja: si los 9 caen en un elemento fijo o pegado que no
 //         contiene la parada, esta tapada entera. FALLA. Tapada por el aviso de
 //         cookies, AVISO: el visitante lo cierra al decidir. Tapada en mas de la
@@ -228,16 +229,22 @@
   const csHtml = getComputedStyle(html);
   const pad = { top: px(csHtml.scrollPaddingTop, vh), bottom: px(csHtml.scrollPaddingBottom, vh),
     left: px(csHtml.scrollPaddingLeft, vw), right: px(csHtml.scrollPaddingRight, vw) };
-  // Lo que hace Chrome al llevar el foco con Tab (Blink: «centrar si hace falta», eje por eje): si la caja, con su
-  // scroll-margin, ya esta entera dentro del snapport, NO se mueve, aunque quede debajo de una cabecera pegada; si no,
-  // la centra en el snapport. Contrastado el 6-nov con Tab y Shift+Tab de verdad (tab-real, 5 paginas de 4 webs):
-  // con «nearest», que era lo de antes, el gate contaba tapadas que el navegador no tapa (60 FALLA de 100 medidas).
+  // Lo que hace Chrome al llevar el foco con Tab (Blink, «centrar si hace falta», eje por eje, contra el snapport y con
+  // el scroll-margin de la caja): entera dentro, NO se mueve, aunque quede debajo de una cabecera pegada; asomando en
+  // parte, al borde mas cercano (y ese borde, sin scroll-padding, es el de la pantalla: debajo de la cabecera); fuera
+  // del todo, al centro. Mas grande que el snapport y cubriendolo, no se mueve. Contrastado el 6-nov con Tab y
+  // Shift+Tab de verdad (tab-real, con traza de cada pulsacion): un campo que asomaba 2 px por arriba quedo a top 0,
+  // con 2 px de desplazamiento. Con «nearest» para todo, que era lo de antes, el gate daba 60 FALLA de 100 medidas.
+  const eje = (a, b, lo, hi) => {
+    const dentro = Math.min(b, hi) - Math.max(a, lo);
+    if (dentro >= b - a - 0.5 || dentro >= hi - lo - 0.5) return null;   // entera dentro, o lo cubre: no se mueve
+    return dentro > 0 ? 'nearest' : 'center';
+  };
   const llevaElFoco = el => {
     const r = el.getBoundingClientRect(), m = getComputedStyle(el);
-    const top = r.top - px(m.scrollMarginTop, 0), bottom = r.bottom + px(m.scrollMarginBottom, 0);
-    const left = r.left - px(m.scrollMarginLeft, 0), right = r.right + px(m.scrollMarginRight, 0);
-    const enV = top >= pad.top && bottom <= vh - pad.bottom, enH = left >= pad.left && right <= vw - pad.right;
-    if (!enV || !enH) el.scrollIntoView({ block: enV ? 'nearest' : 'center', inline: enH ? 'nearest' : 'center', behavior: 'instant' });
+    const v = eje(r.top - px(m.scrollMarginTop, 0), r.bottom + px(m.scrollMarginBottom, 0), pad.top, vh - pad.bottom);
+    const h = eje(r.left - px(m.scrollMarginLeft, 0), r.right + px(m.scrollMarginRight, 0), pad.left, vw - pad.right);
+    if (v || h) el.scrollIntoView({ block: v || 'nearest', inline: h || 'nearest', behavior: 'instant' });
   };
   const orden = enOrden().filter(el => !fijoQueLoContiene(el)).slice(0, CFG.maxParadas);
   const enteras = new Map(), cookies = new Map(), parciales = new Map();

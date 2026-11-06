@@ -35,9 +35,9 @@ install the fast run is **1169 cases green, 0 red**, with the deploy-history ban
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **2064 cases green, 0 red**, with **ten** banks reported as
-`NOT MEASURED`: the eight that measure on a Linux host (`measure-screens`, `mobile-gate`,
-`mobile-menu-gate`, `marca-gate`, `botones-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
+a clean install it reads **2064 cases green, 0 red**, with **eleven** banks reported as
+`NOT MEASURED`: the nine that measure on a Linux host (`measure-screens`, `mobile-gate`,
+`mobile-menu-gate`, `marca-gate`, `botones-gate`, `visible-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
 Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
 `structure-gate` later: see below.)
@@ -105,7 +105,7 @@ $ bash gates/run-all.sh --fast
 ```
 $ bash gates/run-all.sh
   2064 casos en verde · 0 en rojo
-  NO MEDIDOS: medir-pantallas gate-movil gate-menu gate-marca gate-botones conformidad historial form-handler banner-cookies contador-consentimiento
+  NO MEDIDOS: medir-pantallas gate-movil gate-menu gate-marca gate-botones gate-visible conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
 > **The very first run on a clean install also lists `doc-gate(skill)`**, whichever of the two
@@ -469,6 +469,9 @@ The census on the nine sites that upload this way: 0 extra files, so it stops fr
   It **only warns** until `deploy.conf` says `BOTONES_GATE=para`; `BOTONES_FAMILIAS` names the
   site's button families. Measured that day on ten home pages, three sites had one button class
   with two shapes (a smaller header call to action, a form button in another size or in Arial).
+- `visible-gate.js` at 1366 and 390 (since 2026-11-06): the content that is still invisible after
+  walking the page down and waiting for its reveals, and the Tab stop left whole under a sticky
+  header or a fixed bar. It **only warns** until `deploy.conf` says `VISIBLE_GATE=para`.
 
 They run on every page in `URLS_NAVEGADOR` (`/` if none). And once per upload, on the home page:
 
@@ -784,6 +787,7 @@ without blocking. Why the order changed is trap §89.
 | `botones-gate.js` | One button, one look, on the page: the same group (its family from `BOTONES_FAMILIAS`, or its classes) keeps one **shape** everywhere (size, weight, typeface, case, radius, border, padding, with 1 px of size and 2 of padding as tolerance) and one **paint** on the same background (fill, text and border colour; the inverted button of a dark band is the same button). A button of one line keeps its height. With families, a button of none warns. Not hover, not focus. |
 | `botones-sitio.js` | The same comparison (`compara`, exported by the gate: one copy of the rule) over the readings of several pages, by width; it reports only what appears when they are put together, and a reading that is not valid is named and left out. |
 | `botones-barrido.sh` | Every page of the served sitemap (40 by default) through both, at 1366 and 390: the monthly design pass. |
+| `visible-gate.js` | What the visitor actually sees. **VI1**: the page is walked down in steps of 0.8 screens and every container never seen is centred and waited for; text of the content that is still at opacity 0 or visibility hidden counts (FAIL from 200 characters or with an h1/h2, WARN from 40), and what is hidden on purpose does not (display none, `[hidden]`, `[inert]`, aria-hidden, closed details, dialogs, menus, tab panels, carousels, the cookie notice, hover layers). **VI2** (WCAG 2.4.11): the Tab order, forward and backward, scrolled the way Chrome scrolls a focused element (inside the viewport minus the root's scroll-padding: no scroll; partly out: nearest edge; fully out: centred, checked key press by key press against real Tab); a stop whose nine points all fall on a fixed or sticky element is a FAIL, the cookie notice a WARN, five of nine a WARN (2.4.12). Not the focus ring (A11Y-03b), not iframes or shadow DOM. |
 | `measure-screens.js` | Density: how much page per screen, measured against the moulds. |
 | `anatomy.pl` | One table of page anatomies, three consumers, and they must agree. |
 | `roles.pl` | The role vocabulary (`roles.tsv` = 09 §1), and it generates one reference sheet per page type into `blueprint/moulds/types/`. `--gate` re-derives all thirteen and fails on any difference, so a sheet edited by hand does not survive a battery. |

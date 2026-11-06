@@ -21,7 +21,8 @@
 #    VI2  con enlaces seguidos, la cabecera pegada sin scroll-padding (FALLA, y solo
 #         hacia atras: hacia delante Chrome no deja nada debajo) y con el (PASA) · la
 #         misma cabecera con enlaces separados (PASA: Chrome centra cada uno; la
-#         emulacion de antes, «nearest», daba FALLA) · la barra de llamar fija abajo,
+#         emulacion de antes, «nearest», daba FALLA) · enlaces a 385 px, que hacia atras
+#         asoman 15 px por arriba (FALLA: Chrome los lleva al borde, no al centro) · la barra de llamar fija abajo,
 #         a 1366 y a 390 (FALLA) · el aviso de cookies (AVISO) · tapado en parte
 #         (AVISO, no FALLA). Cada fixtura de VI2 se paso el 6-nov por Tab y Shift+Tab
 #         DE VERDAD (puppeteer keyboard) en el mismo Chrome: mismo veredicto.
@@ -88,6 +89,7 @@ echo "=========== VI2 · el foco tapado por lo fijo ==========="
 res CABECERA           foco-cabecera.html      FALLA 'tapadas enteras por la cabecera fija (header, 141 px)'
 TAM="390 844" res CABECERA-390 foco-cabecera.html FALLA '"adelante": 0'
 res ESPACIADA          foco-espaciada.html     PASA  '"tapadasEnteras": 0' 'quedan tapadas'
+res ASOMA              foco-asoma.html         FALLA 'tapadas enteras por la cabecera fija (header, 141 px)'
 res SCROLL-PADDING     foco-padding.html       PASA  '"tapadasEnteras": 0' 'quedan tapadas'
 res BARRA              foco-barra.html         FALLA 'tapadas enteras por la barra fija de abajo (div.barra-llamar, 80 px)'
 TAM="390 844" res BARRA-390 foco-barra.html    FALLA 'tapadas enteras por la barra fija de abajo (div.barra-llamar, 80 px)'

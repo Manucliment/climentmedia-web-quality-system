@@ -78,6 +78,15 @@ BROWSER_URLS="/ /contact/"
 # the palette count. Only letters, digits, # . _ and -.
 # MARCA_IGNORAR="#chat-widget, .third-party-badge"
 
+# The other browser gates that only WARN until the site asks them to stop the upload:
+# the buttons (botones-gate.js, once its buttons are unified), the cookie notice
+# (banner-probe.js) and what the visitor sees (visible-gate.js: content still
+# invisible after scrolling, a Tab stop hidden whole under a sticky header or a
+# fixed bar; the usual fix is html{scroll-padding-top:<header height>}).
+# BOTONES_GATE=para
+# BANNER_GATE=para
+# VISIBLE_GATE=para
+
 # Which pages have a form. On these, the form step is REQUIRED: a page here that
 # ends up without a working form is a FAIL, not a "does not apply". Without this
 # line the form step IS NOT MEASURED, and that gets recorded — an unmeasured
