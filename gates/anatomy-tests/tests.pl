@@ -129,6 +129,9 @@ caso('D · la tabla desaparece', 'anatomy.tsv', sub {
     return !-e "$TMP/anatomy.tsv";
 });
 
-remove_tree($TMP) if -d $TMP;
+# 6-nov-2026 · Se borra la RAIZ, no solo gates/: la copia de blueprint/09-page-types.md se
+# quedaba en .tmp-anatomy/blueprint/ (ignorada por git), y un generador que leia el disco
+# de la fuente la publico como documentacion del 31-oct al 1-nov.
+remove_tree($ROOT) if -d $ROOT;
 printf "\n  OK %d · MAL %d\n", $OK, $MAL;
 exit($MAL ? 1 : 0);
