@@ -5532,7 +5532,20 @@ sub lente_estructura {
             push @d, sprintf('bloque > 1 pantalla%s: %d', ($DOM{densidad_de} ? ' sin una parada' : ''), $desb) if $desb > 0;
             push @d, sprintf('contenedor > 3 pantallas: %d (%s)', $gig, join(' · ', @{ $DOM{que_gigante} || [] })) if $gig > 0;
             push @d, sprintf('tramo sin CTA: %.1f pantallas', $gapmax) if $gapmax > 2.5;
-            push @d, sprintf('pagina: %.1f pantallas', $pant) if $pant > 6 && !$DOM{es_pagina_prosa};
+            # 🔴 6-nov-2026 · EL LIMITE DE LARGO ES EL DE measure-screens.js, LA REGLA DE
+            #    LA PUERTA [trap:design-E3]. Aqui seguia el 6 fijo que measure-screens dejo
+            #    el 19-ago por un presupuesto de palabras (6 + 1 pantalla por cada 80
+            #    palabras visibles pasadas las 400, techo 12): una portada medida el 6-nov a 390
+            #    (8,1 pantallas, limite 10,5 en la puerta) salia FALLO aqui y PASA alli. El snippet copia ahora
+            #    el limite y las pantallas que calcula measure-screens.js, y se juzga con
+            #    ellos. Un DOM capturado antes no los trae: sigue el 6, y se dice.
+            my $lim    = $DOM{limite_pantallas};
+            my $pant_l = $DOM{pantallas_ms} // $pant;
+            my $lim_d  = defined $lim
+                ? sprintf('limite %.1f para %d palabras visibles, el de measure-screens.js', $lim, $DOM{palabras_visibles} // 0)
+                : 'limite 6: este DOM es de un snippet sin el limite de measure-screens.js; recapturar con qa-master.pl --snippet';
+            push @d, sprintf('pagina: %.1f pantallas (%s)', $pant_l, $lim_d)
+                if $pant_l > ($lim // 6) && !$DOM{es_pagina_prosa};
             # 🔴 LA UNICA EXCEPCION DECLARADA (08-qa-final): si falla SOLO por el
             # umbral de CTAs y su interaccion principal son <button>, es un FALSO
             # FALLA. Medido el 7-ago en shop.site-b.example/a-medida.html: 0 CTA en
@@ -5559,11 +5572,11 @@ sub lente_estructura {
             : @d ? fallo(lente=>'ESTRUCTURA', id=>'EST-06', titulo=>'densidad y CTAs',
                        donde=>"$u a innerWidth=$iw innerHeight=$ih",
                        dato=>join(' · ', @d)." · esPaginaProsa: $prosa",
-                       umbral=>'ningun bloque >1 pantalla · <=2,5 pantallas sin CTA · >=2 CTA · <=6 pantallas SOLO si no es prosa',
+                       umbral=>'ningun bloque >1 pantalla · <=2,5 pantallas sin CTA · >=2 CTA · largo <= el limite de measure-screens.js (6 + 1 por cada 80 palabras visibles pasadas las 400, techo 12) SOLO si no es prosa',
                        proc=>'08-qa-final A-bis · sospecha de metodo: el gate aplicaba el mismo limite de 6 pantallas a paginas de PROSA (4 de 15). Lo que SI es defecto sin discusion es el tramo sin CTA y el bloque desbordado',
                        hacer=>'partir el bloque desbordado y repartir CTAs. Al migrar se conserva el CONTENIDO; la maqueta se rehace')
                : pasa(lente=>'ESTRUCTURA', id=>'EST-06', titulo=>'densidad y CTAs',
-                      dato=>sprintf('%.1f pantallas · %d CTA · 0 desbordes · esPaginaProsa: %s (medido a %dx%d)', $pant, $ctas, $prosa, $iw, $ih));
+                      dato=>sprintf('%.1f pantallas (%s) · %d CTA · 0 desbordes · esPaginaProsa: %s (medido a %dx%d)', $pant_l, $lim_d, $ctas, $prosa, $iw, $ih));
 
             # G6 · estados de contenido real
             my @e;
@@ -5782,6 +5795,11 @@ sub snippet_js_plantilla {
     out.contenedores_gigantes = ms.resumen.contenedoresGigantes.length;
     out.que_desborda = ms.resumen.queDesbordan;
     out.que_gigante = ms.resumen.contenedoresGigantes;
+    // 6-nov-2026 · el limite de largo tambien es el suyo (EST-06): presupuesto de
+    // palabras visibles con techo 12, y sus pantallas (body.scrollHeight / vh).
+    out.limite_pantallas = ms.resumen.limitePantallas;
+    out.pantallas_ms = ms.resumen.pantallasDeScroll;
+    out.palabras_visibles = ms.resumen.palabrasVisibles;
   } catch (e) {
     out.blocks_over_1screen = null; out.contenedores_gigantes = null;
     out.densidad_error = 'measure-screens.js no corrio: ' + String(e && e.message || e);

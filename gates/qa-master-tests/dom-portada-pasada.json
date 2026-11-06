@@ -1,0 +1,10 @@
+{ "_caso": "6-nov-2026 · la misma portada con 11,2 pantallas para el mismo limite de 10,5 de measure-screens.js: FALLO, y con el limite de la puerta en el texto, no con el 6.",
+  "innerWidth": 390, "innerHeight": 844, "url": "https://site-c.example/",
+  "http": 200, "titulo": "Site C", "hay_main": true, "secciones": 8, "texto_len": 4600,
+  "testigo": { "valido": true, "motivos": [] },
+  "screens": 11.2, "blocks": 8, "ctas": 4, "buttons_visibles": 0,
+  "densidad_de": "measure-screens.js", "blocks_over_1screen": 0, "contenedores_gigantes": 0,
+  "que_desborda": [], "que_gigante": [],
+  "limite_pantallas": 10.5, "pantallas_ms": 11.2, "palabras_visibles": 760,
+  "max_gap_screens": 2.0, "es_pagina_prosa": false,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0 }

@@ -32,7 +32,7 @@ install the fast run is **1077 cases green, 0 red**, with the deploy-history ban
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1831 cases green, 0 red**, with **nine** banks reported as
+a clean install it reads **1838 cases green, 0 red**, with **nine** banks reported as
 `NOT MEASURED`: the seven that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **2004**: 1831 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **2011**: 1838 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,7 +101,7 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  1831 casos en verde · 0 en rojo
+  1838 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
@@ -464,8 +464,16 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Six more since 2026-11-05**, all from one week of real deploys:
+**Seven more since 2026-11-05**, all from one week of real deploys:
 
+- **EST-06 judges page length with the door's rule (`measure-screens.js`).** On
+  2026-08-19 `measure-screens.js` replaced the flat 6 screens with a word budget (6 + one
+  screen per 80 visible words past 400, capped at 12); `qa-master` kept the 6. A home page
+  measured at 390 with 8.1 screens and a door limit of 10.5 was a FAIL in the receipt and
+  a PASS at the door. The snippet now copies `measure-screens.js`'s limit, its screens and
+  its visible words, and EST-06 says which limit it used. A snapshot taken with an older
+  snippet carries no limit: it is still judged against 6, and the line asks for a
+  recapture.
 - **An old FAIL that production already has does not stop an upload (`d057.pl`, D-057).**
   Five sites were stopped by FAILs their upload did not touch and the published site had
   the same, each with its dated row in the plan. `--anyway` is for what nobody looked at,
@@ -756,7 +764,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **528 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **535 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until

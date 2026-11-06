@@ -713,6 +713,21 @@ espera "cm · 8 de 9 <img> con alt=\"\" DECORATIVO (X3)"     PASA  SEO-10  perl 
 espera "configurador · 0 CTA y 14 <button> (excepcion)"   PASA  EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-configurator.json --cache "$CACHE"
 espera "configurador · se anota, no se arregla"           AVISO EST-06b perl $QA http://site-c.example/ --solo estructura --dom dom-configurator.json --cache "$CACHE"
 espera "guia de PROSA de 12,4 pantallas (sospecha)"       PASA  EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-long-prose.json --cache "$CACHE"
+# 🔴 6-nov-2026 · EL LARGO DE LA PAGINA, CON LA REGLA DE LA PUERTA. measure-screens.js
+#    cambio el 6 fijo por un presupuesto de palabras el 19-ago (6 pantallas + 1 por
+#    cada 80 palabras visibles pasadas las 400, techo 12), y EST-06 siguio con el 6:
+#    una portada medida el 6-nov a 390 (6,9 pantallas en produccion, 8,1 en el candidato,
+#    limite 10,5 en la puerta) salia FALLO aqui y PASA en la puerta [trap:design-E3]. El snippet copia ahora el limite que calcula
+#    measure-screens.js y EST-06 juzga con el. Vistos en ROJO contra el qa-master de
+#    antes: la portada de 8,2 pantallas con 760 palabras daba FALLO, el FALLO de 11,2 no
+#    nombraba su limite, el DOM viejo no pedia recapturar y el snippet no copiaba nada.
+espera "portada de 8,2 pantallas y 760 palabras: limite 10,5" PASA  EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-portada-con-texto.json --cache "$CACHE"
+texto  "...y lo que la dejo pasar es el limite de la puerta"  SI "limite 10.5 para 760 palabras visibles" perl $QA http://site-c.example/ --solo estructura --dom dom-portada-con-texto.json --cache "$CACHE"
+espera "la misma con 11,2 pantallas: pasa del limite"     FALLO EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-portada-pasada.json --cache "$CACHE"
+texto  "...y el FALLO dice su limite, no el 6"            SI "pagina: 11.2 pantallas (limite 10.5 para 760 palabras visibles" perl $QA http://site-c.example/ --solo estructura --dom dom-portada-pasada.json --cache "$CACHE"
+espera "DOM de un snippet viejo: sin limite, sigue el 6"  FALLO EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-portada-snippet-viejo.json --cache "$CACHE"
+texto  "...y pide recapturar"                             SI "sin el limite de measure-screens.js" perl $QA http://site-c.example/ --solo estructura --dom dom-portada-snippet-viejo.json --cache "$CACHE"
+texto  "el snippet copia el limite de measure-screens.js"  SI "out.limite_pantallas = ms.resumen.limitePantallas" perl $QA --snippet
 espera "tactil 44x44: es AAA, nunca FALLO"                AVISO A11Y-12 perl $QA http://site-d.example/ --solo a11y --cache "$CACHE"
 espera "sin hoja de tokens: NO medido != aprobado (X12)"  NOVERIF A11Y-03 perl $QA http://site-d.example/ --solo a11y --css /no/existe.css --cache "$CACHE"
 espera "ancho clampado: la medida se tira entera (PC15)"  NOVERIF EST-05  perl $QA http://site-c.example/ --solo estructura --dom dom-unmeasured.json --cache "$CACHE"

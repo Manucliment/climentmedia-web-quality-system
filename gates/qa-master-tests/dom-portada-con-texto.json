@@ -1,0 +1,10 @@
+{ "_caso": "6-nov-2026 · una portada de 8,2 pantallas con 760 palabras visibles: measure-screens.js (la regla de la puerta) le da 10,5 de limite y PASA. EST-06 la daba en FALLO con el 6 fijo que measure-screens dejo el 19-ago. Nada mas falla: un PASA aqui es solo el largo.",
+  "innerWidth": 390, "innerHeight": 844, "url": "https://site-c.example/",
+  "http": 200, "titulo": "Site C", "hay_main": true, "secciones": 8, "texto_len": 4600,
+  "testigo": { "valido": true, "motivos": [] },
+  "screens": 8.2, "blocks": 8, "ctas": 4, "buttons_visibles": 0,
+  "densidad_de": "measure-screens.js", "blocks_over_1screen": 0, "contenedores_gigantes": 0,
+  "que_desborda": [], "que_gigante": [],
+  "limite_pantallas": 10.5, "pantallas_ms": 8.2, "palabras_visibles": 760,
+  "max_gap_screens": 2.0, "es_pagina_prosa": false,
+  "filas_cojas": 0, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0 }

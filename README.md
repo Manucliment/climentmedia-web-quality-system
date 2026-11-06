@@ -146,7 +146,7 @@ Two numbers, both published because both can go down:
 
 | Number | Today | What it means |
 |---|---|---|
-| Test cases green | **1077 cases green · 0 red** on `--fast`, **1831 cases green** on a full run | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect. Both figures are for a clean install; a machine that has deployed reads two more, and one with a measurement host configured runs seven more banks |
+| Test cases green | **1077 cases green · 0 red** on `--fast`, **1838 cases green** on a full run | If it drops, the instrument broke — and the instrument is what decides whether a defect is a defect. Both figures are for a clean install; a machine that has deployed reads two more, and one with a measurement host configured runs seven more banks |
 | Checks **with a fixture** | **149 of 156 (95%)** | No check ships without a test. It only goes up by writing tests, and **it cannot be flattered by measuring less** |
 
 > **And the second number states its own scope, which is the honest half of it.** That 95% is
