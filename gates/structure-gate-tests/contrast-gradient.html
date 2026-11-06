@@ -38,6 +38,16 @@ section{margin-block:2rem}
    #0180aa sobre blanco = 4,4973:1, que con dos decimales «es» 4,50 y pasaba. #068a22 = 4,5004:1. */
 .malo-redondeo{color:#0180aa}
 .ok-justo    {color:#068a22}
+/* la tinta con opacity:.55 se pinta gris (#7f7f80, 4,0:1): la opacidad apaga la letra */
+.malo-opac   {color:#16181d;opacity:.55}
+/* una aparicion que aun no se ha revelado (opacity:0 con su transition): NO es poco contraste */
+.revela      {opacity:0;transition:opacity .6s ease}
+/* a media aparicion, parada en 0,6: un gris #555 (7,5:1) se veria a 2,9:1 si se contara */
+.revela-a-medias{animation:entra 1s linear -.6s paused}
+.revela-a-medias p{color:#555}
+@keyframes entra{from{opacity:0}to{opacity:1}}
+/* escondida sin transicion (la revela un JS): por debajo de 0,5 se toma revelada, como antes */
+.oculta-quieta{opacity:0}
 
 /* ---- NO MEDIBLES (2): se cuentan aparte, no se aprueban ni se acusan ---- */
 .letra-degr  {background:linear-gradient(90deg,#ff5c00,#ffb800);-webkit-background-clip:text;
@@ -68,6 +78,10 @@ section{margin-block:2rem}
 <section>
   <p class="malo-redondeo">FALLA azul 0180aa sobre blanco, a 4,4973:1: redondeado daria 4,50.</p>
   <p class="ok-justo">PASA verde 068a22 sobre blanco, a 4,5004:1: justo en el minimo.</p>
+  <p class="malo-opac">FALLA tinta con opacidad 0,55: se ve gris, a 4,0:1, aunque su color sea la tinta.</p>
+  <div class="revela"><p>PASA tinta en una seccion que aun no ha aparecido: se mide revelada.</p></div>
+  <div class="revela-a-medias"><p>PASA gris 555 en una seccion a media animacion: se mide revelada.</p></div>
+  <div class="oculta-quieta"><p>PASA tinta en una seccion escondida que revelara un JS: se mide revelada.</p></div>
 </section>
 <section>
   <p class="letra-degr">NO MEDIBLE letra pintada por su degradado</p>

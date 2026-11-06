@@ -72,6 +72,16 @@ before using any of these numbers.
 > painted by its own background) stays NOT MEASURED. The ratio is also compared unrounded:
 > 4.497:1 used to print 4.50 and pass. What slipped through before this: a white-on-green
 > WhatsApp button at 2.1:1, on a lead CTA.
+>
+> **The same day, the chrome.** The body loop measures `<main>` without its nav, header and
+> footer, and nothing measured those in a browser: a breadcrumb outside `<main>` sat at 3.6:1 on
+> four pages of a shop, and the gate called it 13.9:1 because it ignored `opacity` (dark ink at
+> 0.55 paints as a light grey). Opacity between the text and the element that gives its
+> background now multiplies into the text's alpha, in the body loop too. Now every visible text inside a nav, header or footer is measured with
+> the same rule. Two cares the body did not need: only what is visible now (a closed submenu
+> sits at `opacity:0` or `visibility:hidden` on its parent), and a transparent header laid over
+> the hero is NOT MEASURED, because what is underneath is not its parent. It warns
+> (`avisosCromo`) until a site sets `cromo:"para"`; the date to make it stop uploads is 20-nov-2026.
 
 ---
 

@@ -1049,6 +1049,24 @@ function cajaDelTexto (el) {
   return { x0, y0, x1, y1 };
 }
 const TOPE_CANDIDATOS = 64;
+// ¿Hay debajo del texto algo pintado que no sea un antepasado del elemento flotante? Se mira con
+// elementsFromPoint en 3 puntos de la caja del texto. Fuera de la ventana no se puede mirar, y
+// entonces se deja la cadena como estaba (es lo que hacia el gate antes de esto).
+function debajoHayOtro (el, flot) {
+  const t = cajaDelTexto(el);
+  for (const fx of [0.1, 0.5, 0.9]) {
+    const P = { x: t.x0 + (t.x1 - t.x0) * fx, y: t.y0 + (t.y1 - t.y0) * 0.5 };
+    if (P.x < 0 || P.y < 0 || P.x >= innerWidth || P.y >= innerHeight) continue;
+    let visto = false;                         // de arriba abajo: lo de ENCIMA del flotante no cuenta
+    for (const e of document.elementsFromPoint(P.x, P.y)) {
+      if (flot.contains(e)) { visto = true; continue; }   // el flotante y lo suyo
+      if (!visto) continue;
+      if (e.contains(flot)) break;             // un antepasado: aqui la cadena dice la verdad
+      return true;                             // otra cosa pintada debajo: el hero, una foto
+    }
+  }
+  return false;
+}
 
 // Fondo efectivo: se sube apilando fondos hasta el primero opaco. Devuelve los
 // fondos posibles debajo del texto (uno si es color plano; uno por punto, o por
@@ -1056,7 +1074,7 @@ const TOPE_CANDIDATOS = 64;
 // medible NO es aprobado: se cuenta aparte y se dice.
 function fondosDe (el) {
   const cadena = [];
-  let degradado = false;
+  let degradado = false, opaco = false;
   for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
     const cs = getComputedStyle(n);
     const ent = { n, cs, capas:[], bg: aSRGB(cs.backgroundColor) };
@@ -1074,16 +1092,41 @@ function fondosDe (el) {
       if (ent.capas.length) degradado = true;
     }
     cadena.push(ent);
-    if (ent.bg && ent.bg.a >= 0.99) break;
+    if (ent.bg && ent.bg.a >= 0.99) { opaco = true; break; }
     if (ent.capas.some(g => g.tipo === 'lineal'
-          ? g.paradas.every(p => p.c.a >= 0.99) : g.colores.every(c => c.a >= 0.99))) break;
+          ? g.paradas.every(p => p.c.a >= 0.99) : g.colores.every(c => c.a >= 0.99))) { opaco = true; break; }
   }
+  // Algo de la cadena fuera del flujo (fixed o absolute) ANTES del primer fondo opaco: lo que
+  // hay detras puede no ser su padre (una cabecera transparente encima del hero, un texto encima
+  // de una <img> hermana). Se mira lo que de verdad hay debajo del texto; si es otra cosa que
+  // sus antepasados, NO MEDIBLE: no se supone el blanco del body.
+  const iFlota = cadena.findIndex(e => /^(?:fixed|absolute)$/.test(e.cs.position));
+  if (iFlota >= 0 && !(opaco && cadena.length - 1 <= iFlota) && debajoHayOtro(el, cadena[iFlota].n))
+    return { foto:true, flota:true };
   const apilar = lista => {           // lista de arriba abajo -> color sobre el lienzo blanco
     let f = BLANCO;
     for (let i = lista.length - 1; i >= 0; i--) if (lista[i] && lista[i].a > 0.02) f = componer(lista[i], f);
     return f;
   };
-  if (!degradado) return { colores:[apilar(cadena.map(e => e.bg))], degradado:false };
+  // 🔴 6-nov-2026 · LA OPACIDAD APAGA LA LETRA. Entre el texto y el que pone su fondo, un
+  // `opacity` pinta la letra a medias: la miga de una tienda, tinta oscura con opacity 0,55-0,7
+  // sobre crema, se media 13,9:1 y se ve 3,6:1. Se multiplica en el alfa de la letra. La del que
+  // pone el fondo, o la de mas arriba, apaga fondo y letra a la vez y no se cuenta aqui.
+  // ⚠️ Solo la opacidad QUIETA. La de una aparicion (una seccion a opacity:0 que se revela al
+  // bajar, con su transition o su animation) no es poco contraste: es que aun no se ha visto, y
+  // contarla dio 42 elementos «a 1:1» en una portada sana. Esa se toma como revelada (1), y una
+  // quieta por debajo de 0,5 tambien (texto escondido o decorativo: lo de antes de esto).
+  let alfa = 1;
+  for (let i = 0; i < (opaco ? cadena.length - 1 : cadena.length); i++) {
+    const cs = cadena[i].cs, op = parseFloat(cs.opacity);
+    if (!(op < 0.99)) continue;
+    const anima = (cs.animationName && cs.animationName !== 'none') ||
+                  (/\b(?:opacity|all)\b/.test(cs.transitionProperty || '') &&
+                   (cs.transitionDuration || '').split(',').some(d => parseFloat(d) > 0));
+    if (!anima) alfa *= op;
+  }
+  if (alfa < 0.5) alfa = 1;
+  if (!degradado) return { colores:[apilar(cadena.map(e => e.bg))], degradado:false, alfa };
   const t = cajaDelTexto(el), puntos = [];
   for (const fx of [0.1, 0.5, 0.9]) for (const fy of [0.15, 0.5, 0.85])
     puntos.push({ x: t.x0 + (t.x1 - t.x0) * fx, y: t.y0 + (t.y1 - t.y0) * fy });
@@ -1113,7 +1156,32 @@ function fondosDe (el) {
     }
     for (const c of cands) colores.push(apilar(c));
   }
-  return { colores, degradado:true };
+  return { colores, degradado:true, alfa };
+}
+
+// Un elemento con texto propio -> null (no se mira), { foto:true } (NO MEDIBLE) o su medida.
+function medirContraste (el, cs) {
+  const t = [...el.childNodes].filter(n => n.nodeType === 3)
+                              .map(n => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
+  if (t.length < 3) return null;
+  const r = el.getBoundingClientRect();
+  if (r.height < 6 || r.width < 12) return null;          // sr-only / recortado
+  // Lo que pinta la letra es -webkit-text-fill-color si esta puesto, no `color`.
+  const relleno = aSRGB(cs.webkitTextFillColor);
+  const fg0 = relleno || aSRGB(cs.color); if (!fg0) return null;
+  if (fg0.a < 0.02) return { foto:true };                 // letra transparente: la pinta su fondo
+  const f = fondosDe(el);
+  if (f.foto) return { foto:true };
+  const px = parseFloat(cs.fontSize), peso = parseInt(cs.fontWeight, 10) || 400;
+  // WCAG 2.1 SC 1.4.3: texto grande (>=24px, o >=18,66px en negrita) baja a 3:1.
+  const min = (px >= 24 || (px >= 18.66 && peso >= 700)) ? 3 : 4.5;
+  let cr = Infinity;
+  const fgA = { r:fg0.r, g:fg0.g, b:fg0.b, a: fg0.a * (f.alfa === undefined ? 1 : f.alfa) };
+  for (const fondo of f.colores) {
+    const fg = fgA.a >= 0.99 ? fgA : componer(fgA, fondo);
+    cr = Math.min(cr, contraste(fg, fondo));
+  }
+  return { cr, min, px:Math.round(px), sel:mote(el), txt:t.slice(0, 32), degradado:f.degradado };
 }
 
 const malContraste = [];
@@ -1122,31 +1190,49 @@ for (const el of raiz.querySelectorAll('*')) {
   if (esCromo(el) || !visible(el) || !textoPropio(el)) continue;
   const cs = getComputedStyle(el);
   if (parseFloat(cs.opacity) < 0.5) continue;
-  const t = [...el.childNodes].filter(n => n.nodeType === 3)
-                              .map(n => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
-  if (t.length < 3) continue;
-  const r = el.getBoundingClientRect();
-  if (r.height < 6 || r.width < 12) continue;          // sr-only / recortado
-  // Lo que pinta la letra es -webkit-text-fill-color si esta puesto, no `color`.
-  const relleno = aSRGB(cs.webkitTextFillColor);
-  const fg0 = relleno || aSRGB(cs.color); if (!fg0) continue;
-  if (fg0.a < 0.02) { contrasteSobreFoto++; continue; }  // letra transparente: la pinta su fondo
-  const f = fondosDe(el);
-  if (f.foto) { contrasteSobreFoto++; continue; }
+  const m = medirContraste(el, cs);
+  if (!m) continue;
+  if (m.foto) { contrasteSobreFoto++; continue; }
   contrasteMedidos++;
-  if (f.degradado) contrasteSobreDegradado++;
-  const px = parseFloat(cs.fontSize), peso = parseInt(cs.fontWeight, 10) || 400;
-  // WCAG 2.1 SC 1.4.3: texto grande (>=24px, o >=18,66px en negrita) baja a 3:1.
-  const min = (px >= 24 || (px >= 18.66 && peso >= 700)) ? 3 : 4.5;
-  let cr = Infinity;
-  for (const fondo of f.colores) {
-    const fg = fg0.a >= 0.99 ? fg0 : componer(fg0, fondo);
-    cr = Math.min(cr, contraste(fg, fondo));
-  }
-  if (cr < min) malContraste.push({ ratio:dosDec(cr), min, px:Math.round(px), sel:mote(el), txt:t.slice(0, 32),
-                                    degradado: f.degradado });
+  if (m.degradado) contrasteSobreDegradado++;
+  if (m.cr < m.min) malContraste.push({ ratio:dosDec(m.cr), min:m.min, px:m.px, sel:m.sel, txt:m.txt,
+                                        degradado:m.degradado });
 }
 malContraste.sort((a, b) => a.ratio - b.ratio);
+
+/* 🔴 6-nov-2026 · EL CROMO TAMBIEN ES TEXTO. Arriba se mide el cuerpo (<main> menos su
+ * nav, header y footer); la cabecera, la miga y el pie no los media nadie en el navegador.
+ * Se vio en una tienda: la pagina en la que estas, en la miga de pan, a 3,6:1 en sus 4
+ * paginas, fuera de <main>. Aqui se mide todo texto dentro de un nav, header o footer de
+ * la pagina, con la misma regla y el mismo fondo, y tres cuidados que el cuerpo no necesita:
+ *   · solo lo que se VE ahora: visibility y la opacidad heredada (un submenu cerrado va a
+ *     opacity:0 o visibility:hidden en su padre; medirlo seria blanco sobre blanco);
+ *   · una cabecera transparente fija o absoluta encima del hero no tiene detras a su
+ *     padre: NO MEDIBLE (fondosDe), nunca «blanco»;
+ *   · un mismo fallo sale en cada pagina (es el mismo pie): el arreglo es uno.
+ * Banco: structure-gate-tests/contrast-chrome.html. */
+const seVeAhora = el => {
+  if (getComputedStyle(el).visibility !== 'visible') return false;
+  let op = 1;
+  for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    op *= parseFloat(getComputedStyle(n).opacity);
+    if (op < 0.5) return false;
+  }
+  return true;
+};
+const malCromo = [];
+let cromoMedidos = 0, cromoNoMedibles = 0;
+for (const el of document.body.querySelectorAll('*')) {
+  if (!esCromo(el) || !visible(el) || !textoPropio(el) || !seVeAhora(el)) continue;
+  const m = medirContraste(el, getComputedStyle(el));
+  if (!m) continue;
+  if (m.foto) { cromoNoMedibles++; continue; }
+  cromoMedidos++;
+  if (m.cr < m.min) malCromo.push({ ratio:dosDec(m.cr), min:m.min, px:m.px, sel:mote(el), txt:m.txt,
+                                    degradado:m.degradado,
+                                    en: (el.closest(CROMO).tagName || '').toLowerCase() });
+}
+malCromo.sort((a, b) => a.ratio - b.ratio);
 sonda.remove();
 
 /* >>> ANATOMIA-GENERADA · sale de anatomy.tsv · no editar a mano
@@ -1315,6 +1401,20 @@ if (malContraste.length)
   fallos.push(`CONTRASTE · ${malContraste.length} elemento(s) de texto por debajo de AA ` +
               `(peor: ${malContraste[0].ratio}:1 en ${malContraste[0].sel}${malContraste[0].degradado ? ' sobre un degradado' : ''}, ` +
               `${malContraste[0].px}px, minimo ${malContraste[0].min}:1, «${malContraste[0].txt}»)`);
+/* --- E9b · CONTRASTE DEL CROMO (6-nov-2026) --------------------------------
+ * AVISO aparte (no cuenta para la regla de 2 avisos) hasta que la web pida
+ * cromo:'para' en la config del gate, como los botones y el aviso de cookies:
+ * una regla nueva que mira el pie de todas las paginas no para todas las
+ * subidas el dia que entra. Fecha para pasarla a FALLO: 20-nov-2026. */
+const avisosCromo = [];
+if (malCromo.length) {
+  const w = malCromo[0];
+  const msg = `CONTRASTE-CROMO · ${malCromo.length} elemento(s) de texto de la cabecera, la miga o el pie ` +
+              `por debajo de AA (peor: ${w.ratio}:1 en ${w.sel} dentro de <${w.en}>${w.degradado ? ' sobre un degradado' : ''}, ` +
+              `${w.px}px, minimo ${w.min}:1, «${w.txt}»)`;
+  if (CFG.cromo === 'para') fallos.push(msg);
+  else avisosCromo.push(msg + ' · solo avisa hasta cromo:"para" (20-nov-2026)');
+}
 
 /* --- E6 · anatomia -------------------------------------------------------- */
 if (rolesFaltan.length)
@@ -1466,6 +1566,7 @@ return JSON.stringify({
   fallos,
   avisos,
   avisosMovil,
+  avisosCromo,
   notas,
   resumen: {
     bloques: bloques.length,
@@ -1485,6 +1586,7 @@ return JSON.stringify({
     celdasDeCifra: nCifras,
     cifrasPartidas: anchoBloques.reduce((s, a) => s + a.partidas.length, 0),
     contrasteMedidos, contrasteSobreFoto, contrasteSobreDegradado, contrasteFallan: malContraste.length,
+    cromoMedidos, cromoNoMedibles, cromoFallan: malCromo.length, peoresCromo: malCromo.slice(0, 3),
     peoresContrastes: malContraste.slice(0, 3),
     tamanosDeFuenteEnBanda: banda.length, saltosCiegos, valoresDeEspaciado: espaciados.size,
     pliegue: innerHeight,

@@ -88,16 +88,30 @@ prove the gate sees two defects it used to miss.
   not somebody's own. Its "not measurable" case is a `url()` image since 6-nov-2026: a gradient
   is measured now (next item).
 - **`contrast-gradient.html`** (6-nov-2026) is text over CSS gradients, with the counts
-  asserted, not the verdict: `SobreFoto=2 SobreDegradado=7 Fallan=3`. Three must fail (a
+  asserted, not the verdict: `SobreFoto=2 SobreDegradado=7 Fallan=4`. Four must fail (a
   light-green WhatsApp button at ~2:1; dark text that only fails at one end of a left-to-right
-  gradient; a flat `#0180aa` at 4.4973:1, which rounded to two decimals used to pass), six must
+  gradient; a flat `#0180aa` at 4.4973:1, which rounded to two decimals used to pass; ink at `opacity:.55`, which
+  paints grey), six must
   pass while being measured (a split band whose white text sits only on the black half; a card
   over a dark section; a black veil over a magenta-to-cyan layer; a flat `#068a22` at
   4.5004:1…), and two stay NOT MEASURED (text painted by its own gradient; a `url()`). Seen red
   against the old gate and five mutants: worst stop instead of the colour under the text,
-  centre point only, layers stacked upside down, rounding before comparing, and `<=`.
+  centre point only, layers stacked upside down, rounding before comparing, `<=`, and ignoring
+  the opacity between the text and its background (a dark ink at 0.55 measured 13.9:1 where a
+  real breadcrumb showed 3.6:1). Only STATIC opacity counts: a section still waiting to be
+  revealed (opacity 0 with a transition or an animation, or below 0.5 and static) is measured
+  revealed, as before; counting it gave 42 elements "at 1:1" on a healthy home page.
   **Not done:** the moulds' own contrast bench (`measure-layout.js`) still counts a gradient as
   an image. The verdict at the door is this gate's.
+- **`contrast-chrome.html`** (6-nov-2026) is the chrome: header, breadcrumb and footer, which
+  the body loop leaves out. Asserted by counts (`Medidos=5 NoMedibles=3 Fallan=2`): a
+  breadcrumb outside `<main>` at 3.6:1 (dark ink with `opacity:.55`, as found) and a footer link at 1.9:1 must fail; a transparent
+  header laid over a dark hero is NOT MEASURED (its parent is the white body, so the parent
+  chain would call it white on white; `elementsFromPoint` shows the hero underneath); a closed
+  submenu is not counted. It is a separate AVISO (`avisosCromo`) until the site asks for
+  `cromo:"para"` in the gate config (G2b, G2c), the same road as the buttons and the cookie
+  banner. Seen red: without looking underneath (5 failures), without the visibility check (3),
+  without the opacity (1), and the gate before it (no fields).
 
 ## The gates on the MOULDS
 

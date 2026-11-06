@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control de CONTRASTE del CROMO — cabecera, miga y pie</title>
+<style>
+body{margin:0;background:#fff;color:#16181d;font:400 17px/1.6 system-ui,sans-serif}
+a{color:inherit}
+
+/* ---- NO MEDIBLES (3): la cabecera transparente va ENCIMA del hero oscuro. Su padre es el
+   body blanco; medirla contra el seria blanco sobre blanco, un FALLO falso. ---- */
+.cabecera{position:absolute;top:0;left:0;right:0;display:flex;gap:2rem;padding:1rem 2rem;color:#fff;z-index:2}
+.cabecera nav{display:flex;gap:1.5rem;position:relative}
+/* submenu cerrado: no se ve, no se mide (blanco sobre nada) */
+.cabecera .sub{position:absolute;top:2rem;left:0;opacity:0;visibility:hidden;margin:0;padding:.5rem;list-style:none}
+.hero{background:#0f172a;color:#fff;padding:7rem 2rem 4rem}
+
+/* ---- LOS QUE DEBEN FALLAR (2) ---- */
+/* la miga, fuera de <main>: la pagina en la que estas a 3,6:1 sobre crema */
+.miga{background:#f3eadb;padding:.5rem 2rem}
+.miga ol{display:flex;gap:1rem;margin:0;padding:0;list-style:none}
+.miga a{color:#4a3f35}
+/* tinta oscura con opacity: se ve #84796f (3,6:1); medida sin la opacidad daba 13,9:1 */
+.miga .aqui{color:#281c17;opacity:.55}
+/* el pie oscuro con un enlace apagado: #475569 sobre #1e293b */
+.pie{background:#1e293b;color:#e2e8f0;padding:2rem}
+.pie .apagado{color:#475569}
+
+/* ---- LOS QUE DEBEN PASAR, Y SE MIDEN (4) ---- */
+main{max-width:1120px;margin-inline:auto;padding:2rem}
+.art{border-bottom:1px solid #ddd}
+</style>
+</head>
+<body>
+<header class="cabecera">
+  <a href="/">Marca de prueba</a>
+  <nav aria-label="Principal">
+    <a href="/servicios/">Servicios</a>
+    <a href="/contacto/">Contacto</a>
+    <ul class="sub"><li><a href="/servicios/uno/">Submenu cerrado uno</a></li></ul>
+  </nav>
+</header>
+<section class="hero"><p>Un hero oscuro debajo de la cabecera transparente.</p></section>
+<nav class="miga" aria-label="Ruta de navegacion">
+  <ol><li><a href="/">Inicio</a></li><li class="aqui">Pagina en la que estas</li></ol>
+</nav>
+<main>
+  <header class="art"><p>Antetitulo del articulo, legible sobre blanco</p></header>
+  <h1>Control del contraste del cromo</h1>
+  <p>El cuerpo se mide aparte; aqui solo cuenta lo que va dentro de un nav, un header o un footer.</p>
+</main>
+<footer class="pie">
+  <p>Pie legible: claro sobre oscuro.</p>
+  <a class="apagado" href="/legal/">Enlace del pie apagado</a>
+</footer>
+</body>
+</html>
