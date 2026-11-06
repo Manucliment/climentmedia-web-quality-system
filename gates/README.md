@@ -483,7 +483,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Thirty-three more since 2026-11-05**, all from one week of real deploys:
+**Thirty-four more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -544,6 +544,17 @@ without blocking. Why the order changed is trap §89.
   something else are a warning, a 403 to a spoofed Googlebot or bingbot is expected, and
   Chrome not getting in is NOT MEASURED. After every upload, one line in the output and
   the history; it never stops anything.
+- **A door for writing inside a live WordPress (`wp-door.sh`).** Options, redirections,
+  mu-plugins and posts were written by hand, each batch with its own backup and undo
+  written from scratch, and the upload door never saw them. A batch is now a committed
+  folder, `_deploy/wp/<batch>/`, whose `tanda.sh` has three modes (`--medir` reads only,
+  no flag writes, `--volver` undoes), plus an approval file outside it that names the
+  folder's git tree. The door refuses an unapproved or changed tree, takes a lock on the
+  host, uploads the committed tree to a temp folder (never a docroot) and measures before.
+  With `--escribir` it applies, **proves the undo** (undo, measure: it must give the
+  before, line by line), applies again and measures: a red that was not there before, or
+  more reds than `ROJOS_DESPUES`, undoes it and says VUELTO or VUELTA-INCOMPLETA. One row
+  per run in `_deploy/wp/historial.tsv`. Its bench runs on a fake host.
 
 - **Upload lock (step 3-ter-0).** Two sessions holding permission for the same upload ran
   it twice, 11 seconds apart. The door now records each upload of a site in
@@ -727,6 +738,7 @@ without blocking. Why the order changed is trap §89.
 | `receipt.pl` | Writes, verifies and records receipts; owns the deploy history. |
 | `d057.pl` | The door's question for a red receipt of the CANDIDATE: is each FAIL and NOT VERIFIED old (the same in production, measured now with the same `qa-master`, instance by instance) and does a dated row with an owner fix it? PASS, STOP or NOT MEASURED, finding by finding, signed "D-057" (since 2026-11-06). With `--browser`, the same question for each FAIL of the browser gates in step 1-quater, against the same measurement on production. |
 | `redirects-gate.pl` | The gate of a tree that only redirects: a retired domain whose docroot is a `robots.txt` and an `.htaccess` sending every mapped path to its new page and everything else to the home page, with 301. `--candidate` simulates the rules in order (RED-01..08: every WordPress and PHP path ends in a redirect, nothing it lets through is outside the tree, no rule is shadowed, the last one is an unconditional catch-all), asks every target for a 200 (RED-09) and writes a receipt of `TIPO: REDIRECCIONES` whose five page lenses read `NO APLICA`. `--served` asks the domain itself (RED-10); the door runs it after the upload (step 4-ter) and a wrong answer stops it. Declared with `ARBOL=redirecciones` (`TREE=redirects`) in `deploy.conf`. Fail-closed: `RewriteCond`, mod_alias and internal rewrites are failures, not warnings. |
+| `wp-door.sh` | The door for writing INSIDE a live WordPress, which is not an upload: a committed batch (`_deploy/wp/<batch>/tanda.sh`, `--medir` · write · `--volver`) approved by its git tree in `_deploy/wp/<batch>.aprobado`. Dry run by default; `--escribir` measures before, applies, proves the undo, applies again and undoes it all if a new red appears; `--volver` undoes the last one without an approval. Lock on the host, one row per run in `_deploy/wp/historial.tsv`, a closing line: PASS, FAIL or NOT MEASURED. Reads `WP_HOST` and `WP_TMP` from `deploy.conf`. |
 
 ### Structure, layout and type
 

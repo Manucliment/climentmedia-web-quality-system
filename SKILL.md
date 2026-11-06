@@ -52,6 +52,12 @@ sin recibo valido no llega a la linea que sube, y despues comprueba que **lo ser
 medido**. Ninguno sustituye al otro — sin `--candidate` mides *produccion*, y el recibo
 sella entonces un arbol cuyo veredicto salio de medir otra cosa.
 
+**Escribir DENTRO de un WordPress vivo** (opciones, redirecciones, mu-plugins, entradas) no
+es una subida y no pasa por esa puerta: va por la suya, `bash gates/wp-door.sh <REPO>
+<tanda> --escribir`. La tanda va commiteada y aprobada por su arbol. La puerta mide el antes,
+prueba la vuelta atras y lo deshace todo si aparece un rojo nuevo. Sin `--escribir`, solo
+ensaya.
+
 ## Donde esta cada cosa
 
 | | |
