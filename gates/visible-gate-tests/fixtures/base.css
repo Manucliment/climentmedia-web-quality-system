@@ -1,0 +1,4 @@
+html{font:16px/1.5 system-ui,sans-serif}body{margin:0;background:#fff;color:#111}main{max-width:900px;margin:0 auto;padding:0 16px}
+section{min-height:700px;padding:40px 0}p{margin:0 0 12px}
+.reveal{opacity:0;transition:opacity .3s}.reveal.is-visible{opacity:1}
+.enlace{display:inline-block;padding:2px 4px}
