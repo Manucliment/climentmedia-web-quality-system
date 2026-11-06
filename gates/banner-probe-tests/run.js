@@ -28,8 +28,11 @@ function pagina(o = {}) {
   <style>body{margin:0;font:16px sans-serif} .b{font:16px sans-serif;padding:10px 18px;border:1px solid #333;background:#eee} .l{background:none;border:0;text-decoration:underline}
   .hero{position:relative;height:900px} canvas{position:absolute;inset:0;width:100%;height:100%}</style>
   <script>/* gtag( para que la sonda sepa que la pagina mide */ window.dataLayer=[];${o.cookieAntes ? 'document.cookie="_ga=GA1.1.1.1;path=/";' : ""}</script></head>
-  <body><main><section class="hero">${o.lienzo ? '<canvas id="neural"></canvas>' : ""}<h1>Portada</h1><p>Texto de la portada.</p></section></main>
-  ${o.muro ? `<div class="velo" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8">${aviso}</div>` : aviso}
+  <body><main><section class="hero">${o.lienzo ? '<canvas id="neural"></canvas>' : ""}<h1>Portada</h1><p>Texto de la portada.</p></section>
+  ${o.casilla ? `<form class="form" action="/contacto.php" method="post"><label for="n">Nombre</label> <input id="n" name="nombre">
+    <div class="campo consent"><label><input type="checkbox" name="consentimiento" required> <span>He leido y acepto la <a href="/politica-privacidad/">politica de privacidad</a></span></label></div>
+    <button type="submit">Enviar</button></form>` : ""}</main>
+  ${o.sinAviso ? "" : o.muro ? `<div class="velo" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8">${aviso}</div>` : aviso}
   <footer>${o.sinReabrir ? "" : '<button data-cc-act="reopen">Configurar cookies</button>'} <a href="/politica-cookies/">Politica de cookies</a></footer>
   <script>
     var c = document.getElementById("cookie-consent"), velo = document.querySelector(".velo");
@@ -61,6 +64,13 @@ const CASOS = [
   ["la decision se olvida al recargar", { olvida: true }, {}, { B7: "FALLA" }],
   ["sin forma de retirar", { sinReabrir: true }, {}, { B8: "FALLA" }],
   ["solo se retira desde la politica", { sinReabrir: true }, { reabre: true }, { B8: "AVISO" }],
+  // 6-nov-2026 · la fila «acepto la politica de privacidad» de un formulario va antes del
+  // aviso en el documento. El primero, visto en ROJO contra la sonda de antes (B2 FALLA);
+  // el tercero tambien (B1 PASA: tomaba la casilla por el aviso). El segundo tiene que
+  // seguir fallando: elegir por los botones no puede tapar un aviso sin Rechazar.
+  ["casilla de privacidad antes del aviso", { casilla: true }, {}, { B1: "PASA", B2: "PASA" }],
+  ["casilla de privacidad y aviso sin Rechazar", { casilla: true, no: "" }, {}, { B2: "FALLA" }],
+  ["casilla de privacidad y ningun aviso", { casilla: true, sinAviso: true }, {}, { B1: "FALLA" }],
 ];
 
 let ok = 0, mal = 0;

@@ -136,7 +136,18 @@ const res = (estado, id, texto, dato) => {
     const doc = document.documentElement.scrollHeight * innerWidth;
     const fuera = cands.filter((e) => !cands.some((o) => o !== e && o.contains(e)))
       .filter((e) => { const r = e.getBoundingClientRect(); return r.width * r.height < 0.95 * doc; });
-    const caja = fuera[0];
+    // 🔴 6-nov-2026 · LA CASILLA DE PRIVACIDAD DE UN FORMULARIO NO ES EL AVISO. Se cogia el
+    //    primer candidato en el orden del documento, y la fila «He leido y acepto la politica
+    //    de privacidad» de un formulario de contacto (`<div class="campo consent">`, con su
+    //    enlace) va ANTES que el aviso, que se pinta al final del body: B2 FALLA en una web
+    //    nuestra con su aviso bien. Ahora manda el que lleva Aceptar o Rechazar; si ninguno,
+    //    el primero que no esta DENTRO de un formulario; y si todos lo estan, no hay aviso
+    //    (una pagina que mide, B1 FALLA, que es lo que es). Banco: los tres casos «casilla».
+    const tx = (b) => norm(b.innerText || b.value || b.getAttribute("aria-label"));
+    const decide = (e) => [...e.querySelectorAll("button,a,[role=button],input[type=button],input[type=submit]")]
+      .filter(visible).some((b) => SI.some((x) => x.test(tx(b))) || NO.some((x) => x.test(tx(b))));
+    const enFormulario = (e) => !!(e.parentElement && e.parentElement.closest("form"));
+    const caja = fuera.find(decide) || fuera.find((e) => !enFormulario(e));
     if (!caja) return null;
     caja.setAttribute("data-banner-probe", "1");
     const r = caja.getBoundingClientRect();
