@@ -483,7 +483,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Thirty-two more since 2026-11-05**, all from one week of real deploys:
+**Thirty-three more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -536,6 +536,14 @@ without blocking. Why the order changed is trap §89.
   home page, "`/`". A gate leaves the red list only when all of its FAILs pass; the
   history and the closing line name each one. The cookie banner probe is not covered:
   consent is a lens D-057 does not cover.
+- **What the server answers to the AI bots (`ai-crawlers.pl --probe`, step 6-bis).** A
+  shared host's CDN gave 429 with no `Retry-After` to the GPTBot signature on 7 of 10
+  sites whose `robots.txt` let it in, and step 2-sexies said PASS on all 7: it reads the
+  tree's `robots.txt`, not the server. The probe asks for `robots.txt` and the page with
+  each bot's signature and Chrome's; bots that search, cite or train and receive
+  something else are a warning, a 403 to a spoofed Googlebot or bingbot is expected, and
+  Chrome not getting in is NOT MEASURED. After every upload, one line in the output and
+  the history; it never stops anything.
 
 - **Upload lock (step 3-ter-0).** Two sessions holding permission for the same upload ran
   it twice, 11 seconds apart. The door now records each upload of a site in
@@ -746,7 +754,7 @@ without blocking. Why the order changed is trap §89.
 | `linking-gate.pl` | Internal linking, judged against what the site actually contains. |
 | `same-text.pl` | Whether re-laying-out a page lost any of the client's words. Compares the *visible text* of two trees, page by page, by words rather than lines — the layout is meant to change, the content is not. Takes two directories: `same-text.pl <tree-before> <tree-after>`. The door runs it against what production serves, and since 2026-09-28 a page that loses words **stops the upload** unless it is declared with `deploy.sh --loses-text "the reason"`. |
 | `qa-diff.pl` | What changed between two runs, by rule. |
-| `ai-crawlers.pl` | Whether AI answer engines are allowed to crawl at all. Parses robots.txt properly: own-agent groups do not inherit `*`, longest path wins, empty `Disallow` allows. |
+| `ai-crawlers.pl` | Whether AI answer engines are allowed to crawl at all. Parses robots.txt properly: own-agent groups do not inherit `*`, longest path wins, empty `Disallow` allows. With `--probe`, also what the server answers to each bot's signature (the door's step 6-bis, a warning). |
 | `cannibalization.pl` | Two pages fighting over one term. `--audit` finds existing exact H1/title collisions; `--keyword` gives NEW / UPDATE / CANNIBALIZES before a piece is written. |
 | `page-type-gate.pl` | The markup of a page judged by its TYPE (`page-types.tsv`, 22 types): every block parses, every type and property exists in schema.org (`schemaorg-vocab.tsv`, generated from its release), what the type must carry and must not carry loose, the markup against the visible page (FAQ, price, product name, headline), `potentialAction` and the search string (`{q}` = `name=q`), and with `--sondear` whether the search answers a results page. Indexing by type. `blueprint/21-page-types-markup.md`. |
 | `citable.pl` | Whether a paragraph survives being lifted out of the page. Six mechanical checks from citation-ready-check. Refuses to score a language it has no patterns for. |

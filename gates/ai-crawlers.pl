@@ -44,6 +44,22 @@
 #    perl ai-crawlers.pl --repo DIR            (busca DIR/robots.txt)
 #    perl ai-crawlers.pl --url URL --path /learn/algo/   (ruta a comprobar)
 #    perl ai-crawlers.pl ... --quiet           (solo el veredicto)
+#    perl ai-crawlers.pl --url URL --probe     (y la SONDA: ver abajo; --sonda)
+#
+#  LA SONDA (--probe, 6-nov-2026). robots.txt dice si un bot PUEDE entrar; no dice
+#  si el servidor le DEJA. Un benchmark de GEO de otra agencia encontro un servidor
+#  que daba 503 sin Retry-After a los rastreos en bloque con robots.txt abierto, y
+#  ese mismo dia, medido desde este sistema: el CDN de un hosting compartido daba
+#  429, sin cuerpo y sin Retry-After, a la firma de GPTBot en 7 de 10 webs, tambien
+#  en robots.txt, con robots.txt dejandole entrar. Este gate daba PASA en las 7.
+#  Con --probe pide robots.txt y la pagina (--path) con la firma (User-Agent) de cada
+#  bot y con la de Chrome, y dice el codigo, Retry-After y Server cuando no es el de
+#  Chrome. Separa los que BUSCAN y citan (y la peticion del usuario) de los que
+#  ENTRENAN. Googlebot y bingbot con firma falsa reciben 403 de un CDN que comprueba
+#  su IP: es lo esperado y no avisa. LIMITE, dicho: es la firma desde ESTA IP, no la
+#  IP del bot; uno con su IP verificada puede recibir otra cosa. Por eso avisa y no
+#  falla: la linea SONDA no cambia el codigo de salida.
+#      SONDA: PASA | AVISO | NO MEDIDO - ...
 #
 #  Cada linea de salida dice QUE REGLA decidio, para que se pueda verificar sin
 #  volver a abrir el fichero. Un veredicto sin su evidencia no es medible.
@@ -75,7 +91,7 @@ my @BOTS = (
 );
 
 # --- argumentos ---------------------------------------------------------------
-my ($url, $file, $repo, $quiet) = ('', '', '', 0);
+my ($url, $file, $repo, $quiet, $probe) = ('', '', '', 0, 0);
 my $path = '/';
 while (@ARGV) {
   my $a = shift @ARGV;
@@ -84,9 +100,87 @@ while (@ARGV) {
   elsif ($a eq '--repo')  { $repo = shift @ARGV // '' }
   elsif ($a eq '--path')  { $path = shift @ARGV // '/' }
   elsif ($a eq '--quiet' or $a eq '-q') { $quiet = 1 }
+  elsif ($a eq '--probe' or $a eq '--sonda') { $probe = 1 }
   else { die "argumento desconocido: $a\n" }
 }
 die "hace falta --url, --file o --repo\n" unless $url or $file or $repo;
+die "la sonda (--probe) necesita --url: mide lo que contesta el servidor, no un fichero\n" if $probe and not $url;
+
+# --- la sonda: lo que contesta el servidor a la firma de cada bot -------------
+# Las firmas, como las publican sus duenos (6-nov-2026). La de Claude-SearchBot se
+# escribe como las otras dos de Anthropic: un CDN casa por el nombre, no por la cadena.
+my @SONDA = (
+  [ 'Chrome',           'referencia', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' ],
+  [ 'OAI-SearchBot',    'busca',      'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; OAI-SearchBot/1.0; +https://openai.com/searchbot' ],
+  [ 'ChatGPT-User',     'usuario',    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot' ],
+  [ 'Claude-SearchBot', 'busca',      'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-SearchBot/1.0; +Claude-SearchBot@anthropic.com)' ],
+  [ 'Claude-User',      'usuario',    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-User/1.0; +Claude-User@anthropic.com)' ],
+  [ 'PerplexityBot',    'busca',      'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)' ],
+  [ 'Perplexity-User',  'usuario',    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)' ],
+  [ 'GPTBot',           'entrena',    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)' ],
+  [ 'ClaudeBot',        'entrena',    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)' ],
+  [ 'Googlebot',        'verificado', 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' ],
+  [ 'bingbot',          'verificado', 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)' ],
+);
+# (codigo, Retry-After, Server) de la ULTIMA respuesta: con -L, -D trae las de cada salto.
+sub pide {
+  my ($u, $ua) = @_;
+  return ('0', '', '') if $u =~ /'/ or $ua =~ /'/;
+  my $h = `curl -sL --max-redirs 5 -o /dev/null -D - -m 20 -A '$ua' '$u' 2>/dev/null`;
+  my @r = grep { /^HTTP\// } split /\r?\n\r?\n/, ($h // '');
+  return ('0', '', '') unless @r;
+  my ($code) = $r[-1] =~ m{^HTTP/\S+\s+(\d{3})};
+  my ($ra)   = $r[-1] =~ /^Retry-After:\s*(\S+)/mi;
+  my ($sv)   = $r[-1] =~ /^Server:\s*(\S+)/mi;
+  return ($code // '0', $ra // '', $sv // '');
+}
+my $SONDA_HECHA = 0;
+sub sonda {
+  return unless $probe and $url and not $SONDA_HECHA++;
+  (my $base = $url) =~ s{^(https?://[^/]+).*$}{$1};
+  my $pag = $base . ($path =~ m{^/} ? $path : "/$path");
+  my %r;
+  for my $s (@SONDA) { $r{$s->[0]} = [ [ pide("$base/robots.txt", $s->[2]) ], [ pide($pag, $s->[2]) ] ] }
+  my ($cr, $cp) = ($r{Chrome}[0][0], $r{Chrome}[1][0]);
+  unless ($quiet) {
+    print "\nSONDA: la firma de cada bot desde esta IP (robots.txt y $pag)\n";
+    printf "  %-17s %-10s %-24s %s\n", 'BOT', 'QUE HACE', 'robots.txt', 'pagina';
+    for my $s (@SONDA) {
+      my @c = map { my ($k, $ra, $sv) = @$_; $k . ($k =~ /^(?:429|503)$/ ? ($ra ne '' ? " Retry-After $ra" : ' sin Retry-After') : '') } @{ $r{$s->[0]} };
+      printf "  %-17s %-10s %-24s %s\n", $s->[0], $s->[1], @c;
+    }
+  }
+  if ($cp !~ /^2/) {
+    print "SONDA: NO MEDIDO - Chrome recibe $cp en $pag: sin una referencia que entre, no se puede decir que un bot recibe otra cosa\n";
+    return;
+  }
+  my (@aviso, @esperado);
+  for my $s (@SONDA[1 .. $#SONDA]) {
+    my ($n, $rol) = @$s;
+    my @mal;
+    for my $i (0, 1) {
+      my ($k, $ra, $sv) = @{ $r{$n}[$i] };
+      my $ref = $i ? $cp : $cr;
+      next if $k eq $ref or $k =~ /^[23]/;
+      push @mal, sprintf('%s en %s%s%s', $k, ($i ? 'la pagina' : 'robots.txt'),
+                         ($k =~ /^(?:429|503)$/ ? ($ra ne '' ? ", Retry-After $ra" : ', sin Retry-After') : ''),
+                         ($sv ne '' ? " (Server: $sv)" : ''));
+    }
+    next unless @mal;
+    if ($rol eq 'verificado' and not grep { !/^403 / } @mal) { push @esperado, $n; next }
+    push @aviso, "$n" . ($rol eq 'entrena' ? ' (entrena)' : $rol eq 'verificado' ? '' : " ($rol)") . ': ' . join('; ', @mal);
+  }
+  my $esp = @esperado ? ' · ' . join(' y ', @esperado) . ' reciben 403 con firma falsa: lo esperado, el CDN comprueba su IP' : '';
+  if (@aviso) {
+    print "SONDA: AVISO - " . scalar(@aviso) . " bot(s) reciben con su firma otra cosa que Chrome ($cp): " . join(' · ', @aviso) . "$esp\n";
+    print "  robots.txt les deja entrar o no (tabla de arriba); esto es lo que el SERVIDOR les contesta. Los que entrenan\n"
+        . "  no quitan de las respuestas con busqueda; los que buscan y la peticion del usuario, si. Medido con la firma\n"
+        . "  desde esta IP: con su IP verificada, un bot puede recibir otra cosa (lo dice el ajuste del CDN o sus logs).\n"
+      unless $quiet;
+  } else {
+    print "SONDA: PASA - los " . (scalar(@SONDA) - 1 - @esperado) . " bots que buscan, citan o entrenan reciben lo mismo que Chrome ($cp)$esp\n";
+  }
+}
 
 # --- conseguir el robots.txt --------------------------------------------------
 my ($text, $origin, $status);
@@ -128,6 +222,7 @@ if ($file) {
   if ($code eq '404' or $code eq '410') {
     print "robots.txt devuelve $code en $origin\n" unless $quiet;
     print "Por el estandar eso PERMITE TODO.\n" unless $quiet;
+    sonda();
     print "VEREDICTO: PASA (robots.txt $code)\n";
     exit 0;
   }
@@ -239,6 +334,7 @@ unless ($quiet) {
   }
 }
 
+sonda();
 if (@blocked) {
   printf "VEREDICTO: FALLA - %d requerido(s) bloqueado(s): %s\n", scalar @blocked, join(', ', @blocked);
   exit 1;
@@ -251,6 +347,7 @@ exit 0;
 sub no_medido {
   my ($why) = @_;
   print "NO MEDIDO: $why\n";
+  sonda();   # un robots.txt que no contesta puede ser el mismo CDN: la sonda lo dice
   print "VEREDICTO: NO MEDIDO (rc=3). Esto NO es un aprobado.\n";
   exit 3;
 }

@@ -192,6 +192,67 @@ print "  " . '=' x 60 . "\n\n";
         qr/NO MEDIDO/);
 }
 
+# --- LA SONDA (--probe, 6-nov-2026) -------------------------------------------
+# robots.txt deja entrar y el CDN no: 429 sin Retry-After a la firma de GPTBot en 7
+# de 10 webs, con este gate en PASA en las 7. Un servidor propio en 127.0.0.1 (el de
+# receipt-tests, con su `_ua.txt`: «trozo codigo [Retry-After]») hace de ese CDN.
+# Con centinela: un puerto ocupado por otra sesion mediria OTRA cosa. Todos los
+# casos, en ROJO contra el gate de antes (no conocia --probe).
+{
+  my $root = File::Spec->catdir($dir, 'sitio');
+  mkdir $root;
+  my $esc = sub { my ($n, $t) = @_; open my $f, '>', File::Spec->catfile($root, $n) or die $!; print $f $t; close $f };
+  $esc->('robots.txt', "User-agent: *\nAllow: /\n");
+  $esc->('index.html', "<h1>hola</h1>\n");
+  my $cent = "centinela-$$-" . time;
+  $esc->('_sentinel.txt', "$cent\n");
+  # 🔴 10000-14999, y no 8600-8899: ese es el del servidor del 404 de qa-master-tests
+  #    (y cae dentro del de los bancos del recibo). La primera version copio su formula,
+  #    y las dos corridas a la vez se quitaron el puerto: 3 MAL en qa-master el 6-nov.
+  #    Y si esta ocupado, el siguiente: el servidor muere sin ReuseAddr, y el centinela lo ve.
+  my $srvpl = File::Spec->catfile($here, '..', 'receipt-tests', 'test-server.pl');
+  my ($port, $pid, $srv, $vivo);
+  for my $i (0 .. 4) {
+    $port = 10000 + (($$ + $i * 977) % 5000);
+    $pid = open($srv, '-|', $^X, $srvpl, $root, $port);
+    my $listo = $pid ? <$srv> : undef;
+    $vivo = defined $listo && `curl -s -m 5 "http://127.0.0.1:$port/_sentinel.txt" 2>/dev/null` =~ /\Q$cent\E/;
+    last if $vivo;
+    if ($pid) { kill 'TERM', $pid; close $srv; $pid = 0 }
+  }
+  if (!$vivo) {
+    $bad++;
+    print "  MAL  SONDA: no arranco mi servidor en el puerto $port (o contesta otro): nada de la sonda se ha medido\n";
+  } else {
+    my $sonda = sub {   # (etiqueta, _ua.txt o '', rc esperado, lo que TIENE que salir, lo que NO puede salir)
+      my ($label, $ua, $want_rc, $si, $no) = @_;
+      my $uf = File::Spec->catfile($root, '_ua.txt');
+      if (length $ua) { $esc->('_ua.txt', $ua) } else { unlink $uf }
+      my $out = `"$^X" "$GATE" --url "http://127.0.0.1:$port/" --probe 2>&1`;
+      my $rc = $? >> 8;
+      check($label, $rc, $out, $want_rc, $si);
+      if ($no && $out =~ $no) { $ok--; $bad++; printf "  MAL  %s (y sale lo que no debe: /%s/)\n", $label, $no }
+    };
+    # 🔴 EL CASO DEL 6-NOV: robots.txt abierto, el CDN da 429 a GPTBot y robots.txt PASA.
+    $sonda->('SONDA · GPTBot 429 sin Retry-After: AVISO, y robots.txt sigue en PASA', "GPTBot 429\n", 0,
+             qr/SONDA: AVISO - 1 bot.*GPTBot \(entrena\): 429 en robots\.txt, sin Retry-After \(Server: cdn-de-prueba\); 429 en la pagina.*\nVEREDICTO: PASA/s);
+    $sonda->('SONDA · con Retry-After lo dice', "GPTBot 429 120\n", 0, qr/GPTBot \(entrena\): 429 en robots\.txt, Retry-After 120/, qr/sin Retry-After/);
+    $sonda->('SONDA · un bot que BUSCA cortado: AVISO y lo llama «busca»', "OAI-SearchBot 403\n", 0, qr/SONDA: AVISO.*OAI-SearchBot \(busca\): 403/);
+    $sonda->('SONDA · la peticion del usuario cortada: AVISO', "Claude-User 503\n", 0, qr/SONDA: AVISO.*Claude-User \(usuario\): 503 en robots\.txt, sin Retry-After/);
+    # NEGATIVOS: lo que NO es un aviso
+    $sonda->('SONDA · todos como Chrome: PASA', '', 0, qr/SONDA: PASA - los 10 bots/, qr/SONDA: AVISO/);
+    $sonda->('SONDA · Googlebot y bingbot 403 con firma falsa: esperado, PASA', "Googlebot 403\nbingbot 403\n", 0,
+             qr/SONDA: PASA - los 8 bots.*Googlebot y bingbot reciben 403 con firma falsa: lo esperado/, qr/SONDA: AVISO/);
+    $sonda->('SONDA · Googlebot con 429 no es «esperado»: AVISO', "Googlebot 429\n", 0, qr/SONDA: AVISO.*Googlebot: 429/);
+    $sonda->('SONDA · Chrome tampoco entra: NO MEDIDO, no un aviso por bot', "Mozilla 503\n", 0, qr/SONDA: NO MEDIDO - Chrome recibe 503/, qr/SONDA: (AVISO|PASA)/);
+  }
+  kill 'TERM', $pid if $pid;
+  close $srv if $pid;
+  my $out = `"$^X" "$GATE" --file "$dir/x.txt" --probe 2>&1`;
+  my $rc = $? >> 8;
+  check('SONDA · sin --url no se finge: error que lo dice', ($rc ? 1 : 0), $out, 1, qr/la sonda \(--probe\) necesita --url/);
+}
+
 # --- REDIRECCION (necesita red Y un sitio que redirija) ----------------------
 # Este caso existe porque la PRIMERA CORRIDA REAL lo encontro: con el banco en
 # verde -19 casos, todos verdes- uno de los seis sitios medidos devolvia 301 de

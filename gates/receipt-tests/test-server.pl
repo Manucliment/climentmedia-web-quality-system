@@ -71,6 +71,22 @@ while (my $c = $s->accept) {
     my $huella_curl = (@hdr >= 2
                        && $hdr[-2][0] eq 'accept' && $hdr[-2][1] eq '*/*'
                        && $hdr[-1][0] eq 'accept-encoding') ? 1 : 0;
+    # <raiz>/_ua.txt -> lineas «trozo codigo [Retry-After]»: si el User-Agent lleva el
+    #    trozo (sin mirar mayusculas), contesta ese codigo sin cuerpo. Es el CDN que da
+    #    429 a GPTBot aunque robots.txt lo deje entrar (6-nov-2026, ai-crawlers --probe).
+    if (my $uas = marcador("$raiz/_ua.txt")) {
+        my ($ua) = map { $_->[1] } grep { $_->[0] eq 'user-agent' } @hdr;
+        $ua = '' unless defined $ua;
+        my $hecho = 0;
+        for my $r (grep { /\S/ } split /\r?\n/, $uas) {
+            my ($trozo, $cod, $ra) = split ' ', $r;
+            next unless defined $cod && index(lc $ua, lc $trozo) >= 0;
+            print $c "HTTP/1.0 $cod Prueba\r\nContent-Length: 0\r\nServer: cdn-de-prueba\r\n"
+                   . (defined $ra ? "Retry-After: $ra\r\n" : '') . "\r\n";
+            $hecho = 1; last;
+        }
+        if ($hecho) { close $c; next }
+    }
     if (-f "$raiz/_huella-curl.txt" && $huella_curl) {
         print $c "HTTP/1.0 403 Forbidden\r\nContent-Length: 24\r\n"
                . "Content-Type: text/html\r\n\r\n<h1>403 Forbidden</h1>\r\n";

@@ -471,6 +471,20 @@ crawl, they only govern use in Gemini and Apple Intelligence, and blocking them 
 remove you from search. Treating a legitimate decision as a defect is how a gate starts
 getting in the way and ends up switched off.
 
+**`robots.txt` says a bot may come in; it does not say the server lets it.** On 2026-11-06 a
+shared host's CDN answered the GPTBot signature with 429, no body and no `Retry-After`, on 7
+of 10 sites whose `robots.txt` allowed it, and this gate said PASS on all 7. With `--probe` it
+also asks for `robots.txt` and the page with each bot's signature and with Chrome's, and says
+the code, `Retry-After` and `Server` wherever they differ. It separates the bots that search
+and cite (and the user's live request) from the ones that train, and treats a 403 to a
+spoofed Googlebot or bingbot as expected (a CDN checks their IP). It warns and never fails:
+it is the signature from your IP, not the bot's. The door runs it on what is served after
+every upload (step 6-bis) and writes the line to the history.
+
+```bash
+perl gates/ai-crawlers.pl --url https://example.com/ --probe
+```
+
 ### 8.2 · Two pages fighting over one term — `cannibalization.pl`
 
 ```bash

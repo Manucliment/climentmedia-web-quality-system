@@ -2232,6 +2232,20 @@ else
   fi
 fi
 
+# ── 6-bis · LO QUE EL SERVIDOR CONTESTA A LOS BOTS DE IA (6-nov-2026) ─────────
+#    2-sexies mira el robots.txt del ARBOL. No ve el CDN: ese dia daba 429 sin
+#    Retry-After a la firma de GPTBot en 7 de 10 webs con robots.txt abierto, y
+#    2-sexies salia PASA en las 7. ai-crawlers.pl --probe pide robots.txt y la
+#    portada de lo servido con la firma de cada bot. Solo AVISA y se anota: es la
+#    firma desde esta IP, no la del bot, y lo subido, subido esta.
+if [ "${REDIR:-0}" != 1 ] && [ -f "$REF/ai-crawlers.pl" ] && command -v curl >/dev/null 2>&1; then
+  SONDA_IA="$(perl "$REF/ai-crawlers.pl" --url "${SITIO%/}/" --probe --quiet 2>&1 | grep '^SONDA: ' | head -1)"
+  echo
+  echo "  6-bis · bots de IA en lo servido (ai-crawlers.pl --probe)"
+  echo "    ${SONDA_IA:-SONDA: NO MEDIDO - ai-crawlers.pl no dio su linea}"
+  perl "$REF/receipt.pl" --anotar "${SONDA_IA:-SONDA: NO MEDIDO}" --repo "$REPO" >/dev/null 2>&1
+fi
+
 # >>> cierre-de-la-subida (marca del banco deploy-tests: no la muevas sin moverlo)
 # ── EL CIERRE · una linea, y dice lo que se midio (5-nov-2026) ───────────────
 #    Antes se cerraba con «El despliegue esta hecho y G11 lo ha verificado» aunque

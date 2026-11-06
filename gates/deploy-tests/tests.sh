@@ -681,6 +681,12 @@ L_D5N=$(grep -n -- '--navegador "\$NAVC_DIR/d057-lista"' "$PUERTA" | head -1 | c
 L_APL=$(grep -n '^        nav_d057_aplica "\$NAVC_DIR/rojas" "\$NAVC_DIR/d057-nav.txt"$' "$PUERTA" | head -1 | cut -d: -f1)
 L_DEC=$(grep -n '^  nav_decide || exit 1$' "$PUERTA" | head -1 | cut -d: -f1)
 hay "D-057 en el 1-quater: produccion sin el candidato, d057.pl y luego nav_decide" 1 '[ -n "$L_ENV" ] && [ -n "$L_PRO" ] && [ -n "$L_D5N" ] && [ -n "$L_APL" ] && [ -n "$L_DEC" ] && [ "$L_ENV" -lt "$L_PRO" ] && [ "$L_PRO" -lt "$L_D5N" ] && [ "$L_D5N" -lt "$L_APL" ] && [ "$L_APL" -lt "$L_DEC" ]'
+# 6-bis (6-nov): la sonda de bots de IA sobre lo servido, despues de subir y antes del
+# cierre, y anotada. En ROJO contra la puerta de antes (no la llamaba).
+L_EVA2=$(grep -n '^eval "\$CMD"$' "$PUERTA" | head -1 | cut -d: -f1)
+L_SON=$(grep -n -- 'ai-crawlers.pl" --url "\${SITIO%/}/" --probe --quiet' "$PUERTA" | head -1 | cut -d: -f1)
+L_CIE=$(grep -n '^# >>> cierre-de-la-subida' "$PUERTA" | head -1 | cut -d: -f1)
+hay "6-bis: la sonda de bots de IA, tras subir y antes del cierre, anotada" 1 '[ -n "$L_EVA2" ] && [ -n "$L_SON" ] && [ -n "$L_CIE" ] && [ "$L_EVA2" -lt "$L_SON" ] && [ "$L_SON" -lt "$L_CIE" ] && grep -q -- "--anotar \"\${SONDA_IA:-SONDA: NO MEDIDO}\"" "$PUERTA"'
 
 # Y nadie mas en la puerta dice «verificado» de una subida (lo hacian tres lineas).
 VER=$(grep -nE '^[[:space:]]*echo .*(G11 lo ha verificado|desplegado y verificado)' "$PUERTA" | head -3)
