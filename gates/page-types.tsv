@@ -28,7 +28,7 @@
 home|portada|home|WebPage|WebSite;Organization|SearchAction:solo-con-buscador|Product FAQPage|SearchAction|index|WebSite with name and url gives the site name in Google; Organization here or on the about page, with its @id
 servicio||servicio|WebPage|BreadcrumbList;Service|FAQPage:si-se-ve Organization:por-id|Product|-|index|
 ciudad|zona|ciudad|WebPage|BreadcrumbList;Service/LocalBusiness|areaServed:solo-lo-cubierto|Product|-|index|areaServed only lists what is really covered
-ficha|pdp producto|ficha|ItemPage|BreadcrumbList;Product/ProductGroup|Offer:envio-y-devolucion|-|-|index|price in the markup = price on the page; variants with ProductGroup + hasVariant
+ficha|pdp producto|ficha|ItemPage|BreadcrumbList;Product/ProductGroup/SoftwareApplication|Offer:envio-y-devolucion|-|-|index|price in the markup = price on the page; variants with ProductGroup + hasVariant; a program or an agent is a SoftwareApplication (or WebApplication, MobileApplication), a Service is a servicio
 hub||hub|CollectionPage|BreadcrumbList;CollectionPage/ItemList|-|Product|-|index|
 guia|blog articulo|guia|WebPage|BreadcrumbList;Article|Person:autor FAQPage:si-se-ve|Product|-|index|Article or one of its subtypes (BlogPosting, TechArticle), never two
 comparativa||comparativa|WebPage|BreadcrumbList;Article|Person:autor|Product|-|index|

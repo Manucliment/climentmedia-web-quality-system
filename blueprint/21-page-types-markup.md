@@ -36,7 +36,7 @@ sections are not, until four pages of other businesses are measured for each, th
 | `home` | portada | 09 §2.1 | WebPage | yes | `WebSite` + `Organization` |
 | `servicio` | | 09 §2.2 | WebPage | yes | `BreadcrumbList` + `Service` |
 | `ciudad` | zona | 09 §2.3 | WebPage | yes | `BreadcrumbList` + `Service` or `LocalBusiness` |
-| `ficha` | pdp, producto | 09 §2.4 | ItemPage | yes | `BreadcrumbList` + `Product` or `ProductGroup` |
+| `ficha` | pdp, producto | 09 §2.4 | ItemPage | yes | `BreadcrumbList` + `Product`, `ProductGroup` or, for a program or an agent, `SoftwareApplication` (a `Service` is a `servicio`) |
 | `hub` | | 09 §2.5 | CollectionPage | yes | `BreadcrumbList` + `CollectionPage` or `ItemList` |
 | `guia` | blog, articulo | 09 §2.6 | WebPage | yes | `BreadcrumbList` + `Article` (or a subtype) |
 | `comparativa` | | 09 §2.6 | WebPage | yes | `BreadcrumbList` + `Article` |

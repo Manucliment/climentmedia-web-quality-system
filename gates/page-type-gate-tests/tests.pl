@@ -94,6 +94,15 @@ caso('una ficha con Product, Offer y migas: PASA en todo', $FICHA_BIEN, [],
      ['^PASA\s+PT-03', '^PASA\s+PT-05', '^PASA\s+PT-06', '^PASA\s+PT-10\s+la pagina es ItemPage'], ['^FALLO', '^AVISO'], 0);
 caso('una ficha sin Product: FALLO', fichero(pagina('ficha', [$MIGA], $FICHA_CUERPO)), [],
      ['^FALLO\s+PT-03.*falta Product/ProductGroup'], [], 1);
+# 6-nov-2026 · la ficha de un programa o de un agente lleva SoftwareApplication (o un subtipo): PT-03 pedia Product
+#  y siete fichas de agentes de una web nuestra daban FALLO con su marcado bien puesto. Su espejo: con Service sigue
+#  en FALLO, porque un servicio es un `servicio`, no una ficha.
+caso('una ficha de programa con WebApplication: PT-03 PASA',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"WebApplication","name":"Agente de informes","applicationCategory":"BusinessApplication","operatingSystem":"Web"}'], '<h1>Agente de informes</h1><p>Un agente que prepara el informe semanal.</p>')), [],
+     ['^PASA\s+PT-03'], ['^FALLO\s+PT-03'], undef);
+caso('una ficha con Service y sin Product: sigue en FALLO',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"Service","name":"Agente de informes","provider":{"@type":"Organization","name":"x"}}'], '<h1>Agente de informes</h1><p>Un agente que prepara el informe semanal.</p>')), [],
+     ['^FALLO\s+PT-03.*falta Product/ProductGroup/SoftwareApplication'], [], 1);
 caso('una guia sin Article: FALLO', fichero(pagina('guia', [$MIGA], '<h1>Como elegir una lampara</h1>')), [],
      ['^FALLO\s+PT-03.*falta Article'], [], 1);
 caso('una guia con BlogPosting (subtipo de Article): PASA',

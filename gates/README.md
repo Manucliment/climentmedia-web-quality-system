@@ -483,7 +483,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Twenty-one more since 2026-11-05**, all from one week of real deploys:
+**Twenty-two more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -642,6 +642,11 @@ without blocking. Why the order changed is trap §89.
   The shop's account icon goes to `/account`, which sends a visitor to the platform's sign-in on
   another host: R7 failed on every page. It is a named WARNING now; a redirect inside the site,
   `www.` or not, still FAILs, and wins when both are there.
+- **The `ficha` of a program or an agent carries `SoftwareApplication` (`page-types.tsv`, PT-03).**
+  PT-03 asked every `ficha` for `Product` or `ProductGroup`, and seven pages presenting agents
+  and programs failed with the markup that describes them. `SoftwareApplication` and its
+  subtypes count now; a `ficha` with only a `Service` still fails, because a service is a
+  `servicio`.
 
 ---
 
