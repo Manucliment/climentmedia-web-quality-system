@@ -599,6 +599,24 @@ espera "site-a · PNG de 2,3 MB / logo a 200 B/px"           FALLO REN-02  perl 
 #    HTTPS, y el banco ya no sale a internet. Sin el, esos checks salen NO
 #    VERIFICADO o ausentes. Es la costura que el gate trae para esto.
 espera "bc · page_view_gracias sin disparador (G1)"       FALLO MED-03  perl $QA http://site-d.example/ --gracias /gracias/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
+texto  "bc · y lo nombra"                                  SI "page_view_gracias" perl $QA http://site-d.example/ --gracias /gracias/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
+# 🔴 6-nov-2026 · MED-03 LEE LOS PREDICADOS SOBRE {{Event}}. Un activador por expresion regular no
+#    escribe el nombre entre comillas, y una web que lo escuchaba salia FALLO (visto en ROJO contra el
+#    gate anterior: med03-patron daba FALLO). Y al reves: un nombre entre comillas en un predicado de la
+#    URL o en uno negado daba PASA (med03-patron-otro, VERDE contra el gate anterior: era un falso PASA).
+_M03="--candidato --una-sola --solo medicion --sin-recibo"
+espera "MED-03 · un activador por patron lo escucha: PASA"       PASA    MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-patron --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+texto  "MED-03 · y dice que es por un patron"                    SI "por un disparador con patron: devis_envoye" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-patron --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+espera "MED-03 · patron que no lo cubre, URL y negado: FALLO"    FALLO   MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-patron --contenedor fixtures-lenses/contenedor-med03-patron-otro.js $_M03
+espera "MED-03 · patrones que no se pueden leer: NO VERIFICADO"  NOVERIF MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-patron --contenedor fixtures-lenses/contenedor-med03-patron-ilegible.js $_M03
+# Medido en nueve webs nuestras antes de creerselo: dos pasaban de PASA a FALLO por un nombre que el
+# contenedor ENVIA desde otro activador (una etiqueta con ese vtp_eventName). Llega a GA4: es AVISO.
+espera "MED-03 · lo manda otro activador (vtp_eventName): AVISO" AVISO   MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-patron --contenedor fixtures-lenses/contenedor-med03-patron-envia.js $_M03
 # ⚠️ `--sin-recibo` en TODA prueba que apunte a un repo de verdad (anadido el
 #    11-ago-2026). Sin el, estas dos lineas escribian un `.qa-recibo` DENTRO de
 #    site-d-web cada vez que se corria la bateria —y encima un recibo de

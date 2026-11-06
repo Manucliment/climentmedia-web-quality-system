@@ -3916,6 +3916,66 @@ sub js_sin_com {
     return $x;
 }
 
+# =============================================================================
+#  MED-03 · LO QUE EL CONTENEDOR ESCUCHA, LEIDO DE SUS PREDICADOS (6-nov-2026)
+# =============================================================================
+# El gtm.js publicado lleva `"macros":[…]` (la variable Event es la macro con
+# `"function":"__e"`) y `"predicates":[…]`, cada uno `{"function":"_re",
+# "arg0":["macro",N],"arg1":"…"}`. Medido en cuatro contenedores reales el 6-nov:
+# en los cuatro se leen con un JSON corriente.
+# El [...] equilibrado que sigue a "clave":, sin contar lo que va dentro de cadenas.
+sub gtm_lista {
+    my ($c, $k) = @_;
+    return undef unless defined $c && $c =~ /"\Q$k\E"\s*:\s*\[/g;
+    my $i = pos($c) - 1;
+    my ($d, $s, $e) = (0, 0, 0);
+    for my $j ($i .. length($c) - 1) {
+        my $ch = substr($c, $j, 1);
+        if ($s) {
+            if    ($e)          { $e = 0 }
+            elsif ($ch eq "\\") { $e = 1 }
+            elsif ($ch eq '"')  { $s = 0 }
+            next;
+        }
+        if    ($ch eq '"') { $s = 1 }
+        elsif ($ch eq '[') { $d++ }
+        elsif ($ch eq ']') { $d--; return substr($c, $i, $j - $i + 1) unless $d }
+    }
+    return undef;
+}
+# Los predicados sobre la variable Event, sin los negados. undef si no se pueden
+# leer: quien llama no lo convierte en «no escucha».
+sub gtm_predicados_de_evento {
+    my ($cjs) = @_;
+    my ($rm, $rp) = (gtm_lista($cjs, 'macros'), gtm_lista($cjs, 'predicates'));
+    return undef unless defined $rm && defined $rp;
+    my $J = JSON::PP->new->relaxed;
+    my $m = eval { $J->decode($rm) };
+    my $p = eval { $J->decode($rp) };
+    return undef unless ref $m eq 'ARRAY' && ref $p eq 'ARRAY';
+    my %ev = map { $_ => 1 } grep { ref $m->[$_] eq 'HASH' && ($m->[$_]{function} // '') eq '__e' } 0 .. $#$m;
+    return undef unless %ev;
+    return [ grep { ref $_ eq 'HASH' && ref $_->{arg0} eq 'ARRAY' && ($_->{arg0}[0] // '') eq 'macro'
+                    && $ev{ $_->{arg0}[1] // -1 } && !$_->{negate} && defined $_->{arg1} && !ref $_->{arg1} } @$p ];
+}
+# ¿Algun predicado deja pasar este nombre de evento? Como lo aplica GTM.
+sub gtm_escucha {
+    my ($preds, $n) = @_;
+    for my $p (@$preds) {
+        my ($f, $a, $i) = ($p->{function} // '', "$p->{arg1}", $p->{ignore_case});
+        my ($x, $y) = $i ? (lc $n, lc $a) : ($n, $a);
+        return 1 if $f eq '_eq' && $x eq $y;
+        return 1 if $f eq '_cn' && index($x, $y) >= 0;
+        return 1 if $f eq '_sw' && index($x, $y) == 0;
+        return 1 if $f eq '_ew' && length($y) && length($x) >= length($y) && substr($x, -length($y)) eq $y;
+        if ($f eq '_re') {
+            my $re = eval { $i ? qr/$a/i : qr/$a/ };
+            return 1 if $re && $n =~ $re;
+        }
+    }
+    return 0;
+}
+
 # trozos_de_script(url_de_la_pagina, html_sin_comentarios)
 #   Cada <script> de la pagina, en orden de documento:
 #     { doc, async, defer, src, propio, txt }
@@ -4212,17 +4272,66 @@ sub lente_medicion {
             }
             delete $emit{$_} for qw(gtm_js gtm_dom gtm_load js config);
             # nombres que el CONTENEDOR conoce
-            my @sinescucha = grep { index($cjs, "\"$_\"") < 0 && index($cjs, "'$_'") < 0 } sort keys %emit;
-            if (@sinescucha) {
+            # 🔴 6-nov-2026 · Y LOS QUE ESCUCHA POR PATRON. Un activador «evento personalizado» con
+            #    «usar coincidencias de expresiones regulares» no escribe el nombre entre comillas: escribe
+            #    `"arg1":"^(phone_click|email_click|devis_envoye)$"` en un predicado `_re` sobre {{Event}}.
+            #    una web de servicios salia FALLO con `--gracias` por `devis_envoye`, y su contenedor si
+            #    lo escuchaba (medido el 5-nov). Ahora se leen los predicados sobre la macro `__e` y se
+            #    aplica cada uno como lo aplica GTM (_eq, _re, _cn, _sw, _ew; los negados no cuentan). Una
+            #    mencion entre comillas ESCAPADAS no cuenta: en ese contenedor es la configuracion de una
+            #    etiqueta de GA4, que no dispara nada. Y si hay disparadores por patron que no se pueden
+            #    leer, lo que no aparece escrito queda NO VERIFICADO: no se sabe, que no es «no escucha».
+            #    🔴 Y CUANDO SE LEEN, MANDAN ELLOS. El nombre entre comillas en cualquier sitio del fichero
+            #    daba PASA a un evento que solo nombraba un predicado sobre la URL o uno NEGADO (el control
+            #    med03-patron-otro, que paso en VERDE con la regla vieja y con la primera version de esta).
+            #    Los activadores de evento de GTM son predicados sobre {{Event}}: si se leen, son la lista.
+            #    La busqueda entre comillas queda para el contenedor cuyos predicados no se pueden leer.
+            #    Control: med03-patron (PASA), med03-patron-otro (FALLO: el patron no lo cubre, y ni la
+            #    mencion escapada, ni el predicado de la URL, ni el negado lo salvan) y
+            #    med03-patron-ilegible (NO VERIFICADO).
+            #    🔑 MEDIDO ANTES DE CREERSELO, en nueve webs nuestras el 6-nov: la de servicios pasa de FALLO
+            #    a PASA (su patron), y otras dos pasaban de PASA a FALLO por `phone_click` y
+            #    `generate_lead`. Ninguno de los dos se pierde: el contenedor de una lo manda a GA4 desde
+            #    un activador de clic en enlace (tel:), y el de la otra escucha `cm_generate_lead` y lo manda
+            #    con el nombre `generate_lead`. Es decir: el nombre es el `vtp_eventName` de una etiqueta,
+            #    el contenedor lo ENVIA por otro activador, y lo que la pagina empuja con ese nombre no lo
+            #    escucha nadie. Eso no es la conversion muerta de site-d: es AVISO, con lo que hay que mirar
+            #    (que el otro activador cubra el mismo clic). Control: med03-patron-envia (AVISO).
+            my $preds = gtm_predicados_de_evento($cjs);
+            my $oye = sub {
+                my $n = shift;
+                return gtm_escucha($preds, $n) if $preds;
+                return index($cjs, "\"$n\"") >= 0 || index($cjs, "'$n'") >= 0;
+            };
+            my $envia = sub { $cjs =~ /"vtp_eventName"\s*:\s*"\Q$_[0]\E"/ };
+            my @por_patron = $preds ? grep { $oye->($_) && index($cjs, "\"$_\"") < 0 } sort keys %emit : ();
+            my @por_otro   = $preds ? grep { !$oye->($_) && $envia->($_) } sort keys %emit : ();
+            my %otro = map { $_ => 1 } @por_otro;
+            my @sinescucha = grep { !$oye->($_) && !$otro{$_} } sort keys %emit;
+            my $patron_ilegible = !$preds && $cjs =~ /"function"\s*:\s*"_(?:re|cn|sw|ew)"/;
+            if (@sinescucha && $patron_ilegible) {
+                nv(lente=>'MEDICION', id=>'MED-03', titulo=>'cruce eventos <-> disparadores del contenedor',
+                   dato=>scalar(@sinescucha).' de '.scalar(keys %emit).' eventos no aparecen escritos en gtm.js ('.join(' · ', @sinescucha).'), y el contenedor tiene disparadores por patron que no se han podido leer',
+                   umbral=>'0 · todo nombre emitido lo escucha un disparador',
+                   proc=>'G1 · 6-nov-2026: un patron sin leer no es «no escucha»',
+                   hacer=>'mirar en GTM el activador de esos eventos (Vista previa, o el activador con su expresion regular)');
+            } elsif (@sinescucha) {
                 fallo(lente=>'MEDICION', id=>'MED-03', titulo=>'evento emitido que el contenedor NO escucha',
                       donde=>join(' · ', @sinescucha),
                       dato=>scalar(@sinescucha).' de '.scalar(keys %emit).' eventos emitidos',
                       umbral=>'0 · todo nombre emitido aparece en gtm.js',
                       proc=>'G1 · site-d emite page_view_gracias y el contenedor escucha thank_you_view: TRES etiquetas de Ads que no han disparado nunca',
                       hacer=>'o se renombra el evento en la pagina, o se anade el disparador en GTM. Y despues se comprueba en Ads que llega (MED-13)');
+            } elsif (@por_otro) {
+                aviso(lente=>'MEDICION', id=>'MED-03', titulo=>'el contenedor manda el evento por OTRO activador: lo que empuja la pagina no lo escucha nadie',
+                      donde=>join(' · ', @por_otro),
+                      dato=>scalar(@por_otro).' de '.scalar(keys %emit).' eventos emitidos: ninguno de sus activadores de evento lo escucha, y una etiqueta lo envia con ese nombre (vtp_eventName)',
+                      umbral=>'todo nombre emitido lo escucha un activador sobre {{Event}}',
+                      proc=>'G1 · 6-nov-2026: dos webs nuestras, phone_click (por un clic en tel:) y generate_lead (desde cm_generate_lead)',
+                      hacer=>'comprobar en GTM que el otro activador cubre el mismo clic o envio que la pagina empuja; si lo cubre, el push de la pagina sobra');
             } elsif (%emit) {
                 pasa(lente=>'MEDICION', id=>'MED-03', titulo=>'todo evento emitido tiene disparador',
-                     dato=>join(' ', sort keys %emit));
+                     dato=>join(' ', sort keys %emit).(@por_patron ? ' · por un disparador con patron: '.join(' ', @por_patron) : ''));
             } else {
                 aviso(lente=>'MEDICION', id=>'MED-03', titulo=>'el sitio no emite ningun evento con nombre',
                       umbral=>'>=1 evento de conversion', proc=>'G1',
