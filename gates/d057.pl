@@ -309,7 +309,10 @@ my @FILAS;
             }
             next unless %col;
             push @FILAS, { rel => $rel, linea => $i + 1, texto => $t, c => [ d57_celdas($t) ],
-                           col => { %col }, base => ($rel =~ m{^_seo[\\/]BASE\.md$}) };
+                           # `? 1 : 0`: en lista, un match que falla no da NADA, y el hash
+                           # quedaba impar («Odd number of elements», una vez por fila de
+                           # una tabla que no es BASE.md: 19 en una web el 6-nov)
+                           col => { %col }, base => ($rel =~ m{^_seo[\\/]BASE\.md$} ? 1 : 0) };
         }
     }
 }
