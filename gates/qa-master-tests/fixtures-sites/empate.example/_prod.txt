@@ -1,0 +1,5 @@
+# empate.example · produccion de mentira (fake-production.pl)
+# 5-nov-2026 · REN-05: dos paginas con el mismo contenedor de terceros empatan en
+# su porcentaje. El sitemap pone zeta delante de alfa a proposito: la peor pagina
+# tiene que ser alfa (la menor en orden alfabetico), no la primera que llega.
+gzip off

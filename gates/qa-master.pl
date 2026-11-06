@@ -188,7 +188,7 @@
 #            alcance_sitio      => URLs que tiene el SITIO (sitemap) | undef
 #            alcance_lista      => URLs pedidas, sin deduplicar
 #            alcance_documentos => documentos distintos (tras dedupe por md5)
-#            alcance_dom => "fichero.json (innerWidth=NNN)" | undef
+#            alcance_dom => "fichero.json (innerWidth=NNN, innerHeight=NNN, pagina=URL)" | undef
 #        De ahi salen en el recibo, y quedan bajo el SELLO:
 #            ALCANCE-URLS: N                  distintas, union de las lentes
 #            ALCANCE-SITIO: N | NO SE SABE    el denominador honesto
@@ -331,6 +331,28 @@ my @targets;
             push @targets, $x;
         }
     }
+}
+
+# 🔴 5-nov-2026 · D-057 · COMO VOLVER A MEDIR ESTO EN PRODUCCION, CON LA MISMA REGLA.
+#    La puerta deja pasar un FALLO (o un sin mirar) del candidato si produccion lo
+#    tiene igual, y para saberlo vuelve a correr este programa sobre la web publicada
+#    con lo que decide QUE se mide y COMO: la URL, el tipo, las lentes, el tope de
+#    paginas, la muestra, gracias y contacto. Va al recibo, bajo el SELLO, y fuera
+#    se queda lo que no es regla: --candidato (es lo que cambia), --repo (lo pone la
+#    puerta), --recibo y --json (son salidas), --cache (produccion se pide fresca: «la
+#    cache no mide el pasado»), --dom (es la foto de OTRA pagina: con la del
+#    candidato, produccion «coincidiria» siempre) y --contenedor (en produccion
+#    cuenta el contenedor publicado, no un fichero). Una ruta local se escribe entera.
+my @QA_REPETIR;
+{
+    my $abs = sub { my $p = shift; return $p if $p =~ m{^(?:[a-z]+:|/|[A-Za-z]:[\\/])}i || !-e $p;
+                    require Cwd; my $a = Cwd::abs_path($p); return defined $a ? $a : $p };
+    push @QA_REPETIR, map { /^@(.+)$/ ? '@' . $abs->($1) : $_ } @targets;
+    for my $k (qw(tipo solo gracias contacto max-urls muestra)) {
+        push @QA_REPETIR, "--$k", $opt{$k} if defined $opt{$k} && $opt{$k} ne '';
+    }
+    push @QA_REPETIR, '--css', $abs->($opt{css}) if $opt{css} ne '';
+    push @QA_REPETIR, '--una-sola' if $opt{'una-sola'};
 }
 
 # --snippet no toca la red: se puede pedir siempre.
@@ -1630,7 +1652,7 @@ sub lente_seo {
         return;
     }
     my (@titles, %ogimg, @sin_ogalt, @sin_twimg, @sin_can, @sin_desc, @sin_h1, @multi_h1,
-        @img_sin_alt, @sin_jsonld, @sin_bread, @solo_js, @desc_corta, @title_largo);
+        @img_sin_alt, @sin_jsonld, @sin_bread, @solo_js, @desc_corta, @title_largo, @sin_title);
     my @meta3;   # [url, title, h1, description] -> SEO-02b y SEO-05/05b
 
     # 🔴 EL TEXTO QUE SALE DE LA PAGINA LLEGA EN BYTES, Y STDOUT YA CODIFICA.
@@ -1682,6 +1704,12 @@ sub lente_seo {
         push @titles, [$u, $t];
         my $lt = largo_visible($t);
         push @title_largo, "$u ($lt)" if $lt > 65 || ($lt < 15 && $t ne '');
+        # 🔴 6-nov-2026 · UNA PAGINA SIN <title> SALIA «title presente y en rango». La
+        #    linea de arriba solo mira el largo de un title que existe (`$t ne ''`), y no
+        #    habia otra: sin title no entraba en ninguna lista y SEO-01 decia PASA. Lo
+        #    destapo un caso del banco de D-057 que quita el title a una portada para
+        #    tener un FALLO que produccion no tiene, y no lo hubo.
+        push @sin_title, $u if $t eq '';
 
         my $d = meta_of($h, 'description');
         if (!defined $d || $d eq '') { push @sin_desc, $u }
@@ -2001,7 +2029,14 @@ sub lente_seo {
                 : pasa(lente=>'SEO', id=>'SEO-05b', titulo=>'description alineada con title o h1',
                        dato=>"$juzgadas paginas juzgadas");
 
-    @title_largo ? aviso(lente=>'SEO', id=>'SEO-01', titulo=>'longitud del title fuera de 15-65',
+    @sin_title ? fallo(lente=>'SEO', id=>'SEO-01', titulo=>'pagina sin <title>',
+                       donde=>join(' · ', @sin_title[0..($#sin_title>2?2:$#sin_title)]),
+                       ev=>[@sin_title],
+                       dato=>scalar(@sin_title).' de '.scalar(@titles).' paginas sin title'
+                             .(@title_largo ? ' · y '.scalar(@title_largo).' fuera de 15-65' : ''),
+                       umbral=>'toda pagina lleva <title>', proc=>'03-contenido-y-seo §2',
+                       hacer=>'sin title el buscador escribe uno con lo que encuentre: ponerle el suyo, que diga lo que promete la pagina')
+  : @title_largo ? aviso(lente=>'SEO', id=>'SEO-01', titulo=>'longitud del title fuera de 15-65',
                          donde=>join(' · ', @title_largo[0..($#title_largo>2?2:$#title_largo)]),
                          ev=>[@title_largo],
                          umbral=>'15-65 caracteres', proc=>'03-contenido-y-seo §2',
@@ -2799,7 +2834,15 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
         }
         next unless $tp > 0;
         my $p = 100 * $terp / $tp;
-        ($peor_pct, $peor_pag, $peor_ter, $peor_tot) = ($p, $pg, $terp, $tp) if $p > $peor_pct;
+        # 🔴 5-nov-2026 · EL EMPATE NO PUEDE DECIDIRLO EL ORDEN DE LA MUESTRA. Dos
+        #    paginas al 66% (las dos con el mismo GTM de 159 KB): ganaba la primera
+        #    que llegaba, y la huella -que lleva la peor pagina en DATO y DONDE-
+        #    cambiaba de una corrida a otra. Un aceptado firmado no casaba al dia
+        #    siguiente, en dos webs. Empate = el mismo % impreso; lo gana la URL
+        #    menor en orden alfabetico, siempre la misma.
+        my ($pr, $wr) = (sprintf('%.0f', $p), sprintf('%.0f', $peor_pct));
+        ($peor_pct, $peor_pag, $peor_ter, $peor_tot) = ($p, $pg, $terp, $tp)
+            if ($pr ne $wr && $p > $peor_pct) || ($pr eq $wr && $pg lt $peor_pag);
     }
     my $pct = $total ? 100*$terceros/$total : 0;     # union: solo para el detalle
     my $peor_dice = $peor_pag ne ''
@@ -2936,6 +2979,9 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
               : pasa(lente=>'RENDIMIENTO', id=>'REN-10', titulo=>'sin scripts bloqueantes');
 
     # PC2 · lo que NO se puede medir sin navegador
+    # D-057 (6-nov): lo que sale de este bloque sale del DOM, y produccion no lo
+    # tiene sin el suyo (se marca al final del bloque, ver d057_del_dom)
+    my $r_dom = @R;
     if ($DOM_NO_VALE) {
         nv(lente=>'RENDIMIENTO', id=>'REN-11', titulo=>'LCP y CLS reales',
            dato=>"el DOM de $opt{dom} no es la pagina: $DOM_NO_VALE",
@@ -2971,6 +3017,7 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
            proc=>'PC2 · 0 apariciones de LCP/CLS en toda la documentacion, verificado',
            hacer=>'perl qa-master.pl --snippet > s.js  ·  node gates/run-gate.js <url> 1298 900 s.js | tail -n +2 > s.json (agente de Chrome normal)  ·  --dom s.json');
     }
+    d057_del_dom($r_dom);
 }
 
 # =============================================================================
@@ -5446,6 +5493,7 @@ sub lente_estructura {
     }
 
     # ── EST-05..07 · lo que necesita DOM ────────────────────────────────────
+    my $r_dom = @R;   # D-057: lo de este bloque sale del DOM (d057_del_dom)
     if ($DOM_NO_VALE) {
         # La medida se tira entera, como con el ancho clampado (PC15), y lo dicen
         # las tres lineas: una que falta se lee como un PASA.
@@ -5536,6 +5584,7 @@ sub lente_estructura {
            proc=>'08-qa-final A-bis/A-ter · G6',
            hacer=>"perl $0 --snippet > qa.js  ·  node gates/run-gate.js <url> 1298 900 qa.js | tail -n +2 > qa.json (y a 390; agente de Chrome normal)  ·  volver con --dom qa.json");
     }
+    d057_del_dom($r_dom);
 
     # EST-08 · enlazado (grafo)
     nv(lente=>'ESTRUCTURA', id=>'EST-08', titulo=>'el grafo de enlaces: huerfanas, profundidad, anclas',
@@ -6028,6 +6077,45 @@ sub huella_hallazgo {
     push @p, 'PARCIAL' if defined $c->{ev_parcial} && $c->{ev_parcial} ne '';
     return @p ? join(' ', @p) : 'TODO-EL-CHECK';
 }
+
+# ── 🔴 5-nov-2026 · D-057 · UN HALLAZGO, INSTANCIA A INSTANCIA ──────────────────
+#  La puerta compara el candidato con produccion para dejar pasar lo viejo, y no
+#  compara la huella entera: un arbol que arregla 3 de las 5 paginas que fallan tiene
+#  OTRA huella (otro conjunto) y es justo la subida que hay que dejar pasar. Compara
+#  instancias: cada pagina, texto o selector de la evidencia COMPLETA (`ev`), y lo
+#  viejo es lo que produccion tambien tiene. Sin `ev`, la instancia es la huella
+#  entera (DATO y DONDE): si el DATO cambia, no es lo mismo, y para.
+#  Se escriben aqui, en los dos lados, con la misma funcion: dos copias divergen.
+#  En ASCII sin perder nada (%XX de los bytes UTF-8), porque van bajo el SELLO.
+sub esc_instancia {
+    my ($s) = @_;
+    $s = '' unless defined $s;
+    utf8::encode($s) if utf8::is_utf8($s);
+    $s =~ s/([^\x21-\x24\x26-\x7E])/sprintf('%%%02X', ord $1)/ge;
+    return $s;
+}
+sub instancias_hallazgo {
+    my ($c) = @_;
+    my $l = _ev_lista($c->{ev});
+    return map { esc_instancia($_) } (@$l ? @$l : (huella_hallazgo($c)));
+}
+#  Lo que D-057 no cubre (lo mismo que D-045): la lente de medicion, cookies y
+#  consentimiento, y lo que no se acepta nunca (@NO_ACEPTABLE). Se decide aqui, al
+#  lado de la regla, y viaja sellado: la puerta no tiene su propia lista.
+sub d057_fuera {
+    my ($c) = @_;
+    return 'medicion' if ($c->{lente} // '') eq 'MEDICION';
+    return 'cookies y consentimiento' if ($c->{titulo} // '') =~ /cookie|consent/i;
+    my $p = prohibido($c);
+    return 'no se acepta nunca' if $p;
+    return '';
+}
+#  Y lo que sale del DOM (EST-05/06/07, REN-11): la puerta vuelve a medir
+#  produccion sin --dom (el del candidato es del candidato), asi que alli sale sin
+#  medir o no sale. Lo marca cada bloque al acabar —todo lo que ha anadido a @R
+#  desde su principio—, sin lista de ids que copiar: un check nuevo del DOM queda
+#  marcado por estar dentro. gates/d057.pl le pide a esos el DOM de produccion.
+sub d057_del_dom { my ($desde) = @_; $_->{del_dom} = 1 for @R[$desde .. $#R]; return }
 
 # ── Lo que NO se puede aceptar nunca ────────────────────────────────────────
 #  Criterio, y es uno solo para que se pueda discutir: el daño cae sobre el
@@ -6680,6 +6768,14 @@ if ($N{FALLO}) {
 print "  Faltan los BLOQUES B (mirar) y C (las preguntas) de 08-qa-final.md.\n";
 print "  Ningun script encuentra lo que no se le ha escrito.\n";
 
+# D-057 · cada FALLO y cada sin mirar lleva sus instancias y si la puerta puede
+# dejarlo pasar por viejo. Al JSON (lo lee gates/d057.pl de la corrida de
+# produccion) y al recibo (el candidato), con la misma funcion.
+for my $c (grep { $_->{estado} eq 'FALLO' || $_->{estado} eq 'NV' } @R) {
+    $c->{instancias} = [ instancias_hallazgo($c) ];
+    $c->{d057_fuera} = d057_fuera($c);
+}
+
 if ($opt{json} ne '') {
     open my $jf, '>:raw', $opt{json} or die "no puedo escribir $opt{json}: $!\n";
     print $jf JSON::PP->new->utf8->canonical->pretty->encode({
@@ -6835,6 +6931,18 @@ if ($RECIBO_CAND_PREVIO ne '') {
                     medido_contra => ($CAND_ON ? 'CANDIDATO' : 'PRODUCCION'),
                     medido_en     => ($CAND_ON ? "http://127.0.0.1:$CAND_PORT" : $ROOT),
                     nv_candidato  => [ map { $_->{id} } @NV_CAND ],
+                    # D-057 (5-nov-2026): cada hallazgo con sus instancias, y como
+                    # volver a medirlo en produccion. Ver esc_instancia y @QA_REPETIR.
+                    hallazgos => [ map { { estado => $_->{estado}, id => $_->{id},
+                                           lente => $_->{lente}, fuera => $_->{d057_fuera},
+                                           dom => ($_->{del_dom} ? 1 : 0),
+                                           instancias => $_->{instancias} } }
+                                   grep { $_->{estado} eq 'FALLO' || $_->{estado} eq 'NV' } @R ],
+                    qa_repetir => [ map { esc_instancia($_) } @QA_REPETIR ],
+                    # y CON QUE regla: los bytes de este programa. La puerta vuelve a
+                    # medir produccion con el qa-master de ese momento; si no es este,
+                    # la regla no es la misma (y un README nuevo no cambia ninguna).
+                    qa_md5 => eval { open my $q, '<:raw', $0 or die; local $/; md5_hex(<$q>) } // '',
                     veredicto => $veredicto,
                     lentes    => \%lentes,
                     fallo => $N{FALLO}, aviso => $N{AVISO},
@@ -6881,8 +6989,14 @@ if ($RECIBO_CAND_PREVIO ne '') {
                     alcance_sitio      => $SITIO_URLS,
                     alcance_lista      => scalar(@PAGES_URLS),
                     alcance_documentos => scalar(@PAGES),
+                    # D-057 (6-nov): con el alto y la pagina a la que se le
+                    # atribuye (la primera de la lista, la de EST-05/06/07), que
+                    # d057.pl compara con el DOM de produccion: la huella de EST-06
+                    # lleva el ancho y el alto.
                     alcance_dom => ($opt{dom} ne ''
-                                    ? "$opt{dom} (innerWidth=".($DOM{innerWidth}//'?').")"
+                                    ? "$opt{dom} (innerWidth=".($DOM{innerWidth}//'?')
+                                      .", innerHeight=".($DOM{innerHeight}//'?')
+                                      .", pagina=".($URLS[0]//'?').")"
                                     : undef),
                 );
             };

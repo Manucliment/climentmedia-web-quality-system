@@ -1,6 +1,6 @@
 # The gates
 
-42 programs and 40 test batteries. This file is the index: what each program is for,
+43 programs and 40 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -28,11 +28,11 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the fourteen slow batteries: the ones that need a browser, a host, or the network. On a clean
-install the fast run is **1072 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **1077 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1788 cases green, 0 red**, with **nine** banks reported as
+a clean install it reads **1831 cases green, 0 red**, with **nine** banks reported as
 `NOT MEASURED`: the seven that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **1961**: 1788 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **2004**: 1831 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -73,7 +73,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-1074, not 1072, because that machine has deployed. `run-all.sh`
+1079, not 1077, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,13 +95,13 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  1072 casos en verde · 0 en rojo
+  1077 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  1788 casos en verde · 0 en rojo
+  1831 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
@@ -377,8 +377,8 @@ rules no machine will ever measure.
 **It never asked the reverse: does this check that RUNS have a rule behind it?**
 
 ```
-  checks emitted .......... 160
-  with no rule claiming it .. 92   (57%)
+  checks emitted .......... 161
+  with no rule claiming it .. 93   (58%)
 ```
 
 **That is not a tidiness complaint.** A gate nobody's rule asked for is an opinion with
@@ -464,7 +464,28 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Five more since 2026-11-05**, all from one week of real deploys:
+**Six more since 2026-11-05**, all from one week of real deploys:
+
+- **An old FAIL that production already has does not stop an upload (`d057.pl`, D-057).**
+  Five sites were stopped by FAILs their upload did not touch and the published site had
+  the same, each with its dated row in the plan. `--anyway` is for what nobody looked at,
+  `accepted.conf` for the client's decisions, so the rule that let old ones through was
+  checked by the memory of the chat that uploaded. Now `qa-master` writes every FAIL and
+  NOT VERIFIED into the receipt, under the seal, instance by instance, with how to measure
+  production again (`QA-REPETIR`) and its own md5. When step 1 finds a receipt valid in
+  everything but its verdict, the door runs `d057.pl`: it measures production now with
+  the same `qa-master` and lets a finding through only if production has the same check
+  in the same state with every candidate instance in it (fewer is fine: that is a tree
+  that fixes part of it), and an open row in `_seo/BASE.md`, `_seo/plan*.md` or
+  `_diseno/PLAN.md` names it with a date from today on and an owner. Not covered: the
+  measurement lens, cookies and consent, and what is never acceptable. A site with no
+  GA4 and no Ads by decision declares `NO_GA4_OR_ADS="reason"` and MED-13 is NOT
+  APPLICABLE, after checking the tree carries no tag. What came from the browser snapshot
+  (EST-05/06/07, REN-11) is compared only with production's own snapshot
+  (`D057_PRODUCTION_DOM`: same page, width and height, under 12 hours old). Production
+  that does not answer, another `qa-master` or an older receipt is NOT MEASURED, never
+  "old" and never "new". Each finding let through is written to the history and the
+  closing line signed "D-057", with how many production FAILs the upload removes.
 
 - **Upload lock (step 3-ter-0).** Two sessions holding permission for the same upload ran
   it twice, 11 seconds apart. The door now records each upload of a site in
@@ -516,6 +537,7 @@ without blocking. Why the order changed is trap §89.
 | `qa-master.pl` | The master gate. Five lenses over a page or a tree, and it writes the receipt. |
 | `deploy.sh` | The door. No valid receipt, no upload. Before the upload line it runs the browser gates on the candidate (step 1-quater) and a FAIL stops it, and it will not repeat another session's upload of the same site within 15 minutes; after, it checks what is served, page by page for the pages it added or changed, and closes with one line: PASS, FAIL or NOT MEASURED. |
 | `receipt.pl` | Writes, verifies and records receipts; owns the deploy history. |
+| `d057.pl` | The door's question for a red receipt of the CANDIDATE: is each FAIL and NOT VERIFIED old (the same in production, measured now with the same `qa-master`, instance by instance) and does a dated row with an owner fix it? PASS, STOP or NOT MEASURED, finding by finding, signed "D-057" (since 2026-11-06). |
 | `redirects-gate.pl` | The gate of a tree that only redirects: a retired domain whose docroot is a `robots.txt` and an `.htaccess` sending every mapped path to its new page and everything else to the home page, with 301. `--candidate` simulates the rules in order (RED-01..08: every WordPress and PHP path ends in a redirect, nothing it lets through is outside the tree, no rule is shadowed, the last one is an unconditional catch-all), asks every target for a 200 (RED-09) and writes a receipt of `TIPO: REDIRECCIONES` whose five page lenses read `NO APLICA`. `--served` asks the domain itself (RED-10); the door runs it after the upload (step 4-ter) and a wrong answer stops it. Declared with `ARBOL=redirecciones` (`TREE=redirects`) in `deploy.conf`. Fail-closed: `RewriteCond`, mod_alias and internal rewrites are failures, not warnings. |
 
 ### Structure, layout and type
@@ -570,7 +592,7 @@ without blocking. Why the order changed is trap §89.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6), of the coverage (D8) and of one instrument or one bank (D9) must be the last one measured. |
-| `coverage.pl` | How many checks have a test case. Today: **148 of 155 (95%)**. |
+| `coverage.pl` | How many checks have a test case. Today: **149 of 156 (95%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **162 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
@@ -583,7 +605,7 @@ without blocking. Why the order changed is trap §89.
 | `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **95% is measured over 5 programs of 42**,
+The coverage figure has a scope you should know: **95% is measured over 5 programs of 43**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
@@ -634,6 +656,7 @@ and neither can break an existing invocation.
 | `--hours` | `--horas` |
 | `--instrument` | `--instrumento` |
 | `--cache-hours` | `--cache-horas` |
+| `--except-verdict` | `--salvo-veredicto` |
 
 **`deploy.sh`**
 
@@ -653,6 +676,7 @@ and neither can break an existing invocation.
 | Program | English | Spanish |
 |---|---|---|
 | `qa-diff.pl` | `--rule` · `--common` · `--force` | `--regla` · `--comunes` · `--forzar` |
+| `d057.pl` | `--no-ga4-or-ads` · `--out` · `--production-dom` · `--production` · `--today` | `--sin-ga4-ni-ads` · `--salida` · `--dom-produccion` · `--produccion` · `--hoy` |
 | `audit-vs-spec.pl` | `--mode` · `--only` | `--modo` · `--solo` |
 | `coverage.pl` | `--which` | `--cuales` |
 | `run-all.sh` | `--fast` | `--rapido` |
@@ -732,7 +756,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **490 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **528 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until

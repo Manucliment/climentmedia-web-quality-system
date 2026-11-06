@@ -68,6 +68,9 @@
 #    --verificar       valida el recibo contra el arbol de AHORA. exit 0/1
 #    --para-desplegar  ademas exige VEREDICTO PASA, frescura, las cinco lentes
 #                      corridas y un ALCANCE que no sea irrisorio (el gate)
+#    --salvo-veredicto con --para-desplegar: todo eso menos el VEREDICTO, que lo
+#                      decide gates/d057.pl (D-057, lo viejo igual en produccion).
+#                      En ingles, --except-verdict
 #    --servido         G11: descarga cada fichero del manifiesto y compara md5
 #    --arbol           imprime el hash del arbol desplegable (y con --listar, el
 #                      manifiesto). Sirve para ver QUE se considera desplegable
@@ -1176,6 +1179,32 @@ sub escribe_recibo {
     if ($a{nv_candidato} && @{$a{nv_candidato}}) {
         push @cuerpo, "NV-POR-CANDIDATO: " . solo_ascii(join(' ', @{$a{nv_candidato}}));
     }
+    # ── 🔴 D-057 (5-nov-2026) · CADA HALLAZGO, INSTANCIA A INSTANCIA ─────────
+    #  La puerta deja pasar un FALLO o un sin mirar del candidato si produccion lo
+    #  tiene igual y hay fila con fecha que lo arregla (gates/d057.pl). Para eso
+    #  tiene que saber QUE fallo, en que paginas o textos, y como volver a medir
+    #  produccion con la misma regla. Bajo el SELLO: si alguien quita una instancia
+    #  nueva de aqui para que «coincida» con produccion, el recibo deja de valer.
+    #  Las instancias llegan ya en ASCII (qa-master: esc_instancia, %XX sin perder).
+    if ($a{hallazgos}) {
+        my @h = @{ $a{hallazgos} };
+        push @cuerpo, "HALLAZGOS: " . scalar(@h);
+        my $i = 0;
+        for my $x (@h) {
+            $i++;
+            my $fuera = solo_ascii($x->{fuera} // '');
+            $fuera =~ s/ /_/g;
+            my @ins = @{ $x->{instancias} || [] };
+            # dom=si: sale del DOM del candidato, y produccion necesita el suyo (6-nov)
+            push @cuerpo, sprintf('HALLAZGO-%03d: %s %s %s %d d057=%s dom=%s', $i, solo_ascii($x->{estado}),
+                                  solo_ascii($x->{id}), solo_ascii($x->{lente} // '?'), scalar(@ins),
+                                  ($fuera eq '' ? 'si' : "no:$fuera"), ($x->{dom} ? 'si' : 'no'));
+            my $j = 0;
+            push @cuerpo, sprintf('HALLAZGO-%03d-I-%03d: %s', $i, ++$j, solo_ascii($_)) for @ins;
+        }
+    }
+    push @cuerpo, "QA-REPETIR: " . solo_ascii(join(' ', @{ $a{qa_repetir} })) if $a{qa_repetir};
+    push @cuerpo, "QA-MASTER-MD5: " . solo_ascii($a{qa_md5}) if $a{qa_md5};
     # El alcance de un arbol de redirecciones no son paginas: son las reglas y
     # las sondas, y van en sus lineas REDIRECCIONES-*. Se dice aqui en una frase
     # para que nadie lea la ausencia de ALCANCE-URLS como «no declarado».
@@ -1332,7 +1361,11 @@ sub verifica {
         #    escribe «PASA (con N aceptados)» a proposito —«PASA» a secas seria
         #    mentir por omision a quien solo lee esta linea—. `\b` es lo que
         #    impide que un futuro «PASAJERO» o «PASA-A-MEDIAS» cuele por parecido.
-        if (($R->{VEREDICTO} // '') !~ /^PASA\b/) {
+        # 🔴 5-nov-2026 · --salvo-veredicto: todo lo demas igual de duro (sello, arbol,
+        #    frescura, lentes, alcance), y el veredicto lo decide gates/d057.pl: un
+        #    FALLA hecho solo de lo que produccion ya tiene igual y con fila que lo
+        #    arregla. Lo pide la puerta, no quien sube: sin d057 en PASA no se usa.
+        if (($R->{VEREDICTO} // '') !~ /^PASA\b/ && !$o{salvo_veredicto}) {
             push @mal, "VEREDICTO: " . ($R->{VEREDICTO} // '?') . " - EN ROJO NO SE DESPLIEGA";
             for my $l (qw(SEO RENDIMIENTO ACCESIBILIDAD MEDICION ESTRUCTURA)) {
                 my $v = $R->{"LENTE-$l"} // '?';
@@ -2072,6 +2105,7 @@ sub main {
         '--out'   => '--salida',   '--receipt' => '--recibo',
         '--hours' => '--horas',    '--instrument' => '--instrumento',
         '--cache-hours' => '--cache-horas',
+        '--except-verdict' => '--salvo-veredicto',
     );
     @a = map { $ALIAS{$_} // $_ } @a;
 
@@ -2080,6 +2114,7 @@ sub main {
         if    ($x =~ /^--(escribir|verificar|servido|arbol|historial)$/) { $modo = $1 }
         elsif ($x eq '--anotar') { $modo = 'anotar'; $opt{anotar} = shift @a }
         elsif ($x eq '--para-desplegar') { $opt{para_desplegar} = 1 }
+        elsif ($x eq "--salvo-veredicto") { $opt{salvo_veredicto} = 1 }   # D-057: lo decide gates/d057.pl
         elsif ($x eq '--listar')         { $opt{listar} = 1 }
         elsif ($x =~ /^--(repo|sitio|json|salida|recibo|cache|cache-horas|horas|max|anotar|instrumento)$/) {
             $opt{$1} = shift @a;
@@ -2198,7 +2233,8 @@ sub main {
     if ($modo eq 'verificar') {
         my ($ok, $mal, $R) = verifica(repo => $opt{repo}, recibo => $opt{recibo},
                                       horas => $opt{horas},
-                                      para_desplegar => $opt{para_desplegar});
+                                      para_desplegar => $opt{para_desplegar},
+                                      salvo_veredicto => $opt{salvo_veredicto});
         if ($ok) {
             printf "RECIBO VALIDO · %s · %s · arbol %s\n",
                    ($R->{SITIO} // '?'), ($R->{FECHA} // '?'), ($R->{'ARBOL-HASH'} // '?');

@@ -84,6 +84,25 @@ BROWSER_URLS="/ /contact/"
 # form is not a correct one.
 FORM_URLS="/contact/"
 
+# A site with NO GA4 and NO Google Ads, by decision: the conversion lands
+# somewhere else (a booking calendar, an inbox). MED-13 (a conversion that
+# reached GA4 or Ads) is then NOT APPLICABLE at the door, with this reason, and
+# gates/d057.pl checks that the tree really carries no tag: if a page loads
+# gtag, Tag Manager or an AW- id, the upload stops instead. Without this line
+# MED-13 stays NOT VERIFIED. The door reads NO_GA4_OR_ADS or SIN_GA4_NI_ADS.
+# NO_GA4_OR_ADS="bookings land in the calendar; no analytics or ads, decided on 2026-10-19"
+
+# The PUBLISHED page's DOM, for gates/d057.pl. A FAIL that comes from the browser
+# snapshot (EST-05/06/07, REN-11: the candidate was measured with --dom) can only
+# be compared with production through production's own snapshot: without it,
+# d057 says NOT MEASURED for those, never "old" and never "new". Capture it on
+# the measuring host, on the live page that --dom described, at the SAME width
+# and height as the candidate's, less than 12 hours before the upload:
+#   perl gates/qa-master.pl --snippet > qa.js
+#   node gates/run-gate.js https://your-domain.tld/ 390 844 qa.js | tail -n +2 > _deploy/dom-production.json
+# A path relative to the repo. The door reads D057_PRODUCTION_DOM or D057_DOM_PRODUCCION.
+# D057_PRODUCTION_DOM=_deploy/dom-production.json
+
 # Skip the browser step entirely, with a reason. It still gets recorded: a
 # declared hole is still a hole. Useful when the site is not reachable from the
 # measuring host.

@@ -1,0 +1,4 @@
+# d057.example · produccion de mentira (fake-production.pl)
+# 5-nov-2026 · D-057: la escuela de musica inventada TAL COMO ESTA PUBLICADA, con
+# dos descriptions repetidas (canto/piano y guitarra/violin): SEO-02b en FALLO.
+gzip off

@@ -1360,7 +1360,11 @@ JSON
   fi
   # el bucle entero: subir (simulado) y G11 EN VERDE contra lo servido
   salida="$(NAV_HOST= BROWSER_HOST= NAV_HOST_CONF="$NAVAIS" bash ../deploy.sh "$RV" --subir 2>&1)"; rc=$?
-  if [ "$rc" = 0 ] && printf '%s' "$salida" | grep -q 'desplegado y verificado contra el recibo'; then
+  # 🔴 6-nov · desde de6af6c la puerta ya no dice «desplegado y verificado contra
+  #    el recibo» (lo decia con paginas de la subida en 404): G11 dice lo suyo y el
+  #    veredicto de la subida es el CIERRE. Este caso esperaba la frase vieja.
+  if [ "$rc" = 0 ] && printf '%s' "$salida" | grep -q 'G11 · PASA: lo del recibo se sirve' \
+     && printf '%s' "$salida" | grep -q 'Los dos momentos cerrados'; then
     printf '  OK    %-46s candidato -> subir -> G11 verde\n' "los DOS momentos, de punta a punta"; ok=$((ok+1))
   else
     printf '  MAL   %-46s exit %s\n' "los DOS momentos, de punta a punta" "$rc"; ko=$((ko+1))
@@ -2149,6 +2153,213 @@ espera "REN-05 · cm no tiene terceros: PASA"             PASA  REN-05 \
 #    medible» — que se lee «no he podido mirar» siendo «he mirado y es cero».
 texto  "REN-05 · cero terceros dice 0%, no «no medible»" NO "sin pagina medible" \
        perl $QA http://cm.example/ --solo rendimiento --cache "$CACHE"
+# 🔴 5-nov-2026 · EL EMPATE. La HUELLA lleva la peor pagina, y con dos paginas
+#    al mismo % ganaba la que llegaba antes: una web aceptada dejaba de casar
+#    con su propia aceptacion porque cambiaba el orden, no la web. Ahora, a %
+#    igual (el que se imprime), gana la URL menor en orden alfabetico. En
+#    empate.example el sitemap pone zeta delante de alfa a proposito; medido
+#    contra el gate de antes: nombraba zeta.
+texto  "REN-05 · empate: nombra la menor (alfa)"         SI "peor pagina http://empate.example/alfa.html" \
+       perl $QA http://empate.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
+texto  "REN-05 · empate: no la que llega antes (zeta)"   NO "peor pagina http://empate.example/zeta.html" \
+       perl $QA http://empate.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
+
+echo
+echo "== D-057 · LO VIEJO IGUAL EN PRODUCCION NO PARA UNA SUBIDA (gates/d057.pl) · 5-nov-2026"
+# 🔴 EL HUECO: cinco webs paradas el 5-nov por FALLOs que su subida no tocaba y que
+#    la web publicada ya tenia igual. La regla para dejarlos pasar (D-045) existia y
+#    la comprobaba la memoria del chat que subia. Ahora la comprueba d057.pl, que
+#    mide produccion con la misma regla del recibo y busca la fila con fecha.
+#    La escuela de musica de fixtures-d057/ es INVENTADA. Publicada (d057.example)
+#    tiene dos descriptions repetidas: SEO-02b en FALLO, con 2 instancias. Las tres
+#    carpetas son la misma web con UN fichero cambiado (`diff -rq` abajo):
+#      igual        la que esta publicada, tal cual
+#      arregla-una  arregla una de las dos repetidas (le quita 1 a produccion)
+#      nueva        repite una tercera (una instancia que produccion no tiene)
+#    Cada caso copia su carpeta a la cache, escribe su fila y mide el candidato alli:
+#    el arbol de fixtures-d057/ no se ensucia con recibos.
+D57="$CACHE/d057"
+if mide_bloque "D-057 · d057.pl contra la produccion de mentira" http://d057.example/; then
+  mkdir -p "$D57"
+  # el banco no deja recibos ni historial en el de las webs
+  d57_cand() {   # d57_cand <nombre> <carpeta> <lente> [mas de qa-master]: copia y mide el candidato
+    local n="$1" fx="$2" lente="$3"; shift 3
+    rm -rf "${D57:?}/$n"; cp -r "$fx" "$D57/$n"
+    QA_RECIBOS_DIR="$D57/recibos" perl $QA http://d057.example/ --repo "$D57/$n" --candidato --solo "$lente" "$@" > "$D57/$n.qa.txt" 2>&1
+  }
+  d57_fila() {   # d57_fila <nombre> <fichero bajo _seo/> <cabecera> <fila>
+    mkdir -p "$D57/$1/_seo"
+    printf '%s\n%s\n%s\n' "$3" "$(printf '%s' "$3" | sed 's/[^|]*|/---|/g; s/^---//')" "$4" > "$D57/$1/_seo/$2"
+  }
+  B57="| Capa | Qué | Fuente | Estado | Fecha | Fila del plan |"
+  d57() {        # d57 <etiqueta> <exit> <literal que tiene que salir> <nombre> [mas de d057.pl]
+    local eti="$1" rcq="$2" lit="$3" n="$4"; shift 4
+    local out rc; out="$(QA_RECIBOS_DIR="$D57/recibos" perl ../d057.pl --repo "$D57/$n" "$@" 2>&1)"; rc=$?
+    if [ "$rc" = "$rcq" ] && printf '%s' "$out" | grep -qF -- "$lit"; then
+      printf '  OK    %-46s exit %s · "%s"\n' "$eti" "$rc" "$lit"; ok=$((ok+1))
+    else
+      printf '  MAL   %-46s esperaba exit %s con "%s" y salio exit %s\n' "$eti" "$rcq" "$lit" "$rc"; ko=$((ko+1))
+      printf '%s\n' "$out" | grep -E 'D057-|NO MEDIDO|^ +(PARA|SIGUE|D-057|NO-) ' | head -6 | sed 's/^/          /'
+    fi
+  }
+  # las tres carpetas: la misma web con UN fichero distinto, y igual = la publicada
+  D57_DIF="$(diff -rq fixtures-sites/d057.example fixtures-d057/igual | grep -v '_prod.txt' | wc -l | tr -dc '0-9')"
+  D57_A="$(diff -rq fixtures-d057/igual fixtures-d057/arregla-una | wc -l | tr -dc '0-9')"
+  D57_N="$(diff -rq fixtures-d057/igual fixtures-d057/nueva | wc -l | tr -dc '0-9')"
+  if [ "$D57_DIF" = 0 ] && [ "$D57_A" = 1 ] && [ "$D57_N" = 1 ]; then
+    printf '  OK    %-46s %s\n' "D-057 · las carpetas difieren en UN fichero" "igual=publicada · 1 · 1"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s igual/publicada %s · arregla-una %s · nueva %s\n' "D-057 · las carpetas difieren en UN fichero" "$D57_DIF" "$D57_A" "$D57_N"; ko=$((ko+1))
+  fi
+
+  # ── los cuatro que pide el encargo ──
+  # 1 · igual en produccion, con fila abierta y fecha: PASA, nombrado
+  d57_cand igual fixtures-d057/igual seo
+  d57_fila igual BASE.md "$B57" "| 2 · Puerta | SEO-02b, las dos descriptions repetidas | qa-master | pendiente | 2099-12-31 | textos |"
+  d57 "D-057 · igual en produccion y con fila: PASA"   0 "D057-FALLO: SEO-02b"       igual
+  # 2 · solo en el candidato: una instancia que produccion no tiene. PARA
+  d57_cand nueva fixtures-d057/nueva seo
+  d57_fila nueva BASE.md "$B57" "| 2 · Puerta | SEO-02b, las descriptions repetidas | qa-master | pendiente | 2099-12-31 | textos |"
+  d57 "D-057 · una instancia nueva: PARA"              1 "1 de 3 NUEVO en el candidato" nueva
+  # 3 · igual en produccion pero SIN fila que lo arregle: PARA
+  d57_cand sin-fila fixtures-d057/igual seo
+  d57 "D-057 · sin fila con fecha: PARA"               1 "ninguna fila de _seo/BASE.md ni del plan nombra SEO-02b" sin-fila
+  # 4 · de medicion: D-057 no lo cubre aunque fuera viejo. PARA, sin medir produccion
+  d57_cand medicion fixtures-lenses/med-consent-js-gtm-directo medicion --una-sola --contenedor fixtures-lenses/contenedor-solo-google.js
+  d57_fila medicion BASE.md "$B57" "| 2 · Puerta | MED-02, el consentimiento llega tarde | qa-master | pendiente | 2099-12-31 | medicion |"
+  d57 "D-057 · un FALLO de medicion: PARA"             1 "MED-02    D-057 no cubre" medicion
+
+  # ── los bordes ──
+  # 🔴 el candidato que ARREGLA una de las dos tiene otra huella (otro conjunto) y es
+  #    justo la subida que hay que dejar pasar: se compara instancia a instancia.
+  d57_cand arregla fixtures-d057/arregla-una seo
+  d57_fila arregla BASE.md "$B57" "| 2 · Puerta | SEO-02b, la que queda | qa-master | pendiente | 2099-12-31 | textos |"
+  d57 "D-057 · arregla 1 de 2: PASA"                   0 "D057-FALLO: SEO-02b"       arregla
+  d57 "D-057 · y cuenta lo que quita (condicion 2)"    0 "D057-QUITA: 1"             arregla
+  d57 "D-057 · igual en produccion no quita nada"      0 "D057-QUITA: 0"             igual
+  # un check entero que produccion no tiene (sin title en la portada)
+  rm -rf "$D57/otro-check"; cp -r fixtures-d057/igual "$D57/otro-check"
+  D57_T="$(perl -0pi -e '$n += s{<title>[^<]*</title>\n}{}; END { print STDERR $n // 0 }' "$D57/otro-check/index.html" 2>&1)"
+  QA_RECIBOS_DIR="$D57/recibos" perl $QA http://d057.example/ --repo "$D57/otro-check" --candidato --solo seo > "$D57/otro-check.qa.txt" 2>&1
+  # 🔴 6-nov · y lo que destapo este caso: una portada SIN <title> salia en SEO-01
+  #    «title presente y en rango». Medido contra el gate de antes: PASA.
+  espera "SEO-01 · una pagina sin <title>: FALLO"      FALLO SEO-01 \
+         perl $QA http://d057.example/ --repo "$D57/otro-check" --candidato --solo seo --sin-recibo
+  texto  "SEO-01 · y nombra la pagina"                 SI "1 de 6 paginas sin title" \
+         perl $QA http://d057.example/ --repo "$D57/otro-check" --candidato --solo seo --sin-recibo
+  espera "SEO-01 · con title en las seis: PASA"        PASA  SEO-01 \
+         perl $QA http://d057.example/ --repo fixtures-d057/igual --candidato --solo seo --sin-recibo
+  d57_fila otro-check BASE.md "$B57" "| 2 · Puerta | SEO-01 y SEO-02b | qa-master | pendiente | 2099-12-31 | textos |"
+  if [ "$D57_T" = 1 ]; then
+    d57 "D-057 · un check que produccion no tiene: PARA" 1 "solo en el candidato: en produccion no sale (es NUEVO)" otro-check
+  else
+    printf '  MAL   %-46s quitar el title hizo %s cambios, no 1\n' "D-057 · un check que produccion no tiene" "$D57_T"; ko=$((ko+1))
+  fi
+  # la fila: vencida, cerrada, sin fecha, sin dueño, tachada, y un id que se parece
+  d57_fila sin-fila BASE.md "$B57" "| 2 · Puerta | SEO-02b | qa-master | pendiente | 2020-01-01 | textos |"
+  d57 "D-057 · fila vencida: PARA"                     1 "vencio el 2020-01-01"      sin-fila
+  d57_fila sin-fila BASE.md "$B57" "| 2 · Puerta | SEO-02b | qa-master | **hecho** (abc1234) | 2099-12-31 | textos |"
+  d57 "D-057 · fila cerrada que sigue fallando: PARA"  1 "su fila esta cerrada"      sin-fila
+  d57_fila sin-fila BASE.md "$B57" "| 2 · Puerta | SEO-02b | qa-master | pendiente | — | textos |"
+  d57 "D-057 · fila sin fecha: PARA"                   1 "su fila no tiene fecha"    sin-fila
+  d57_fila sin-fila BASE.md "$B57" "| 2 · Puerta | ~~SEO-02b~~ ya no | qa-master | pendiente | 2099-12-31 | textos |"
+  d57 "D-057 · un id tachado no es fila: PARA"         1 "ninguna fila"              sin-fila
+  d57_fila sin-fila BASE.md "$B57" "| 2 · Puerta | SEO-02 (titles) | qa-master | pendiente | 2099-12-31 | textos |"
+  d57 "D-057 · SEO-02 no es SEO-02b: PARA"             1 "ninguna fila"              sin-fila
+  rm -f "$D57/sin-fila/_seo/BASE.md"
+  P57="| Fecha | Vertical | Qué | Resuelve | Firma | Cómo se mide | Dueño | Visible | Estado |"
+  d57_fila sin-fila plan-ciclo-2099.md "$P57" "| 31-dic-2099 | todas | las descriptions | SEO-02b | D-011 | qa-master | | no | pendiente |"
+  d57 "D-057 · fila del plan sin dueño: PARA"          1 "su fila no tiene dueno"    sin-fila
+  d57_fila sin-fila plan-ciclo-2099.md "$P57" "| 31-dic-2099 | todas | las descriptions | SEO-02b | D-011 | qa-master | chat de la escuela | no | pendiente |"
+  d57 "D-057 · fila del plan con dueño y fecha: PASA"  0 "dueno: chat de la escuela" sin-fila
+  # 🔴 un sin mirar viejo con fila tambien pasa (Manuel: «lo viejo sin mirar va igual
+  #    que lo viejo en rojo»); sin fila, sigue su camino de siempre en la puerta
+  d57 "D-057 · sin mirar sin fila: SIGUE, no para"     0 "D057-SIGUE: SEO-17"        igual
+  d57_fila igual BASE.md "$B57" "| 2 · Puerta | SEO-02b, y SEO-17 (idiomas) | qa-master | pendiente | 2099-12-31 | textos |"
+  d57 "D-057 · sin mirar igual en produccion: pasa"   0 "D057-NV: SEO-17"           igual
+  # MED-13 en una web sin GA4 ni Ads por decision: NO APLICA, si de verdad no lleva
+  d57_cand sin-ga4 fixtures-d057/igual medicion
+  d57 "D-057 · MED-13 sin declarar: SIGUE"             0 "SIGUE     NV    MED-13" sin-ga4
+  d57 "D-057 · MED-13 con SIN_GA4_NI_ADS: NO APLICA"   0 "D057-NO-APLICA: MED-13"    sin-ga4 --sin-ga4-ni-ads "las citas van a la agenda de la clinica"
+  rm -rf "$D57/con-ga4"; cp -r fixtures-d057/igual "$D57/con-ga4"
+  D57_G="$(perl -0pi -e '$n += s{</head>}{<script async src="https://www.googletagmanager.com/gtag/js?id=G-PRUEBA1234"></script>\n</head>}; END { print STDERR $n // 0 }' "$D57/con-ga4/canto/index.html" 2>&1)"
+  QA_RECIBOS_DIR="$D57/recibos" perl $QA http://d057.example/ --repo "$D57/con-ga4" --candidato --solo medicion > "$D57/con-ga4.qa.txt" 2>&1
+  if [ "$D57_G" = 1 ]; then
+    d57 "D-057 · lo declara y lleva GA4: PARA"         1 "y el arbol lleva canto/index.html: googletagmanager.com" con-ga4 --sin-ga4-ni-ads "sin GA4"
+  else
+    printf '  MAL   %-46s poner la etiqueta hizo %s cambios, no 1\n' "D-057 · lo declara y lleva GA4" "$D57_G"; ko=$((ko+1))
+  fi
+  # lo que no se puede medir no se da por bueno ni por nuevo
+  rm -rf "$D57/prod"; cp -r fixtures-d057/igual "$D57/prod"
+  QA_RECIBOS_DIR="$D57/recibos" perl $QA http://d057.example/ --repo "$D57/prod" --solo seo > "$D57/prod.qa.txt" 2>&1
+  d57 "D-057 · un recibo de PRODUCCION: NO MEDIDO"     2 "D-057 compara el CANDIDATO con produccion" prod
+  rm -rf "$D57/nadie"; cp -r fixtures-d057/igual "$D57/nadie"
+  # 🔴 6-nov · por un proxy que no escucha, no por la produccion de mentira: un host
+  #    sin fixture alli es un 502 en su registro, y el centinela del final («la
+  #    produccion no se ha inventado nada») lo cuenta, con razon, como un caso que
+  #    midio algo inventado. Aqui no contesta nadie, que es lo que se prueba.
+  P57MUERTO="http://127.0.0.1:9"
+  http_proxy="$P57MUERTO" https_proxy="$P57MUERTO" HTTPS_PROXY="$P57MUERTO" \
+    QA_RECIBOS_DIR="$D57/recibos" perl $QA http://d057.example/ --repo "$D57/nadie" --candidato --solo seo > "$D57/nadie.qa.txt" 2>&1
+  d57_fila nadie BASE.md "$B57" "| 2 · Puerta | SEO-02b | qa-master | pendiente | 2099-12-31 | textos |"
+  http_proxy="$P57MUERTO" https_proxy="$P57MUERTO" HTTPS_PROXY="$P57MUERTO" \
+    d57 "D-057 · produccion que no contesta: NO MEDIDO"  2 "qa-master sobre produccion salio con 3" nadie
+  # la misma regla = el mismo qa-master: con otro (aqui, una copia con UNA linea de
+  # mas) produccion no se mediria con la regla del recibo
+  G57="$D57/gates-otro"; rm -rf "$G57"; mkdir -p "$G57"
+  cp ../d057.pl ../receipt.pl ../qa-master.pl "$G57/" && printf '\n# una linea de mas\n' >> "$G57/qa-master.pl"
+  D57_OUT="$(QA_RECIBOS_DIR="$D57/recibos" perl "$G57/d057.pl" --repo "$D57/igual" 2>&1)"; D57_RC=$?
+  if [ "$D57_RC" = 2 ] && printf '%s' "$D57_OUT" | grep -qF "qa-master ha cambiado desde el recibo"; then
+    printf '  OK    %-46s exit 2 · "qa-master ha cambiado"\n' "D-057 · otro qa-master: NO MEDIDO"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s esperaba exit 2 y salio %s\n' "D-057 · otro qa-master: NO MEDIDO" "$D57_RC"; ko=$((ko+1))
+  fi
+  # el recibo que juzgo va en la salida: la fila de SEGUIMIENTO-14D solo se fia de
+  # un .d057-ultima.txt que sea de ESTE recibo (scripts/apuntar-seguimiento.mjs)
+  S57="$(grep -m1 '^SELLO:' "$D57/igual/.qa-recibo" | sed 's/^SELLO:[[:space:]]*//' | tr -d '\r')"
+  d57 "D-057 · nombra el recibo que juzgo"              0 "D057-RECIBO: $S57"         igual
+  # --except-verdict es --salvo-veredicto, y cambia lo que dice el recibo
+  R57A="$(perl ../receipt.pl --verify --repo "$D57/igual" --for-deploy --except-verdict 2>&1 | tr -d '0-9')"
+  R57B="$(perl ../receipt.pl --verificar --repo "$D57/igual" --para-desplegar --salvo-veredicto 2>&1 | tr -d '0-9')"
+  R57C="$(perl ../receipt.pl --verificar --repo "$D57/igual" --para-desplegar 2>&1 | tr -d '0-9')"
+  if [ "$R57A" = "$R57B" ] && printf '%s' "$R57C" | grep -qF "EN ROJO NO SE DESPLIEGA" \
+     && ! printf '%s' "$R57A" | grep -qF "EN ROJO NO SE DESPLIEGA"; then
+    printf '  OK    %-46s %s\n' "receipt.pl · --except-verdict = --salvo-veredicto" "y sin el, EN ROJO"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s %s\n' "receipt.pl · --except-verdict = --salvo-veredicto" "la salida no es la misma, o sin el no dice EN ROJO"; ko=$((ko+1))
+  fi
+
+  # ── 6-nov · LO QUE SALE DEL DOM (EST-06, EST-07: infi y ecomm) ──
+  # 🔴 la puerta vuelve a medir produccion sin --dom (el del candidato es del
+  #    candidato): alli EST-06 sale sin medir y EST-07 ni sale, y el FALLO viejo
+  #    paraba como «NUEVO». Con el DOM de produccion se compara; sin el, o si no es
+  #    de produccion, de la misma pagina, al mismo ancho y alto y de hoy: NO MEDIDO.
+  d57_dom() {   # d57_dom <fichero> <innerWidth> <url> <horas de antiguedad>
+    perl -MPOSIX=strftime -e 'my ($f, $w, $u, $h) = @ARGV; open my $o, ">", $f or die;
+      print $o qq({ "innerWidth": $w, "innerHeight": 844, "url": "$u", "ts": ")
+             . strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time - $h * 3600))
+             . qq(", "http": 200, "titulo": "Escuela de musica", "hay_main": true, "secciones": 6, "texto_len": 4200,)
+             . qq( "testigo": { "valido": true, "motivos": [] }, "screens": 5.0, "blocks": 8, "blocks_over_1screen": 0,)
+             . qq( "ctas": 3, "buttons_visibles": 0, "max_gap_screens": 3.4, "es_pagina_prosa": false,)
+             . qq( "filas_cojas": 1, "titulares_huerfanos": 0, "alturas_desiguales": 0, "listas_de_uno": 0 }\n)' "$@"
+  }
+  d57_dom "$D57/dom-cand.json" 390 https://d057.example/ 0
+  d57_cand dom fixtures-d057/igual estructura --dom "$D57/dom-cand.json"
+  d57_fila dom BASE.md "$B57" "| 2 · Puerta | EST-01, EST-06, EST-07 y EST-12 de la portada | qa-master | pendiente | 2099-12-31 | diseno |"
+  d57 "D-057 · del DOM sin el de produccion: NO MEDIDO" 2 "D057_DOM_PRODUCCION en deploy.conf" dom
+  d57 "D-057 · y EST-07 no sale NUEVO"                  2 "NO-MEDIDO FALLO EST-07    sale del DOM" dom
+  d57_dom "$D57/dom-prod.json" 390 https://d057.example/ 1
+  d57 "D-057 · del DOM, con el de produccion: PASA"     0 "D057-RESULTADO: PASA"      dom --dom-produccion "$D57/dom-prod.json"
+  d57 "D-057 · y lo pasa por viejo"                     0 "D-057     FALLO EST-07"    dom --production-dom "$D57/dom-prod.json"
+  d57_dom "$D57/dom-ancho.json" 1366 https://d057.example/ 1
+  d57 "D-057 · DOM de produccion a otro ancho"          2 "innerWidth=1366 innerHeight=844 y el del candidato de 390x844" dom --dom-produccion "$D57/dom-ancho.json"
+  d57_dom "$D57/dom-viejo.json" 390 https://d057.example/ 30
+  d57 "D-057 · DOM de produccion de ayer"               2 "es de hace 30 h"           dom --dom-produccion "$D57/dom-viejo.json"
+  d57_dom "$D57/dom-local.json" 390 http://127.0.0.1:8123/ 1
+  d57 "D-057 · el DOM del candidato como produccion"    2 "es el del candidato, no el de produccion" dom --dom-produccion "$D57/dom-local.json"
+  d57_dom "$D57/dom-otra.json" 390 https://d057.example/canto/ 1
+  d57 "D-057 · DOM de produccion de otra pagina"        2 "otra pagina"               dom --dom-produccion "$D57/dom-otra.json"
+fi
 
 echo
 echo "== EST-10 · UN DESPLEGABLE CON MENOS DE 3 DESTINOS · 17-ago-2026"

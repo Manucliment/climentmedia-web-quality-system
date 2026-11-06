@@ -166,6 +166,19 @@ fi
 SITIO="${SITIO:-${SITE:-}}"
 SUBIDA="${SUBIDA:-${UPLOAD:-}}"
 MODO_SPEC="${MODO_SPEC:-${SPEC_MODE:-}}"
+# D-057 · una web sin GA4 ni Ads POR DECISION lo dice con su motivo: MED-13 (una
+# conversion que llega a GA4/Ads) es entonces NO APLICA, y d057.pl mira que el
+# arbol de verdad no lleve ninguna etiqueta. Sin esto, MED-13 queda sin mirar.
+SIN_GA4_NI_ADS="${SIN_GA4_NI_ADS:-${NO_GA4_OR_ADS:-}}"
+# D-057 · el DOM de la pagina PUBLICADA (6-nov): lo que el candidato midio con su
+# DOM (EST-05/06/07, REN-11) solo se compara con produccion con el de produccion.
+# Ruta relativa al repo; d057.pl mira que sea de produccion, de esa pagina, al
+# mismo ancho y alto y de las ultimas 12 h. Sin el, esos salen NO MEDIDO.
+D057_DOM_PRODUCCION="${D057_DOM_PRODUCCION:-${D057_PRODUCTION_DOM:-}}"
+case "$D057_DOM_PRODUCCION" in
+  ''|/*|[A-Za-z]:[\\/]*) ;;
+  *) D057_DOM_PRODUCCION="$REPO/$D057_DOM_PRODUCCION" ;;
+esac
 [ -n "$SITIO" ] || { echo "  $CONF no define SITIO"; exit 2; }
 
 # ── ARBOL DE REDIRECCIONES (2-nov-2026) ──────────────────────────────────────
@@ -346,6 +359,37 @@ MEDIDO="$(grep -m1 '^MEDIDO-CONTRA:' "$REPO/.qa-recibo" 2>/dev/null | sed 's/^ME
 linea; echo "  1 · el recibo"; linea
 perl "$REF/receipt.pl" --verificar --repo "$REPO" --para-desplegar --horas "$HORAS"
 GATE=$?
+
+# ── 1-D057 · LO VIEJO QUE YA ESTA IGUAL EN PRODUCCION (5-nov-2026) ───────────
+#    Un recibo de CANDIDATO en FALLA que vale en todo lo demas (sello, arbol, edad,
+#    lentes, alcance) no para si TODO lo que falla esta igual en la web publicada y
+#    tiene fila abierta con fecha y dueño en el plan: gates/d057.pl mide produccion
+#    con la misma regla y lo decide, uno a uno. Nada nuevo pasa en rojo, y no cubre
+#    medicion, cookies y consentimiento ni lo que no se acepta nunca. El por que y
+#    el como, en la cabecera de d057.pl. Se corre UNA vez por puerta: el paso 2 lee
+#    su salida para los sin mirar.
+D057=0; D057_RC=""; RECIBO_SALVO=""; D057_SAL="$REPO/_deploy/.d057-ultima.txt"
+d057_corre() {
+  [ -n "$D057_RC" ] && return "$D057_RC"
+  mkdir -p "$REPO/_deploy" 2>/dev/null
+  perl "$REF/d057.pl" --repo "$REPO" ${SIN_GA4_NI_ADS:+--sin-ga4-ni-ads "$SIN_GA4_NI_ADS"} \
+       ${D057_DOM_PRODUCCION:+--dom-produccion "$D057_DOM_PRODUCCION"} --salida "$D057_SAL" | sed 's/^/  /'
+  D057_RC=${PIPESTATUS[0]}
+  return "$D057_RC"
+}
+d057_lista() { [ -n "$D057_RC" ] && grep -m1 "^D057-$1:" "$D057_SAL" 2>/dev/null | sed "s/^D057-$1:[[:space:]]*//" | tr -d '\r'; }
+if [ "$GATE" != 0 ] && [ "$MEDIDO" = CANDIDATO ] && [ -f "$REF/d057.pl" ] \
+   && grep -q '^VEREDICTO: FALLA' "$REPO/.qa-recibo" 2>/dev/null \
+   && perl "$REF/receipt.pl" --verificar --repo "$REPO" --para-desplegar --salvo-veredicto --horas "$HORAS" >/dev/null 2>&1; then
+  echo
+  echo "  El recibo vale en todo menos en su VEREDICTO (FALLA). ¿Es todo viejo? (D-057)"
+  if d057_corre; then
+    D057=1; GATE=0; RECIBO_SALVO="--salvo-veredicto"
+    echo "  D-057: todo lo que falla ya esta igual en produccion y tiene fila con fecha. Sigue."
+  else
+    echo "  D-057: no lo cubre (arriba, cada uno con su motivo)."
+  fi
+fi
 
 # ── 1-bis · SE DICE CONTRA QUE SE MIDIO, PASE O NO PASE ──────────────────────
 #    Un recibo de CANDIDATO habla del arbol que se va a subir: es el que vale
@@ -847,6 +891,17 @@ NVC=0
 NVC="${NVC:-0}"
 NV_REALES=$(( NV - NVC ))
 [ "$NV_REALES" -lt 0 ] && NV_REALES=0
+# D-057 · un sin mirar viejo (igual en produccion, con fila con fecha) no es un hueco
+# de esta subida, y MED-13 en una web sin GA4 ni Ads por decision no aplica. Los dos
+# los dice d057.pl (corrido aqui si el paso 1 no lo corrio); se restan y se nombran.
+D057_NV=""; D057_NA=""
+if [ "$NV_REALES" != 0 ] && [ "$MEDIDO" = CANDIDATO ] && [ -f "$REF/d057.pl" ]; then
+  [ -n "$D057_RC" ] || { echo; d057_corre; }
+  D057_NV="$(d057_lista NV)"; D057_NA="$(d057_lista NO-APLICA)"
+  NV_D057="$(printf '%s %s\n' "$D057_NV" "$D057_NA" | wc -w | tr -dc '0-9')"
+  NV_REALES=$(( NV_REALES - ${NV_D057:-0} ))
+  [ "$NV_REALES" -lt 0 ] && NV_REALES=0
+fi
 if [ "$NV" != 0 ]; then
   linea; echo "  2 · lo que nadie ha mirado"; linea
   echo "  $NV comprobaciones quedaron SIN VERIFICAR:"
@@ -871,6 +926,12 @@ if [ "$NV" != 0 ]; then
     echo "  De esas, $NVC NO son huecos: son las preguntas que solo produccion"
     echo "  contesta, y las contesta G11 en el paso 4."
     echo "    $NVC_LISTA"
+    echo "  Quedan $NV_REALES sin mirar de verdad."
+  fi
+  if [ -n "$D057_NV$D057_NA" ]; then
+    echo
+    [ -n "$D057_NV" ] && echo "  D-057: $D057_NV ya estan igual sin mirar en produccion y tienen fila con fecha."
+    [ -n "$D057_NA" ] && echo "  NO APLICA: $D057_NA (SIN_GA4_NI_ADS: $SIN_GA4_NI_ADS)."
     echo "  Quedan $NV_REALES sin mirar de verdad."
   fi
   echo
@@ -904,7 +965,7 @@ if [ "$NV" != 0 ]; then
     SIN_MIRAR="$(grep -m1 '^SIN-MIRAR:' "$REPO/.qa-recibo" 2>/dev/null | sed 's/^SIN-MIRAR:[[:space:]]*//')"
     HUECOS=""
     for x in $SIN_MIRAR; do
-      case " $NVC_LISTA " in *" $x "*) continue ;; esac
+      case " $NVC_LISTA $D057_NV $D057_NA " in *" $x "*) continue ;; esac
       # el historial guarda tambien la mitad medida de A11Y-13 (ver arriba)
       if [ "$x" = A11Y-13 ] && [ "$NAVC_MENU_TOTAL" -gt 0 ]; then
         x="A11Y-13(menu:$( [ "$NAVC_MENU_PASA" = "$NAVC_MENU_TOTAL" ] && echo PASA || echo FALLA)$NAVC_MENU_PASA/$NAVC_MENU_TOTAL)"
@@ -922,6 +983,22 @@ if [ "$NV" != 0 ]; then
     fi
   elif [ -n "$AUN_ASI" ]; then
     echo "  (ensayo: el motivo se anotara cuando se suba de verdad)"
+  fi
+fi
+# D-057 · lo que paso por viejo queda nombrado uno a uno en el historial, firmado
+# «D-057» (no por el chat), y en _deploy/.d057-ultima.txt para la fila de 14 dias.
+D057_NOTA=""
+if [ -n "$D057_RC" ]; then
+  D057_F="$(d057_lista FALLO)"
+  [ -n "$D057_F" ]  && D057_NOTA="FALLO viejo: $D057_F"
+  [ -n "$D057_NV" ] && D057_NOTA="${D057_NOTA:+$D057_NOTA; }sin mirar viejo: $D057_NV"
+  [ -n "$D057_NA" ] && D057_NOTA="${D057_NOTA:+$D057_NOTA; }NO APLICA: $D057_NA"
+  D057_Q="$(d057_lista QUITA)"
+  [ -n "$D057_NOTA" ] && [ -n "$D057_Q" ] && D057_NOTA="$D057_NOTA; quita $D057_Q FALLO de produccion"
+  if [ -n "$D057_NOTA" ] && [ "$SUBIR" = 1 ]; then
+    perl "$REF/receipt.pl" --anotar "D-057 [$D057_NOTA] igual en produccion y con fila (gates/d057.pl)" --repo "$REPO" >/dev/null 2>&1 \
+      && echo "  anotado en el historial: D-057 [$D057_NOTA]" \
+      || echo "  NO he podido anotar D-057 en el historial: esta firma NO consta."
   fi
 fi
 
@@ -1521,7 +1598,8 @@ if [ -n "${RECIBO_SELLO_1:-}" ] && [ "$RECIBO_SELLO_AHORA" != "$RECIBO_SELLO_1" 
   perl "$REF/receipt.pl" --anotar "subida parada: el recibo cambio a media puerta" --repo "$REPO" >/dev/null 2>&1
   exit 1
 fi
-if ! SELLO_SAL="$(perl "$REF/receipt.pl" --verificar --repo "$REPO" --para-desplegar --horas "${HORAS:-12}" 2>&1)"; then
+#    Con D-057 (paso 1-D057) el veredicto ya lo decidio d057.pl: todo lo demas, igual.
+if ! SELLO_SAL="$(perl "$REF/receipt.pl" --verificar --repo "$REPO" --para-desplegar --horas "${HORAS:-12}" ${RECIBO_SALVO:-} 2>&1)"; then
   echo "  🔴 el recibo, vuelto a verificar justo antes de subir, ya no deja subir: NO se sube."
   printf '%s\n' "$SELLO_SAL" | grep -E 'CAMBIADO|recibo:|NUEVO|RETIRADO|SELLO|DISTINTO|ahora|VEREDICTO|FALLA|CADUC|caduc' | head -8 | sed 's/^ */     /'
   echo "     O algo toco el repo durante la puerta, o el recibo ya no vale. Vuelve a medir"
@@ -2007,6 +2085,8 @@ cierre_dice() {  # usa ENL_RC, ENL_NM, NAV_FALLOS, NAV_CORRIO, NAV_BASURA, NAV_N
 }
 # <<< cierre-de-la-subida
 cierre_dice
+# D-057: lo que subio por viejo va en el cierre, para que la fila de 14 dias lo diga
+[ -n "${D057_NOTA:-}" ] && CIERRE="$CIERRE · D-057: $D057_NOTA"
 echo
 linea; echo "  CIERRE · $CIERRE"; linea
 perl "$REF/receipt.pl" --anotar "CIERRE $CIERRE" --repo "$REPO" >/dev/null 2>&1

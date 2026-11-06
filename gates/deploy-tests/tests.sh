@@ -270,6 +270,14 @@ else
   recibo "el mismo recibo del paso 1: sube"                  "SELLO: bbbb" 0 0 "SUBIDOR-EJECUTADO" "YA NO ES"
   recibo "vuelto a verificar ENTERO: en FALLA no sube"       "SELLO: bbbb" "$PARA_DESP" 1 "ya no deja subir: NO se sube" "SUBIDOR-EJECUTADO"
   recibo "y ensena el veredicto que lo para"                 "SELLO: bbbb" "$PARA_DESP" 1 "VEREDICTO: FALLA" ""
+  # 🔴 6-nov-2026 · D-057: si el paso 1 dejo pasar un FALLA por viejo (d057.pl), el
+  #    veredicto ya esta decidido y aqui se vuelve a verificar todo lo demas. Sin la
+  #    marca, el mismo recibo en FALLA sigue sin subir.
+  SIN_SALVO='(grep { $_ eq "--para-desplegar" } @ARGV) && !(grep { $_ eq "--salvo-veredicto" } @ARGV)'
+  RECIBO_SALVO=--salvo-veredicto \
+  recibo "D-057 en el paso 1: lo demas vale, sube"           "SELLO: bbbb" "$SIN_SALVO" 0 "SUBIDOR-EJECUTADO" "NO se sube"
+  RECIBO_SALVO= \
+  recibo "sin D-057, ese mismo recibo en FALLA no sube"      "SELLO: bbbb" "$SIN_SALVO" 1 "ya no deja subir: NO se sube" "SUBIDOR-EJECUTADO"
   rm -rf "$RREC"
 fi
 rm -rf "$SEL" "$FREF"
@@ -411,6 +419,16 @@ hay "en la puerta: SUBIENDO, despues la orden de parar, despues el subidor" 1 '[
 hay "el recibo del paso 1 se apunta tras el paso 1 y se compara antes de subir" 1 '[ -n "$L_GAT" ] && [ -n "$L_PIN" ] && [ -n "$L_REV" ] && [ "$L_GAT" -lt "$L_PIN" ] && [ "$L_PIN" -lt "$L_REV" ] && [ "$L_REV" -lt "$L_EVA" ]'
 hay "--parar se atiende antes de medir nada" 1 '[ -n "$L_PAR" ] && [ -n "$L_PA1" ] && [ "$L_PAR" -lt "$L_PA1" ]'
 hay "la trampa de salida de 3-bis no pisa la de la puerta en curso" 1 'grep -q "^trap .*en_curso_fin.* EXIT$" "$PUERTA"'
+# D-057 (6-nov): d057.pl solo decide sobre un recibo de CANDIDATO que vale en todo lo
+# demas (--salvo-veredicto), y lo hace despues del paso 1 y antes de su «NO SE DESPLIEGA».
+L_SAL=$(grep -n -- '--para-desplegar --salvo-veredicto --horas "\$HORAS" >/dev/null 2>&1; then$' "$PUERTA" | head -1 | cut -d: -f1)
+L_D57=$(grep -n '^  if d057_corre; then$' "$PUERTA" | head -1 | cut -d: -f1)
+L_STO=$(grep -n '^if \[ "\$GATE" != 0 \]; then$' "$PUERTA" | head -1 | cut -d: -f1)
+hay "D-057: tras el paso 1, con el recibo valido salvo el veredicto, antes de parar" 1 '[ -n "$L_GAT" ] && [ -n "$L_SAL" ] && [ -n "$L_D57" ] && [ -n "$L_STO" ] && [ "$L_GAT" -lt "$L_SAL" ] && [ "$L_SAL" -lt "$L_D57" ] && [ "$L_D57" -lt "$L_STO" ]'
+hay "D-057: solo sobre un recibo de CANDIDATO" 1 'grep -q "^if \[ \"\$GATE\" != 0 \] && \[ \"\$MEDIDO\" = CANDIDATO \]" "$PUERTA"'
+# y le pasa el DOM de produccion del deploy.conf, que se lee en sus dos nombres y
+# relativo al repo (sin el, lo del DOM sale NO MEDIDO en d057.pl)
+hay "D-057: el DOM de produccion llega a d057.pl" 1 'grep -q -- "--dom-produccion \"\$D057_DOM_PRODUCCION\"" "$PUERTA" && grep -q "^D057_DOM_PRODUCCION=\"\${D057_DOM_PRODUCCION:-\${D057_PRODUCTION_DOM:-}}\"$" "$PUERTA" && grep -q "D057_DOM_PRODUCCION=\"\$REPO/\$D057_DOM_PRODUCCION\"" "$PUERTA"'
 rm -rf "$PEC" "$PDIR"
 
 # =============================================================================
