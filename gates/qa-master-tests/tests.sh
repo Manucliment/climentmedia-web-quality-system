@@ -701,6 +701,17 @@ espera "MED-03 · solo nombres compuestos: AVISO, no FALLO"          AVISO MED-0
        perl $QA https://climentmedia.com --repo fixtures-lenses/med03-compuesto --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
 texto  "MED-03 · y dice que el JS compone el nombre"                SI "el JS compone el nombre del evento" \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med03-compuesto --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+# 🔴 6-nov-2026 · LA CLAVE ABREVIADA. `push({ event, site, ...params })` (un ayudante `track(event, …)`)
+#    no tiene dos puntos y ninguna regla la veia: una tienda nuestra salia «no emite ningun evento con
+#    nombre». De los cuatro push de med03-abreviada cuentan 2; el valor (`origen: event`) y la clave que
+#    empieza igual (`event_id`) no. El estado es AVISO con las dos reglas: lo que la separa es el texto
+#    (visto en ROJO contra el gate anterior en los dos `texto`, y la cifra exacta, con cuatro mutantes).
+espera "MED-03 · clave abreviada: AVISO"                            AVISO MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-abreviada --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+texto  "MED-03 · la clave abreviada cuenta: 2 de los 4 push"        SI "2 push con un nombre que se construye" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-abreviada --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+texto  "MED-03 · y no dice que el sitio no emite"                   NO "no emite ningun evento" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-abreviada --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
 # ⚠️ `--sin-recibo` en TODA prueba que apunte a un repo de verdad (anadido el
 #    11-ago-2026). Sin el, estas dos lineas escribian un `.qa-recibo` DENTRO de
 #    site-d-web cada vez que se corria la bateria —y encima un recibo de

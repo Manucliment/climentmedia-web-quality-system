@@ -1,0 +1,19 @@
+med03-abreviada · 6-nov-2026
+
+Una tienda nuestra empuja todos sus eventos con un ayudante:
+
+    function track(event, params) { window.dataLayer.push({ event, site: 'static', ...params }); }
+
+La clave va ABREVIADA (`{ event }`, sin dos puntos). Las reglas de MED-03 piden `event:` (con
+comillas, sin ellas, o seguido de una variable), asi que no la veian, y el sitio salia «no emite
+ningun evento con nombre», que es falso: emite, y lo que no se puede leer aqui es el nombre.
+
+Ahora cuenta como un nombre compuesto: AVISO «el JS compone el nombre del evento», con cuantos.
+
+La cifra exacta es la prueba. De los cuatro push de script.js cuentan 2:
+  1 · `{ event, site, ...params }`  cuenta (la clave justo tras la llave)
+  2 · `{ ...datos, event }`         cuenta (la clave tras una coma, al final)
+  3 · `{ origen: event, ... }`      NO cuenta: `event` es el valor, no la clave
+  4 · `{ event_id, ... }`           NO cuenta: es otra clave
+Con la regla anterior sale 0 («no emite ningun evento»); si la regla cogiera el valor o el prefijo,
+saldria 3 o 4; si solo mirara tras la llave, 1. Todas esas, en rojo.

@@ -4537,6 +4537,15 @@ sub lente_medicion {
                 #    aqui se cruzaria contra el contenedor como si lo fuera.
                 $emit{$_}++ for $s =~ /\.push\(\s*\{[^{}]*?(?<![\w.\$'"])event\s*:\s*['"]([a-z0-9_]+)['"](?!\s*\+)/gi;
                 $compuestos += () = $s =~ /\.push\(\s*\{[^{}]*?(?<![\w.\$'"])['"]?event['"]?\s*:\s*(?:['"][^'"\n]*['"]\s*\+|[A-Za-z_\$][\w.\$]*\s*[,}+])/g;
+                # 🔴 6-nov-2026 · Y LA CLAVE ABREVIADA (`push({ event, site: 'static', ...params })`), sin dos
+                #    puntos: el nombre llega en la variable `event`, que es como lo escribe un ayudante
+                #    `track(event, params)`. Las tres reglas de arriba piden `event:` y no la veian: una tienda
+                #    que empuja todos sus eventos asi salia «no emite ningun evento con nombre» (medido el
+                #    6-nov en su arbol). Cuenta como compuesto: se emite, y el nombre no se lee aqui.
+                #    `event` tiene que ser una CLAVE: justo tras `{` o tras una coma, y seguida de `,` o `}`.
+                #    `{ origen: event }` (el evento del DOM como valor) y `{ event_id, … }` no cuentan.
+                #    Control: med03-abreviada (2 de 4 push; cualquier otra cifra, en rojo).
+                $compuestos += () = $s =~ /\.push\(\s*\{(?:[^{}]*?,)?\s*event\s*[,}]/g;
                 $emit{$_}++ for $s =~ /gtag\(\s*['"]event['"]\s*,\s*['"]([a-z0-9_]+)['"]/gi;
                 $emit{$_}++ for $s =~ /data-thanks\s*=\s*["']([a-z0-9_]+)["']/gi;
             }
@@ -4611,7 +4620,7 @@ sub lente_medicion {
                 # «no emite ningun evento» seria falso; NO VERIFICADO pararia la puerta por una forma
                 # de escribir JS. Es un aviso que dice lo que no se ha cruzado.
                 aviso(lente=>'MEDICION', id=>'MED-03', titulo=>'el JS compone el nombre del evento: no se puede cruzar con el contenedor',
-                      dato=>"$compuestos push con un nombre que se construye en el JS (\"prefijo_\" + variable), ninguno escrito entero",
+                      dato=>"$compuestos push con un nombre que se construye en el JS (una variable, o \"prefijo_\" + variable), ninguno escrito entero",
                       umbral=>'todo nombre emitido lo escucha un activador sobre {{Event}}', proc=>'G1 · 6-nov-2026',
                       hacer=>'mirar en GTM Vista previa que cada evento compuesto llega con un activador; o escribir el nombre entero en el JS para que se pueda cruzar');
             } else {
