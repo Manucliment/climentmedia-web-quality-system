@@ -303,7 +303,11 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   `gates/consent-count.php` to `_deploy/consent-count.php`, list it in `PHP_EN_PRODUCCION`,
   and have the banner send `navigator.sendBeacon('/consent-count.php', new URLSearchParams({ e: 'accept' }))`
   (or `reject`, `partial`) when the visitor chooses. Same origin, no cookie, no IP, no time
-  of day: one line per choice, «date TAB choice», outside the docroot. Say it in the cookie
+  of day and no order: one row per day with three totals («date TAB accept TAB reject TAB
+  partial»), outside the docroot. One line per choice is not anonymous: the server's
+  access log keeps every POST's IP and time in the same order, so line N is request N
+  (until 2026-11-06 the receiver wrote it that way; a copy older than that needs replacing,
+  and the new one folds the old file into totals on its first write). Say it in the cookie
   policy. Bench: `gates/consent-count-tests/tests.sh` (on the measuring host, which has PHP).
 - **AND THE PROPERTY ITSELF** · The site can emit every event and the analytics property
   still lose it. Before calling measurement done, read the property's settings through the
