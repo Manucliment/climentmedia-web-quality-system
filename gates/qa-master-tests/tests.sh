@@ -579,6 +579,72 @@ espera "red · MED-07 corre sobre lo servido"            PASA  MED-07 \
        perl $QA http://casa.example/ --solo medicion --una-sola --contenedor fixtures-lenses/contenedor-solo-google.js --cache "$CACHE"
 
 echo
+echo "== MEDICION EN MODULOS · el JS que se carga con import · 5-nov-2026"
+# 🔴 Una tienda nuestra carga todo su JS como modulos: un <script type="module">
+#    en linea que importa ./js/site.js, sin un solo src. El id del contenedor vive
+#    en js/config.js, que importa site.js. MED-01 decia «sin medicion ninguna» y
+#    MED-02/03/07 no corrian: ids_en_pagina y el cruce leian el HTML y los src
+#    propios, nunca los import. Ahora pasan por js_de_la_pagina (la del formulario
+#    del JS del mismo dia), y MED-02 fecha cada modulo por el <script> desde el que
+#    se llega a el. Lo que no se puede ordenar (el default y la carga en dos
+#    ficheros del mismo turno) es NO VERIFICADO con los dos nombres.
+#    VISTO EN ROJO PRIMERO, con el programa de antes sobre estos fixtures: los de
+#    modulo daban MED-01 AVISO «sin medicion ninguna» y MED-02/03/07 AUSENTES; el
+#    del fragmento en linea, FALLO pero por «sin consent default»; y el de la
+#    politica leida sin la home, PASA «1 paginas» sin haber medido ninguna (ese
+#    estaba roto tambien con un consent.js clasico). Y cada mecanismo apagado en
+#    una copia del gate pone rojo su caso (doce mutantes: once rojos, y el de la
+#    medicion directa solo se ve en el TEXTO, que es como se prueba abajo).
+MMO="--contenedor fixtures-lenses/contenedor-solo-google.js --candidato --una-sola --solo medicion --sin-recibo"
+espera "modulo · MED-01 encuentra el contenedor importado" PASA MED-01 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo $MMO
+texto  "modulo · dice en que modulo y quien lo importa"  SI "GTM-MODULO1 · en /js/config.js (lo importa /js/sitio.js)" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo $MMO
+texto  "modulo · no el id de un comentario del modulo"   NO "GTM-VIEJO02" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo $MMO
+espera "modulo · MED-02 default antes, en el mismo fichero" PASA MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo $MMO
+texto  "modulo · y cuenta las paginas que midio"         SI "1 de 1 paginas cargan contenedor" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo $MMO
+espera "modulo · MED-07 corre y la politica nombra a Google" PASA MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo $MMO
+texto  "modulo · G- en un modulo es medicion directa"    SI "G-MODULO1234 · en /js/config.js (lo importa /js/sitio.js)" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-gtag $MMO
+texto  "modulo · y no «sin medicion ninguna»"            NO "sin medicion ninguna" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-gtag $MMO
+# ── Los rojos de MED-02: el contenedor en un modulo no puede salir PASA sin medir ──
+espera "modulo · sin consent default, FALLA"             FALLO MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-sin-consent $MMO
+texto  "modulo · y por no existir"                       SI "sin consent default: cookies antes de aceptar" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-sin-consent $MMO
+# El modulo es diferido: el fragmento clasico escrito DESPUES corre ANTES.
+espera "modulo · fragmento en linea despues, corre antes" FALLO MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-fragmento-antes $MMO
+texto  "modulo · y por llegar tarde, no por no existir"  SI "consent default DESPUES del contenedor" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-fragmento-antes $MMO
+espera "modulo · dentro del modulo la carga va antes"    FALLO MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-orden-interno $MMO
+# Dos ficheros del mismo turno: el orden es el de las llamadas, que no se siguen.
+espera "modulo · default y carga en dos modulos: sin verificar" NOVERIF MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-orden-incierto $MMO
+texto  "modulo · y nombra los dos ficheros"              SI "el default en /js/consentimiento.js, gtm.js en /js/etiquetas.js" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-orden-incierto $MMO
+espera "modulo · sin carga de gtm.js legible: sin verificar" NOVERIF MED-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-sin-carga $MMO
+# 0 paginas medidas no es un PASA: el contenedor sale de la home y se lee otra.
+espera "modulo · ninguna leida carga el contenedor"      NOVERIF MED-02 \
+       perl $QA https://climentmedia.com/politica-privacidad/ --repo fixtures-lenses/med-modulo $MMO
+espera "clasico · igual con un consent.js de los de antes" NOVERIF MED-02 \
+       perl $QA https://climentmedia.com/politica-privacidad/ --repo fixtures-lenses/med-consent-js $MMO
+# ── MED-03 y MED-07 leen tambien lo importado ──
+espera "modulo · evento de un modulo que nadie escucha"  FALLO MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-tercero $MMO
+texto  "modulo · y dice cual"                            SI "solicitud_presupuesto" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-tercero $MMO
+espera "modulo · pixel de un modulo, politica muda"      FALLO MED-07 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-modulo-tercero $MMO
+
+echo
 echo "== CONTROLES POSITIVOS · defectos CONOCIDOS de la sintesis del 10-ago-2026"
 espera "site-a · paleta bajo AA (--primary L=0,58)"        FALLO A11Y-03 perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
 espera "site-a · el comentario dice 4,84 y son 4,11"        FALLO A11Y-04 perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"

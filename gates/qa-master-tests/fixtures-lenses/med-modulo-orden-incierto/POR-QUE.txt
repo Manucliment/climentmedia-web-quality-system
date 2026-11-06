@@ -1,0 +1,8 @@
+# fixture: el default y la carga en DOS modulos que importa el mismo (5-nov-2026)
+# El <script type="module"> en linea importa js/consentimiento.js (el default) y
+# js/etiquetas.js (la carga de gtm.js) y llama a las dos funciones. Las dos corren
+# en el turno de ese mismo <script>: el orden es el de las llamadas, que el gate
+# no sigue (aqui es correcto; cambiando el orden de las dos lineas no lo seria, y
+# el texto de los ficheros seria el mismo).
+# Tiene que salir MED-02 NO VERIFICADO nombrando los dos ficheros: ni un PASA por
+# orden de texto ni un FALLO por adivinar. Con el programa de antes no corria.

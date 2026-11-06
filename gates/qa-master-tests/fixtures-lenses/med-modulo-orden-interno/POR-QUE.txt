@@ -1,0 +1,5 @@
+# fixture: dentro de un modulo, la carga escrita antes que el default (5-nov-2026)
+# Como med-modulo, pero js/sitio.js carga gtm.js y DESPUES declara el default. En
+# un mismo fichero manda su texto (la misma regla que med-consent-js-orden-interno
+# para un consent.js clasico). Tiene que salir MED-02 FALLO «consent default
+# DESPUES del contenedor». Con el programa de antes no corria.

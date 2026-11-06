@@ -1,0 +1,7 @@
+# fixture: el default en un modulo, el fragmento de GTM en linea DESPUES (5-nov-2026)
+# En el texto de la pagina el <script type="module"> (que declara el default en
+# js/sitio.js) va antes que el fragmento clasico de GTM. Al ejecutar, el
+# fragmento corre al leerse y el modulo es diferido: gtm.js se carga antes que el
+# default. Tiene que salir MED-02 FALLO «consent default DESPUES del contenedor».
+# Con el programa de antes salia FALLO pero por «sin consent default»: el default
+# del modulo no existia.

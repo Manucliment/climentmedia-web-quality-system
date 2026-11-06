@@ -1,0 +1,4 @@
+# fixture: medicion directa (G-) en un modulo importado (5-nov-2026)
+# Ningun contenedor: js/config.js trae una propiedad de GA4 que js/sitio.js carga
+# con gtag.js. Tiene que salir MED-01 AVISO «medicion directa, sin contenedor» con
+# G-MODULO1234 en /js/config.js. Con el programa de antes, «sin medicion ninguna».

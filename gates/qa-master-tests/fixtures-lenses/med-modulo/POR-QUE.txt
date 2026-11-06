@@ -1,0 +1,9 @@
+# fixture: la medicion en un MODULO importado (5-nov-2026)
+# La pagina no tiene ningun <script src>: un <script type="module"> en linea
+# importa ./js/sitio.js (el consent default y la carga de gtm.js, en ese orden),
+# que importa ./config.js (el id del contenedor). Es como carga su JS una tienda
+# nuestra, y con solo los src el gate decia MED-01 «sin medicion ninguna».
+# Tiene que salir: MED-01 PASA con GTM-MODULO1 en /js/config.js (no el
+# GTM-VIEJO02 del comentario), MED-02 PASA (los dos en el mismo fichero: manda
+# su texto) y MED-07 PASA (la politica nombra a Google).
+# Sus hermanos med-modulo-* son esta misma web con una cosa cambiada.

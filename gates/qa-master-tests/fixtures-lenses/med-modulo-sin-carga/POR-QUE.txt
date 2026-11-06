@@ -1,0 +1,5 @@
+# fixture: contenedor en un modulo y la URL de gtm.js montada a trozos (5-nov-2026)
+# Como med-modulo, pero js/sitio.js escribe `BASE + 'gtm.js?id='`: no hay ninguna
+# carga de googletagmanager.com/gtm.js que leer. Hay default, y no hay contra que
+# ordenarlo. Tiene que salir MED-02 NO VERIFICADO «sin carga de gtm.js a la
+# vista», no un PASA sobre nada. Con el programa de antes no corria.

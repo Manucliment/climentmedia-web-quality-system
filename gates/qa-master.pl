@@ -3219,7 +3219,15 @@ sub formulario_del_js {
 #   (medido en una tienda nuestra el 5-nov-2026: 11 paginas leidas, 0 formularios,
 #   y el formulario entero en un modulo importado). Un especificador sin ruta
 #   (`'lit'`) es de un paquete: no es de la pagina y no se sigue.
-#   Cada uno: { donde, txt }. Tope de 40 ficheros por pagina.
+#   Cada uno: { donde, txt } y, para quien necesite saber CUANDO corre (MED-02):
+#     linea     1 si es un <script> en linea (su texto ya esta en el HTML)
+#     trozo     el <script> de la pagina, con su doc/async/defer (los de arriba)
+#     importado 1 si llego por un import; `via` dice quien lo importo
+#     url       el fichero (normalizado), '' en linea
+#     hijos     [url, dinamico] de cada import interno que escribe, tambien los
+#               ya vistos: con ellos se sabe desde que <script> se llega a cada
+#               modulo, y si solo por un import() dinamico.
+#   Tope de 40 ficheros por pagina.
 sub js_de_la_pagina {
     my ($pag, $html) = @_;
     my (@cola, @r, %visto);
@@ -3228,14 +3236,19 @@ sub js_de_la_pagina {
         next if $x->{src} ne '' && $visto{$x->{src}}++;
         push @cola, { base => ($x->{src} eq '' ? base_ef($pag) : $x->{src}),
                       donde => ($x->{src} eq '' ? 'un <script> en linea' : ruta_corta($x->{src})),
-                      txt => $x->{txt} };
+                      txt => $x->{txt}, trozo => $x, linea => ($x->{src} eq '' ? 1 : 0),
+                      importado => 0, url => $x->{src}, via => '', hijos => [] };
     }
     while (my $m = shift @cola) {
         push @r, $m;
         last if @r >= 40;
-        my @spec = grep { defined } ($m->{txt} =~
-            /\b(?:import|export)\b[^'";]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/g);
-        for my $s (@spec) {
+        my @spec;
+        while ($m->{txt} =~
+            /\b(?:import|export)\b[^'";]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/g) {
+            push @spec, defined $1 ? [$1, 0] : defined $2 ? [$2, 0] : [$3, 1];
+        }
+        for my $sp (@spec) {
+            my ($s, $din) = @$sp;
             next unless $s =~ m{^(?:\.{1,2}/|/)};
             my $a = abs_url($s, $m->{base}) or next;
             # abs_url pega `./x.js` tal cual: se quitan los «.» y «..» del camino
@@ -3249,11 +3262,13 @@ sub js_de_la_pagina {
                 $a = "$ori/" if $a eq $ori;
             }
             next unless is_internal($a);
+            push @{ $m->{hijos} }, [$a, $din];
             next if $visto{$a}++;
             my $r = fetch($a);
             next unless $r->{code} == 200 && ($r->{ctype} // '') !~ /html/i
                      && ($r->{body} // '') !~ /\A\s*</;
-            push @cola, { base => $a, donde => ruta_corta($a), txt => js_sin_com($r->{body}) };
+            push @cola, { base => $a, donde => ruta_corta($a), txt => js_sin_com($r->{body}),
+                          importado => 1, url => $a, via => $m->{donde}, linea => 0, hijos => [] };
         }
     }
     return @r;
@@ -4060,18 +4075,49 @@ sub ruta_corta {
 #   tampoco es un contenedor que se pueda descargar.
 sub id_marcador { my $i = shift // ''; return $i =~ /X{4,}/i ? 1 : 0 }
 
-# ids_en_pagina(url, cuerpo, patron): [id, donde] del HTML (sin comentarios) y de
-#   cada script propio (sin comentarios). `donde` es '' para el HTML -el DATO de
-#   siempre- y la ruta del script si salio de uno.
+# ids_en_pagina(url, cuerpo, patron): [id, donde] del HTML (sin comentarios), de
+#   cada script propio y de cada MODULO que importan (sin comentarios: es
+#   `js_de_la_pagina`). `donde` es '' para el HTML -el DATO de siempre-, la ruta
+#   del script si salio de uno, y la del modulo con quien lo importa.
+# 🔴 5-nov-2026 · LAS PAGINAS QUE CARGAN SU JS COMO MODULOS NO MEDIAN. Una tienda
+#    nuestra carga todo con un `<script type="module">import { boot } from
+#    './js/site.js'</script>` en linea, sin un solo src: el id del contenedor vive
+#    en js/config.js, que importa js/site.js. Aqui se miraban el HTML y los src
+#    propios, asi que MED-01 decia «sin medicion ninguna» sobre una web que mide,
+#    y MED-02/03/07 no corrian nunca. Es el mismo agujero que tenia el formulario
+#    del JS ese mismo dia, y se cierra con la misma funcion.
 sub ids_en_pagina {
     my ($pag, $cuerpo, $re) = @_;
     my $b = sin_com($cuerpo // '');
     my @r = map { [$_, ''] } ($b =~ /$re/g);
-    for my $x (trozos_de_script($pag, $b)) {
-        next unless $x->{propio};
-        push @r, map { [$_, ruta_corta($x->{src})] } ($x->{txt} =~ /$re/g);
+    for my $x (js_de_la_pagina($pag, $b)) {
+        next if $x->{linea};   # su texto ya va en el HTML de arriba
+        my $d = $x->{importado} ? "$x->{donde} (lo importa $x->{via})" : $x->{donde};
+        push @r, map { [$_, $d] } ($x->{txt} =~ /$re/g);
     }
     return @r;
+}
+
+# modulos_alcanzados(js_de_la_pagina): desde que <script> de la pagina se llega
+#   a cada modulo importado. { url => { doc => dinamico } }: dinamico 0 si hay un
+#   camino solo de `import` estaticos, 1 si todos pasan por un `import()`.
+sub modulos_alcanzados {
+    my @js = @_;
+    my %mod = map { ($_->{url} => $_) } grep { $_->{importado} } @js;
+    my %alc;
+    for my $t (grep { !$_->{importado} } @js) {
+        my $doc = $t->{trozo}{doc};
+        my @pila = map { [@$_] } @{ $t->{hijos} };
+        while (my $e = pop @pila) {
+            my ($u, $din) = @$e;
+            my $m = $mod{$u} or next;
+            my $ya = $alc{$u}{$doc};
+            next if defined $ya && $ya <= $din;   # ya se llego igual o mejor (estatico)
+            $alc{$u}{$doc} = $din;
+            push @pila, map { [$_->[0], ($din || $_->[1]) ? 1 : 0] } @{ $m->{hijos} };
+        }
+    }
+    return \%alc;
 }
 
 # antes(a, b): la clave [fase, doc, posicion] a se ejecuta antes que b.
@@ -4093,7 +4139,7 @@ sub lente_medicion {
     #    miden en la home; pero el orden del consent y las casillas premarcadas
     #    son de CADA pagina, y aqui se miraba solo una. Se declara que mira que.
     alcance('MEDICION', [@vistas], undef,
-            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-09/10/11 la primera de las leidas con <form> (--contacto, las que nombran contacto, el resto; orden fijo, no el de la lista) o, si ninguna, el <form> que escribe el JS de una de ellas · el contenedor y el consent default se buscan en el HTML Y en los scripts PROPIOS que carga cada pagina');
+            'MED-02 y MED-06 sobre todas · MED-01/03/05/07/08 son del sitio (home + contenedor) · MED-09/10/11 la primera de las leidas con <form> (--contacto, las que nombran contacto, el resto; orden fijo, no el de la lista) o, si ninguna, el <form> que escribe el JS de una de ellas · el contenedor y el consent default se buscan en el HTML, en los scripts PROPIOS que carga cada pagina y en los modulos que importan');
 
     # El contenedor: home primero, luego cada pagina; en cada una el HTML y sus
     # scripts propios. Gana el primer id REAL; un marcador de plantilla solo se
@@ -4175,13 +4221,37 @@ sub lente_medicion {
         #    que lo inyecta definida arriba y llamada despues saldria FALLO
         #    aunque no cargue nada antes: es el lado barato del error, y lo que
         #    pide la forma de la casa.
-        my (@sin_consent, @consent_tarde);
+        #
+        # 🔴 5-nov-2026 · LOS MODULOS. Una pagina que carga su JS con
+        #    `<script type="module">import ... from './js/site.js'</script>` no
+        #    tiene src: el default y la carga de gtm.js viven en modulos que se
+        #    importan. Sin seguirlos, la pagina no «tenia contenedor», se saltaba,
+        #    y MED-02 salia PASA sobre 0 paginas medidas en cuanto MED-01 encontraba
+        #    el id en un modulo. Ahora cada modulo que importa la pagina (seguido por
+        #    `js_de_la_pagina`) entra, fechado por el <script> desde el que se llega
+        #    a el: corre en el turno de ese <script> (un modulo es diferido; con async,
+        #    el peor caso de cada lado, como arriba), y si solo se llega por un
+        #    import() dinamico, el default puede llegar el ultimo.
+        #    Lo que NO se puede saber: el orden entre dos ficheros distintos que
+        #    corren en el MISMO turno (el modulo en linea y lo que importa, o dos
+        #    modulos que importa el mismo). Los `import` se evaluan antes que el
+        #    cuerpo que los escribe, y el default y la carga suelen ir en funciones
+        #    exportadas que se llaman despues: el orden es el de las llamadas, y este
+        #    gate no las sigue. Eso es NO VERIFICADO, diciendo cuales; no un PASA
+        #    por orden de texto ni un FALLO por adivinar. Dentro de un mismo fichero
+        #    sigue mandando su texto.
+        my (@sin_consent, @consent_tarde, @incierto, @sin_carga);
+        my $medidas = 0;
         for my $p (@vistas) {
             my $b = sin_com(fetch($p)->{body});   # los comentarios fuera ANTES del filtro: uno que nombre GTM hacia entrar aqui a una pagina sin contenedor
             my @tr = trozos_de_script($p, $b);
+            my @js   = js_de_la_pagina($p, $b);
+            my @mods = grep { $_->{importado} } @js;
             my $RE_CONT = qr/\bGTM-[A-Z0-9]+\b|googletagmanager\.com/;
-            next unless $b =~ $RE_CONT
-                     || grep { $_->{propio} && $_->{txt} =~ $RE_CONT } @tr;   # sin contenedor no aplica
+            my $arriba = $b =~ $RE_CONT || grep { $_->{propio} && $_->{txt} =~ $RE_CONT } @tr;
+            my @en_mod = grep { $_->{txt} =~ $RE_CONT } @mods;
+            next unless $arriba || @en_mod;   # sin contenedor no aplica
+            $medidas++;
             # 🔴 17-ago-2026 · SIN QUITAR LOS COMENTARIOS, ESTE CHECK SE APRUEBA
             #    CON UN COMENTARIO. Salio escribiendo su propio caso: el fixture
             #    llevaba `<!-- MED-02 · GTM PRIMERO y el consent default
@@ -4192,20 +4262,61 @@ sub lente_medicion {
             #    positivo: aqui un comentario APRUEBA un check de cumplimiento
             #    que deberia suspender, y el dano cae en el visitante al que se
             #    le ponen cookies sin haber aceptado nada.
-            my ($kd, $kg);   # claves del primer default y de la primera carga de gtm.js
+            # Cada default y cada carga de gtm.js: { k => [fase, doc, posicion],
+            # id => de que texto sale, mod => 1 si es de un modulo importado }.
+            my $RE_DEF = qr/consent['"]?\s*,?\s*['"]?default/;
+            my $RE_GJS = qr{googletagmanager\.com/gtm\.js};
+            my (@dd, @gg);
             for my $x (@tr) {
                 my $t = $x->{txt} // '';
-                if ($t =~ /consent['"]?\s*,?\s*['"]?default/) {
-                    my $k = [ ($x->{async} ? 2 : $x->{defer} ? 1 : 0), $x->{doc}, $-[0] ];
-                    $kd = $k if !$kd || antes($k, $kd);
-                }
-                if ($t =~ m{googletagmanager\.com/gtm\.js}) {
-                    my $k = [ ($x->{async} ? 0 : $x->{defer} ? 1 : 0), $x->{doc}, $-[0] ];
-                    $kg = $k if !$kg || antes($k, $kg);
+                push @dd, { k => [ ($x->{async} ? 2 : $x->{defer} ? 1 : 0), $x->{doc}, $-[0] ], id => "doc$x->{doc}", mod => 0,
+                            donde => ($x->{src} eq '' ? 'un <script> en linea' : ruta_corta($x->{src})) } if $t =~ $RE_DEF;
+                push @gg, { k => [ ($x->{async} ? 0 : $x->{defer} ? 1 : 0), $x->{doc}, $-[0] ], id => "doc$x->{doc}", mod => 0,
+                            donde => ($x->{src} eq '' ? 'un <script> en linea' : ruta_corta($x->{src})) } if $t =~ $RE_GJS;
+            }
+            if (@mods) {
+                my $alc = modulos_alcanzados(@js);
+                my %raiz = map { ($_->{doc} => $_) } @tr;
+                my $min = sub { my ($x, $c) = @_; return $c if !$x || $c->[0] < $x->[0] || ($c->[0] == $x->[0] && $c->[1] < $x->[1]); $x };
+                for my $m (@mods) {
+                    my $de = $alc->{ $m->{url} } or next;
+                    # carga: lo antes que puede correr · default: lo mas tarde
+                    my ($lo, $hi);
+                    for my $doc (keys %$de) {
+                        my $r = $raiz{$doc} or next;
+                        $lo = $min->($lo, [ ($r->{async} ? 0 : $r->{defer} ? 1 : 0), $doc ]);
+                        $hi = $min->($hi, [ ($r->{async} ? 2 : $r->{defer} ? 1 : 0), $doc ]) unless $de->{$doc};
+                    }
+                    next unless $lo;
+                    $hi ||= [2, 1e9];   # solo por import(): puede llegar el ultimo
+                    push @dd, { k => [ @$hi, $-[0] ], id => $m->{url}, mod => 1, donde => $m->{donde} } if $m->{txt} =~ $RE_DEF;
+                    push @gg, { k => [ @$lo, $-[0] ], id => $m->{url}, mod => 1, donde => $m->{donde} } if $m->{txt} =~ $RE_GJS;
                 }
             }
-            if    (!$kd)                    { push @sin_consent, $p }
-            elsif ($kg && !antes($kd, $kg)) { push @consent_tarde, $p }
+            # 1 = el default corre antes · -1 = la carga puede correr antes · 0 = no se sabe
+            my $orden = sub {
+                my ($d, $g) = @_;
+                return antes($d->{k}, $g->{k}) ? 1 : -1 unless $d->{mod} || $g->{mod};   # la regla de siempre
+                return $d->{k}[2] < $g->{k}[2] ? 1 : -1 if $d->{id} eq $g->{id};         # un fichero: su texto
+                for my $i (0, 1) { return 1 if $d->{k}[$i] < $g->{k}[$i]; return -1 if $d->{k}[$i] > $g->{k}[$i] }
+                return 0;   # mismo turno, ficheros distintos, un import por medio
+            };
+            if (!@dd) { push @sin_consent, $p; next }
+            if (grep { my $d = $_; !grep { $orden->($d, $_) != 1 } @gg } @dd) {
+                # 🔴 Sin una sola carga de gtm.js a la vista, «antes del contenedor»
+                #    no se ha medido. Con el contenedor en el HTML o en un src es la
+                #    regla de siempre; si solo lo nombra un modulo (el id en config.js),
+                #    la carga esta en algun sitio que no se ha leido.
+                push @sin_carga, "$p (el contenedor lo nombra ".$en_mod[0]{donde}.', y no se ve donde se carga gtm.js)'
+                    if !@gg && !$arriba;
+                next;
+            }
+            if (!grep { my $d = $_; !grep { $orden->($d, $_) == -1 } @gg } @dd) { push @consent_tarde, $p; next }
+            # Ni pasa ni falla: hay un default al que ninguna carga adelanta seguro,
+            # y una carga con la que no se sabe. Se nombra ESA pareja.
+            my ($d) = grep { my $x = $_; !grep { $orden->($x, $_) == -1 } @gg } @dd;
+            my ($g) = grep { $orden->($d, $_) == 0 } @gg;
+            push @incierto, "$p (el default en $d->{donde}, gtm.js en $g->{donde})";
         }
         if (@sin_consent) {
             fallo(lente=>'MEDICION', id=>'MED-02', titulo=>'sin consent default: cookies antes de aceptar',
@@ -4220,8 +4331,29 @@ sub lente_medicion {
                   ev=>[@consent_tarde],
                   dato=>scalar(@consent_tarde).' de '.scalar(@vistas).' paginas',
                   umbral=>'antes, en orden de EJECUCION: un script con defer corre despues de todo lo que va en linea', proc=>'04-medicion §3', hacer=>'moverlo arriba: cuando llega, las cookies ya estan puestas. Si el default vive en un consent.js con defer, ninguna pagina puede cargar gtm.js por su cuenta');
+        } elsif (@incierto) {
+            nv(lente=>'MEDICION', id=>'MED-02', titulo=>'orden del consent default entre modulos',
+               donde=>join(' · ', @incierto[0..($#incierto>2?2:$#incierto)]),
+               dato=>scalar(@incierto).' de '.$medidas.' paginas con contenedor: el default y la carga de gtm.js estan en ficheros distintos que corren en el mismo turno (un <script type=module> y lo que importa)',
+               umbral=>'el default corre antes que gtm.js, en orden de EJECUCION',
+               proc=>'5-nov-2026 · los import se evaluan antes que el cuerpo que los escribe, y el orden real es el de las llamadas a las funciones exportadas, que este gate no sigue',
+               hacer=>'poner el default y la carga en el MISMO fichero, el default escrito antes, o el default en linea en el <head>: asi se mide solo. MED-02 no se firma en measured.conf (el gate lo mide si el codigo se deja leer); mientras, mirarlo en el navegador (en el dataLayer, el consent default antes del evento gtm.js) y decirlo en el --aun-asi');
+        } elsif (@sin_carga) {
+            nv(lente=>'MEDICION', id=>'MED-02', titulo=>'contenedor en un modulo, sin carga de gtm.js a la vista',
+               donde=>join(' · ', @sin_carga[0..($#sin_carga>2?2:$#sin_carga)]),
+               dato=>scalar(@sin_carga).' de '.$medidas.' paginas con contenedor: hay consent default, pero ninguna carga de googletagmanager.com/gtm.js en el JS que se lee',
+               umbral=>'el default corre antes que gtm.js, en orden de EJECUCION',
+               proc=>'5-nov-2026 · sin la carga no hay orden que medir, y un PASA aqui seria sobre nada',
+               hacer=>'escribir la URL de gtm.js entera en el fichero que la carga: asi se mide sola. Mientras, mirar el orden en el navegador y decirlo en el --aun-asi (MED-02 no se firma en measured.conf)');
+        } elsif (!$medidas) {
+            nv(lente=>'MEDICION', id=>'MED-02', titulo=>'ninguna pagina leida carga el contenedor',
+               dato=>'0 de '.scalar(@vistas).' paginas: '.($gtm // $marcador).' sale de la home, y en las leidas no hay contenedor cuyo orden mirar',
+               umbral=>'el default corre antes que gtm.js, en cada pagina que lo carga',
+               proc=>'5-nov-2026 · un PASA sobre 0 paginas medidas es la trampa de siempre',
+               hacer=>'medir tambien la home (o una pagina que cargue el contenedor)');
         } else {
-            pasa(lente=>'MEDICION', id=>'MED-02', titulo=>'consent default antes del contenedor', dato=>scalar(@vistas).' paginas');
+            pasa(lente=>'MEDICION', id=>'MED-02', titulo=>'consent default antes del contenedor',
+                 dato=>"$medidas de ".scalar(@vistas).' paginas cargan contenedor, y en todas el default va antes');
         }
 
         # ── MED-03 · EL CRUCE (G1) · el gate mas caro que faltaba ────────────
@@ -4270,20 +4402,18 @@ sub lente_medicion {
             # un consent.js documentado nombra el pixel que se descarto o el evento
             # que se evito, y aqui eso se leia como un proveedor cargado o un
             # evento emitido.
-            for my $t ($h =~ /(<script\b[^>]*>)/gi) {
-                my $src = attr($t,'src') or next;
-                my $a = abs_url($src, $ROOT.'/') or next;
-                next unless is_internal($a);
-                my $x = fetch($a); push @scan, js_sin_com($x->{body}) if $x->{code} == 200;
-            }
+            # 🔴 5-nov-2026 · Y LOS MODULOS QUE IMPORTAN (`js_de_la_pagina`). Con el
+            #    contenedor encontrado en un modulo, aqui solo entraban los src: un
+            #    evento o un pixel escrito en js/site.js no existia, MED-03 cruzaba lo
+            #    que trae el HTML y MED-07 aprobaba una politica que no nombra al
+            #    pixel. Lo que va en linea ya esta en $h.
+            push @scan, map { $_->{txt} } grep { !$_->{linea} } js_de_la_pagina("$ROOT/", $h);
             if ($opt{gracias} ne '') {
                 my $g = fetch("$ROOT$opt{gracias}");
-                push @scan, $g->{body} if $g->{code} == 200;
-                for my $t (($g->{body}//'') =~ /(<script\b[^>]*>)/gi) {
-                    my $src = attr($t,'src') or next;
-                    my $a = abs_url($src, "$ROOT$opt{gracias}") or next;
-                    next unless is_internal($a);
-                    my $x = fetch($a); push @scan, js_sin_com($x->{body}) if $x->{code} == 200;
+                if ($g->{code} == 200) {
+                    push @scan, $g->{body};
+                    push @scan, map { $_->{txt} } grep { !$_->{linea} }
+                                js_de_la_pagina("$ROOT$opt{gracias}", sin_com($g->{body} // ''));
                 }
             }
             for my $s (@scan) {

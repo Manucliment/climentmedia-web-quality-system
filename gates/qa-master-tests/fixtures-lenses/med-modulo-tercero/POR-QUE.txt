@@ -1,0 +1,8 @@
+# fixture: un pixel y un evento en un modulo importado (5-nov-2026)
+# Como med-modulo, y js/sitio.js importa ./anuncios.js, que carga el pixel de
+# Meta y empuja el evento solicitud_presupuesto. El contenedor de prueba
+# (contenedor-solo-google.js) no lo escucha y la politica solo nombra a Google.
+# Tiene que salir MED-03 FALLO (solicitud_presupuesto) y MED-07 FALLO (Meta).
+# Con el programa de antes no corria ninguno; con el contenedor encontrado en el
+# modulo pero el cruce leyendo solo los src, MED-03 decia «no emite ningun
+# evento» y MED-07 aprobaba la politica.

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture: la medicion en un modulo importado | Climent Media</title>
+<meta name="description" content="Una pagina sin ningun script con src: un modulo en linea importa el sitio, que importa la configuracion con el id del contenedor.">
+<link rel="canonical" href="https://climentmedia.com/">
+</head>
+<body>
+<main data-tipo="hub">
+  <section data-sec="hero"><h1>Portada</h1><p>Texto de la portada, suficientemente largo para que ninguna lente se queje de que la pagina esta vacia.</p></section>
+  <section data-sec="cierre"><h2>Siguiente</h2><p><a href="/politica-privacidad/">Privacidad y cookies</a></p></section>
+</main>
+<script type="module">
+  import { arrancar } from './js/sitio.js';
+  arrancar();
+</script>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i;f.parentNode.insertBefore(j,f);})(window,document,"script","dataLayer","GTM-MODULO1");</script>
+</body>
+</html>

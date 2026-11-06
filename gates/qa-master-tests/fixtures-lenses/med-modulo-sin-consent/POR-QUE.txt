@@ -1,0 +1,6 @@
+# fixture: contenedor en un modulo y SIN consent default (5-nov-2026)
+# med-modulo sin la llamada al default: js/sitio.js carga gtm.js al arrancar.
+# Tiene que salir MED-02 FALLO «sin consent default». Con el programa de antes
+# MED-01 decia «sin medicion ninguna» y MED-02 no corria; con el contenedor
+# encontrado en el modulo pero la pagina sin seguir sus import, MED-02 salia PASA
+# sobre 0 paginas medidas.
