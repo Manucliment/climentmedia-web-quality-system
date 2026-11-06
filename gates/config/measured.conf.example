@@ -10,8 +10,9 @@
 #
 #    SEO-17   the language decision (monolingual on purpose, or reciprocal hreflang)
 #    A11Y-13  real keyboard and a real screen reader
-#    A11Y-14  text over a photo or a gradient
-#    MED-13   that ONE conversion actually REACHED the ads platform / analytics
+#    A11Y-14  text over a photo (a CSS gradient is measured by structure-gate since 2026-11-06)
+#    MED-13   that ONE conversion actually REACHED the ads platform / analytics (a site
+#             with no campaign declares SIN_ADS in deploy.conf and measures it in GA4)
 #    MED-14   what happens when the visitor presses REJECT
 #    EST-08   the link graph (another gate measures it, in its own run)
 #    EST-12f  the authorship anchor compared against your OTHER sites
@@ -37,7 +38,10 @@
 #      changes, and a keyboard pass from six months ago is about another site.
 #  4 · TIED TO THE DATA when the check prints one (SEO-17: whether there is
 #      hreflang; EST-12f: the anchor). If today's measurement is not what was
-#      signed, the signature is void and it must be measured again.
+#      signed, the signature is void and it must be measured again. And the
+#      other way round (2026-11-06): an entry signed on a DATA line is void for a
+#      check that prints none today. MED-13 signed in GA4 under SIN_ADS stops
+#      counting the day SIN_ADS is removed.
 #  5 · A FUTURE DATE is void: you measure before you sign, not after.
 #
 #  It is NOT the "anyway" flag, and it is NOT accepted.conf (that one is for a

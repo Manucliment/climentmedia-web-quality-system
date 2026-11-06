@@ -92,6 +92,16 @@ FORM_URLS="/contact/"
 # MED-13 stays NOT VERIFIED. The door reads NO_GA4_OR_ADS or SIN_GA4_NI_ADS.
 # NO_GA4_OR_ADS="bookings land in the calendar; no analytics or ads, decided on 2026-10-19"
 
+# A site WITH GA4 and NO Google Ads campaign running. MED-13 asks for a
+# conversion in the Ads interface, which such a site never has: with this line
+# qa-master measures MED-13 in GA4 instead (the lead event is a key event and it
+# has been seen arriving), and prints the DATO to sign it with in measured.conf.
+# The tree is checked: a page carrying AW-, googleadservices.com or
+# googleads.g.doubleclick.net makes MED-13 a FAIL. Remove the line the day the
+# campaigns start: the signature stops counting on its own, and MED-13 asks for
+# the conversion in Ads again. qa-master reads NO_ADS or SIN_ADS.
+# NO_ADS="no campaigns until the launch planned for December"
+
 # The PUBLISHED page's DOM, for gates/d057.pl. A FAIL that comes from the browser
 # snapshot (EST-05/06/07, REN-11: the candidate was measured with --dom) can only
 # be compared with production through production's own snapshot: without it,

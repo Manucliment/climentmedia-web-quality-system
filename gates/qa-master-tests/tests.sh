@@ -1881,6 +1881,36 @@ if mide_bloque "MEDIDO A MANO: las siete y sus cerraduras" http://site-d.example
   else
     printf '  MAL   %-46s no hay linea DATO de A11Y-03b\n' "el informe imprime el DATO de A11Y-03b"; ko=$((ko+1))
   fi
+  # 9-ter · 🔴 6-nov-2026 · D-063 · MED-13 EN UNA WEB SIN ADS. El umbral pedia una conversion en
+  #    Ads, y una web sin campañas no la tiene nunca: tres webs paradas sin firma honesta. Con
+  #    SIN_ADS en deploy.conf (y un arbol sin etiqueta de Ads) se mide en GA4, y la firma va atada
+  #    a ese DATO: el dia que se quita SIN_ADS, deja de valer sola. Con el programa de antes, el
+  #    informe no habla de GA4 ni trae DATO, y la firma de GA4 seguia valiendo sin SIN_ADS.
+  rm -f "$RM/_deploy/measured.conf"
+  printf '# una web sin campañas\nSIN_ADS="sin campañas hasta el encendido"   # D-063\n' > "$RM/_deploy/deploy.conf"
+  texto  "SIN_ADS · MED-13 se mide en GA4"              SI "que el lead haya LLEGADO a GA4" $MQA -q
+  D13="$($MQA -q 2>&1 | grep -m1 -E '^[[:space:]]+MED-13[[:space:]]+DATO: ' | sed -E 's/^[[:space:]]+MED-13[[:space:]]+DATO: //')"
+  if [ "$D13" = "SIN_ADS: sin campañas hasta el encendido" ]; then
+    printf '  OK    %-46s %s\n' "el informe imprime el DATO de MED-13" "$D13"; ok=$((ok+1))
+  else
+    printf '  MAL   %-46s salio «%s»\n' "el informe imprime el DATO de MED-13" "$D13"; ko=$((ko+1))
+  fi
+  med MED-13 PASA "$HOY" "DATO=SIN_ADS: sin campañas hasta el encendido"
+  espera "SIN_ADS · firmado en GA4 con su DATO · PASA"  PASA    MED-13 $MQA
+  # NEGATIVO · se enciende Ads y se quita SIN_ADS: la firma de GA4 ya no vale
+  rm -f "$RM/_deploy/deploy.conf"
+  espera "sin SIN_ADS · la firma de GA4 no vale"        NOVERIF MED-13 $MQA -q
+  texto  "y dice por que"                               SI "DATO de otra situacion" $MQA -q
+  # NEGATIVO · SIN_ADS con una etiqueta de Ads en el arbol: la declaracion no es verdad
+  printf 'SIN_ADS="sin campañas"\n' > "$RM/_deploy/deploy.conf"
+  printf '<!doctype html><html><head><script>gtag("config","AW-1234567")</script></head><body></body></html>\n' > "$RM/conversion.html"
+  rm -f "$RM/_deploy/measured.conf"
+  espera "SIN_ADS con AW- en el arbol · FALLO"          FALLO   MED-13 $MQA -q
+  texto  "y nombra la pagina"                           SI "/conversion.html: AW-1234567" $MQA -q
+  # y la misma etiqueta en un comentario no cuenta: sigue midiendose en GA4
+  printf '<!doctype html><html><head><!-- gtag("config","AW-1234567") --></head><body></body></html>\n' > "$RM/conversion.html"
+  texto  "AW- en un comentario · sigue en GA4"          SI "que el lead haya LLEGADO a GA4" $MQA -q
+  rm -f "$RM/conversion.html" "$RM/_deploy/deploy.conf" "$RM/_deploy/measured.conf"
   # 10 · el nombre en castellano tambien vale
   med MED-14 PASA "$HOY"; mv "$RM/_deploy/measured.conf" "$RM/_deploy/medido.conf"
   espera "medido.conf (castellano) tambien vale"        PASA    MED-14 $MQA

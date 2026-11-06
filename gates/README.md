@@ -483,7 +483,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Twenty-two more since 2026-11-05**, all from one week of real deploys:
+**Twenty-three more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -647,6 +647,13 @@ without blocking. Why the order changed is trap §89.
   and programs failed with the markup that describes them. `SoftwareApplication` and its
   subtypes count now; a `ficha` with only a `Service` still fails, because a service is a
   `servicio`.
+- **A site with GA4 and no Ads campaign can close MED-13 (`qa-master.pl`, MED-13).** MED-13
+  asked for a conversion in the Ads interface, which such a site never has: three sites had no
+  honest way to sign it. `NO_ADS="reason"` in `deploy.conf` makes it measured in GA4 (the lead
+  event is a key event and has been seen arriving), signed with the DATO the report prints. The
+  tree is checked: an `AW-` id, `googleadservices.com` or `googleads.g.doubleclick.net` outside a
+  comment makes it a FAIL. And a signature made on a DATO no longer counts for a check that
+  carries none today, so the day the line is removed the GA4 signature stops counting by itself.
 
 ---
 

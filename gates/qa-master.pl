@@ -3204,6 +3204,54 @@ sub arbol_sin_formulario {
     return $con ? 0 : $paginas;
 }
 
+# ── UNA WEB SIN CAMPAÑAS DE ADS · 6-nov-2026 · D-063 ────────────────────────
+#  MED-13 pedia una conversion en la interfaz de Ads, y una web con GA4 y sin
+#  campañas no la tiene nunca: no hay forma honesta de firmarlo, y paraba tres
+#  webs. La web lo declara en <repo>/_deploy/deploy.conf con SIN_ADS="<motivo>"
+#  (o NO_ADS), y entonces MED-13 se mide en GA4. La declaracion se comprueba
+#  contra el arbol: una etiqueta de Ads fuera de un comentario la desmiente.
+#  Una etiqueta de Ads DENTRO del contenedor de GTM no se ve desde el arbol.
+sub conf_de_subida {       # <claves...> -> el valor de la primera que este, o undef
+    my @claves = @_;
+    return undef unless defined $opt{repo} && $opt{repo} ne '' && -f "$opt{repo}/_deploy/deploy.conf";
+    open(my $fh, '<:encoding(UTF-8)', "$opt{repo}/_deploy/deploy.conf") or return undef;
+    my %v;
+    while (my $l = <$fh>) {
+        next if $l =~ /^\s*#/;
+        $v{$1} = $3 if $l =~ /^\s*(?:export\s+)?([A-Z_][A-Z0-9_]*)=(["']?)(.*?)\2\s*(?:#.*)?$/;
+    }
+    close $fh;
+    for my $k (@claves) { return $v{$k} if defined $v{$k} }
+    return undef;
+}
+sub arbol_con_ads {        # -> '' (ninguna), «/ruta: lo que lleva», o undef sin --repo
+    return undef unless defined $opt{repo} && $opt{repo} ne '' && -d $opt{repo};
+    my $hay = '';
+    no warnings 'once';
+    require File::Find;
+    File::Find::find({ no_chdir => 1, wanted => sub {
+        return if $hay ne '';
+        my $p = $File::Find::name;
+        if (-d $p) {
+            my $b = (split m{[\\/]}, $p)[-1];
+            $File::Find::prune = 1 if $p ne $opt{repo} && $b =~ /^(?:[._]|node_modules$|vendor$)/;
+            return;
+        }
+        return unless $p =~ /\.(?:html?|php|js)$/i;
+        open(my $fh, '<', $p) or return;
+        local $/; my $t = <$fh> // ''; close $fh;
+        $t =~ s{/\*.*?\*/}{ }gs;
+        $t =~ s{<!--.*?-->}{ }gs;
+        if ($t =~ /(\bAW-\d{6,}\b|googleadservices\.com|googleads\.g\.doubleclick\.net)/) {
+            my $lleva = $1;    # antes de las sustituciones de abajo: cada una que casa borra $1
+            (my $rel = substr($p, length $opt{repo})) =~ s{\\}{/}g;
+            $rel =~ s{^/*}{/};
+            $hay = "$rel: $lleva";
+        }
+    }}, $opt{repo});
+    return $hay;
+}
+
 # ── EL FORMULARIO QUE CREA EL JS · 5-nov-2026 ────────────────────────────────
 #  Una tienda nuestra monta su formulario de leads dentro de su configurador
 #  (`<form class="...">` en una cadena de su JS, que la pagina inserta al elegir
@@ -5307,10 +5355,29 @@ sub lente_medicion {
     }
 
     # ── PC1 · el punto ciego mas caro que tenemos ───────────────────────────
-    nv(lente=>'MEDICION', id=>'MED-13', titulo=>'que UNA conversion haya LLEGADO a Google Ads / GA4',
-       umbral=>'>=1 conversion registrada en la interfaz de Ads en los ultimos 7 dias',
-       proc=>'PC1 · en las cinco webs la verificacion se detiene en «la etiqueta existe». Nadie ha abierto Ads ni GA4 en ningun proyecto',
-       hacer=>'un acceso de lectura a Ads por cliente y una comprobacion al mes. 🔴 Es el hueco entre dos cosas que cada una parece correcta: el contenedor bien Y la pagina bien, y cero conversiones');
+    # 6-nov-2026 · D-063 · sin campañas de Ads (SIN_ADS en deploy.conf), se mide en GA4. La firma
+    #    va atada al DATO «SIN_ADS: <motivo>»: el dia que se enciende Ads y se quita la linea, deja
+    #    de valer sola y MED-13 vuelve a pedir la conversion en Ads (ver lee_medidos).
+    my $sin_ads = conf_de_subida('SIN_ADS', 'NO_ADS');
+    my $ads = (defined $sin_ads && $sin_ads ne '') ? arbol_con_ads() : undef;
+    if (defined $ads && $ads ne '') {
+        fallo(lente=>'MEDICION', id=>'MED-13', titulo=>'deploy.conf dice SIN_ADS y el arbol lleva una etiqueta de Ads',
+              donde=>$ads, ev=>[$ads], dato=>"SIN_ADS: $sin_ads · $ads",
+              umbral=>'SIN_ADS solo vale en un arbol sin AW-, googleadservices.com ni googleads.g.doubleclick.net',
+              proc=>'D-063 · la declaracion se comprueba contra el arbol',
+              hacer=>'o se quita SIN_ADS de deploy.conf, y MED-13 vuelve a pedir la conversion en Ads, o se quita la etiqueta');
+    } elsif (defined $ads) {
+        nv(lente=>'MEDICION', id=>'MED-13', titulo=>'que el lead haya LLEGADO a GA4 (la web no tiene Ads: SIN_ADS)',
+           dato=>"SIN_ADS: $sin_ads",
+           umbral=>'el evento del lead es un evento clave en GA4 (Admin API, keyEvents) y se ha visto llegar: en los informes de 28 dias, o en DebugView con la vista previa y sin lead falso',
+           proc=>'D-063 · sin campañas no llega ninguna conversion a Ads: se mide lo que existe. La parte de Ads va a la fila de 14 dias del encendido. Una etiqueta de Ads dentro del contenedor de GTM no se ve desde el arbol: se mira en su Vista previa',
+           hacer=>'medirlo y firmarlo en _deploy/measured.conf (CHECK MED-13, con este DATO). El dia que se encienda Ads se quita SIN_ADS: el DATO cambia, la firma deja de valer y MED-13 vuelve a pedir la conversion en Ads');
+    } else {
+        nv(lente=>'MEDICION', id=>'MED-13', titulo=>'que UNA conversion haya LLEGADO a Google Ads / GA4',
+           umbral=>'>=1 conversion registrada en la interfaz de Ads en los ultimos 7 dias',
+           proc=>'PC1 · en las cinco webs la verificacion se detiene en «la etiqueta existe». Nadie ha abierto Ads ni GA4 en ningun proyecto',
+           hacer=>'un acceso de lectura a Ads por cliente y una comprobacion al mes. Una web sin campañas lo declara con SIN_ADS en deploy.conf y se mide en GA4 (D-063). 🔴 Es el hueco entre dos cosas que cada una parece correcta: el contenedor bien Y la pagina bien, y cero conversiones');
+    }
 
     nv(lente=>'MEDICION', id=>'MED-14', titulo=>'que pasa cuando el visitante pulsa RECHAZAR',
        umbral=>'0 cookies de terceros y gcs=G100 despues de rechazar',
@@ -6857,9 +6924,19 @@ if ($opt{repo} ne '' && -d $opt{repo}) {
         my $e = $mias[0];
         $usada{"$_"} = 1 for @mias;
         my $dato_hoy = _norm_ev($c->{dato});
-        if ($dato_hoy ne '' && _norm_ev($e->{DATO} // '') ne $dato_hoy) {
+        my $dato_fir = _norm_ev($e->{DATO} // '');
+        if ($dato_hoy ne '' && $dato_fir ne $dato_hoy) {
             push @MED_RECHAZADAS, { %$e, _por => "DATO distinto: hoy se mide «$dato_hoy» y se firmo sobre «"
                                     . ($e->{DATO} // '(sin DATO)') . '». Hay que volver a medir' };
+            next;
+        }
+        # 6-nov-2026 · D-063 · Y AL REVES: una firma hecha SOBRE un DATO no vale para un check que hoy no
+        #    trae ninguno. Lo firmado era otra situacion: MED-13 medido en GA4 con SIN_ADS no vale el dia
+        #    que se quita SIN_ADS y vuelve a pedirse la conversion en Ads. Medido en todos los
+        #    measured.conf de las webs ese dia: solo SEO-17, EST-12f y A11Y-03b llevan DATO, y los tres lo
+        #    traen siempre, asi que no cae ninguna firma de hoy.
+        if ($dato_hoy eq '' && $dato_fir ne '') {
+            push @MED_RECHAZADAS, { %$e, _por => "DATO de otra situacion: se firmo sobre «$e->{DATO}» y hoy $c->{id} no trae DATO. Hay que volver a medir" };
             next;
         }
         if (time > $e->{_fin}) {
