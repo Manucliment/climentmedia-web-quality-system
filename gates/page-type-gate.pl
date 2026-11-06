@@ -46,6 +46,7 @@ use strict; use warnings; use utf8;
 use JSON::PP;
 use File::Basename qw(dirname);
 use File::Spec;
+use Scalar::Util qw(refaddr);
 use Unicode::Normalize qw(NFD);
 binmode STDOUT, ':encoding(UTF-8)';
 
@@ -475,7 +476,7 @@ my @REGLAS = (
 #  Only describes what is there. Each case below is one we have had.
 # =============================================================================
 {
-    my (@mal, @avi, $mirado);
+    my (@mal, @avi, $mirado, @NOTA_VAR);
     for my $nd (nodos_de('Question')) {
         my $q = texto($nd->{n}{name}); next if $q eq ''; $mirado++;
         push @mal, "la pregunta «" . substr($q, 0, 70) . "» no esta en la pagina" unless se_ve($q);
@@ -491,8 +492,9 @@ my @REGLAS = (
             my $nn = norm($nom);
             push @avi, "el producto «$nom» no coincide con el h1" unless $H1 ne '' && (index($H1, $nn) >= 0 || index($nn, $H1) >= 0);
         }
-        for my $nd (nodos_de('Offer')) {
-            my $p = texto($nd->{n}{price}); next unless $p =~ /^\s*([0-9]+)(?:[.,]([0-9]+))?\s*$/; $mirado++;
+        # undef = el precio no es un numero que se pueda buscar; 1/0 = se ve o no en la pagina
+        my $precio_se_ve = sub {
+            my $p = shift; return undef unless $p =~ /^\s*([0-9]+)(?:[.,]([0-9]+))?\s*$/;
             my ($ent, $dec) = ($1, $2 // '');
             my $miles = $ent; 1 while $miles =~ s/^(\d+)(\d{3})/$1.$2/;
             my $miles2 = $ent; 1 while $miles2 =~ s/^(\d+)(\d{3})/$1,$2/;
@@ -500,7 +502,39 @@ my @REGLAS = (
             my @formas = $dec eq '' || $dec eq '00'
                 ? map { (qr/(?<![\d.,])\Q$_\E(?:[.,]00)?(?![\d])/) } ($ent, $miles, $miles2)
                 : map { (qr/(?<![\d.,])\Q$_\E[.,]\Q$dec\E(?!\d)/) } ($ent, $miles, $miles2);
-            push @mal, "el precio $p del marcado no aparece en la pagina" unless grep { $VISC =~ $_ } @formas;
+            return (grep { $VISC =~ $_ } @formas) ? 1 : 0;
+        };
+        # 🔴 6-nov-2026 · LAS VARIANTES DE UN ProductGroup NO SON DE ESTA URL. Una tienda
+        #    escribe cada variante con su URL (?variant=…) y su precio, y la pagina ensena
+        #    el de la elegida: el resto se ve en la URL de su variante. Esto pedia todos
+        #    aqui (FALLO en 4 packs de una tienda, medido ese dia: el marcado con 121.64,
+        #    125.67, 133.46 y 141.51, y la pagina con 121,64 €). De las variantes de un
+        #    grupo basta UNA en la pagina; ninguna sigue siendo FALLO, y un Product
+        #    suelto con varias ofertas se mira oferta a oferta, como antes.
+        my %DE_VARIANTE;
+        for my $g (nodos_de('ProductGroup')) {
+            my $vs = $g->{n}{hasVariant}; $vs = [$vs] if ref $vs eq 'HASH'; next unless ref $vs eq 'ARRAY';
+            my ($vistos, $medidos) = (0, 0);
+            for my $v (grep { ref $_ eq 'HASH' } @$vs) {
+                my $o = $v->{offers};
+                for my $of (grep { ref $_ eq 'HASH' } (ref $o eq 'ARRAY' ? @$o : ($o))) {
+                    $DE_VARIANTE{refaddr $of} = 1;
+                    my $s = $precio_se_ve->(texto($of->{price}));
+                    next unless defined $s;
+                    $medidos++; $vistos += $s;
+                }
+            }
+            next unless $medidos;
+            $mirado++;
+            my $nom = texto($g->{n}{name}); $nom = 'sin nombre' if $nom eq '';
+            if ($vistos) { push @NOTA_VAR, "ProductGroup «$nom»: $vistos de $medidos precios de variante en la pagina (los demas, en la URL de su variante)" }
+            else         { push @mal, "ninguno de los $medidos precios de las variantes de «$nom» aparece en la pagina" }
+        }
+        for my $nd (nodos_de('Offer')) {
+            next if $DE_VARIANTE{refaddr $nd->{n}};
+            my $p = texto($nd->{n}{price});
+            my $s = $precio_se_ve->($p); next unless defined $s; $mirado++;
+            push @mal, "el precio $p del marcado no aparece en la pagina" unless $s;
         }
     }
     for my $nd (grep { $_->{suelto} } nodos_de('Article')) {
@@ -510,7 +544,7 @@ my @REGLAS = (
     }
     if (!$mirado) { nv('PT-06', 'el marcado contra la pagina', 'no hay preguntas, producto, precio ni articulo que cruzar') }
     elsif (@mal)  { fallo('PT-06', 'el marcado dice algo que la pagina no ensena', join(' · ', @mal) . ' · el marcado solo describe lo que se ve') }
-    else          { pasa('PT-06', 'lo marcado esta en la pagina', '') }
+    else          { pasa('PT-06', 'lo marcado esta en la pagina', join(' · ', @NOTA_VAR)) }
     aviso('PT-06', 'el marcado y la pagina no dicen lo mismo', join(' · ', @avi)) if @avi;
 }
 

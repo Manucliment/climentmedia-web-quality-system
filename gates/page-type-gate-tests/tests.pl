@@ -164,6 +164,23 @@ print "\n== PT-06 · EL MARCADO CONTRA LA PAGINA\n";
 caso('el precio del marcado (39.95) no es el de la pagina (49,95): FALLO',
      fichero(pagina('ficha', [$MIGA, $ITEMPAGE, producto('39.95')], $FICHA_CUERPO)), [],
      ['^FALLO\s+PT-06.*precio 39.95'], [], 1);
+# 6-nov-2026 · LAS VARIANTES DE UN ProductGroup. Una tienda escribe un ProductGroup con
+#   cuatro variantes, cada una con su URL (?variant=…) y su precio, y la pagina ensena el
+#   precio de la elegida: los otros tres se ven en la URL de su variante, no en esta.
+#   PT-06 pedia los cuatro aqui (FALLO en 4 packs, medido ese dia). Ahora, de las
+#   variantes de un grupo, basta UNA en la pagina. Los dos que TIENEN que seguir en
+#   rojo: un grupo sin ningun precio de variante visible, y un Product suelto.
+my $VARP = sub { my ($p, $v) = @_; '{"@type":"Product","name":"Lampara de mesa Nube ' . $v . '","image":"i.jpg","sku":"L' . $v . '","offers":{"@type":"Offer","url":"https://tienda.example/pagina/?variant=' . $v . '","price":"' . $p . '","priceCurrency":"EUR","availability":"https://schema.org/InStock"}}' };
+my $GRUPO = sub { '{"@context":"https://schema.org","@type":"ProductGroup","name":"Lampara de mesa Nube","image":"i.jpg","productGroupID":"G1","variesBy":"https://schema.org/size","hasVariant":[' . join(',', @_) . ']}' };
+caso('un ProductGroup: la variante elegida en la pagina y las otras en su URL: PASA',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, $GRUPO->($VARP->('49.95', 1), $VARP->('59.95', 2), $VARP->('69.95', 3))], $FICHA_CUERPO)), [],
+     ['^PASA\s+PT-06.*1 de 3 precios de variante'], ['^FALLO\s+PT-06'], 0);
+caso('un ProductGroup sin ningun precio de variante en la pagina: FALLO',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, $GRUPO->($VARP->('39.95', 1), $VARP->('59.95', 2))], $FICHA_CUERPO)), [],
+     ['^FALLO\s+PT-06.*ninguno de los 2 precios de las variantes'], [], 1);
+caso('un Product suelto con dos ofertas, una que no se ve: FALLO (no es un grupo)',
+     fichero(pagina('ficha', [$MIGA, $ITEMPAGE, '{"@context":"https://schema.org","@type":"Product","name":"Lampara de mesa Nube","image":"i.jpg","offers":[{"@type":"Offer","price":"49.95","priceCurrency":"EUR"},{"@type":"Offer","price":"59.95","priceCurrency":"EUR"}]}'], $FICHA_CUERPO)), [],
+     ['^FALLO\s+PT-06.*precio 59.95'], [], 1);
 caso('el precio con punto de miles (1.299,00 € en la pagina, 1299 en el marcado): PASA',
      fichero(pagina('ficha', [$MIGA, $ITEMPAGE, producto('1299')], '<h1>Lampara de mesa Nube</h1><p>1.299,00 €</p>')), [],
      ['^PASA\s+PT-06'], ['^FALLO'], 0);
