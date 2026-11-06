@@ -4236,6 +4236,7 @@ sub lente_medicion {
             my $cjs = $cont->{body};
             # eventos que EMITE el sitio: marcado + JS servido + la de gracias
             my %emit;
+            my $compuestos = 0;
             my @scan = ($h);
             # 26-sep-2026 · el JS propio entra SIN sus comentarios (`js_sin_com`):
             # un consent.js documentado nombra el pixel que se descarto o el evento
@@ -4266,10 +4267,21 @@ sub lente_medicion {
                 #    cruce de site-d reportaba 2 eventos donde habia 7.
                 #    Con `$_` cada elemento es el suyo.
                 $emit{$_}++ for $s =~ /data-event\s*=\s*["']([a-z0-9_]+)["']/gi;
-                $emit{$_}++ for $s =~ /['"]event['"]\s*:\s*['"]([a-z0-9_]+)['"]/gi;
+                # 6-nov-2026 · LA CLAVE SIN COMILLAS (`dataLayer.push({ event: "x" })`), que es como la
+                #    escribe medio mundo: una web que emitia tres eventos salia «no emite ningun evento».
+                #    Y un nombre que se COMPONE (`event: "cm_" + nombre`) no se lee: el trozo entre
+                #    comillas seguido de `+` no es un nombre (se cruzaria «cm_», que no existe), asi que se
+                #    cuenta aparte y se dice. Control: med03-sin-comillas.
+                $emit{$_}++ for $s =~ /['"]event['"]\s*:\s*['"]([a-z0-9_]+)['"](?!\s*\+)/gi;
+                #    Las dos formas nuevas se leen solo DENTRO de un `.push({ … })`: un `{event: x}` suelto en
+                #    el JS de una libreria (un plugin de WordPress, jQuery) no es un evento del dataLayer, y
+                #    aqui se cruzaria contra el contenedor como si lo fuera.
+                $emit{$_}++ for $s =~ /\.push\(\s*\{[^{}]*?(?<![\w.\$'"])event\s*:\s*['"]([a-z0-9_]+)['"](?!\s*\+)/gi;
+                $compuestos += () = $s =~ /\.push\(\s*\{[^{}]*?(?<![\w.\$'"])['"]?event['"]?\s*:\s*(?:['"][^'"\n]*['"]\s*\+|[A-Za-z_\$][\w.\$]*\s*[,}+])/g;
                 $emit{$_}++ for $s =~ /gtag\(\s*['"]event['"]\s*,\s*['"]([a-z0-9_]+)['"]/gi;
                 $emit{$_}++ for $s =~ /data-thanks\s*=\s*["']([a-z0-9_]+)["']/gi;
             }
+            my $nota_comp = $compuestos ? " · y $compuestos con un nombre que el JS compone (sin cruzar: no se puede leer)" : '';
             delete $emit{$_} for qw(gtm_js gtm_dom gtm_load js config);
             # nombres que el CONTENEDOR conoce
             # 🔴 6-nov-2026 · Y LOS QUE ESCUCHA POR PATRON. Un activador «evento personalizado» con
@@ -4311,27 +4323,38 @@ sub lente_medicion {
             my $patron_ilegible = !$preds && $cjs =~ /"function"\s*:\s*"_(?:re|cn|sw|ew)"/;
             if (@sinescucha && $patron_ilegible) {
                 nv(lente=>'MEDICION', id=>'MED-03', titulo=>'cruce eventos <-> disparadores del contenedor',
-                   dato=>scalar(@sinescucha).' de '.scalar(keys %emit).' eventos no aparecen escritos en gtm.js ('.join(' · ', @sinescucha).'), y el contenedor tiene disparadores por patron que no se han podido leer',
+                   dato=>scalar(@sinescucha).' de '.scalar(keys %emit).' eventos no aparecen escritos en gtm.js ('.join(' · ', @sinescucha).'), y el contenedor tiene disparadores por patron que no se han podido leer'.$nota_comp,
                    umbral=>'0 · todo nombre emitido lo escucha un disparador',
                    proc=>'G1 · 6-nov-2026: un patron sin leer no es «no escucha»',
                    hacer=>'mirar en GTM el activador de esos eventos (Vista previa, o el activador con su expresion regular)');
             } elsif (@sinescucha) {
                 fallo(lente=>'MEDICION', id=>'MED-03', titulo=>'evento emitido que el contenedor NO escucha',
                       donde=>join(' · ', @sinescucha),
+                      # La nota de los compuestos va en `hacer`, NO en el dato: el dato de un FALLO es su
+                      # HUELLA, y una aceptacion firmada (la de una web de cliente, hasta el 25-nov)
+                      # caducaria por una frase nueva del gate, sin que cambie nada del sitio.
                       dato=>scalar(@sinescucha).' de '.scalar(keys %emit).' eventos emitidos',
                       umbral=>'0 · todo nombre emitido aparece en gtm.js',
                       proc=>'G1 · site-d emite page_view_gracias y el contenedor escucha thank_you_view: TRES etiquetas de Ads que no han disparado nunca',
-                      hacer=>'o se renombra el evento en la pagina, o se anade el disparador en GTM. Y despues se comprueba en Ads que llega (MED-13)');
+                      hacer=>'o se renombra el evento en la pagina, o se anade el disparador en GTM. Y despues se comprueba en Ads que llega (MED-13)'.($compuestos ? ". Ademas, $compuestos push con un nombre que compone el JS, sin cruzar: mirarlos en GTM Vista previa" : ''));
             } elsif (@por_otro) {
                 aviso(lente=>'MEDICION', id=>'MED-03', titulo=>'el contenedor manda el evento por OTRO activador: lo que empuja la pagina no lo escucha nadie',
                       donde=>join(' · ', @por_otro),
-                      dato=>scalar(@por_otro).' de '.scalar(keys %emit).' eventos emitidos: ninguno de sus activadores de evento lo escucha, y una etiqueta lo envia con ese nombre (vtp_eventName)',
+                      dato=>scalar(@por_otro).' de '.scalar(keys %emit).' eventos emitidos: ninguno de sus activadores de evento lo escucha, y una etiqueta lo envia con ese nombre (vtp_eventName)'.$nota_comp,
                       umbral=>'todo nombre emitido lo escucha un activador sobre {{Event}}',
                       proc=>'G1 · 6-nov-2026: dos webs nuestras, phone_click (por un clic en tel:) y generate_lead (desde cm_generate_lead)',
                       hacer=>'comprobar en GTM que el otro activador cubre el mismo clic o envio que la pagina empuja; si lo cubre, el push de la pagina sobra');
             } elsif (%emit) {
                 pasa(lente=>'MEDICION', id=>'MED-03', titulo=>'todo evento emitido tiene disparador',
-                     dato=>join(' ', sort keys %emit).(@por_patron ? ' · por un disparador con patron: '.join(' ', @por_patron) : ''));
+                     dato=>join(' ', sort keys %emit).(@por_patron ? ' · por un disparador con patron: '.join(' ', @por_patron) : '').$nota_comp);
+            } elsif ($compuestos) {
+                # Solo nombres compuestos: el sitio SI emite, y el gate no puede leer cuales. Decir
+                # «no emite ningun evento» seria falso; NO VERIFICADO pararia la puerta por una forma
+                # de escribir JS. Es un aviso que dice lo que no se ha cruzado.
+                aviso(lente=>'MEDICION', id=>'MED-03', titulo=>'el JS compone el nombre del evento: no se puede cruzar con el contenedor',
+                      dato=>"$compuestos push con un nombre que se construye en el JS (\"prefijo_\" + variable), ninguno escrito entero",
+                      umbral=>'todo nombre emitido lo escucha un activador sobre {{Event}}', proc=>'G1 · 6-nov-2026',
+                      hacer=>'mirar en GTM Vista previa que cada evento compuesto llega con un activador; o escribir el nombre entero en el JS para que se pueda cruzar');
             } else {
                 aviso(lente=>'MEDICION', id=>'MED-03', titulo=>'el sitio no emite ningun evento con nombre',
                       umbral=>'>=1 evento de conversion', proc=>'G1',

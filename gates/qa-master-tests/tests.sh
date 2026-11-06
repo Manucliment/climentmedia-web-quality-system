@@ -617,6 +617,24 @@ espera "MED-03 · patrones que no se pueden leer: NO VERIFICADO"  NOVERIF MED-03
 # contenedor ENVIA desde otro activador (una etiqueta con ese vtp_eventName). Llega a GA4: es AVISO.
 espera "MED-03 · lo manda otro activador (vtp_eventName): AVISO" AVISO   MED-03 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med03-patron --contenedor fixtures-lenses/contenedor-med03-patron-envia.js $_M03
+# 🔴 6-nov-2026 · LA CLAVE SIN COMILLAS. `dataLayer.push({ event: "x" })` no se leia: med03-sin-comillas
+#    salia «no emite ningun evento» (AVISO) con los dos contenedores, el que lo escucha y el que no
+#    (visto en ROJO contra el gate anterior en los dos casos de abajo). Y un nombre compuesto
+#    (`"cm_" + nombre`) no es un nombre: si se tomara el trozo entre comillas, med03-compuesto cruzaria
+#    «cm_» y saldria FALLO (visto en ROJO quitando el `(?!\s*\+)`). El objeto de libreria
+#    (`{ event: "scroll_libreria" }`, fuera de un push) no se cruza: si se cruzara, el PASA seria FALLO.
+espera "MED-03 · clave sin comillas, el contenedor la escucha: PASA" PASA  MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-sin-comillas --contenedor fixtures-lenses/contenedor-med03-sin-comillas.js $_M03
+texto  "MED-03 · y nombra el compuesto, sin cruzarlo"               SI "y 1 con un nombre que el JS compone" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-sin-comillas --contenedor fixtures-lenses/contenedor-med03-sin-comillas.js $_M03
+texto  "MED-03 · un {event:} de libreria no es un evento"           NO "scroll_libreria" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-sin-comillas --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+espera "MED-03 · clave sin comillas que nadie escucha: FALLO"       FALLO MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-sin-comillas --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+espera "MED-03 · solo nombres compuestos: AVISO, no FALLO"          AVISO MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-compuesto --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+texto  "MED-03 · y dice que el JS compone el nombre"                SI "el JS compone el nombre del evento" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-compuesto --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
 # ⚠️ `--sin-recibo` en TODA prueba que apunte a un repo de verdad (anadido el
 #    11-ago-2026). Sin el, estas dos lineas escribian un `.qa-recibo` DENTRO de
 #    site-d-web cada vez que se corria la bateria —y encima un recibo de
