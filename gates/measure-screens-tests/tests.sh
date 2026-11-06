@@ -156,6 +156,15 @@ espera f16-tipo-declarado.html        PASA  ""                      "legal decla
 espera f17-condiciones-generales.html PASA  ""                      "legal por la ruta, como en mobile-gate"
 espera f18-texto-sin-tipo.html        FALLA "CTA en toda la pagina" "el mismo texto sin tipo sigue cayendo"
 echo
+echo "== LA PAGINA-CONFIGURADOR (6-nov-2026, la excepcion declarada de 08-qa-final)"
+#   La pagina a medida de una tienda pinta con JS sus pasos como <button class="choice">: «solo 0 CTA» aqui y en
+#   la nota de diseno, con seis botones de eleccion en la primera pantalla. qa-master ya la eximia (EST-06b).
+#   f23 sale FALLA con el gate de antes (medido el 6-nov en el servidor). Los espejos: los mismos botones como
+#   acordeon (aria-expanded) o como pestanas (role=tab) no son la conversion y siguen cayendo.
+espera f23-configurador.html       PASA  ""                      "cinco botones de eleccion y 0 CTA"
+espera f24-acordeon-sin-cta.html   FALLA "CTA en toda la pagina" "un acordeon no es un configurador"
+espera f25-pestanas-sin-cta.html   FALLA "CTA en toda la pagina" "unas pestanas tampoco"
+echo
 # 🔴 Se CUENTAN antes de medir. Con la carpeta equivocada, el patron no casaba,
 #    `sh` dejaba el literal `[0-9]*.html` y el bucle media UN caso inexistente --
 #    un «MAL» que parecia un problema de ancho. Cero moldes no es un repertorio

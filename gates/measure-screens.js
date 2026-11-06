@@ -289,7 +289,19 @@
     : /gracias|merci|thanks|bedankt/.test(rutaMin) ? "gracias" : "");
   const exigeCTA = !["legal", "gracias", "recurso"].includes(tipoPagina);
   if (exigeCTA && peorPx > vh * 2.5) fallos.push(`se recorren ${(peorPx / vh).toFixed(1)} pantallas seguidas sin un solo CTA (limite 2,5)`);
-  if (exigeCTA && totalCTA < 2) fallos.push(`solo ${totalCTA} CTA en toda la pagina`);
+  // 🔴 6-nov-2026 · LA PAGINA-CONFIGURADOR, la unica excepcion declarada de 08-qa-final, que qa-master ya aplicaba
+  //  (EST-06b) y este gate no [trap:design-E3]. Su interaccion principal son <button> que pinta su JS -elegir la forma,
+  //  la medida, el paso- sin clase de CTA: la pagina a medida de una tienda daba «solo 0 CTA» con seis botones de
+  //  eleccion en la primera pantalla, y la nota de diseno lo copiaba. Se cuentan como qa-master (visibles, con texto, sin
+  //  disabled), y SIN los que el selector de arriba deja fuera a proposito: los conmutadores de un acordeon o un menu
+  //  (aria-expanded), las pestanas (role=tab) y los de submit, que ya son CTA. Solo quita el umbral de «>= 2 CTA»: el
+  //  tramo sin CTA sigue contando, como en qa-master.
+  const eleccion = [...main.querySelectorAll('button:not([disabled])')].filter(b =>
+    b.getBoundingClientRect().height > 0 && (b.innerText || '').trim() &&
+    !b.hasAttribute('aria-expanded') && b.getAttribute('role') !== 'tab' &&
+    String(b.type || '').toLowerCase() !== 'submit' && !b.closest('nav,header,footer'));
+  const configurador = totalCTA < 2 && eleccion.length >= 3;
+  if (exigeCTA && totalCTA < 2 && !configurador) fallos.push(`solo ${totalCTA} CTA en toda la pagina`);
 
   return JSON.stringify({
     url: location.hostname + location.pathname,
@@ -307,7 +319,9 @@
       contenedoresGigantes: gigantes.map(b => `${b.que} — ${b.px}px = ${b.pantallas} pantallas`),
       sinCTA: `${sinCTA.length}/${bloques.length}`,
       ctasTotales: totalCTA,
-      reglasDeCTA: exigeCTA ? 'se aplican' : `no se aplican: tipo «${tipoPagina}» (${mainTipo ? 'declarado en <main>' : 'por la ruta'})`,
+      reglasDeCTA: !exigeCTA ? `no se aplican: tipo «${tipoPagina}» (${mainTipo ? 'declarado en <main>' : 'por la ruta'})`
+        : configurador ? `pagina-configurador: ${totalCTA} CTA y ${eleccion.length} botones de eleccion; el minimo de 2 CTA no se aplica (la excepcion declarada, 08-qa-final; EST-06b en qa-master). El tramo sin CTA, si`
+        : 'se aplican',
       mayorTramoSinCTA: `${peorRacha} bloques = ${(peorPx / vh).toFixed(1)} pantallas`,
     },
     detalle: bloques,
@@ -349,6 +363,9 @@
  *                                 nada que pulsar. El visitante que se convence
  *                                 en la seccion 6 no tiene donde hacerlo.
  *  · >= 2 CTA en la pagina        Uno arriba y uno al cierre, como minimo.
+ *                                 Salvo una pagina-configurador (>= 3 botones de
+ *                                 eleccion y < 2 CTA, 6-nov-2026): sus botones son
+ *                                 la conversion. El tramo sin CTA si le cuenta.
  *
  *  ⚠️ SE MIDE EN LAS DOS ANCHURAS. En movil todo se apila y un bloque que cabe
  *  a 1280 puede ocupar tres pantallas a 390. Y ojo con la trampa conocida:

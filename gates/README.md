@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **2011**: 1838 plus 171 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **2014**: 1838 plus 174 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -464,8 +464,16 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Seven more since 2026-11-05**, all from one week of real deploys:
+**Eight more since 2026-11-05**, all from one week of real deploys:
 
+- **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
+  page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
+  the first screen and "only 0 CTA" here and in the design score, while `qa-master` already
+  exempted it (EST-06b, the one declared exception of the final QA). The gate now counts
+  the same visible buttons `qa-master` counts, minus the toggles its CTA selector leaves out
+  on purpose (`aria-expanded`, `role=tab`, submit). With three or more and fewer than two
+  CTAs, the two-CTA minimum does not apply and `reglasDeCTA` says why; the stretch without a
+  CTA still counts. The mirrors: the same buttons as an accordion or as tabs still FAIL.
 - **EST-06 judges page length with the door's rule (`measure-screens.js`).** On
   2026-08-19 `measure-screens.js` replaced the flat 6 screens with a word budget (6 + one
   screen per 80 visible words past 400, capped at 12); `qa-master` kept the 6. A home page
