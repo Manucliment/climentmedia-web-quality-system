@@ -338,7 +338,10 @@ sub d57_fila_de {
         my $dueno = $cel->('dueno');
         $dueno = '' if defined $dueno && $dueno =~ /^[\s\-\x{2014}]*$|^\xE2\x80\x94$/;
         if (!defined $dueno || $dueno eq '') {
-            if (defined $estado && $estado =~ /espera\s+([^\s(,;.]+)/i) { $dueno = "espera $1" }
+            # 6-nov: «espera X» da dueño solo al PRINCIPIO del Estado. En cualquier sitio, «la portada
+            # espera la lectura…» daba «dueño: espera la» (una web, 6-nov). «espera a X» vale.
+            (my $e0 = $estado // '') =~ s/[*_`~]//g;
+            if ($e0 =~ /^\W*espera\s+(?:al?\s+)?([^\s(,;.]+)/i) { $dueno = "espera $1" }
             elsif ($f->{base}) { $dueno = 'el chat de la web (BASE.md)' }
             else { push @sin_dueno, $donde; next }
         }

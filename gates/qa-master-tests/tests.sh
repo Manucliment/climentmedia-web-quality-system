@@ -2465,6 +2465,12 @@ if mide_bloque "D-057 · d057.pl contra la produccion de mentira" http://d057.ex
   D57_ODD="$(QA_RECIBOS_DIR="$D57/recibos" perl ../d057.pl --repo "$D57/sin-fila" 2>&1 | grep -c 'Odd number')"
   if [ "$D57_ODD" = 0 ]; then printf '  OK    %-46s %s\n' "D-057 · una fila fuera de BASE.md, sin avisos de Perl" "0 avisos"; ok=$((ok+1))
   else printf '  MAL   %-46s %s aviso(s) «Odd number»\n' "D-057 · una fila fuera de BASE.md, sin avisos de Perl" "$D57_ODD"; ko=$((ko+1)); fi
+  # 🔴 6-nov · «espera X» da dueño solo al principio del Estado: en mitad («la portada espera la
+  #    lectura…») daba «dueno: espera la». El primero, visto en ROJO contra la regla de antes (PASA).
+  d57_fila sin-fila plan-ciclo-2099.md "$P57" "| 31-dic-2099 | todas | las descriptions | SEO-02b | D-011 | qa-master | | no | pendiente: la portada espera la lectura de ANUNCIOS |"
+  d57 "D-057 · «espera» en mitad del Estado no es dueño" 1 "su fila no tiene dueno"    sin-fila
+  d57_fila sin-fila plan-ciclo-2099.md "$P57" "| 31-dic-2099 | todas | las descriptions | SEO-02b | D-011 | qa-master | | no | **espera a ANUNCIOS** (su plan) |"
+  d57 "D-057 · «espera a X» al principio: su dueño"    0 "dueno: espera ANUNCIOS"    sin-fila
   # 🔴 un sin mirar viejo con fila tambien pasa (Manuel: «lo viejo sin mirar va igual
   #    que lo viejo en rojo»); sin fila, sigue su camino de siempre en la puerta
   d57 "D-057 · sin mirar sin fila: SIGUE, no para"     0 "D057-SIGUE: SEO-17"        igual
