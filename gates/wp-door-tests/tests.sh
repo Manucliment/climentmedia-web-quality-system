@@ -57,7 +57,8 @@ case "${1:-aplicar}" in
     cp "$HOME/backups/estado" "$S/estado" ;;
   *)
     cp "$S/estado" "$HOME/backups/estado"; echo nuevo > "$S/estado"
-    [ -f "$D/aplicar-falla" ] && exit 3
+    # solo el PRIMER aplicar: así el segundo no tapa a la puerta que no mire el primero
+    if [ -f "$D/aplicar-falla" ] && [ ! -f "$HOME/ya-fallo" ]; then touch "$HOME/ya-fallo"; exit 3; fi
     exit 0 ;;
 esac
 EOF
@@ -139,7 +140,7 @@ nuevo admite-1-nuevo 1 rojo-nuevo no-arregla; puerta --escribir
 caso "ROJOS_DESPUES=1 no deja pasar un rojo NUEVO" "$( [ $EX = 1 ] && dice 'rojo nuevo' && echo 1 || echo 0)" "exit $EX · $(tail -1 <<<"$SAL")"
 
 nuevo aplicar-falla 0 aplicar-falla; puerta --escribir
-caso "aplicar sale con error: deshace y lo mide" "$( [ $EX = 1 ] && dice 'aplicar salió con 3' && dice 'VUELTO' && [ "$(estado)" = viejo ] && echo 1 || echo 0)" "exit $EX · $(tail -1 <<<"$SAL")"
+caso "aplicar sale con error: deshace y lo mide, sin seguir" "$( [ $EX = 1 ] && dice 'CIERRE: FALLA - aplicar salió con 3' && dice 'VUELTO' && [ "$(estado)" = viejo ] && [ "$(llamadas)" = '--medir aplicar --volver --medir' ] && echo 1 || echo 0)" "exit $EX · $(llamadas) · $(tail -1 <<<"$SAL")"
 
 nuevo hora 0 hora; puerta --escribir
 caso "la hora en una línea de --medir no hace distinta la vuelta" "$( [ $EX = 0 ] && dice 'CIERRE: PASA' && echo 1 || echo 0)" "exit $EX · $(tail -1 <<<"$SAL")"
