@@ -32,7 +32,7 @@ install the fast run is **1077 cases green, 0 red**, with the deploy-history ban
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1849 cases green, 0 red**, with **nine** banks reported as
+a clean install it reads **1861 cases green, 0 red**, with **nine** banks reported as
 `NOT MEASURED`: the seven that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -43,7 +43,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **2025**: 1849 plus 174 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **2041**: 1861 plus 178 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -101,7 +101,7 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  1849 casos en verde · 0 en rojo
+  1861 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
@@ -464,7 +464,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Eleven more since 2026-11-05**, all from one week of real deploys:
+**Fourteen more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -557,6 +557,31 @@ without blocking. Why the order changed is trap §89.
   declares `data-tipo="nosotros"` or `"hub"` was asked for a `BreadcrumbList` it cannot
   have, since nothing sits above it. The exemption goes by the path; the same page at
   `/sobre/` still warns.
+- **The consent counter keeps one row per day, with three totals (`consent-count.php`).**
+  It wrote one line per choice, in arrival order. The host's access log keeps the IP and
+  the time of every POST to the counter, in the same order, so line N was request N: the
+  two files together said which IP chose what, though the counter stored no time. Now it
+  keeps «date · accept · reject · partial», one row per day, rewritten under a lock; a file
+  in the old format is folded into totals on the next choice. The bench sends twenty
+  choices at once and loses none; against the old counter, eight of its cases go red.
+  Each site copies the new `consent-count.php` to its `_deploy/` again.
+- **MED-03 reads the triggers GTM reads.** A custom-event trigger set to "use regex
+  matching" does not write the event name between quotes: it writes a pattern in a
+  predicate on `{{Event}}`. A site whose container listened to its quote event through
+  such a pattern was a FAIL. MED-03 now reads the predicates on the Event macro and
+  applies each as GTM does (`_eq`, `_re`, `_cn`, `_sw`, `_ew`; a negated one does not
+  count). A quoted mention elsewhere (a tag's settings, a URL predicate) no longer
+  passes. If the patterns cannot be read, a name not written in the container is NOT
+  VERIFIED, not "not listened". A name the container sends itself from another trigger
+  (a GA4 tag with that `vtp_eventName`) is a WARN: it reaches GA4, and what the page
+  pushes under that name nobody hears.
+- **MED-03 reads `event:` without quotes, and names what it cannot read.**
+  `dataLayer.push({ event: "x" })` was not read, so sites pushing three named events
+  "emitted no named event" and were never crossed with their container. It is read now,
+  only inside a `.push({ ... })`: a library's `{ event: ... }` is not a dataLayer event. A
+  name the JS builds (`"cm_" + name`) is counted and named in the verdict, never crossed
+  as its quoted fragment; when that is all a site emits, the WARN says so instead of "no
+  named event".
 
 ---
 
@@ -607,7 +632,7 @@ without blocking. Why the order changed is trap §89.
 | `forms-gate.js` | The form in the DOM: labels, consent, a real submit button, a visible honeypot. |
 | `form-handler.php` | The reference handler the gate is written against. |
 | `banner-probe.js` | The cookie banner as a first-time visitor meets it, on the measurement host: nothing tracks before the choice, Accept and Reject in the first layer with the same weight, no wall, the page's language, Reject really rejects and is remembered, and a way to reopen it outside the banner. It never clicks Accept. Bench: `banner-probe-tests/`. |
-| `consent-count.php` | The anonymous accept/reject counter the banner calls with `sendBeacon`: one line per choice, «date TAB choice», no cookie, no IP, no time of day, outside the docroot. Copied to `_deploy/` of each site. Bench: `consent-count-tests/` (on the measurement host). |
+| `consent-count.php` | The anonymous accept/reject counter the banner calls with `sendBeacon`: one row per day with three totals, «date TAB accept TAB reject TAB partial», rewritten under a lock (one line per choice could be matched to the access log by its order), no cookie, no IP, no time of day, outside the docroot. Copied to `_deploy/` of each site. Bench: `consent-count-tests/` (on the measurement host). |
 
 ### Migration
 
@@ -788,7 +813,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **541 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **553 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until
