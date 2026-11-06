@@ -587,6 +587,9 @@ sub add {
         # Motivo por el que la evidencia NO puede ser completa (muestra, red
         # caida...). Vacio = el conjunto de `ev` es todo lo que hay.
         ev_parcial => ($f{ev_parcial} // ''),
+        # QUE es el hallazgo, sin lo que se mueve al medir (6-nov-2026): si viene, es la
+        # huella. Ver `huella_hallazgo`.
+        clave  => ($f{clave} // ''),
     };
 }
 sub fallo { add(estado=>'FALLO', @_) }
@@ -2857,7 +2860,32 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
                   scalar(@muestra), (@muestra == 1 ? '' : 's'))
         : ' · sin pagina medible';
     if ($terceros > 300*1024 || ($peor_pct > 50 && $peor_ter > 100*1024)) {
+        # 🔴 6-nov-2026 · LA CLAVE (ver `huella_hallazgo`): la decision que se acepta es «estos
+        #    terceros se quedan», y eso es la lista de hosts, la rama del umbral que salta y el
+        #    peso en tramos de 100 KB. Ni la peor pagina, ni cuantas se midieron, ni los KB
+        #    exactos, que se mueven de una corrida a otra sin que cambie la web. Un host mas, o
+        #    pasar de tramo, es otra decision y vuelve a preguntar. Controles en el banco:
+        #    site-d con 1, 3 y 40 paginas (la misma huella), terceros-otro (un host mas en el
+        #    mismo tramo: otra) y terceros-crece (los mismos hosts y 100 KB mas: otra).
+        #    ⚠️ Los hosts de la clave son los de los RECURSOS de terceros que pesan, no
+        #    @third_hosts: esa lista coge cualquier URL entre comillas del HTML, enlaces
+        #    incluidos (wa.me, una red social del pie), y cambia con las paginas de la
+        #    muestra. Medido el 6-nov en una web nuestra: el aceptado del 5-nov llevaba wa.me
+        #    y la corrida del 6, con otras tres paginas, no. Un enlace no pesa nada.
+        my %hosts_peso;
+        for my $ru (keys %res) {
+            next unless $res{$ru}{ter} && !$res{$ru}{roto} && ($res{$ru}{wire} // 0) > 0;
+            my ($hh) = $ru =~ m{^https?://([^/:?#]+)}i;
+            $hosts_peso{lc $hh}++ if defined $hh;
+        }
+        my @hosts_peso = sort keys %hosts_peso;
+        my $tramo = 100 * (int(($terceros / 1024 - 1e-9) / 100) + 1);
+        my $clave_ren05 = sprintf('terceros %s · %s · hasta %d KB',
+                                  (@hosts_peso ? join(' ', @hosts_peso) : '(sin host)'),
+                                  ($terceros > 300*1024 ? 'mas de 300 KB en total' : 'mas del 50% de una pagina'),
+                                  $tramo);
         fallo(lente=>'RENDIMIENTO', id=>'REN-05', titulo=>'presupuesto de terceros excedido',
+              clave=>$clave_ren05,
               donde=>$peor_pag,
               dato=>sprintf('%s de terceros en total%s · %s', kb($terceros), $peor_dice, join(' ', @third_hosts)),
               umbral=>'FALLO >300 KB en total, o >50% del peso DE UNA PAGINA con >100 KB · ⚠️ el % es POR PAGINA desde el 11-ago-2026: sobre la union dependia de cuantas midieras · ⚠️ medido sobre el PRIMER render: lo que un tercero carga A SU VEZ no se ve sin el panel de red (bloque B), asi que este numero es un SUELO',
@@ -6206,7 +6234,34 @@ sub ev_hash {
     return substr(md5_hex($txt), 0, EV_HASH_LEN);
 }
 
+# ── 🔴 6-nov-2026 · LA CLAVE: QUE ES EL HALLAZGO, SIN LO QUE SE MUEVE AL MEDIR ──
+#  La huella sale del DATO, y el DATO de algun check lleva numeros que cambian sin que
+#  cambie nada de la web. REN-05 es el caso: el mismo sitio, con la misma decision
+#  («estos terceros se quedan»), daba tres huellas segun cuantas paginas se midieran
+#  («peor de 1 medida» / «peor de 3» / «peor de 40»), cual salia la peor y los KB de un
+#  contenedor que varia dos de una corrida a otra. Medido en una web nuestra el 5-nov:
+#  231 y 233 KB, y la peor pagina saltando entre dos, con DOS bloques aceptados
+#  iguales para tapar una sola decision. Y D-057 compara INSTANCIAS, que sin `ev` son
+#  la huella entera: el candidato nunca pesa igual que produccion, asi que un REN-05
+#  viejo no contaba nunca como viejo y paraba la puerta.
+#  Un check que declara `clave` dice QUE es el hallazgo con lo que no se mueve al
+#  medir, y esa es su huella. El DATO se sigue imprimiendo entero; solo deja de ser la
+#  identidad. La clave tiene que cambiar cuando cambia la decision: en REN-05 lleva los
+#  hosts, la rama del umbral y el peso en tramos de 100 KB (un tercero mas, o crecer de
+#  tramo, vuelve a preguntar).
+#  ⚠️ Lo firmado antes de esto sigue valiendo: `huella_vieja` es la de siempre, y una
+#     aceptacion casa con cualquiera de las dos (ver el bucle de aceptados).
 sub huella_hallazgo {
+    my ($c) = @_;
+    if (defined $c->{clave} && $c->{clave} ne '') {
+        # PARCIAL tambien aqui (la regla del 11-ago, abajo): lo que ata es el HECHO de ser
+        # parcial, y eso no lo quita una clave.
+        return 'CLAVE=' . _norm_ev($c->{clave})
+             . ((defined $c->{ev_parcial} && $c->{ev_parcial} ne '') ? ' PARCIAL' : '');
+    }
+    return huella_vieja($c);
+}
+sub huella_vieja {
     my ($c) = @_;
     my $d = _norm_ev($c->{dato});
     my $w = _norm_ev($c->{donde});
@@ -6596,9 +6651,14 @@ if ($opt{repo} ne '' && -d $opt{repo}) {
     for my $c (@R) {
         next unless $c->{estado} eq 'FALLO';
         my $h = huella_hallazgo($c);
+        # Una aceptacion firmada antes de que el check declarara su `clave` lleva la huella
+        # vieja (DATO y DONDE): sigue casando con ella, exacta como siempre. Al renovarla se
+        # copia la de hoy, que es la que se imprime.
+        my $hv = (defined $c->{clave} && $c->{clave} ne '') ? huella_vieja($c) : $h;
         for my $e (@$buenas) {
             next unless ($e->{CHECK} // '') eq $c->{id};
-            next unless _norm_ev($e->{HALLAZGO}) eq $h;
+            my $he = _norm_ev($e->{HALLAZGO});
+            next unless $he eq $h || $he eq $hv;
             # 1 · lo que no se puede aceptar nunca
             if (my $por = prohibido($c)) {
                 push @ACEPT_RECHAZADAS, { %$e, _por => "NO ES ACEPTABLE: $por" };

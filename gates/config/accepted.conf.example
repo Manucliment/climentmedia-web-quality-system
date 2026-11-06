@@ -33,8 +33,8 @@
 #      and pasted without thinking; a file gets reviewed in a diff.
 #  2 · FIVE MANDATORY FIELDS. If one is missing the entry is void, it is said
 #      out loud, and the failure keeps counting.
-#  3 · You accept a FINDING, not a CHECK. It matches against the `FINGERPRINT`
-#      line the report prints under each FAIL. If the finding changes, IT COUNTS
+#  3 · You accept a FINDING, not a CHECK. It matches against the fingerprint
+#      line the report prints under each FAIL (labelled `HUELLA`). If the finding changes, IT COUNTS
 #      AGAIN.
 #  4 · IT EXPIRES: 90 days by default, hard ceiling 180 (an `UNTIL` beyond the
 #      ceiling is rejected outright, not trimmed), warning at 14 days out.
@@ -46,26 +46,36 @@
 #  HOW TO FILL IT IN
 #  -----------------
 #    perl gates/qa-master.pl <URL> --repo DIR --candidate
-#  and copy, VERBATIM, the `FINGERPRINT` line printed under the FAIL.
+#  and copy, VERBATIM, what follows `HUELLA` on the line printed under the FAIL.
+#  The labels inside it are printed in Spanish, and they match only as printed:
+#  DATO= (data), DONDE= (where), EV= / EVP= (evidence), CLAVE= (key) and
+#  TODO-EL-CHECK (whole check).
 #  When a check emits no evidence (it is binary and site-wide) the fingerprint
-#  it prints is `WHOLE-CHECK`, and that is what goes here. It is not a wildcard:
-#  if the finding DOES carry evidence, `WHOLE-CHECK` matches nothing.
+#  it prints is `TODO-EL-CHECK`, and that is what goes here. It is not a wildcard:
+#  if the finding DOES carry evidence, `TODO-EL-CHECK` matches nothing.
 #
-#  THE THREE FINGERPRINT SHAPES, AND WHAT EACH MEANS
-#  -------------------------------------------------
-#    DATA=... WHERE=...      the WHERE is the ENTIRE evidence for the finding.
-#    DATA=... EV=<8 hex>     the finding has MORE evidence than fits on screen
+#  THE FOUR FINGERPRINT SHAPES, AND WHAT EACH MEANS
+#  ------------------------------------------------
+#    DATO=... DONDE=...      the DONDE (where) is the ENTIRE evidence for the finding.
+#    DATO=... EV=<8 hex>     the finding has MORE evidence than fits on screen
 #                            (25 pages, 40 resources...). The report prints three
 #                            or four; the EV summarises the WHOLE SET. If a
 #                            single one enters or leaves, the EV changes and the
 #                            acceptance stops matching. To read the full list
 #                            BEFORE signing:  --evidence
-#    DATA=... EVS=<8 hex>    the same, but the check measured a SAMPLE, not the
+#    DATO=... EVP=<8 hex>    the same, but the check measured a SAMPLE, not the
 #                            whole site (performance looks at 3 pages of 25).
 #                            Accepting this is NOT accepting that the rest is
 #                            clean: it is accepting what was looked at. The
 #                            receipt says so in those words, and whoever
 #                            deploys sees it.
+#    CLAVE=...               the check names WHAT the finding is, without the
+#                            numbers that move from one run to the next (since
+#                            2026-11-06, the third-party budget REN-05: the hosts
+#                            that weigh, the threshold it crosses and the weight
+#                            in 100 KB tiers). One more host, or the next tier, is
+#                            a different finding. An entry signed earlier with
+#                            DATO= and DONDE= keeps matching while those hold.
 #
 #  WHY A HASH AND NOT THE LIST. Because this line gets read in a diff: with 25
 #  paths inside it would be 3 KB and the file would stop being reviewable, which
@@ -83,7 +93,7 @@
 # The check id, exactly as the report prints it.
 CHECK:     MED-09
 # The exact FINGERPRINT. Copied from the report, never written from memory.
-FINDING:   WHOLE-CHECK
+FINDING:   TODO-EL-CHECK
 # Why this is not a defect of ours. If nobody knows why it is pending, write
 # that it is pending AND WHO DECIDES. An invented reason is worse than none: it
 # looks like a decision and it is not.

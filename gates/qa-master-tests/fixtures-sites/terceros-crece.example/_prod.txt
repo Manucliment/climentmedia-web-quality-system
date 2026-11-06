@@ -1,0 +1,7 @@
+# terceros-crece.example · produccion de mentira (fake-production.pl)
+# 6-nov-2026 · REN-05, el control de la CLAVE: el mismo host de terceros que
+# empate.example (terceros.example) y unos 100 KB mas, porque la pagina pide el
+# contenedor dos veces con otra query (el servidor de mentira sirve el mismo
+# fichero; el gate cuenta dos recursos). Los mismos hosts y otro tramo de peso
+# tienen que dar OTRA huella: una aceptacion de empate no cubre esto.
+gzip off

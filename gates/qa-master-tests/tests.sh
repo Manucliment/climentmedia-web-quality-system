@@ -1622,7 +1622,12 @@ if mide_bloque "ACEPTADO: el silenciador y sus cerraduras" http://site-d.example
       echo "HALLAZGO: $1"
       [ "${4:-}" = "sin-motivo" ] || echo "MOTIVO:   Texto legal del cliente: se propone, no se inventa."
       echo "ACEPTA:   Manuel Climent"
-      echo "FECHA:    ${2:-2026-08-11}"
+      # 🔴 6-nov-2026 · LA FECHA POR DEFECTO ES HOY. Era 2026-08-11 escrita a mano, y sin
+      #    HASTA una aceptacion vale 90 dias: el 10-nov los casos 1, 7, 7-bis y 8 de este
+      #    bloque habrian salido MAL a la vez, sin que cambiara nada del gate (una fecha
+      #    escrita en un test es una mecha). Los casos que necesitan una fecha concreta
+      #    (la caducada, el tope) la siguen pasando.
+      echo "FECHA:    ${2:-$(date +%Y-%m-%d)}"
       [ -z "${3:-}" ] || echo "HASTA:    $3"
     } > "$RA/_deploy/aceptado.conf"
   }
@@ -2223,6 +2228,62 @@ texto  "REN-05 · empate: nombra la menor (alfa)"         SI "peor pagina http:/
        perl $QA http://empate.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
 texto  "REN-05 · empate: no la que llega antes (zeta)"   NO "peor pagina http://empate.example/zeta.html" \
        perl $QA http://empate.example/ --solo rendimiento --cache "$CACHE" --max-urls 40
+# 🔴 6-nov-2026 · LA HUELLA DE REN-05 ES SU CLAVE, no su DATO. El DATO lleva cuantas
+#    paginas se midieron, cual salio la peor y los KB exactos: el mismo site-d daba TRES
+#    huellas con 1, 3 y 40 paginas (visto en ROJO contra el gate anterior: el primer caso
+#    de abajo sale MAL), y una web nuestra necesitaba dos aceptados para una decision.
+#    La clave lleva los hosts de los RECURSOS que pesan, la rama del umbral y el tramo de
+#    100 KB. Los dos controles que TIENEN que separar: un host mas que pesa, al mismo
+#    tramo (terceros-otro: una imagen de site-b) y los mismos hosts con 100 KB mas
+#    (terceros-crece); vistos en ROJO con un mutante sin los hosts y otro sin el tramo.
+#    Y el que NO tiene que separar: dos ENLACES a otros hosts (terceros-enlace) dan la
+#    huella de empate; visto en ROJO con los hosts de @third_hosts, que coge toda URL
+#    entre comillas del HTML (en una web nuestra, el host de un chat entraba o no segun
+#    las paginas de la muestra).
+#    Y lo firmado antes sigue casando: un aceptado con la huella vieja (DATO y DONDE).
+if mide_bloque "REN-05: la huella es la clave" http://site-d.example/ http://empate.example/ http://terceros-crece.example/ http://terceros-otro.example/ http://terceros-enlace.example/ --cache "$CACHE"; then
+  huella_ren05() { "$@" 2>&1 | grep -A8 -E '^\s+\[[A-Z ]+\] +REN-05 ' | grep -m1 'HUELLA ' | sed -E 's/^[[:space:]]*HUELLA //'; }
+  linea_ren05()  { local k="$1"; shift; "$@" 2>&1 | grep -A8 -E '^\s+\[[A-Z ]+\] +REN-05 ' | grep -m1 -E "^\s+$k " | sed -E "s/^[[:space:]]*$k +//"; }
+  igual() { # igual <etiqueta> SI|NO <a> <b>
+    local r=NO; [ -n "$3" ] && [ -n "$4" ] && [ "$3" = "$4" ] && r=SI
+    if [ -z "$3" ] || [ -z "$4" ]; then
+      printf '  MAL   %-46s falta una HUELLA de REN-05\n' "$1"; ko=$((ko+1))
+    elif [ "$r" = "$2" ]; then
+      printf '  OK    %-46s %s\n' "$1" "$(printf '%.40s' "$3")"; ok=$((ok+1))
+    else
+      printf '  MAL   %-46s %s | %s\n' "$1" "$3" "$4"; ko=$((ko+1))
+    fi
+  }
+  _R5="--solo rendimiento --cache $CACHE"
+  R5_1="$(huella_ren05 perl $QA http://site-d.example/ $_R5 --una-sola)"
+  R5_3="$(huella_ren05 perl $QA http://site-d.example/ $_R5 --max-urls 40)"
+  R5_40="$(huella_ren05 perl $QA http://site-d.example/ $_R5 --max-urls 40 --muestra 40)"
+  R5_E="$(huella_ren05 perl $QA http://empate.example/ $_R5 --max-urls 40)"
+  R5_C="$(huella_ren05 perl $QA http://terceros-crece.example/ $_R5 --max-urls 40)"
+  R5_O="$(huella_ren05 perl $QA http://terceros-otro.example/ $_R5 --max-urls 40)"
+  R5_L="$(huella_ren05 perl $QA http://terceros-enlace.example/ $_R5 --max-urls 40)"
+  igual "REN-05 · huella igual con 1 y con 40 paginas"     SI "$R5_1" "$R5_40"
+  igual "REN-05 · huella igual con 3 y con 40 paginas"     SI "$R5_3" "$R5_40"
+  igual "REN-05 · un host mas que pesa: otra huella"       NO "$R5_O" "$R5_E"
+  igual "REN-05 · mismos hosts, 100 KB mas: otra huella"   NO "$R5_C" "$R5_E"
+  igual "REN-05 · un enlace no mueve la huella"            SI "$R5_L" "$R5_E"
+  # Los aceptados: el de antes (DATO y DONDE de la corrida de 1 pagina) y el de la clave.
+  R5A="$CACHE/repo-ren05"; rm -rf "$R5A"; mkdir -p "$R5A/_deploy"
+  printf '<!doctype html><html lang="es"><head><title>x</title></head><body><main><h1>x</h1></main></body></html>\n' > "$R5A/index.html"
+  acepta_ren05() {
+    { echo "[ACEPTADO]"; echo "CHECK:    REN-05"; echo "HALLAZGO: $1"
+      echo "MOTIVO:   Los terceros son la medicion del cliente: se quedan hasta su plan."
+      echo "ACEPTA:   Cliente de prueba"; echo "FECHA:    $(date +%Y-%m-%d)"; } > "$R5A/_deploy/aceptado.conf"
+  }
+  R5_D="$(linea_ren05 DATO perl $QA http://site-d.example/ $_R5 --una-sola)"
+  R5_W="$(linea_ren05 DONDE perl $QA http://site-d.example/ $_R5 --una-sola)"
+  acepta_ren05 "DATO=$R5_D DONDE=$R5_W"
+  espera "REN-05 · el aceptado de antes sigue casando"     ACEPTADO REN-05 perl $QA http://site-d.example/ $_R5 --una-sola --repo "$R5A" --sin-recibo
+  acepta_ren05 "$R5_1"
+  espera "REN-05 · el de la clave casa con 40 paginas"     ACEPTADO REN-05 perl $QA http://site-d.example/ $_R5 --max-urls 40 --muestra 40 --repo "$R5A" --sin-recibo
+  acepta_ren05 "$R5_E"
+  espera "REN-05 · la clave de empate NO tapa el doble"    FALLO    REN-05 perl $QA http://terceros-crece.example/ $_R5 --max-urls 40 --repo "$R5A" --sin-recibo
+fi
 
 echo
 echo "== D-057 · LO VIEJO IGUAL EN PRODUCCION NO PARA UNA SUBIDA (gates/d057.pl) · 5-nov-2026"

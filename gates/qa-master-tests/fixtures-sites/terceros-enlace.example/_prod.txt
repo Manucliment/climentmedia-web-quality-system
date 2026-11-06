@@ -1,0 +1,7 @@
+# terceros-enlace.example · produccion de mentira (fake-production.pl)
+# 6-nov-2026 · REN-05, la clave no la mueve un ENLACE: el mismo contenedor que
+# empate.example (terceros.example) y dos enlaces a otros hosts (un chat y una
+# red social), que no cargan nada ni pesan. Tiene que dar la MISMA huella que
+# empate: en una web nuestra, el aceptado del 5-nov llevaba el host del chat y la
+# corrida del 6, con otras paginas en la muestra, no.
+gzip off

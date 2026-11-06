@@ -1,0 +1,6 @@
+# terceros-otro.example · produccion de mentira (fake-production.pl)
+# 6-nov-2026 · REN-05, el otro control de la CLAVE: el mismo contenedor que
+# empate.example (terceros.example) y UN HOST MAS que pesa (una imagen de
+# site-b.example, ~37 KB), en el mismo tramo de 100 KB. Un tercero nuevo es otra
+# decision: tiene que dar OTRA huella aunque el peso no cambie de tramo.
+gzip off
