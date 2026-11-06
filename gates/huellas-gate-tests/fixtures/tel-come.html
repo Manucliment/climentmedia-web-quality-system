@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Telefono que se come cifras</title><link rel="stylesheet" href="base.css"><style></style></head>
+<body><main>
+<h1>Telefono que se come cifras</h1>
+<form action="#" onsubmit="return false"><label for="t">Telefono</label> <input id="t" name="phone" type="text"> <button class="btn">Enviar</button></form>
+</main><script>document.getElementById('t').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,9)})</script></body></html>
