@@ -78,7 +78,12 @@ if (@shells) {
   }
   elsif (@unreach) { bad('R2 sitemap alcanzable navegando', scalar(@unreach)." URL(s) solo llegan por sitemap:");
                   print "         - $_\n" for @unreach; }
-  else { ok('R2 sitemap alcanzable navegando', scalar(keys %sm)." URLs, todas alcanzables"); }
+  # 6-nov-2026 · /sitemap.xml era un indice y algun hijo no se pudo leer: sus paginas no estan en la lista.
+  elsif ($j->{sitemap_hijos_sin_leer}) {
+    nv('R2 sitemap alcanzable navegando', scalar(keys %sm)." URLs leidas, todas alcanzables, pero $j->{sitemap_hijos_sin_leer} de los "
+       . ($j->{sitemap_hijos} // '?')." sitemaps del indice no se han podido leer: lo que traen no se ha mirado"); }
+  else { ok('R2 sitemap alcanzable navegando', scalar(keys %sm)." URLs, todas alcanzables"
+            . ($j->{sitemap_hijos} ? " (de un indice de $j->{sitemap_hijos} sitemaps)" : '')); }
 }
 
 # --- R3: cada pagina indexable recibe >=1 enlace DE CONTENIDO (fuera de nav/footer)
@@ -181,10 +186,19 @@ if (@shells) {
 }
 
 # --- R7: los enlaces internos apuntan a la URL canonica
+#     6-nov-2026 · UN ENLACE QUE REDIRIGE FUERA DEL SITIO NO TIENE CANONICA NUESTRA. En una tienda Shopify
+#     el icono de la cuenta va a /account, que manda a shopify.com/authentication: R7 lo daba por
+#     «enlace a URL que redirige» en cada pagina, y no hay otra URL a la que enlazar (la de la plataforma
+#     lleva la sesion). Va aparte, en AVISO y con su nombre: puede ser la plataforma o un enlace a otra web
+#     disfrazado de URL propia, y eso lo decide quien lo lee. Un 301 dentro del sitio sigue en FALLA.
 {
-  my (@dup, @redir);
+  my (@dup, @redir, @fuera);
+  (my $sitio = lc($host // '')) =~ s/^www\.//;
   for my $u (@ok200) {
-    push @redir, $u if ($p->{$u}{redirects}//0) > 0 && ($p->{$u}{in_unique}//0) > 0;
+    if (($p->{$u}{redirects}//0) > 0 && ($p->{$u}{in_unique}//0) > 0) {
+      my ($h) = $u =~ m{^https?://([^/:?#]+)}; $h = lc($h // ''); $h =~ s/^www\.//;
+      if ($sitio ne '' && $h ne '' && $h ne $sitio) { push @fuera, $u } else { push @redir, $u }
+    }
     if ($u =~ m{/index\.html$} && ($p->{$u}{in_unique}//0) > 0) {
       # misma convencion de clave que el rastreador: sin barra final salvo la raiz
       (my $clean = $u) =~ s{index\.html$}{};
@@ -195,7 +209,10 @@ if (@shells) {
   }
   if (@dup || @redir) { bad('R7 enlazar a la URL canonica');
       print "         - $_\n" for @dup;
-      print "         - enlace a URL que redirige: $_\n" for @redir; }
+      print "         - enlace a URL que redirige: $_\n" for @redir;
+      print "         - (aparte, sale del sitio al redirigir: $_)\n" for @fuera; }
+  elsif (@fuera) { avis('R7 enlazar a la URL canonica', scalar(@fuera)." enlace(s) a una URL del sitio que redirige FUERA de el (la cuenta o el pago de la plataforma, o otra web): no hay canonica nuestra");
+      print "         - $_\n" for @fuera; }
   else { ok('R7 enlazar a la URL canonica'); }
 }
 

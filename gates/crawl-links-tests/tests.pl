@@ -551,6 +551,27 @@ caso_regla('R7 · solo la canonica, pasa', 'R7', 'PASA', {
     "https://$HOST/"      => { in_unique => 9, in_body => 9 },
     "https://$HOST/blog/" => { in_unique => 2, in_body => 2 },
 });
+# 🔴 6-nov-2026 · UNA TIENDA SHOPIFY: el icono de la cuenta va a /account, que redirige a la
+#    autenticacion de la plataforma, en otro host. El rastreo la guarda por su URL final. Con el gate
+#    de antes, FALLA en cada pagina. Sus espejos: un 301 dentro del sitio sigue en FALLA (tambien con
+#    www. delante), y con los dos a la vez manda el de dentro.
+caso_regla('R7 · la cuenta sale a la plataforma: AVISO', 'R7', 'AVISO', {
+    "https://$HOST/"                           => { in_unique => 9, in_body => 9 },
+    "https://plataforma.test/authentication/x" => { redirects => 1, in_unique => 9, in_body => 0 },
+});
+caso_regla('R7 · un 301 dentro del sitio sigue en FALLA', 'R7', 'FALLA', {
+    "https://$HOST/"       => { in_unique => 9, in_body => 9 },
+    "https://$HOST/nuevo/" => { redirects => 1, in_unique => 3, in_body => 3 },
+});
+caso_regla('R7 · con www. delante es el mismo sitio: FALLA', 'R7', 'FALLA', {
+    "https://$HOST/"           => { in_unique => 9, in_body => 9 },
+    "https://www.$HOST/nuevo/" => { redirects => 1, in_unique => 3, in_body => 3 },
+});
+caso_regla('R7 · los dos a la vez: manda el de dentro', 'R7', 'FALLA', {
+    "https://$HOST/"                           => { in_unique => 9, in_body => 9 },
+    "https://$HOST/nuevo/"                     => { redirects => 1, in_unique => 3, in_body => 3 },
+    "https://plataforma.test/authentication/x" => { redirects => 1, in_unique => 9, in_body => 0 },
+});
 
 print "\n== R8 · ANCLAS DESCRIPTIVAS\n";
 # «leer mas» es el mismo texto para 40 destinos distintos: no le dice nada ni al
@@ -611,6 +632,61 @@ caso_regla('R11b · mayusculas solo en la consulta, pasa', 'R11b', 'PASA', {
     "https://$HOST/"          => { out_targets => [ "https://$HOST/buscar?q=Madrid" ] },
     "https://$HOST/buscar"    => {},
 });
+
+# =============================================================================
+#  6-nov-2026 · EL SITEMAP QUE ES UN INDICE
+# =============================================================================
+#  🔴 Una tienda Shopify sirve en /sitemap.xml un <sitemapindex>: sus <loc> son OTROS
+#     sitemaps (sitemap_products_1.xml?from=…). El rastreador los leia como paginas, y R2 las
+#     daba por inalcanzables y R4 por huerfanas. Con el de antes, el primer caso lleva los
+#     .xml en la lista. Sin red: se siembra la cache con el indice y sus hijos.
+print "\n== EL SITEMAP QUE ES UN INDICE · 6-nov-2026\n";
+sub caso_indice {
+    my ($eti, $sitemap, $hijos, $espera_lista, $espera_sin_leer) = @_;
+    my $tmp = tempdir(CLEANUP => 1); my $cache = "$tmp/c"; make_path($cache); my $out = "$tmp/g.json";
+    seed($cache, "https://$HOST/sitemap.xml", 200, $sitemap, 'application/xml');
+    seed($cache, $_->[0], $_->[1], $_->[2], 'application/xml') for @$hijos;
+    seed($cache, $START, 200, '<!DOCTYPE html><html lang="es"><head><title>T</title></head><body><main><h1>x</h1></main></body></html>');
+    my $log = `perl "$CRAWL" "$START" "$cache" "$out" 1 2>&1`;
+    if (!-f $out) { printf "  MAL   %-52s sin salida: %s\n", $eti, ($log // ''); $ko++; return }
+    my $j = JSON::PP->new->decode(do { local $/; open my $h, '<', $out or die $!; <$h> });
+    my $lista = join(' ', map { s{^https://\Q$HOST\E}{}r } @{ $j->{sitemap} || [] });
+    my $sl = $j->{sitemap_hijos_sin_leer} // 'sin campo';
+    if ($lista eq $espera_lista && "$sl" eq "$espera_sin_leer") { printf "  OK    %-52s %s · sin leer %s\n", $eti, $lista, $sl; $ok++ }
+    else { printf "  MAL   %-52s salio «%s» · sin leer %s; esperaba «%s» · %s\n", $eti, $lista, $sl, $espera_lista, $espera_sin_leer; $ko++ }
+}
+my $indice = sub { '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                   . join('', map { "<sitemap><loc>$_</loc></sitemap>" } @_) . '</sitemapindex>' };
+my $lista_xml = sub { '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">'
+                   . join('', map { "<url><loc>$_</loc><image:image><image:loc>https://cdn.$HOST/a.jpg</image:loc></image:image></url>" } @_) . '</urlset>' };
+my $prod = "https://$HOST/sitemap_products_1.xml?from=1&to=9";
+(my $prod_xml = $prod) =~ s/&/&amp;/g;   # en el XML de verdad va escapado
+caso_indice('indice de dos: la lista son sus paginas, no los .xml', $indice->($prod_xml, "https://$HOST/sitemap_pages_1.xml"),
+    [ [ $prod, 200, $lista_xml->("https://$HOST/products/a", "https://$HOST/products/b") ],
+      [ "https://$HOST/sitemap_pages_1.xml", 200, $lista_xml->("https://$HOST/pages/contact") ] ],
+    '/pages/contact /products/a /products/b', 0);
+caso_indice('un hijo que no se lee: se cuenta', $indice->($prod_xml, "https://$HOST/sitemap_blogs_1.xml"),
+    [ [ $prod, 200, $lista_xml->("https://$HOST/products/a") ], [ "https://$HOST/sitemap_blogs_1.xml", 404, '' ] ],
+    '/products/a', 1);
+caso_indice('una lista normal, como siempre (y sin image:loc)', $lista_xml->("https://$HOST/a", "https://$HOST/b"), [], '/a /b', 0);
+# Y el gate lo dice: R2 no puede dar PASA sobre un indice con hijos sin leer.
+{
+    my $tmp = tempdir(CLEANUP => 1); my $f = "$tmp/g.json";
+    my %pages = ("https://$HOST/" => { status => 200, depth => 0, reached_by_crawl => JSON::PP::true, in_unique => 1,
+                 out_targets => ["https://$HOST/a"], out_internal_unique => 1, out_chrome => 2, in_body => 1 },
+                 "https://$HOST/a" => { status => 200, depth => 1, reached_by_crawl => JSON::PP::true, in_unique => 1,
+                 out_targets => ["https://$HOST/"], out_internal_unique => 1, out_chrome => 2, in_body => 1 });
+    for my $sl (0, 2) {
+        open my $h, '>', $f or die $!;
+        print $h JSON::PP->new->encode({ site => $HOST, start => "https://$HOST/", sitemap => [ sort keys %pages ],
+                                         sitemap_hijos => 3, sitemap_hijos_sin_leer => $sl, pages => \%pages });
+        close $h;
+        my ($r) = `perl "$GATE" "$f" 2>&1` =~ /^(PASA|FALLA|AVISO|NOVERIF)\s+R2\b/m;
+        my $espera = $sl ? 'NOVERIF' : 'PASA';
+        if (($r // '') eq $espera) { printf "  OK    %-52s R2=%s\n", "indice con $sl hijo(s) sin leer", $r; $ok++ }
+        else { printf "  MAL   %-52s esperaba R2=%s y salio %s\n", "indice con $sl hijo(s) sin leer", $espera, $r // 'SIN LINEA'; $ko++ }
+    }
+}
 
 printf "\n-----------------------------------------------------------------\n";
 printf "  OK %-3d  ·  MAL %d\n", $ok, $ko;

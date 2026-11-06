@@ -483,7 +483,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Nineteen more since 2026-11-05**, all from one week of real deploys:
+**Twenty-one more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -634,6 +634,14 @@ without blocking. Why the order changed is trap §89.
 - **The anatomy bench removes its whole temp root.** It removed only the copied gates and
   left its copy of `blueprint/09-page-types.md` behind, ignored by git, where a site
   generator reading this repository's disk published it as documentation.
+- **A sitemap index is not a list of pages (`crawl-links.pl`).** A hosted shop serves a
+  `<sitemapindex>` at `/sitemap.xml`, whose `<loc>` entries are other sitemaps. They were read
+  as pages, and R2 called them unreachable and R4 orphaned. Each child is read now (one level,
+  up to 50), and a child that cannot be read is counted: R2 is NOT VERIFIED until it is.
+- **A link that redirects out of the site has no canonical of ours (`linking-gate.pl`, R7).**
+  The shop's account icon goes to `/account`, which sends a visitor to the platform's sign-in on
+  another host: R7 failed on every page. It is a named WARNING now; a redirect inside the site,
+  `www.` or not, still FAILs, and wins when both are there.
 
 ---
 

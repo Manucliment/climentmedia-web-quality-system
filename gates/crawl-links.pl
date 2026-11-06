@@ -267,14 +267,34 @@ my %seed;
 $seed{canon($START)} = 1;
 my @sitemap_urls;
 my %sitemap_raw;   # clave canonica -> URL literal del sitemap
+# 6-nov-2026 · UN INDICE DE SITEMAPS NO ES UNA LISTA DE PAGINAS. Una tienda Shopify (y un WordPress
+#    con Yoast o Rank Math) sirve en /sitemap.xml un <sitemapindex> cuyos <loc> son OTROS sitemaps
+#    (sitemap_products_1.xml?from=…). Se leian como paginas, y R2 las daba por inalcanzables y R4 por
+#    huerfanas. Ahora se lee cada hijo (un nivel, hasta 50) y sus <loc> son las paginas. Un hijo que no
+#    se puede leer se cuenta en sitemap_hijos_sin_leer: lo que traia no lo ha visto nadie.
+my ($SITEMAP_HIJOS, $SITEMAP_SIN_LEER) = (0, 0);
 {
     my ($c, $e, $n, $ct, $sx) = fetch("https://$START_HOST/sitemap.xml");
     if ($c == 200) {
-        while ($sx =~ m{<loc>\s*([^<]+?)\s*</loc>}gi) {
-            my $u = $1; $u =~ s/&amp;/&/g;
-            my $k = canon($u);
-            push @sitemap_urls, $k;
-            $sitemap_raw{$k} //= $u;
+        my @xml = ($sx);
+        if ($sx =~ /<sitemapindex\b/i) {
+            @xml = ();
+            my @hijos;
+            while ($sx =~ m{<loc>\s*([^<]+?)\s*</loc>}gi) { (my $h = $1) =~ s/&amp;/&/g; push @hijos, $h; }
+            $SITEMAP_HIJOS = scalar @hijos;
+            for my $h (@hijos[0 .. ($#hijos < 49 ? $#hijos : 49)]) {
+                my ($hc, undef, undef, undef, $hx) = fetch($h);
+                if ($hc == 200 && ($hx // '') !~ /<sitemapindex\b/i) { push @xml, $hx } else { $SITEMAP_SIN_LEER++ }
+            }
+            $SITEMAP_SIN_LEER += @hijos - 50 if @hijos > 50;
+        }
+        for my $x (@xml) {
+            while ($x =~ m{<loc>\s*([^<]+?)\s*</loc>}gi) {
+                my $u = $1; $u =~ s/&amp;/&/g;
+                my $k = canon($u);
+                push @sitemap_urls, $k;
+                $sitemap_raw{$k} //= $u;
+            }
         }
     }
 }
@@ -527,9 +547,12 @@ my $out = {
     pages_fetched     => $fetched,
     sitemap_count     => scalar @sitemap_urls,
     sitemap           => [ sort @sitemap_urls ],
+    sitemap_hijos     => $SITEMAP_HIJOS,      # 0 = /sitemap.xml era la lista; N = era un indice de N sitemaps
+    sitemap_hijos_sin_leer => $SITEMAP_SIN_LEER,
     pages             => \%byfinal,
 };
 open my $o, '>', $OUT or die $!;
 print $o JSON::PP->new->pretty->canonical->encode($out);
 close $o;
-print "OK  $START_HOST  fetched=$fetched  pages=", scalar(keys %byfinal), "  sitemap=", scalar(@sitemap_urls), "\n";
+print "OK  $START_HOST  fetched=$fetched  pages=", scalar(keys %byfinal), "  sitemap=", scalar(@sitemap_urls),
+      ($SITEMAP_HIJOS ? "  (indice de $SITEMAP_HIJOS sitemaps" . ($SITEMAP_SIN_LEER ? ", $SITEMAP_SIN_LEER sin leer" : '') . ')' : ''), "\n";
