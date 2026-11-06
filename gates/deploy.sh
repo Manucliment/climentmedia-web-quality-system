@@ -559,6 +559,18 @@ BOTONES_GATE="${BOTONES_GATE:-avisa}"
 #    subida (el aviso es de todo el sitio). Como marca y botones, al principio SOLO AVISA, y su
 #    NO MEDIDO (una CMP en un iframe, por ejemplo) no es un hueco hasta BANNER_GATE=para.
 BANNER_GATE="${BANNER_GATE:-avisa}"
+# 6-nov-2026 · EL CONTRASTE DEL CROMO. structure-gate.js media el contraste de <main> y nada
+#    mas: una miga fuera de <main> estaba a 3,6:1 en cuatro paginas de una tienda y ningun
+#    gate lo veia. Ahora mide tambien la cabecera, la miga y el pie, y lo deja aparte, en
+#    avisosCromo (nav_lee lo ensena como «aviso:»). Como marca, botones y aviso de cookies,
+#    al principio SOLO AVISA: para la subida cuando la web pone CROMO_GATE=para, que llega
+#    al gate como "cromo":"para" dentro de NAV_CFG. Fecha para ponerlo en las webs: 20-nov.
+cromo_cfg() {    # NAV_CFG -> NAV_CFG con "cromo":"para" si CROMO_GATE=para
+  [ "${CROMO_GATE:-avisa}" = para ] || return 0
+  if [ -n "$NAV_CFG" ]; then NAV_CFG="${NAV_CFG%\}},\"cromo\":\"para\"}"; else NAV_CFG='{"cromo":"para"}'; fi
+}
+CROMO_GATE="${CROMO_GATE:-avisa}"
+cromo_cfg
 BOTONES_CFG="$(FAM="$(printf '%s' "${BOTONES_FAMILIAS:-}" | tr -cd 'A-Za-z0-9#._, =;-')" IGN="$MARCA_IGNORAR" perl -e '
   my @f = grep { length $_->[0] && length $_->[1] } map { my ($n, $s) = split /=/, $_, 2; [ ($n // "") =~ s/^\s+|\s+$//gr, ($s // "") =~ s/^\s+|\s+$//gr ] } split /;/, ($ENV{FAM} // "");
   my @ign = grep { length } map { s/^\s+|\s+$//gr } split /,/, ($ENV{IGN} // "");
@@ -735,6 +747,10 @@ nav_lee() {      # <fichero> <gate> <ruta> <ancho> -> imprime la linea; NAV_R = 
   printf '    %-22s %-26s %4spx  %s\n' "$2" "$3" "$4" "$ver"
   [ "$ver" = FALLA ] && printf '%s' "$out" | grep -A6 '"fallos"' | head -7 | sed 's/^/        /'
   printf '%s\n' "$out" | grep '^NAV-NOTA: ' | sed 's/^NAV-NOTA: /        nota: /'
+  # 6-nov-2026 · el contraste del cromo, mientras solo avisa (CROMO_GATE=avisa): structure-gate
+  #    lo deja en avisosCromo, que no cuenta para su veredicto. Sin esta linea no lo veia nadie.
+  [ "$2" = structure-gate.js ] && printf '%s' "$out" | perl -0ne '
+    if (/"avisosCromo":\s*\[\s*"((?:[^"\\]|\\.)*)"/) { (my $m = $1) =~ s/\\"/"/g; print "        aviso: $m\n" }'
   return 0
 }
 

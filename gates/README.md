@@ -438,7 +438,11 @@ there, and its candidate receipt was replaced by one the door would have accepte
 2026-11-01).** It copies the tree to the measuring host and runs the gates there, through
 `run-gate.js` in candidate mode:
 
-- `structure-gate.js` at 1298;
+- `structure-gate.js` at 1298. Since 2026-11-06 it also measures the contrast of the header,
+  the breadcrumb and the footer, which it used to leave out with everything outside `<main>`
+  (a breadcrumb at 3.6:1 on four pages of a shop, seen by nobody). That part **only warns**,
+  as an `aviso:` line under the gate's verdict, until `deploy.conf` says `CROMO_GATE=para`;
+  the door then passes `"cromo":"para"` to the gate and it is a failure like any other;
 - `measure-screens.js` at 1298 and 390;
 - `mobile-gate.js` at 360, 390, 1366 and 1440;
 - `mobile-menu-gate.js` at 390;

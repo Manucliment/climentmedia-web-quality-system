@@ -3962,9 +3962,12 @@ sub lente_a11y {
        proc=>'PC8 · el foco se midio con .focus() programatico, que NO es tabular; 1.094 elementos quedaron fuera por invisibles',
        hacer=>'10 minutos con Tab y 10 con NVDA/VoiceOver. Es lo unico que prueba esto, y no lo sustituye ningun script');
 
-    nv(lente=>'ACCESIBILIDAD', id=>'A11Y-14', titulo=>'texto sobre foto o degradado',
+    # 6-nov-2026 · el degradado de CSS ya no es de este check: structure-gate.js lo mide en el
+    #    navegador (el peor punto del texto, con sus paradas) y cuenta aparte lo que no sabe leer
+    #    (una imagen, letra pintada por su fondo, una cabecera flotante sobre otra cosa). Queda la foto.
+    nv(lente=>'ACCESIBILIDAD', id=>'A11Y-14', titulo=>'texto sobre foto',
        umbral=>'>=4,5:1 sobre la zona real de la imagen',
-       proc=>'PC13 · 167 elementos no medibles con getComputedStyle en las 5 webs (site-b 70 · site-a 40 · cm 35 · site-c 18 · bc 4)',
+       proc=>'PC13 · 167 elementos no medibles con getComputedStyle en las 5 webs (site-b 70 · site-a 40 · cm 35 · site-c 18 · bc 4) · el degradado de CSS lo mide structure-gate desde el 6-nov: sus NO MEDIBLES («contrasteSobreFoto») son los que quedan aqui',
        hacer=>'gates/measure-contrast-on-photo.py YA EXISTE. «No medible» no es «aprobado»');
 }
 

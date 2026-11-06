@@ -553,8 +553,46 @@ else
   menu "N5 no se repite: FALLA a la primera"           mobile-menu-gate.js "$N5|$BIEN"  FALLA 1 ""
   menu "un PASA no se repite"                          mobile-menu-gate.js "$BIEN|$N3"  PASA  1 ""
   menu "el mismo texto en otro gate no se repite"      mobile-gate.js      "$N3|$BIEN"  FALLA 1 ""
+  # 6-nov-2026 · EL CONTRASTE DEL CROMO. structure-gate lo deja en avisosCromo, fuera de su
+  #    veredicto, mientras CROMO_GATE=avisa: si nav_lee no lo ensena, no lo ve nadie. Los dos
+  #    primeros, en ROJO contra la puerta de antes (no salia ninguna linea «aviso:»).
+  cromo() { # nombre · gate · salida del gate · veredicto · la linea «aviso:» («» = ninguna)
+    local got
+    rm -f "$NDIR"/*; printf '%s\n' "$3" > "$NDIR/sale"
+    ( NAV_HOST=h; NAV_ENV=""; . "$NMD"; sleep() { :; }
+      ssh() { echo '{"coincide":true,"anchoPedido":1440}'; cat "$NDIR/sale"; }
+      nav_mide "$NDIR/out" "https://www.ejemplo.test/" "$2" 1440 900
+      nav_lee "$NDIR/out" "$2" / 1440; echo "R=$NAV_R" ) > "$TMP" 2>&1
+    got="$(grep -o '^R=.*' "$TMP")|$(grep -o 'aviso: .*' "$TMP" | head -1)"
+    if [ "$got" = "R=$4|$5" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s\n' "$1" "$got" "R=$4|$5"; sed 's/^/          /' "$TMP" | head -8; fi
+  }
+  C1='{"VEREDICTO":"PASA","fallos":[],"avisosCromo":["CONTRASTE-CROMO · 1 elemento(s) (peor: 3.57:1) · solo avisa hasta cromo:\"para\" (20-nov-2026)"]}'
+  C2=$'{\n "VEREDICTO": "PASA",\n "fallos": [],\n "avisosCromo": [\n  "CONTRASTE-CROMO · 2 elemento(s) (peor: 4.1:1) · solo avisa hasta cromo:\\"para\\" (20-nov-2026)"\n ],\n "avisosMovil": []\n}'
+  C0='{"VEREDICTO":"PASA","fallos":[],"avisosCromo":[]}'
+  cromo "cromo que avisa: PASA y la linea «aviso:»"     structure-gate.js "$C1" PASA 'aviso: CONTRASTE-CROMO · 1 elemento(s) (peor: 3.57:1) · solo avisa hasta cromo:"para" (20-nov-2026)'
+  cromo "el JSON en varias lineas, como lo da run-gate"  structure-gate.js "$C2" PASA 'aviso: CONTRASTE-CROMO · 2 elemento(s) (peor: 4.1:1) · solo avisa hasta cromo:"para" (20-nov-2026)'
+  # NEGATIVOS: sin aviso no hay linea, y otro gate no la da.
+  cromo "avisosCromo vacio: ninguna linea"               structure-gate.js "$C0" PASA ""
+  cromo "el mismo texto en otro gate: ninguna linea"     mobile-gate.js    "$C1" PASA ""
 fi
 rm -rf "$NMD" "$NDIR"
+# Y CROMO_GATE=para llega al gate: cromo_cfg anade "cromo":"para" a NAV_CFG, sin romper lo que
+# ya llevaba (reservas, tienda). En ROJO contra la puerta de antes (no hay cromo_cfg).
+CCF="$(mktemp -t cromocfg-XXXXXXXX)"
+sed -n '/^cromo_cfg() {/,/^}/p' "$PUERTA" > "$CCF"
+cfg() { # nombre · CROMO_GATE · NAV_CFG de antes · NAV_CFG esperado
+  local got
+  if [ ! -s "$CCF" ]; then ko=$((ko+1)); printf '  MAL   %s\n        no encuentro cromo_cfg en %s\n' "$1" "$PUERTA"; return; fi
+  got="$( CROMO_GATE="$2"; NAV_CFG="$3"; . "$CCF"; cromo_cfg; printf '%s' "$NAV_CFG" )"
+  if [ "$got" = "$4" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+  else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s\n' "$1" "$got" "$4"; fi
+}
+cfg "CROMO_GATE=para sin otra configuracion"  para  ''                                          '{"cromo":"para"}'
+cfg "CROMO_GATE=para con reservas y tienda"   para  '{"hostsReserva":"a.test","ecommerce":true}' '{"hostsReserva":"a.test","ecommerce":true,"cromo":"para"}'
+cfg "CROMO_GATE=avisa no toca nada"           avisa '{"ecommerce":true}'                         '{"ecommerce":true}'
+cfg "sin CROMO_GATE, avisa"                   ''    ''                                          ''
+rm -f "$CCF"
 
 # Y nadie mas en la puerta dice «verificado» de una subida (lo hacian tres lineas).
 VER=$(grep -nE '^[[:space:]]*echo .*(G11 lo ha verificado|desplegado y verificado)' "$PUERTA" | head -3)
