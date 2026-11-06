@@ -166,6 +166,12 @@ ancho_min(){
 }
 ancho_min G1-btnfila  button-row.html    no
 ancho_min G2-rejmala  grid-squeezed.html  si
+# 6-nov-2026 · la fila de formulario (dos campos lado a lado, un <select> con sus
+# opciones) no es una rejilla: G1b visto en ROJO contra el gate anterior. G2b es su
+# pareja que TIENE que fallar: tarjetas con titular y un <input>, en ROJO con un
+# mutante que saca de la rejilla toda celda con un control.
+ancho_min G1b-formfila form-row.html            no
+ancho_min G2b-rejcampo grid-squeezed-input.html si
 
 echo
 echo "=========== FRONTERA 4 - cpl no se le exige a quien no es prosa =========="

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es" data-tipo="servicio">
+<head>
+<meta charset="utf-8">
+<title>Fila de formulario — fixture 6-nov-2026</title>
+<!--
+  POSITIVO de ANCHO-MIN. Un formulario con DOS CAMPOS lado a lado no es una
+  rejilla de tarjetas estrujada: es estrecho A PROPOSITO, como la fila de
+  botones de `button-row.html`.
+
+  Antes del 6-nov-2026 el gate lo acusaba. `celdasDe` cuenta como celda a
+  cualquier hijo de un flex/grid con >=20 caracteres de texto, y el innerText de
+  un campo con un <select> lleva TODAS sus opciones. Medido el 5-nov en una web
+  nuestra, en el Chrome del servidor: «1 seccion CON REJILLA ... a 704px» en la
+  pagina de empleo, y su pagina de contacto, con el mismo formulario y el mismo
+  ancho, PASABA solo porque sus opciones eran mas cortas. Ensancharlo a 840px para
+  callarlo lo empeora: un formulario de dos campos a 1120px es peor de rellenar.
+
+  ESPERADO: PASA. Su pareja roja es `grid-squeezed-input.html`: el mismo
+  contenedor estrecho con TARJETAS que llevan un campo, y tiene que fallar.
+-->
+<style>
+  :root{--ancho:1120px}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif; font-size:17px; line-height:1.6;
+       background:#140d1f; color:#e8e2f0; margin:0}
+  .env{max-width:var(--ancho); margin:0 auto; padding-inline:24px}
+  section{padding:56px 0}
+  h1{font-size:2.4rem; margin:0 0 .75rem}
+  h2{font-size:1.5rem; margin:0 0 .75rem; color:#e3c37a}
+  p{max-width:68ch}
+  .btn{display:inline-block; padding:14px 22px; border-radius:10px;
+       background:#e3c37a; color:#241a10; font-weight:600; text-decoration:none; border:0; font:inherit}
+  .rejilla{list-style:none; padding:0; margin:2rem 0 0; display:grid; gap:22px;
+           grid-template-columns:repeat(3,1fr); max-width:var(--ancho)}
+  .tar{background:#1e1430; border:1px solid #33254d; border-radius:12px; padding:20px}
+  .form-wrap{max-width:704px; margin:0 auto}
+  .fila-2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px}
+  .campo label{display:block; font-size:.9rem; margin-bottom:4px}
+  .campo select,.campo input{width:100%; padding:10px; font:inherit}
+</style>
+</head>
+<body>
+<main>
+  <section class="env" data-sec="hero">
+    <h1>Trabaja con nosotros</h1>
+    <p>Buscamos fisioterapeutas para visitas a domicilio en la ciudad y alrededores.</p>
+    <p><a class="btn" href="#candidatura">Enviar mi candidatura</a></p>
+  </section>
+
+  <section class="env" data-sec="oferta">
+    <h2>Lo que ofrecemos</h2>
+    <ul class="rejilla">
+      <li class="tar"><h3>Horario a tu medida</h3><p>Eliges los dias y las franjas en las que quieres hacer visitas cada semana.</p></li>
+      <li class="tar"><h3>Pacientes cerca de casa</h3><p>Te asignamos visitas en tu zona para que no pases la manana en el coche.</p></li>
+      <li class="tar"><h3>Agenda y facturacion</h3><p>Nosotros llevamos las citas y los cobros; tu te ocupas de los pacientes.</p></li>
+    </ul>
+  </section>
+
+  <!-- Sin .env A PROPOSITO, como en su pareja roja: el elemento mas ancho con
+       max-width de esta seccion es el envoltorio del formulario (704px). -->
+  <section id="candidatura" data-sec="cierre" style="padding-inline:24px">
+    <h2>Tu candidatura</h2>
+    <div class="form-wrap">
+      <form action="/candidatura.php" method="post">
+        <div class="fila-2">
+          <div class="campo"><label for="st">Estatuto</label>
+            <select id="st" name="estatuto"><option>Autonomo con numero de colegiado</option><option>Asalariado a tiempo parcial</option><option>Recien titulado</option></select></div>
+          <div class="campo"><label for="di">Disponibilidad</label>
+            <select id="di" name="disponibilidad"><option>Mananas de lunes a viernes</option><option>Tardes y fines de semana</option><option>Solo sustituciones</option></select></div>
+        </div>
+        <div class="fila-2">
+          <div class="campo"><label for="no">Nombre</label><input id="no" name="nombre" autocomplete="name"></div>
+          <div class="campo"><label for="te">Telefono</label><input id="te" name="telefono" type="tel" autocomplete="tel"></div>
+        </div>
+        <button class="btn" type="submit">Enviar mi candidatura</button>
+      </form>
+    </div>
+  </section>
+</main>
+</body>
+</html>

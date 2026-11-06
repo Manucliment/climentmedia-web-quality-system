@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es" data-tipo="servicio">
+<head>
+<meta charset="utf-8">
+<title>Rejilla estrujada con un campo en cada tarjeta — fixture 6-nov-2026</title>
+<!--
+  NEGATIVO de ANCHO-MIN, pareja roja de `form-row.html`. Tres TARJETAS (titular,
+  parrafo y un campo para pedir cantidad) en un contenedor de 510px: es una
+  rejilla de tarjetas estrujada, y que cada una lleve un <input> no la convierte
+  en un formulario.
+
+  El arreglo del 6-nov saca de la rejilla la celda que es un CAMPO (un control y
+  su etiqueta, sin titular). Si algun dia saca toda celda que lleve un control,
+  este fixture deja de fallar y lo canta: es el modo de fallo de `button-row` el
+  24-ago, cuando el arreglo del falso positivo se comio la regla entera.
+
+  ESPERADO: ANCHO-MIN salta.
+-->
+<style>
+  :root{--ancho:1120px}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif; font-size:17px; line-height:1.6;
+       background:#140d1f; color:#e8e2f0; margin:0}
+  .env{max-width:var(--ancho); margin:0 auto; padding-inline:24px}
+  section{padding:56px 0}
+  h1{font-size:2.4rem; margin:0 0 .75rem}
+  h2{font-size:1.5rem; margin:0 0 .75rem; color:#e3c37a}
+  p{max-width:68ch}
+  .btn{display:inline-block; padding:14px 22px; border-radius:10px;
+       background:#e3c37a; color:#241a10; font-weight:600; text-decoration:none}
+  .rejilla-mala{list-style:none; padding:0; margin:2rem 0 0; display:grid; gap:22px;
+                grid-template-columns:repeat(3,1fr); max-width:510px}
+  .tar{background:#1e1430; border:1px solid #33254d; border-radius:12px; padding:16px}
+  .tar input{width:100%; padding:6px; font:inherit}
+</style>
+</head>
+<body>
+<main>
+  <section class="env" data-sec="hero">
+    <h1>Bonos de sesiones</h1>
+    <p>Compra varias sesiones de una vez y usalas cuando quieras durante un ano.</p>
+    <p><a class="btn" href="/contacto/">Preguntar por un bono</a></p>
+  </section>
+  <!-- Sin .env A PROPOSITO: el elemento mas ancho con max-width de esta seccion
+       es la propia rejilla (510px), como en `grid-squeezed.html`. -->
+  <section data-sec="oferta" style="padding-inline:24px">
+    <h2>Elige tu bono</h2>
+    <ul class="rejilla-mala">
+      <li class="tar"><h3>Bono de cinco</h3><p>Cinco sesiones a domicilio con la misma fisioterapeuta, sin caducidad corta.</p><label>Cuantos <input type="number" name="b5" min="0" value="0"></label></li>
+      <li class="tar"><h3>Bono de diez</h3><p>Diez sesiones para un tratamiento largo, con una revision a mitad del proceso.</p><label>Cuantos <input type="number" name="b10" min="0" value="0"></label></li>
+      <li class="tar"><h3>Bono de pareja</h3><p>Sesiones para dos personas de la misma casa en la misma visita, una detras de otra.</p><label>Cuantos <input type="number" name="b2" min="0" value="0"></label></li>
+    </ul>
+  </section>
+  <section class="env" data-sec="cierre">
+    <h2>¿Dudas con los bonos?</h2>
+    <p>Cuentanos que necesitas y te decimos cual encaja.</p>
+    <p><a class="btn" href="/contacto/">Preguntar por un bono</a></p>
+  </section>
+</main>
+</body>
+</html>

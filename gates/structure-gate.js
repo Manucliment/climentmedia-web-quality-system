@@ -823,6 +823,18 @@ function cifraDe (c) {
   return { texto: mayor.t, lineas, desborda: r.getBoundingClientRect().width > util + 1 };
 }
 
+// 6-nov-2026 · UNA FILA DE FORMULARIO NO ES UNA REJILLA DE TARJETAS. Dos campos
+// lado a lado (`.fila-2`) pasaban por dos celdas: el innerText de un campo con un
+// <select> lleva TODAS sus opciones, y con eso llega a los 20 caracteres. Medido
+// el 5-nov en una web nuestra: «1 seccion CON REJILLA ... a 704px» en su pagina de
+// empleo, y su contacto, con el mismo formulario y el mismo ancho, PASABA porque
+// sus opciones eran mas cortas. Un campo = la celda ES un control o lo lleva, y no
+// lleva titular: una tarjeta con su <h3> y un <input> sigue siendo tarjeta (lo
+// caza `grid-squeezed-input.html`; su pareja que pasa es `form-row.html`).
+const CONTROL = 'input:not([type=hidden]):not([type=submit]):not([type=button]),select,textarea';
+const esCampo = c => (c.matches(CONTROL) || !!c.querySelector(CONTROL)) &&
+                     !c.querySelector('h1,h2,h3,h4,h5,h6');
+
 // Celda de rejilla = hijo directo de un contenedor 2D de >=2 COLUMNAS que lleva
 // texto propio. Se exige texto (>=20 caracteres) a proposito: una tira de logos
 // o una fila de iconos son legitimamente estrechas y no son celdas de tarjeta.
@@ -851,6 +863,7 @@ function celdasDe (b) {
                                  // funcionar. Lo caza `rejilla-estrujada.html`: para eso existe un
                                  // caso rojo y no solo casos que tienen que pasar.
                                  .filter(c => !c.matches(SEL_ACC))
+                                 .filter(c => !esCampo(c))
                                  .filter(c => (c.innerText || '').trim().length >= 20);
     if (hijos.length < 2) return;
     const xs = new Set(hijos.map(c => Math.round(c.getBoundingClientRect().left)));
