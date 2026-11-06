@@ -660,6 +660,13 @@ without blocking. Why the order changed is trap §89.
   crosses and the weight in 100 KB tiers. One more host, or the next tier, fingerprints
   differently. An entry signed with the old `DATO= DONDE=` keeps matching while those
   hold. `config/accepted.conf.example` now names the labels as the report prints them.
+- **REN-11 is fingerprinted by Google's band, not by the millisecond.** Two captures of
+  the same page never give the same LCP, so an acceptance signed on the data line expired
+  at the next capture, and D-057 could not call a slow LCP that production has too old.
+  Its key is what fails and in which band: LCP from 2.5 to 4 s (needs improvement) or
+  above 4 s (poor), CLS from 0.1 to 0.25 or above 0.25. Crossing into the next band, or
+  the other metric failing too, is a different finding. A CLS that was not measured no
+  longer prints as `CLS 0.000` in the data line, and it does not enter the key.
 - **The bench's acceptances are dated today.** The acceptance block wrote a fixed
   2026-08-11 with no expiry, and an acceptance lasts 90 days: four of its cases would have
   failed together on 2026-11-10 with nothing changed in the gate.

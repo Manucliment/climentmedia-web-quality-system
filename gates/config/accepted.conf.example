@@ -73,9 +73,11 @@
 #                            numbers that move from one run to the next (since
 #                            2026-11-06, the third-party budget REN-05: the hosts
 #                            that weigh, the threshold it crosses and the weight
-#                            in 100 KB tiers). One more host, or the next tier, is
-#                            a different finding. An entry signed earlier with
-#                            DATO= and DONDE= keeps matching while those hold.
+#                            in 100 KB tiers; and the field vitals REN-11: what
+#                            fails, in Google's band). One more host, the next
+#                            tier or the next band is a different finding. An
+#                            entry signed earlier with DATO= and DONDE= keeps
+#                            matching while those hold.
 #
 #  WHY A HASH AND NOT THE LIST. Because this line gets read in a diff: with 25
 #  paths inside it would be 3 KB and the file would stop being reviewable, which

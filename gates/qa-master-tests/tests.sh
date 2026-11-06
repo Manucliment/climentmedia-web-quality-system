@@ -2461,6 +2461,44 @@ if mide_bloque "REN-05: la huella es la clave" http://site-d.example/ http://emp
   espera "REN-05 · la clave de empate NO tapa el doble"    FALLO    REN-05 perl $QA http://terceros-crece.example/ $_R5 --max-urls 40 --repo "$R5A" --sin-recibo
 fi
 
+# 🔴 6-nov-2026 · LA HUELLA DE REN-11 ES LA FRANJA DE GOOGLE, no los milisegundos. Dos
+#    capturas de la misma pagina no dan nunca el mismo LCP: con la huella del DATO, un
+#    aceptado caducaba en la captura siguiente y D-057 no podia llamar viejo a un LCP
+#    lento que produccion tiene igual. El primer caso sale MAL con el gate de antes
+#    (2.900 y 3.700 ms, dos huellas). Los dos que TIENEN que separar: pasar a la franja
+#    mala (>4 s) y que falle tambien el CLS; vistos en ROJO con un mutante sin la franja
+#    del LCP y otro sin el CLS.
+if mide_bloque "REN-11: la huella es la franja" http://site-c.example/ --cache "$CACHE"; then
+  huella_ren11() { "$@" 2>&1 | grep -A8 -E '^\s+\[[A-Z ]+\] +REN-11 ' | grep -m1 'HUELLA ' | sed -E 's/^[[:space:]]*HUELLA //'; }
+  igual_r11() { # igual_r11 <etiqueta> SI|NO <a> <b>
+    local r=NO; [ -n "$3" ] && [ -n "$4" ] && [ "$3" = "$4" ] && r=SI
+    if [ -z "$3" ] || [ -z "$4" ]; then
+      printf '  MAL   %-46s falta una HUELLA de REN-11\n' "$1"; ko=$((ko+1))
+    elif [ "$r" = "$2" ]; then
+      printf '  OK    %-46s %s\n' "$1" "$(printf '%.40s' "$3")"; ok=$((ok+1))
+    else
+      printf '  MAL   %-46s %s | %s\n' "$1" "$3" "$4"; ko=$((ko+1))
+    fi
+  }
+  _R11="--solo rendimiento --cache $CACHE"
+  R11_A="$(huella_ren11 perl $QA http://site-c.example/ $_R11 --dom dom-ren11-lcp-2900.json)"
+  R11_B="$(huella_ren11 perl $QA http://site-c.example/ $_R11 --dom dom-ren11-lcp-3700.json)"
+  R11_M="$(huella_ren11 perl $QA http://site-c.example/ $_R11 --dom dom-ren11-lcp-4600.json)"
+  R11_C="$(huella_ren11 perl $QA http://site-c.example/ $_R11 --dom dom-ren11-lcp-y-cls.json)"
+  R11_N="$(huella_ren11 perl $QA http://site-c.example/ $_R11 --dom dom-lcp-lento-sin-cls.json)"
+  igual_r11 "REN-11 · 2.900 y 3.700 ms: la misma huella"     SI "$R11_A" "$R11_B"
+  igual_r11 "REN-11 · mas de 4 s: otra huella"               NO "$R11_M" "$R11_A"
+  igual_r11 "REN-11 · falla tambien el CLS: otra huella"     NO "$R11_C" "$R11_A"
+  igual_r11 "REN-11 · un CLS sin medir no entra en la clave" SI "$R11_N" "$R11_A"
+  R11R="$CACHE/repo-ren11"; rm -rf "$R11R"; mkdir -p "$R11R/_deploy"
+  printf '<!doctype html><html lang="es"><head><title>x</title></head><body><main><h1>x</h1></main></body></html>\n' > "$R11R/index.html"
+  { echo "[ACEPTADO]"; echo "CHECK:    REN-11"; echo "HALLAZGO: $R11_A"
+    echo "MOTIVO:   El LCP lo pone el video del cliente en la portada: se queda hasta su plan."
+    echo "ACEPTA:   Cliente de prueba"; echo "FECHA:    $(date +%Y-%m-%d)"; } > "$R11R/_deploy/aceptado.conf"
+  espera "REN-11 · el aceptado casa en la captura siguiente" ACEPTADO REN-11 perl $QA http://site-c.example/ $_R11 --dom dom-ren11-lcp-3700.json --repo "$R11R" --sin-recibo
+  espera "REN-11 · y no tapa un LCP de mas de 4 s"           FALLO    REN-11 perl $QA http://site-c.example/ $_R11 --dom dom-ren11-lcp-4600.json --repo "$R11R" --sin-recibo
+fi
+
 echo
 echo "== D-057 · LO VIEJO IGUAL EN PRODUCCION NO PARA UNA SUBIDA (gates/d057.pl) · 5-nov-2026"
 # 🔴 EL HUECO: cinco webs paradas el 5-nov por FALLOs que su subida no tocaba y que

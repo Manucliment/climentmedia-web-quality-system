@@ -3088,9 +3088,24 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
            hacer=>'volver a capturar con el snippet de hoy (perl qa-master.pl --snippet), que lee LCP y CLS con PerformanceObserver');
     } elsif (exists $DOM{lcp_ms} || exists $DOM{cls}) {
         my ($lcp,$cls) = ($DOM{lcp_ms}//0, $DOM{cls}//0);
+        # 🔴 6-nov-2026 · LA CLAVE DE REN-11 ES LA FRANJA, NO LOS MILISEGUNDOS. El DATO
+        #    lleva el LCP al milisegundo, y dos capturas de la misma pagina no dan nunca el
+        #    mismo: un aceptado firmado con el DATO caducaba en la captura siguiente, y
+        #    D-057 (que compara instancias, y sin `ev` la instancia es la huella) no podia
+        #    llamar viejo a un LCP lento que produccion tiene igual, porque el candidato y
+        #    produccion no tardan lo mismo. La clave lleva solo lo que falla y en que franja
+        #    de Google cae (LCP: de 2,5 a 4 s necesita mejorar, mas de 4 s es malo; CLS: de
+        #    0,1 a 0,25 y mas de 0,25). Pasar de franja, o que falle tambien la otra, es
+        #    otra huella. Lo que no esta medido no entra: un CLS null no es «CLS 0».
+        my @franja;
+        push @franja, ($lcp > 4000 ? 'LCP por encima de 4 s' : 'LCP de 2,5 a 4 s') if $lcp > 2500;
+        push @franja, ($cls > 0.25 ? 'CLS por encima de 0,25' : 'CLS de 0,1 a 0,25') if $cls > 0.1;
         ($lcp > 2500 || $cls > 0.1)
           ? fallo(lente=>'RENDIMIENTO', id=>'REN-11', titulo=>'Core Web Vitals de campo',
-                  dato=>sprintf('LCP %.0f ms · CLS %.3f', $lcp, $cls),
+                  clave=>join(' · ', @franja),
+                  dato=>sprintf('LCP %s · CLS %s',
+                                defined $DOM{lcp_ms} ? sprintf('%.0f ms', $lcp) : 'sin medir',
+                                defined $DOM{cls} ? sprintf('%.3f', $cls) : 'sin medir'),
                   umbral=>'LCP <=2.500 ms · CLS <=0,1', proc=>'PC2 · snippet de qa-maestro',
                   hacer=>'si el LCP es una imagen: dimensionarla y precargarla. Si el CLS: REN-03')
           : pasa(lente=>'RENDIMIENTO', id=>'REN-11', titulo=>'Core Web Vitals',
