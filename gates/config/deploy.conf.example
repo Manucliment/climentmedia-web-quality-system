@@ -113,6 +113,18 @@ FORM_URLS="/contact/"
 # A path relative to the repo. The door reads D057_PRODUCTION_DOM or D057_DOM_PRODUCCION.
 # D057_PRODUCTION_DOM=_deploy/dom-production.json
 
+# A measurement only the served site can answer, that this door cannot bring by
+# itself: for example, the URLs with impressions in Search Console that were left
+# without a 301 (before the upload production still answers 200 to all of them, so
+# a URL the candidate drops without its 301 looks the same as one that carries it).
+# The door runs it from the repo after G11 and the browser (step 6-ter), and it
+# only WARNS: what was uploaded is uploaded. Exit 0 is PASS, 1 is a WARNING with
+# the lines that say FAIL or WARN, anything else (or 10 minutes) NOT MEASURED. It
+# goes into the closing line and the history. The door reads AFTER_UPLOAD or TRAS_SUBIR.
+# Paths with forward slashes, also on Windows (C:/Users/...): the command goes
+# through `bash -c`, which eats backslashes, and the door says so when it happens.
+# AFTER_UPLOAD="node /path/to/your-tools/urls-dropped.mjs --site your-domain.tld"
+
 # Skip the browser step entirely, with a reason. It still gets recorded: a
 # declared hole is still a hole. Useful when the site is not reachable from the
 # measuring host.

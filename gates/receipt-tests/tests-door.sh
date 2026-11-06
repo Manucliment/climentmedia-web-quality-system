@@ -708,6 +708,7 @@ sed -i 's/^EXCLUIR="/EXCLUIR="--exclude=_tareas /' "$T/repo/_deploy/deploy.conf"
 perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
 r "con su --exclude, sube"                         0 bash "$REF/deploy.sh" "$T/repo" --subir
 no_contiene "y ya no lo cuenta"                        "QUE EL RECIBO NO SELLA"
+no_contiene "y sin TRAS_SUBIR no hay paso 6-ter"       "6-ter · lo que"
 #  El caso que ya costo una vez: un CLAUDE.md servido en una tienda, con la arquitectura
 #  y un cupon vivo dentro. El recibo no sella los .md; si el EXCLUIR no los saca, suben.
 sed -i 's/ --exclude=\*\.md//' "$T/repo/_deploy/deploy.conf"
@@ -726,6 +727,55 @@ sed -i 's|^SUBIDA=.*|SUBIDA=../fuera/subir.sh|' "$T/repo/_deploy/deploy.conf"
 r "un subidor fuera de _deploy/: no para"           0 bash "$REF/deploy.sh" "$T/repo"
 contiene "y dice desde donde no lo sabe"               "no vive en _deploy/ de este repo"
 cp "$T/conf-antes" "$T/repo/_deploy/deploy.conf"; cp "$T/subir-antes" "$T/repo/_deploy/subir.sh"; rm -rf "$T/repo/_tareas" "$T/fuera"
+
+echo
+echo "-- 6-ter · LO QUE LA WEB PIDE MEDIR TRAS SUBIR (TRAS_SUBIR, 6-nov-2026) --------"
+#  La orden de verdad busca en Search Console las URLs con impresiones que se quedan
+#  sin 301; aqui, tres guiones que contestan como ella: PASA, AVISO y NO MEDIDO.
+#  Lo que se mira: que corre DESPUES de subir, que no para nada, que lo que no pasa
+#  sale con sus lineas y en el cierre, y que queda en el historial.
+cp "$T/repo/_deploy/deploy.conf" "$T/conf-antes"
+#  La ruta, en forma de bash: en Windows $TEMP trae barras invertidas, y la orden
+#  pasa por bash -c, que se las come (ver el ultimo caso).
+TP="$(cd "$T" && pwd)"
+printf '%s\n' 'echo "http://127.0.0.1/ · 3 URLs con impresiones · 1 fuera de los sitemaps"' \
+  'echo "  PASA  http://127.0.0.1/viejo  (12 impr.) · 301 en un salto"' 'exit 0' > "$T/tras-pasa.sh"
+printf '%s\n' 'echo "http://127.0.0.1/ · 3 URLs con impresiones · 2 fuera de los sitemaps"' \
+  'echo "  FALLA  http://127.0.0.1/servicios  (40 impr., 2 clics) · responde 404"' \
+  'echo "  PASA  http://127.0.0.1/viejo  (12 impr.) · 301 en un salto"' 'exit 1' > "$T/tras-aviso.sh"
+printf '%s\n' 'echo "NO MEDIDO: no hay acceso a Search Console"' 'exit 2' > "$T/tras-nm.sh"
+printf 'AFTER_UPLOAD="bash %s/tras-pasa.sh"\n' "$TP" >> "$T/repo/_deploy/deploy.conf"
+r "con AFTER_UPLOAD que pasa: sube"                  0 bash "$REF/deploy.sh" "$T/repo" --subir --pierde-texto "fixture"
+contiene "y la corre tras subir"                       "6-ter · lo que"
+contiene "y dice PASA con su cabecera"                 "PASA · http://127.0.0.1/ · 3 URLs con impresiones"
+no_contiene "y el cierre no lo nombra"                 "tras subir,"
+cp "$T/conf-antes" "$T/repo/_deploy/deploy.conf"
+printf 'TRAS_SUBIR="bash %s/tras-aviso.sh"\n' "$TP" >> "$T/repo/_deploy/deploy.conf"
+r "con TRAS_SUBIR que avisa: sube igual, no para"    0 bash "$REF/deploy.sh" "$T/repo" --subir --pierde-texto "fixture"
+contiene "y dice AVISO"                                "AVISO · http://127.0.0.1/ · 3 URLs con impresiones"
+contiene "y ensena la linea que falla"                 "FALLA  http://127.0.0.1/servicios"
+no_contiene "y no ensena las que pasan"                "PASA  http://127.0.0.1/viejo"
+contiene "y lo lleva al cierre"                        "tras subir, bash"
+if grep -qE 'TRAS_SUBIR AVISO: .*FALLA +http://127.0.0.1/servicios' "$QA_RECIBOS_DIR/history.tsv" 2>/dev/null; then
+  OK=$((OK+1)); printf '  PASA  %-52s\n' "y queda en el historial con su linea"
+else MAL=$((MAL+1)); printf '  FALLA %-52s\n' "y queda en el historial con su linea"
+     grep 'TRAS_SUBIR' "$QA_RECIBOS_DIR/history.tsv" 2>/dev/null | tail -2 | sed 's/^/          /'; fi
+cp "$T/conf-antes" "$T/repo/_deploy/deploy.conf"
+printf 'TRAS_SUBIR="bash %s/tras-nm.sh"\n' "$TP" >> "$T/repo/_deploy/deploy.conf"
+r "con TRAS_SUBIR que no mide: sube igual"           0 bash "$REF/deploy.sh" "$T/repo" --subir --pierde-texto "fixture"
+contiene "y dice NO MEDIDO con su codigo"              "NO MEDIDO · la orden salio con 2"
+contiene "y lo lleva al cierre"                        "sin medir (exit 2)"
+no_contiene "y no culpa a las barras"                  "barras invertidas"
+#  Y en ensayo no corre: mide lo servido, y en ensayo no se ha servido nada nuevo.
+r "en ensayo no la corre"                            0 bash "$REF/deploy.sh" "$T/repo"
+no_contiene "y no sale el 6-ter"                       "6-ter · lo que"
+#  Una ruta de Windows con \ en la orden: bash -c se come las barras. Se dice por que.
+cp "$T/conf-antes" "$T/repo/_deploy/deploy.conf"
+printf '%s\n' 'TRAS_SUBIR="bash C:\no-existe\tras.sh"' >> "$T/repo/_deploy/deploy.conf"
+r "con una ruta C:\...: sube igual"                   0 bash "$REF/deploy.sh" "$T/repo" --subir --pierde-texto "fixture"
+contiene "y dice NO MEDIDO"                            "NO MEDIDO · la orden salio con 127"
+contiene "y dice que son las barras"                   "barras invertidas"
+cp "$T/conf-antes" "$T/repo/_deploy/deploy.conf"; rm -f "$T"/tras-*.sh
 
 echo
 echo "==============================================================================="

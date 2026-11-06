@@ -2315,6 +2315,52 @@ if [ "${REDIR:-0}" != 1 ] && [ -f "$REF/ai-crawlers.pl" ] && command -v curl >/d
   perl "$REF/receipt.pl" --anotar "${SONDA_IA:-SONDA: NO MEDIDO}" --repo "$REPO" >/dev/null 2>&1
 fi
 
+# ── 6-ter · LO QUE LA WEB PIDE MEDIR TRAS SUBIR (TRAS_SUBIR, 6-nov-2026) ──────
+#    Hay medidas que solo valen sobre lo servido y que esta puerta no puede traer
+#    sola. La que lo pidio: las URLs con impresiones en Search Console que se
+#    quedan sin 301. Antes de subir no se puede saber: produccion aun da 200 a
+#    todas, y una URL que el candidato deja caer sin 301 se ve igual que una que
+#    lleva el suyo. La web la declara en deploy.conf, `TRAS_SUBIR="<orden>"`
+#    (`AFTER_UPLOAD` en ingles), y la puerta la corre aqui, desde el repo, despues
+#    de G11 y del navegador. Solo AVISA, como el 6-bis: lo subido, subido esta.
+#    exit 0 es PASA; 1, AVISO con sus lineas; cualquier otro (o 10 min sin
+#    acabar), NO MEDIDO. Va al cierre y al historial.
+TRAS_SUBIR="${TRAS_SUBIR:-${AFTER_UPLOAD:-}}"
+TRAS_NOTA=""
+if [ -n "$TRAS_SUBIR" ] && [ "${REDIR:-0}" != 1 ]; then
+  echo
+  echo "  6-ter · lo que $CONF pide medir tras subir: $TRAS_SUBIR"
+  TRAS_OUT="$( cd "$REPO" && timeout 600 bash -c "$TRAS_SUBIR" 2>&1 )"; TRAS_RC=$?
+  TRAS_CAB="$(printf '%s\n' "$TRAS_OUT" | grep -m1 . | cut -c1-200)"
+  TRAS_MAL="$(printf '%s\n' "$TRAS_OUT" | grep -E '(^|[[:space:]])(FALLA|FALLO|FAIL|AVISO|WARN|NO MEDIDO|NOT MEASURED)([[:space:]]|$|:)')"
+  N_TRAS_MAL="$(printf '%s' "$TRAS_MAL" | grep -c .)"
+  case "$TRAS_RC" in
+    0)
+      echo "    PASA · ${TRAS_CAB:-(sin salida)}"
+      perl "$REF/receipt.pl" --anotar "TRAS_SUBIR PASA: $TRAS_SUBIR" --repo "$REPO" >/dev/null 2>&1
+      ;;
+    1)
+      echo "    ⚠ AVISO · ${TRAS_CAB:-(sin salida)}"
+      printf '%s\n' "$TRAS_MAL" | head -10 | cut -c1-200 | sed 's/^[[:space:]]*/      /'
+      [ "${N_TRAS_MAL:-0}" -gt 10 ] && echo "      … y $((N_TRAS_MAL - 10)) mas"
+      echo "    Lo subido, subido esta: esto no para nada. Se arregla en la siguiente subida."
+      TRAS_NOTA="tras subir, $TRAS_SUBIR avisa (${N_TRAS_MAL:-0} linea(s))"
+      perl "$REF/receipt.pl" --anotar "TRAS_SUBIR AVISO: $TRAS_SUBIR · $(printf '%s\n' "$TRAS_MAL" | grep -m1 . | sed 's/^[[:space:]]*//' | cut -c1-160)" \
+           --repo "$REPO" >/dev/null 2>&1
+      ;;
+    *)
+      echo "    NO MEDIDO · la orden salio con $TRAS_RC$([ "$TRAS_RC" = 124 ] && echo ' (10 min sin acabar)') · ${TRAS_CAB:-(sin salida)}"
+      #  Una ruta de Windows con \ llega rota: bash -c se come las barras (lo vio el
+      #  banco el 6-nov: C:\Users\... se quedo en C:Users...). Se dice el porque.
+      case "$TRAS_SUBIR" in *\\*)
+        echo "    La orden lleva barras invertidas (\\) y bash se las come al correrla: las rutas, con / (C:/Users/...)." ;;
+      esac
+      TRAS_NOTA="tras subir, $TRAS_SUBIR sin medir (exit $TRAS_RC)"
+      perl "$REF/receipt.pl" --anotar "TRAS_SUBIR NO MEDIDO (exit $TRAS_RC): $TRAS_SUBIR" --repo "$REPO" >/dev/null 2>&1
+      ;;
+  esac
+fi
+
 # >>> cierre-de-la-subida (marca del banco deploy-tests: no la muevas sin moverlo)
 # ── EL CIERRE · una linea, y dice lo que se midio (5-nov-2026) ───────────────
 #    Antes se cerraba con «El despliegue esta hecho y G11 lo ha verificado» aunque
@@ -2355,6 +2401,8 @@ cierre_dice
 [ -n "${D057_NOTA:-}" ] && CIERRE="$CIERRE · D-057: $D057_NOTA"
 # y lo del navegador que subio por viejo: el paso 6 lo vuelve a ver en rojo en lo servido
 [ -n "${NAVC_D057:-}" ] && CIERRE="$CIERRE · D-057 en el navegador (viejas, con fila): $NAVC_D057"
+# y lo que la web pidio medir tras subir, si no paso (6-ter): no cambia el veredicto, se lee al lado
+[ -n "${TRAS_NOTA:-}" ] && CIERRE="$CIERRE · $TRAS_NOTA"
 echo
 linea; echo "  CIERRE · $CIERRE"; linea
 perl "$REF/receipt.pl" --anotar "CIERRE $CIERRE" --repo "$REPO" >/dev/null 2>&1

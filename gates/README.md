@@ -558,6 +558,18 @@ without blocking. Why the order changed is trap §89.
   something else are a warning, a 403 to a spoofed Googlebot or bingbot is expected, and
   Chrome not getting in is NOT MEASURED. After every upload, one line in the output and
   the history; it never stops anything.
+- **What the site asks to measure after the upload (`AFTER_UPLOAD`, step 6-ter).** Some
+  measurements only the served site can answer and the door cannot bring alone. The one
+  that asked for it: URLs with impressions in Search Console left without a 301. Before
+  the upload it cannot be known, because production still answers 200 to all of them,
+  and a URL the candidate drops without its 301 looks the same as one that carries it.
+  The site names a command in `deploy.conf` (`AFTER_UPLOAD`, or `TRAS_SUBIR`); the door
+  runs it from the repo after G11 and the browser. Exit 0 is PASS; 1 is a WARNING that
+  prints the lines saying FAIL or WARN and goes into the closing line; anything else, or
+  ten minutes, is NOT MEASURED. All three go to the history, and none stops anything:
+  what was uploaded is uploaded, and the fix (its 301) goes in the next upload. Paths in
+  the command use forward slashes, on Windows too: it runs through `bash -c`, which eats
+  backslashes, and a NOT MEASURED caused by one says so.
 - **A door for writing inside a live WordPress (`wp-door.sh`).** Options, redirections,
   mu-plugins and posts were written by hand, each batch with its own backup and undo
   written from scratch, and the upload door never saw them. A batch is now a committed
