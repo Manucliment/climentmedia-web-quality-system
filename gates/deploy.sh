@@ -500,6 +500,75 @@ else
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "G1 no medido: no es un repo git" --repo "$REPO" >/dev/null 2>&1
 fi
 
+# ── 1-ter-b · EL PAQUETE ES LO QUE SELLO EL RECIBO (6-nov-2026) ─────────────────
+#    Dos listas de lo que no viaja: la del recibo (receipt.pl: fuera toda carpeta
+#    `_algo/` de primer nivel, los .md, .sh, .ps1...) y la del subidor, que empaqueta
+#    `tar c…f <destino> $EXCLUIR .`. Lo que la segunda deja pasar y la primera no sella
+#    SUBE sin que nadie lo haya medido, y G11 no lo ve: compara lo sellado con lo
+#    servido, no lo subido con lo sellado. Medido el 20-oct en una web: 121 ficheros en
+#    el paquete y 120 sellados; el de mas, una lista interna en una carpeta `_tareas/`
+#    nueva que ningun --exclude cubria. Censo del 6-nov sobre las 9 webs que suben asi:
+#    0 de mas en las 9, y por eso para desde el primer dia.
+#    ⚠️ LIMITE, declarado: solo se rehace el paquete de un subidor que vive en
+#    `_deploy/` del repo y empaqueta con `tar c…f <destino> $EXCLUIR .` (desde la raiz).
+#    Uno que sube por pasos, o con otra herramienta, sale NO MEDIDO con su porque.
+#    Y se mide aqui, en el paso 1, como G1: durante una subida el repo no se toca.
+PAQ_SCRIPT=""
+case "$SUBIDA" in
+  ''|/*|[A-Za-z]:*) ;;
+  *) [ -f "$REPO/$SUBIDA" ] && PAQ_SCRIPT="$REPO/$SUBIDA" ;;
+esac
+PAQ_NM=""
+if [ "$REDIR" = 1 ]; then
+  PAQ_NM=""   # un arbol de redirecciones lo mide redirects-gate.pl entero
+elif [ -z "$PAQ_SCRIPT" ]; then
+  PAQ_NM="SUBIDA no es un guion del repo: no se de que esta hecho su paquete"
+elif [ "$(cd "$(dirname "$PAQ_SCRIPT")" && pwd)" != "$(cd "$REPO/_deploy" 2>/dev/null && pwd)" ]; then
+  PAQ_NM="el subidor ($SUBIDA) no vive en _deploy/ de este repo: no se desde donde empaqueta"
+elif ! grep -qE '^[^#]*\btar[[:space:]]+-?c[a-zA-Z]*f[[:space:]]+[^[:space:]]+[[:space:]]+\$\{?EXCLUIR\}?[[:space:]]+\.([[:space:]]|$)' "$PAQ_SCRIPT"; then
+  PAQ_NM="el subidor no empaqueta con «tar c…f <destino> \$EXCLUIR .»: sube de otra forma"
+elif [ -z "${EXCLUIR:-}" ]; then
+  PAQ_NM="$CONF no define EXCLUIR, y el subidor lo usa"
+fi
+if [ "$REDIR" = 0 ] && [ -n "$PAQ_NM" ]; then
+  echo "  1-ter-b · el paquete contra el recibo · NO MEDIDO: $PAQ_NM"
+elif [ "$REDIR" = 0 ]; then
+  PAQ_LISTA="$(mktemp -t paquete-XXXXXXXX)"; PAQ_SELLO="$(mktemp -t sellado-XXXXXXXX)"
+  # shellcheck disable=SC2086
+  ( cd "$REPO" && tar cf - $EXCLUIR . 2>/dev/null ) | tar tf - 2>/dev/null \
+    | grep -v '/$' | sed 's|^\./||' | LC_ALL=C sort > "$PAQ_LISTA"
+  perl "$REF/receipt.pl" --arbol --listar --repo "$REPO" 2>/dev/null \
+    | sed -nE 's/^[0-9a-f]+[[:space:]]+[0-9]+[[:space:]]+//p' | LC_ALL=C sort > "$PAQ_SELLO"
+  N_PAQ="$(grep -c . "$PAQ_LISTA")"
+  if [ "$N_PAQ" = 0 ] || [ ! -s "$PAQ_SELLO" ]; then
+    echo "  1-ter-b · el paquete contra el recibo · NO MEDIDO: no pude rehacer el paquete ($N_PAQ ficheros) o leer lo sellado"
+  else
+    PAQ_SOBRA="$(LC_ALL=C comm -23 "$PAQ_LISTA" "$PAQ_SELLO")"
+    N_SOBRA="$(printf '%s' "$PAQ_SOBRA" | grep -c .)"
+    N_APARTE="$(LC_ALL=C comm -13 "$PAQ_LISTA" "$PAQ_SELLO" | grep -c .)"
+    if [ "$N_SOBRA" = 0 ]; then
+      echo "  1-ter-b · el paquete es lo sellado: $N_PAQ fichero(s), todos en el recibo$([ "$N_APARTE" -gt 0 ] && echo " ($N_APARTE sellado(s) que el tar no lleva: los sube el subidor aparte)")"
+    else
+      linea; echo "  1-ter-b · el paquete contra el recibo"; linea
+      echo "  🔴 EL PAQUETE LLEVA $N_SOBRA FICHERO(S) QUE EL RECIBO NO SELLA: subirian sin que"
+      echo "     nadie los haya medido, y G11 no los veria."
+      printf '%s\n' "$PAQ_SOBRA" | head -10 | sed 's/^/       /'
+      [ "$N_SOBRA" -gt 10 ] && echo "       … y $((N_SOBRA - 10)) mas"
+      echo "     Si no se sirven, su --exclude en EXCLUIR de $CONF (una carpeta _algo/ nueva,"
+      echo "     su --exclude en el mismo commit). Si se tienen que servir, en SERVIDOS_PESE_A_EXCLUIR."
+      if [ "$SUBIR" = 1 ]; then
+        echo
+        echo "  NO SE DESPLIEGA."
+        perl "$REF/receipt.pl" --anotar "subida parada: el paquete lleva $N_SOBRA fichero(s) sin sellar" --repo "$REPO" >/dev/null 2>&1
+        rm -f "$PAQ_LISTA" "$PAQ_SELLO"
+        exit 1
+      fi
+      echo "  (ensayo: con --subir, esto para la subida)"
+    fi
+  fi
+  rm -f "$PAQ_LISTA" "$PAQ_SELLO"
+fi
+
 # ── las claves y las medidas de navegador (las usan el 1-quater y el 6) ──────
 #    Las claves aceptan los dos nombres (ver el paso 6, 21-sep-2026). Lo de este
 #    bloque son funciones: medir aqui no mide nada hasta que alguien las llama.

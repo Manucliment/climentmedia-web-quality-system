@@ -434,6 +434,20 @@ never overwrites a candidate receipt**: it says so and writes nothing (`--receip
 it elsewhere). One site measured its production with `--repo` to count what already failed
 there, and its candidate receipt was replaced by one the door would have accepted.
 
+**Before anything is uploaded, the door checks that the package is what the receipt sealed
+(step 1-ter-b, since 2026-11-06).** Two lists say what does not travel: the receipt's (every
+top-level `_folder/`, the `.md`, `.sh`, `.ps1`... plus the `EXCLUIR` of `deploy.conf`) and
+the uploader's, which packs `tar c…f <destination> $EXCLUIR .` from the repo root. A file
+the second lets through and the first does not seal is uploaded without anyone having
+measured it, and G11 cannot see it: it compares what was sealed with what is served.
+Measured on one site: 121 files in the package and 120 sealed, the extra one an internal
+list in a new `_tasks/` folder that no `--exclude` covered. The door rebuilds the package
+with the same `tar` and the same `EXCLUIR`, compares the two lists, and with `--upload` an
+extra file stops it and is named (the dry run says it would). Sealed files the `tar` does
+not carry are only counted: some uploaders send them on their own. An uploader that does
+not live in `_deploy/`, or does not pack with that `tar`, reads NOT MEASURED with its reason.
+The census on the nine sites that upload this way: 0 extra files, so it stops from day one.
+
 **Between the two, the door measures the candidate in a real browser (step 1-quater, since
 2026-11-01).** It copies the tree to the measuring host and runs the gates there, through
 `run-gate.js` in candidate mode:
@@ -734,7 +748,7 @@ without blocking. Why the order changed is trap §89.
 | Program | What it does |
 |---|---|
 | `qa-master.pl` | The master gate. Five lenses over a page or a tree, and it writes the receipt. |
-| `deploy.sh` | The door. No valid receipt, no upload. Before the upload line it runs the browser gates on the candidate (step 1-quater) and a FAIL stops it, and it will not repeat another session's upload of the same site within 15 minutes; after, it checks what is served, page by page for the pages it added or changed, and closes with one line: PASS, FAIL or NOT MEASURED. |
+| `deploy.sh` | The door. No valid receipt, no upload. Before the upload line it checks that the uploader's package carries nothing the receipt did not seal (step 1-ter-b), runs the browser gates on the candidate (step 1-quater) and a FAIL stops it, and it will not repeat another session's upload of the same site within 15 minutes; after, it checks what is served, page by page for the pages it added or changed, and closes with one line: PASS, FAIL or NOT MEASURED. |
 | `receipt.pl` | Writes, verifies and records receipts; owns the deploy history. |
 | `d057.pl` | The door's question for a red receipt of the CANDIDATE: is each FAIL and NOT VERIFIED old (the same in production, measured now with the same `qa-master`, instance by instance) and does a dated row with an owner fix it? PASS, STOP or NOT MEASURED, finding by finding, signed "D-057" (since 2026-11-06). With `--browser`, the same question for each FAIL of the browser gates in step 1-quater, against the same measurement on production. |
 | `redirects-gate.pl` | The gate of a tree that only redirects: a retired domain whose docroot is a `robots.txt` and an `.htaccess` sending every mapped path to its new page and everything else to the home page, with 301. `--candidate` simulates the rules in order (RED-01..08: every WordPress and PHP path ends in a redirect, nothing it lets through is outside the tree, no rule is shadowed, the last one is an unconditional catch-all), asks every target for a 200 (RED-09) and writes a receipt of `TIPO: REDIRECCIONES` whose five page lenses read `NO APLICA`. `--served` asks the domain itself (RED-10); the door runs it after the upload (step 4-ter) and a wrong answer stops it. Declared with `ARBOL=redirecciones` (`TREE=redirects`) in `deploy.conf`. Fail-closed: `RewriteCond`, mod_alias and internal rewrites are failures, not warnings. |

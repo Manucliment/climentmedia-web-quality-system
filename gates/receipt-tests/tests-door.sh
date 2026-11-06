@@ -667,6 +667,67 @@ no_contiene "sin el aviso del fichero roto"    "mal formado"
 rm -f "$T/repo/_huecos.tsv"
 
 echo
+echo "-- 1-ter-b · EL PAQUETE ES LO QUE SELLO EL RECIBO (6-nov-2026) ----------------"
+#  Una web, 20-oct: el tar de su subidor llevaba 121 ficheros y el recibo sellaba 120;
+#  el de mas, una lista interna en una carpeta `_tareas/` nueva que ningun --exclude
+#  cubria. G11 no lo ve: compara lo sellado con lo servido. El subidor de aqui empaqueta
+#  como los de verdad (`tar c…f <destino> $EXCLUIR .` desde la raiz).
+export SERVIDO="$T/servido"
+cp "$T/repo/_deploy/deploy.conf" "$T/conf-antes"; cp "$T/repo/_deploy/subir.sh" "$T/subir-antes"
+cat > "$T/repo/_deploy/subir.sh" <<'SH'
+#!/usr/bin/env bash
+# subida de pruebas como las de verdad: el tar del arbol con $EXCLUIR, extraido donde sirve el servidor
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+. _deploy/deploy.conf
+TMP="$(mktemp)"
+tar cf "$TMP" $EXCLUIR .
+tar xf "$TMP" -C "$SERVIDO"
+rm -f "$TMP"
+echo "  (subida de pruebas hecha)"
+SH
+#  Con el `_spec/` que dejo el bloque 9: en la primera version del bloque faltaba aqui,
+#  y el paso lo cazo (6 FALLA del banco, todos por `_spec/site.json`). Es la forma del
+#  defecto real: una carpeta interna que el EXCLUIR de la web no nombra.
+printf 'EXCLUIR="--exclude=_deploy --exclude=_spec --exclude=*.md --exclude=.qa-recibo --exclude=.qa-arbol"\n' >> "$T/repo/_deploy/deploy.conf"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "el paquete es lo sellado: sube"                 0 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "y lo dice"                                   "el paquete es lo sellado:"
+contiene "con su cuenta"                               "todos en el recibo"
+mkdir -p "$T/repo/_tareas"; printf 'ruta\tdestino\n' > "$T/repo/_tareas/redirecciones.tsv"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "una carpeta _algo/ nueva sin --exclude: NO sube" 1 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "lo dice"                                     "EL PAQUETE LLEVA 1 FICHERO(S) QUE EL RECIBO NO SELLA"
+contiene "y lo nombra"                                 "_tareas/redirecciones.tsv"
+contiene "y dice como se arregla"                      "su --exclude en EXCLUIR"
+if [ -e "$T/servido/_tareas/redirecciones.tsv" ]; then
+  MAL=$((MAL+1)); printf '  FALLA %-52s\n' "y no ha subido nada"
+else OK=$((OK+1)); printf '  PASA  %-52s\n' "y no ha subido nada"; fi
+r "en ensayo lo dice y no para"                    0 bash "$REF/deploy.sh" "$T/repo"
+contiene "y avisa de que con --subir pararia"          "con --subir, esto para la subida"
+sed -i 's/^EXCLUIR="/EXCLUIR="--exclude=_tareas /' "$T/repo/_deploy/deploy.conf"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "con su --exclude, sube"                         0 bash "$REF/deploy.sh" "$T/repo" --subir
+no_contiene "y ya no lo cuenta"                        "QUE EL RECIBO NO SELLA"
+#  El caso que ya costo una vez: un CLAUDE.md servido en una tienda, con la arquitectura
+#  y un cupon vivo dentro. El recibo no sella los .md; si el EXCLUIR no los saca, suben.
+sed -i 's/ --exclude=\*\.md//' "$T/repo/_deploy/deploy.conf"
+perl "$REF/receipt.pl" --escribir --repo "$T/repo" --json "$T/qa-verde.json" --sitio "http://127.0.0.1:$PUERTO" >/dev/null
+r "un CLAUDE.md que EXCLUIR no saca: NO sube"      1 bash "$REF/deploy.sh" "$T/repo" --subir
+contiene "y lo nombra"                                 "CLAUDE.md"
+if [ -e "$T/servido/CLAUDE.md" ]; then
+  MAL=$((MAL+1)); printf '  FALLA %-52s\n' "y el CLAUDE.md no esta servido"
+else OK=$((OK+1)); printf '  PASA  %-52s\n' "y el CLAUDE.md no esta servido"; fi
+#  Lo que no se puede rehacer se dice: un subidor que no es un tar, o que vive fuera.
+cp "$T/subir-antes" "$T/repo/_deploy/subir.sh"
+r "un subidor que no es tar: no para"               0 bash "$REF/deploy.sh" "$T/repo"
+contiene "y dice NO MEDIDO con su porque"              "1-ter-b · el paquete contra el recibo · NO MEDIDO: el subidor no empaqueta"
+mkdir -p "$T/fuera"; cp "$T/repo/_deploy/subir.sh" "$T/fuera/subir.sh"
+sed -i 's|^SUBIDA=.*|SUBIDA=../fuera/subir.sh|' "$T/repo/_deploy/deploy.conf"
+r "un subidor fuera de _deploy/: no para"           0 bash "$REF/deploy.sh" "$T/repo"
+contiene "y dice desde donde no lo sabe"               "no vive en _deploy/ de este repo"
+cp "$T/conf-antes" "$T/repo/_deploy/deploy.conf"; cp "$T/subir-antes" "$T/repo/_deploy/subir.sh"; rm -rf "$T/repo/_tareas" "$T/fuera"
+
+echo
 echo "==============================================================================="
 printf "  %d PASA · %d FALLA\n" "$OK" "$MAL"
 echo "==============================================================================="
