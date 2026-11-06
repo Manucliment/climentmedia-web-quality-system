@@ -1,0 +1,5 @@
+# env-real.example · produccion de mentira (fake-production.pl)
+# 6-nov-2026 · MED-12, la cara que TIENE que seguir en rojo tras aceptar la pagina
+# HTML de una tienda: un .env de verdad, servido con 200. No empieza por <html, asi
+# que es el fichero, y MED-12 lo da por expuesto. Su contenido es inventado.
+gzip off

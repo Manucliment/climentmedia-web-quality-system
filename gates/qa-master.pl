@@ -1537,6 +1537,45 @@ my %ANATOMIA = anatomia_cargar();
 my %TIPOS_OK   = map { $_ => 1 } keys %ANATOMIA;
 my %TIPO_DECL;              # url -> 1 si el tipo salio del MARCADO
 my @TIPO_RAROS;             # data-tipo con un valor que no esta en la lista
+my @TIPO_SIN_ANAT;          # paginas con un tipo valido que no tiene anatomia medida (EST-02e)
+# 🔴 6-nov-2026 · EL VOCABULARIO DE data-tipo ES page-types.tsv, NO SOLO anatomy.tsv.
+#    Eran dos listas: page-types.tsv tiene 22 tipos con sus alias (plp, faq, carrito,
+#    busqueda…) y page-type-gate le pide a una tienda que declare data-tipo="plp" en
+#    sus colecciones; este gate solo aceptaba los 15 de anatomy.tsv, asi que esa
+#    misma pagina salia con EST-02d «valor que no existe», se le inferia «servicio»
+#    por la ruta y se le exigia la anatomia de un servicio: un rojo por obedecer al
+#    otro gate. Ahora un tipo o alias de page-types.tsv vale; si no tiene anatomia
+#    medida (09 §2: no se exige hasta medirla en cuatro paginas de otros negocios),
+#    se acepta y sale EST-02e, a la vista: declarar un tipo sin anatomia no puede
+#    ser una forma callada de esquivar la anatomia. Un valor que no esta en
+#    ninguna de las dos sigue siendo EST-02d. Sin page-types.tsv se dice y se vuelve
+#    a lo de antes (solo anatomy.tsv), que es lo conservador.
+my %TIPO_SIN_ANAT;          # tipo de page-types.tsv sin fila en anatomy.tsv
+my %ALIAS_PT;               # nombre (tipo o alias) de page-types.tsv -> su tipo
+{
+    my ($midir) = $0 =~ m{^(.*)[\/][^\/]+$}; $midir = '.' unless defined $midir;
+    if (open my $fh, '<', "$midir/page-types.tsv") {
+        while (my $l = <$fh>) {
+            chomp $l; $l =~ s/\r$//;
+            next if $l =~ /^\s*#/ || $l !~ /\S/;
+            my ($t, $al) = split /\|/, $l;
+            $t =~ s/^\s+|\s+$//g;
+            next unless $t =~ /^[a-z0-9-]+$/;
+            $TIPO_SIN_ANAT{$t} = 1 unless $TIPOS_OK{$t};
+            $ALIAS_PT{lc $_} //= $t for ($t, split ' ', ($al // ''));
+        }
+        close $fh;
+    } else {
+        print STDERR "  ⚠ no encuentro page-types.tsv junto al script: data-tipo solo acepta los tipos de anatomy.tsv\n";
+    }
+}
+# El nombre que vale, o undef: un tipo de anatomy.tsv o de page-types.tsv, o un alias suyo.
+sub tipo_valido {
+    my $t = lc(shift // ''); $t =~ s/^\s+|\s+$//g;
+    $t = $ALIAS_PT{$t} // $t;
+    return ($TIPOS_OK{$t} || $TIPO_SIN_ANAT{$t}) ? $t : undef;
+}
+my $TIPOS_LISTA = join ' ', sort(keys %TIPOS_OK, keys %TIPO_SIN_ANAT);
 # 🔴 26-sep-2026 · `--tipo` SE APLICABA A TODA LA CORRIDA, Y SIN VALIDAR.
 #    `qa-master.pl <url> --tipo legal` sin `--una-sola` amplia la corrida a las
 #    URLs del sitemap, y el tipo se les aplicaba A TODAS: la web entera quedaba
@@ -1550,20 +1589,31 @@ my %ALIAS_TIPO = (producto => 'ficha', product => 'ficha', quiz => 'landing',
                   thanks => 'gracias', about => 'nosotros', pricing => 'precios');
 if ($opt{tipo} ne '') {
     my $t = lc $opt{tipo};
-    $t = $ALIAS_TIPO{$t} // $t;
-    $TIPOS_OK{$t} or do {
-        print STDERR "  Tipo desconocido: '$opt{tipo}'. Hay: ", join(', ', sort keys %TIPOS_OK), "\n";
+    $t = tipo_valido($ALIAS_TIPO{$t} // $t) or do {
+        print STDERR "  Tipo desconocido: '$opt{tipo}'. Hay: ", join(', ', split ' ', $TIPOS_LISTA), "\n";
         exit 2 };
     $opt{tipo} = $t;
 }
+sub tipo_sin_anatomia {
+    my ($u, $t, $de) = @_;
+    return unless $TIPO_SIN_ANAT{$t};
+    push @TIPO_SIN_ANAT, qq{$u ($de)} unless grep { $_ =~ /^\Q$u\E / } @TIPO_SIN_ANAT;
+}
 sub tipo_de {
     my $u = shift;
-    return $opt{tipo} if $opt{tipo} ne '' && ($URL_PEDIDA{$u} || @URLS == 1);
+    if ($opt{tipo} ne '' && ($URL_PEDIDA{$u} || @URLS == 1)) {
+        tipo_sin_anatomia($u, $opt{tipo}, "--tipo $opt{tipo}");
+        return $opt{tipo};
+    }
     my $cuerpo = fetch($u)->{body} // '';
     if ($cuerpo =~ /<(?:main|body)\b[^>]*\bdata-tipo\s*=\s*["']([^"']+)["']/i) {
-        my $t = lc $1; $t =~ s/^\s+|\s+$//g;
-        if ($TIPOS_OK{$t}) { $TIPO_DECL{$u} = 1; return $t }
-        push @TIPO_RAROS, qq{$u (data-tipo="$t")}
+        my $dec = lc $1; $dec =~ s/^\s+|\s+$//g;
+        if (my $t = tipo_valido($dec)) {
+            $TIPO_DECL{$u} = 1;
+            tipo_sin_anatomia($u, $t, $dec eq $t ? qq{data-tipo="$t"} : qq{data-tipo="$dec" = $t});
+            return $t;
+        }
+        push @TIPO_RAROS, qq{$u (data-tipo="$dec")}
             unless grep { $_ =~ /^\Q$u\E / } @TIPO_RAROS;
     }
     my ($p) = $u =~ m{^https?://[^/]+(/.*)?$}; $p //= '/';
@@ -4870,6 +4920,25 @@ sub lente_medicion {
             # (`=` `~=` `|=` `^=` `$=` `*=`) y el `[data-x]` pelado. El lector de
             # site-a —`[data-pop-act="close"]`— caia justo por el `="close"`.
             $leidos{$_}++  for $c =~ /\[\s*data-([a-z0-9-]+)\s*(?:[~|^\$*]?=|\])/gi;
+            # 🔴 6-nov-2026 · EL NOMBRE EN UNA CONSTANTE. El tema de una tienda (minificado)
+            #    guarda el nombre del atributo en una const y lee con ella:
+            #        const HYDRATION_KEY_ATTRIBUTE="data-hydration-key", …
+            #        el.getAttribute(HYDRATION_KEY_ATTRIBUTE) · querySelectorAll(`[${…}]`)
+            #    Los patrones de arriba solo ven el nombre ESCRITO en la llamada, y MED-05
+            #    acusaba de «sin lector» a un atributo que se lee en tres sitios (medido en
+            #    el morph.js servido ese dia). Una constante con «data-x» cuenta como
+            #    lector solo si se USA para leer: getAttribute/hasAttribute/getAttributeNode
+            #    con ella, o un selector `[${ella}`. Escribir con ella (setAttribute) no es
+            #    leer: fixture constante-que-solo-escribe, que sigue en FALLO.
+            my %const_attr;
+            while ($c =~ /(?:\b(?:const|let|var)\s+|,\s*)([A-Za-z_\$][\w\$]*)\s*=\s*(["'])data-([a-z0-9-]+)\2/g) {
+                $const_attr{$1} = $3;
+            }
+            for my $nom (keys %const_attr) {
+                $leidos{$const_attr{$nom}}++
+                    if $c =~ /\b(?:getAttribute|hasAttribute|getAttributeNode)\s*\(\s*\Q$nom\E\s*\)/
+                    || $c =~ /\[\s*\$\{\s*\Q$nom\E\s*\}/;
+            }
         }
         # La otra fuente de emision: lo que el sitio SIRVE de verdad. Hace falta
         # para un repo que no versiona el HTML (se genera al desplegar): sin
@@ -5120,7 +5189,13 @@ sub lente_medicion {
         #    Y el dano no es cosmetico: el unico camino que le quedaba a una web
         #    que hace lo correcto era taparlo en aceptado.conf, que es
         #    exactamente lo que ese fichero no debe usarse para hacer.
-        my $NUM = qr/\d+|veinticuatro|vingt-quatre|twenty-four|una|uno|une|uma|dos|duas|dois|deux|two|tres|tr[eê]s|trois|three|cuatro|quatre|four|cinco|cinq|five|seis|six|sete|siete|sept|seven|ocho|oito|huit|eight|nueve|nove|neuf|nine|diez|dez|dix|ten|once|onze|eleven|doce|douze|twelve|one|um|un/i;
+        # 6-nov-2026 · AL PORTUGUES LE FALTABAN TRES. La lista cubre del 1 al 12 y el 24
+        #    en cada idioma, y en portugues no estaban «quatro», «doze» ni «vinte e
+        #    quatro»: «guardamos os dados … doze meses» salia «sin plazo» (lo vio el
+        #    Asistente leyendo la regla, con una web en portugues esperando su plazo).
+        #    Fixture med-plazo-pt con la frase de esa web y el plazo puesto, visto en
+        #    ROJO antes; su negativo, la frase de hoy sin plazo, sigue FALLO.
+        my $NUM = qr/\d+|veinticuatro|vingt-quatre|twenty-four|vinte[- ]e[- ]quatro|una|uno|une|uma|dos|duas|dois|deux|two|tres|tr[eê]s|trois|three|cuatro|quatre|quatro|four|cinco|cinq|five|seis|six|sete|siete|sept|seven|ocho|oito|huit|eight|nueve|nove|neuf|nine|diez|dez|dix|ten|once|onze|eleven|doce|douze|doze|twelve|one|um|un/i;
         # 🔴 Y `conserva\w*` NO CASABA CON EL FRANCES, que era justo el idioma del
         #    caso que motivo el arreglo. «conservées» es conserv + e-acentuada, y
         #    `\w` no casa una vocal acentuada en una cadena de bytes: la palabra
@@ -5186,12 +5261,26 @@ sub lente_medicion {
         #    (la spec, el despliegue, el SEO, el QA, el recibo, las instrucciones
         #    del agente, el .git y el .env): si el subidor se los lleva por error,
         #    se sirven, y ahi esta como se construye la web y a veces sus claves.
+        # 🔴 6-nov-2026 · UNA PAGINA HTML NO ES EL FICHERO. Una plataforma de tienda
+        #    contestaba /.env y /.qa-recibo con 200 y su pagina HTML entera (medido:
+        #    text/html, la tienda), y esto lo daba por expuesto: un rojo sin arreglo,
+        #    porque alli no hay fichero. En una ruta de FICHERO, un cuerpo que empieza
+        #    por `<!doctype html` o `<html` es la pagina de la web, no el fichero: un
+        #    .env, un recibo, unas instrucciones o un HEAD de git no empiezan asi. Lo
+        #    decide el CUERPO, no el Content-Type (un servidor mal puesto puede dar el
+        #    .env como text/html). Y solo en ficheros: una CARPETA que da 200 con HTML
+        #    puede ser su listado, y un listado es HTML. Sale en el PASA, con su motivo.
+        my %ES_FICHERO = map { $_ => 1 } qw(/.qa-recibo /CLAUDE.md /.git/HEAD /.env);
         my (@expuestas, @cerradas, @sin_medir);
         my @RUTAS = qw(/_leads/ /_secrets/ /check-smtp.php /_spec/ /_deploy/ /_seo/ /_qa/
                        /.qa-recibo /CLAUDE.md /.git/HEAD /.env);
         for my $p (@RUTAS) {
             my $c = codigo_sin_seguir("$ROOT$p");
             if (!defined $c || $c == 0 || $c == 429 || $c >= 500) { push @sin_medir, "$ROOT$p (" . (defined $c ? "HTTP $c" : 'sin respuesta') . ')' }
+            elsif ($c == 200 && $ES_FICHERO{$p}
+                   && (fetch("$ROOT$p")->{body} // '') =~ /\A(?:\xEF\xBB\xBF)?\s*<(?:!doctype\s+html|html)\b/i) {
+                push @cerradas, "$p 200 (una pagina HTML, no el fichero)";
+            }
             elsif ($c == 200) { push @expuestas, "$ROOT$p (HTTP 200)" }
             else              { push @cerradas, "$p $c" }
         }
@@ -5199,7 +5288,7 @@ sub lente_medicion {
             fallo(lente=>'MEDICION', id=>'MED-12', titulo=>'ruta interna expuesta por web',
                   donde=>join(' · ', @expuestas), ev=>[@expuestas],
                   dato=>scalar(@expuestas).' de '.scalar(@RUTAS).' rutas internas se sirven',
-                  umbral=>'403, 404 o una redireccion en cada una', proc=>'qa-final.sh §5',
+                  umbral=>'403, 404 o una redireccion en cada una (en un fichero, tambien un 200 con una pagina HTML: no es el fichero)', proc=>'qa-final.sh §5',
                   hacer=>'bloquear en el servidor, y si es una carpeta del repo, sacarla del paquete de subida (deploy.conf). En _leads/ hay nombres, telefonos e IPs');
         } elsif (@sin_medir) {
             nv(lente=>'MEDICION', id=>'MED-12', titulo=>'rutas internas: alguna no se ha podido mirar',
@@ -5423,6 +5512,7 @@ sub lente_estructura {
     #    se juzga con SU tipo.
     my @vistas = @PAGES;
     my (@sin_sec, @sin_datasec, @anat_mal, @heur, %tipos, $con_datasec, @no_leidas, @leidas_est);
+    my $datasec_sin_anat = 0;   # paginas con data-sec y un tipo sin anatomia (EST-02e)
     my (@drop_pobres, @drop_rotos, $drop_mirados);
     my (@sin_pie, @pie_sin_legal, @nap_discrepa, @sin_autoria, @autoria_marca, %anclas_autoria);
     my (@legales_pagina, @capta_por);   # EST-12b: [pagina, n legales] y lo que delata que capta
@@ -5525,8 +5615,13 @@ sub lente_estructura {
             push @sin_datasec, $p;
             my $need = scalar @{$ANATOMIA{$tp} // []};
             push @heur, "$p ($ns <section> para $need roles OBL de «$tp»)" if $need && $ns < $need;
+        } elsif ($TIPO_SIN_ANAT{$tp}) {
+            # 6-nov-2026 · un tipo sin anatomia no tiene roles que juzgar: si contara
+            # aqui, EST-02c diria «anatomia completa» de una pagina que no ha mirado
+            # (el «0 de 0 · PASA»). Queda fuera, y lo dice EST-02e.
+            $datasec_sin_anat++;
         } else {
-            $con_datasec = 1;
+            $con_datasec++;
             my %hay = map { $_ => 1 } @secs;
             my @faltan = grep { !$hay{$_} } @{$ANATOMIA{$tp} // []};
             push @anat_mal, "$p «$tp» faltan: ".join(' ', @faltan) if @faltan;
@@ -5574,9 +5669,23 @@ sub lente_estructura {
                           donde=>join("\n                 ", @TIPO_RAROS[0..($#TIPO_RAROS>3?3:$#TIPO_RAROS)]),
                           ev=>[@TIPO_RAROS],
                           dato=>scalar(@TIPO_RAROS).' pagina(s) · se ha vuelto a inferir el tipo por la ruta',
-                          umbral=>'data-tipo debe ser uno de: '.join(' ', sort keys %TIPOS_OK),
-                          proc=>'09-tipos-de-pagina §2',
+                          umbral=>'data-tipo debe ser uno de: '.$TIPOS_LISTA.' (o un alias de page-types.tsv)',
+                          proc=>'09-tipos-de-pagina §2 · page-types.tsv',
                           hacer=>'corregir el valor o quitar el atributo: declarar un tipo que el gate no conoce es creer que se declara algo mientras se mide otra cosa');
+    # EST-02e · un tipo VALIDO sin anatomia medida (6-nov-2026, ver %TIPO_SIN_ANAT):
+    # se acepta, y se dice que su maqueta no se juzga. Sin esta linea, declarar
+    # data-tipo="plp" seria una forma callada de quedarse sin anatomia.
+    if (@TIPO_SIN_ANAT) {
+        my %n; $n{$_}++ for map { /(?:= |data-tipo="|--tipo )([a-z0-9-]+)"?\)$/ ? $1 : '?' } @TIPO_SIN_ANAT;
+        aviso(lente=>'ESTRUCTURA', id=>'EST-02e', titulo=>'tipo declarado sin anatomia medida: su maqueta no se juzga',
+              donde=>join("\n                 ", @TIPO_SIN_ANAT[0..($#TIPO_SIN_ANAT>3?3:$#TIPO_SIN_ANAT)]),
+              ev=>[@TIPO_SIN_ANAT],
+              dato=>scalar(@TIPO_SIN_ANAT).' pagina(s) · '.join(' ', map { "$_ x$n{$_}" } sort keys %n)
+                    .' · EST-01 (secciones) si se mide; la anatomia (EST-02c) no',
+              umbral=>'un tipo con anatomia en anatomy.tsv; sin ella en page-types.tsv: '.join(' ', sort keys %TIPO_SIN_ANAT),
+              proc=>'09 §2: una anatomia no se exige hasta medirla en cuatro paginas de otros negocios',
+              hacer=>'si el tipo es el de la pagina, nada que hacer aqui: lo que no se juzga queda a la vista. Si no lo es, declarar el que lo es');
+    }
 
     # EST-02 · data-sec (PC4 / X2). NUNCA se reporta como PASA.
     # 🔴 5-nov-2026 · Hasta hoy el dato llevaba escrito «(0 de 121 paginas nuestras lo
@@ -5609,7 +5718,8 @@ sub lente_estructura {
                           dato=>scalar(@anat_mal).' de '.scalar(@vistas).' paginas',
                           umbral=>'todos los roles OBL de 09 §2, por tipo de pagina', proc=>'09-tipos-de-pagina §2',
                           hacer=>'cada rol que falta tiene su consecuencia escrita en 09 §2. Los moldes estan en blueprint/moulds/')
-                  : pasa(lente=>'ESTRUCTURA', id=>'EST-02c', titulo=>'anatomia completa en las paginas que declaran data-sec');
+                  : pasa(lente=>'ESTRUCTURA', id=>'EST-02c', titulo=>'anatomia completa en las paginas que declaran data-sec',
+                         dato=>"$con_datasec pagina(s) con data-sec juzgada(s)" . ($datasec_sin_anat ? " · $datasec_sin_anat de un tipo sin anatomia, fuera (EST-02e)" : ''));
     }
 
     # ── EST-10 · un desplegable con menos de 3 destinos no es un desplegable ──

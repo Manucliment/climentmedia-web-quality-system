@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preguntas frecuentes | Fixture de data-tipo sin anatomia</title>
+<meta name="description" content="Fixture de la bateria: una pagina que declara un tipo que page-types.tsv tiene y anatomy.tsv todavia no. El gate lo acepta y avisa de que su maqueta no se juzga.">
+<link rel="canonical" href="https://fixture.test/">
+</head>
+<body>
+<!-- «preguntas» es un ALIAS de «faq» en page-types.tsv y NO en anatomy.tsv: no
+     tiene anatomia medida. Esta en la RAIZ, que la ruta inferiria «home»: si sale
+     «faq», gano la declaracion y el alias se resolvio. Y tiene que salir el aviso EST-02e, no EST-02d. -->
+<main data-tipo="preguntas">
+  <section data-sec="hero"><h1>Todos los productos</h1><p>Un listado de mentira para el banco.</p></section>
+  <section data-sec="catalogo"><h2>Productos</h2><ul><li><a href="/p/uno/">Uno</a></li><li><a href="/p/dos/">Dos</a></li></ul></section>
+</main>
+</body>
+</html>

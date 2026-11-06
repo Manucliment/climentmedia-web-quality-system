@@ -1,0 +1,6 @@
+# carpeta-200.example · produccion de mentira (fake-production.pl)
+# 6-nov-2026 · MED-12: la pagina HTML solo excusa a una ruta de FICHERO. Una carpeta
+# interna que contesta 200 con HTML puede ser su listado («Index of /_leads/»), y un
+# listado es HTML: sigue en FALLO aunque el cuerpo sea una pagina.
+gzip off
+status /_leads/ 200

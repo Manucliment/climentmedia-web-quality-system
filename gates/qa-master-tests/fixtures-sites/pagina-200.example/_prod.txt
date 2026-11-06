@@ -1,0 +1,10 @@
+# pagina-200.example · produccion de mentira (fake-production.pl)
+# 6-nov-2026 · MED-12: una plataforma de tienda que contesta las rutas de fichero
+# que no existen (/.env, /.qa-recibo, /.git/HEAD) con 200 y su propia pagina HTML,
+# no con un 404. Medido en una tienda real ese dia: 200, text/html, la pagina entera
+# de la tienda. Eso no es el fichero servido. Las carpetas y el .php siguen
+# cerrados con su 404; la carpeta que da 200 con HTML es otro caso (carpeta-200).
+gzip off
+status /.env 200
+status /.qa-recibo 200
+status /.git/HEAD 200

@@ -723,6 +723,16 @@ texto  "MED-05 · y lo nombra por su nombre"               SI "data-thanks" \
 # 🔴 LA FRONTERA · el mismo arbol CON el lector no puede salir acusado.
 espera "MED-05 · el mismo, con lector: PASA"              PASA  MED-05 \
        perl $QA https://climentmedia.com --repo fixtures-med05/con-lector --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 6-nov-2026 · EL LECTOR QUE LEE POR UNA CONSTANTE. El tema de una tienda guarda el
+#    nombre en `const X="data-…"` y lee con getAttribute(X), hasAttribute(X) y
+#    `[${X}]`; MED-05 solo veia el nombre escrito en la llamada y lo daba por
+#    huerfano (medido con el .js servido por la tienda: FALLO antes, PASA despues).
+#    El fixture es con-lector con el lector reescrito asi. Su negativo: la MISMA
+#    constante usada solo para ESCRIBIR (setAttribute), que no es leer: sigue FALLO.
+espera "MED-05 · lee por una constante: PASA"             PASA  MED-05 \
+       perl $QA https://climentmedia.com --repo fixtures-med05/lector-por-constante --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-05 · la constante solo escribe: FALLO"        FALLO MED-05 \
+       perl $QA https://climentmedia.com --repo fixtures-med05/constante-que-solo-escribe --candidato --una-sola --solo medicion --sin-recibo
 # 🔴 Y que no se acuse al codigo DEL CLIENTE: `_migrate/` guarda su web
 #    capturada como evidencia y no se despliega. En site-c daba 16 atributos, de
 #    los que 4 de los 5 visibles eran de su Elementor.
@@ -789,6 +799,20 @@ espera "MED-12 · todo cerrado: PASA, no silencio"         PASA  MED-12 perl $QA
 espera "MED-12 · una ruta que da 503: NO VERIFICADO"      NOVERIF MED-12 perl $QA http://a-medias.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
 texto  "MED-12 · y no la cuenta como cerrada"             SI "1 de 11 sin respuesta valida; 10 cerradas" \
        perl $QA http://a-medias.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+# 🔴 6-nov-2026 · MED-12 EN UNA TIENDA QUE CONTESTA 200 A TODO. Una plataforma de
+#    tienda devolvia /.env y /.qa-recibo con 200 y su pagina HTML entera (medido ese
+#    dia: text/html, la tienda), y MED-12 la daba por expuesta: un rojo que no se
+#    puede arreglar, porque no hay fichero. Una ruta de FICHERO que contesta con una
+#    pagina HTML no sirve el fichero. Las dos caras que TIENEN que seguir en rojo: un
+#    .env de verdad (no empieza por <html: es el fichero) y una CARPETA que da 200
+#    con HTML (un listado tambien es HTML).
+espera "MED-12 · fichero que contesta con su pagina: PASA" PASA  MED-12 perl $QA http://pagina-200.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+texto  "MED-12 · y lo dice, no lo calla"                  SI "/.env 200 (una pagina HTML, no el fichero)" \
+       perl $QA http://pagina-200.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+espera "MED-12 · un .env de verdad sigue FALLO"           FALLO MED-12 perl $QA http://env-real.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+texto  "MED-12 · y lo nombra"                             SI "http://env-real.example/.env (HTTP 200)" \
+       perl $QA http://env-real.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
+espera "MED-12 · carpeta con 200 y HTML sigue FALLO"      FALLO MED-12 perl $QA http://carpeta-200.example/ --solo medicion --una-sola --sin-recibo --cache "$CACHE"
 espera "bc · politica «pendiente de revision juridica»"   FALLO MED-08  perl $QA http://site-d.example/ --solo medicion --contenedor fixtures-sites/site-d.example/_gtm.js --cache "$CACHE"
 espera "bc · casillas de analitica premarcadas (G13)"     FALLO MED-06  perl $QA http://site-d.example/ --solo medicion --cache "$CACHE"
 # 8-sep-2026 - LA CARA CONTRARIA, y hacia falta: el caso de arriba solo prueba que
@@ -2230,6 +2254,28 @@ espera "data-tipo · un valor inventado AVISA"         AVISO EST-02d \
        perl $QA https://climentmedia.com --repo fixtures-type/basura --candidato --una-sola --solo estructura --sin-recibo
 texto  "data-tipo · y vuelve a inferir por la ruta"   SI "tipos: home x1" \
        perl $QA https://climentmedia.com --repo fixtures-type/basura --candidato --una-sola --solo estructura --sin-recibo
+# 🔴 6-nov-2026 · DOS LISTAS DE TIPOS. page-types.tsv tiene 22 tipos (plp, faq,
+#    carrito…) y este gate solo aceptaba los 15 de anatomy.tsv: una tienda que
+#    declaraba data-tipo="plp" en sus colecciones -lo que pide page-type-gate- salia
+#    con EST-02d «valor que no existe» y se le inferia «servicio» por la ruta, con la
+#    anatomia de un servicio. Ahora el vocabulario es page-types.tsv (tipos y
+#    alias); un tipo sin anatomia medida se acepta y sale EST-02e, a la vista: su
+#    maqueta no se juzga. La frontera de arriba (un valor inventado) sigue en rojo.
+texto  "data-tipo · plp (page-types.tsv) es un tipo"   SI "tipos: plp x1" \
+       perl $QA https://climentmedia.com --repo fixtures-type/plp --candidato --una-sola --solo estructura --sin-recibo
+espera "data-tipo · plp no es un valor que no existe"  AUSENTE EST-02d \
+       perl $QA https://climentmedia.com --repo fixtures-type/plp --candidato --una-sola --solo estructura --sin-recibo
+espera "data-tipo · y avisa: sin anatomia medida"      AVISO EST-02e \
+       perl $QA https://climentmedia.com --repo fixtures-type/plp --candidato --una-sola --solo estructura --sin-recibo
+texto  "data-tipo · y cuenta por tipo"                 SI "1 pagina(s) · plp x1" \
+       perl $QA https://climentmedia.com --repo fixtures-type/plp --candidato --una-sola --solo estructura --sin-recibo
+# sin roles que juzgar, EST-02c no puede decir «anatomia completa»: seria un 0 de 0 · PASA
+espera "data-tipo · sin anatomia, EST-02c no aprueba"  AUSENTE EST-02c \
+       perl $QA https://climentmedia.com --repo fixtures-type/plp --candidato --una-sola --solo estructura --sin-recibo
+texto  "data-tipo · un alias (preguntas) es su tipo"   SI "tipos: faq x1" \
+       perl $QA https://climentmedia.com --repo fixtures-type/alias-faq --candidato --una-sola --solo estructura --sin-recibo
+espera "data-tipo · un tipo CON anatomia no avisa"     AUSENTE EST-02e \
+       perl $QA https://climentmedia.com --repo fixtures-type/declarado --candidato --una-sola --solo estructura --sin-recibo
 
 echo
 echo "== LOS TIPOS nosotros Y empleo (09 §2.13 y §2.14) · 26-sep-2026"
@@ -2945,6 +2991,15 @@ espera "MED-09 · politica en neerlandes con plazo, PASA"   PASA  MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-nl --candidato --una-sola --solo medicion --sin-recibo
 espera "MED-09 · la misma, SIN plazo, sigue FALLO"        FALLO MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-nl-sin-plazo --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 6-nov-2026 · EL PORTUGUES, CON SU FRASE. A la lista le faltaban «quatro», «doze» y
+#    «vinte e quatro», y una web en portugues espera a que su cliente le de el plazo:
+#    con «doze meses» habria seguido «sin plazo». El fixture es la frase de esa web con
+#    el plazo puesto; el negativo, la de hoy («apenas o tempo necessário») con la
+#    «garantia de 3 anos» de otro bloque al lado: ni lo uno ni lo otro es un plazo.
+espera "MED-09 · portugues, «doze meses», PASA"           PASA  MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-pt --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-09 · «o tempo necessário» no es plazo: FALLO" FALLO MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-pt-sin-plazo --candidato --una-sola --solo medicion --sin-recibo
 # 🔴 MED-11 · cada pulsacion de mas era un correo duplicado a la clinica y una
 #    conversion de mas en su cuenta de Ads.
 espera "MED-11 · sin guarda de doble envio, FALLA"       FALLO MED-11 \
