@@ -75,7 +75,7 @@ perl gates/linking-gate.pl /tmp/g.json     # EXIT 1 if anything FAILS
 | R3 | Inbound **content** links per page | ≥1 (outside nav/footer) | WARN |
 | R4 | Hard orphans (0 inbound) | 0 · if it is live and unlinked, **`noindex` is mandatory** | FAIL |
 | R5 | **The hub links to ALL its children** | 0 children unlinked from their parent | FAIL |
-| R6 | **VISIBLE breadcrumb** where there is a hierarchy | `BreadcrumbList` with no breadcrumb on screen = FAIL | FAIL |
+| R6 | **VISIBLE breadcrumb** where there is a hierarchy | `BreadcrumbList` with no breadcrumb on screen = FAIL · no breadcrumb at depth ≥1 = WARN, except the home page of a language (`/es/`: one segment, an `hreflang` version of the root) | FAIL |
 | R7 | Links point at the **canonical URL** | 0 to `index.html`, 0 to URLs that redirect | FAIL |
 | R8 | Descriptive anchors | 0 generic, 0 empty | FAIL |
 | R9 | % of content links over the total | ≥10% FAIL · <20% WARN | FAIL/WARN |

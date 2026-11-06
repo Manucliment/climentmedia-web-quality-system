@@ -154,14 +154,30 @@ if (@shells) {
 }
 
 # --- R6: breadcrumb visible donde hay jerarquia, y coherente con el schema
+#     6-nov-2026 · LA PORTADA DE UN IDIOMA NO LLEVA MIGAS. R6 decide «con jerarquia» por
+#     la profundidad en clics, y /es/ esta a un clic de la raiz: una web con dos idiomas
+#     daba AVISO en cada subida por sus dos portadas (31-oct). Es portada de idioma una
+#     pagina de UN segmento que es version de la raiz por hreflang, en cualquiera de las
+#     dos direcciones: la raiz la lista, o ella lista la raiz con un idioma (no con
+#     x-default, que una pagina interna a veces apunta a la raiz). Su schema sin miga
+#     visible sigue siendo FALLA. Sin hreflang en el rastreo, nada cambia.
 {
-  my (@sinvis, @soloschema);
+  my (@sinvis, @soloschema, %portada);
+  my $raiz = $j->{start} // '';
+  for my $par (@{ (($p->{$raiz} // {})->{hreflang}) || [] }) { $portada{ $par->[1] } = 1; }
+  for my $u (@ok200) { next if $u eq $raiz;
+    for my $par (@{ $p->{$u}{hreflang} || [] }) { $portada{$u} = 1 if $par->[0] ne 'x-default' && $par->[1] eq $raiz; } }
+  delete $portada{$raiz};
+  for my $u (keys %portada) { delete $portada{$u} unless $u =~ m{^https?://[^/]+/[^/?]+$}; }
+  my $exentas = 0;
   for my $u (@ok200) { my $d = $p->{$u}{depth}; next unless defined $d && $d >= 1 && $d != 99;
-    push @sinvis, $u unless $p->{$u}{has_breadcrumb_visible};
-    push @soloschema, $u if $p->{$u}{has_breadcrumb_schema} && !$p->{$u}{has_breadcrumb_visible}; }
+    push @soloschema, $u if $p->{$u}{has_breadcrumb_schema} && !$p->{$u}{has_breadcrumb_visible};
+    if ($portada{$u}) { $exentas++; next; }
+    push @sinvis, $u unless $p->{$u}{has_breadcrumb_visible}; }
+  my $nota = $exentas ? "; $exentas portada(s) de idioma (hreflang de la raiz) no la necesitan" : '';
   if (@soloschema) { bad('R6 breadcrumb VISIBLE, no solo schema', scalar(@soloschema)." pagina(s) emiten BreadcrumbList sin breadcrumb en pantalla"); }
-  elsif (@sinvis)  { avis('R6 breadcrumb VISIBLE', scalar(@sinvis)." pagina(s) con jerarquia y sin breadcrumb"); }
-  else { ok('R6 breadcrumb VISIBLE'); }
+  elsif (@sinvis)  { avis('R6 breadcrumb VISIBLE', scalar(@sinvis)." pagina(s) con jerarquia y sin breadcrumb$nota"); }
+  else { ok('R6 breadcrumb VISIBLE', $exentas ? substr($nota, 2) : ''); }
 }
 
 # --- R7: los enlaces internos apuntan a la URL canonica

@@ -293,6 +293,74 @@ caso_r5('jerarquico completo: nada que reprochar',     'PASA',
           ['/servicios/dos',    ['/servicios']] ]);
 
 # =============================================================================
+print "\n== R6 · LA PORTADA DE UN IDIOMA NO LLEVA MIGAS · 6-nov\n";
+# 🔴 EL DEFECTO (31-oct, una web con dos idiomas): /es/ y /nl/ estan a un clic de la raiz,
+#    R6 decide «con jerarquia» por esa profundidad y pedia una miga a las dos portadas de
+#    idioma, AVISO en cada subida. El primer caso, visto en ROJO contra el gate de antes.
+#    Los que esperan AVISO o FALLA son lo que el arreglo NO puede tapar: una pagina interna
+#    del idioma, una seccion de un segmento que no es idioma, una interna cuyo x-default
+#    apunta a la raiz, y el schema de migas sin miga en pantalla.
+# $pags: [ [ruta, profundidad, miga visible 0|1, schema 0|1, [[idioma, ruta]...]], ... ]
+sub caso_r6 {
+    my ($eti, $espera, $pags) = @_;
+    my $tmp = tempdir(CLEANUP => 1);
+    my $f   = "$tmp/g.json";
+    my $url = sub { my $r = shift; return "https://$HOST" . $r; };
+    my %pages;
+    for my $x (@$pags) {
+        my ($r, $d, $vis, $sch, $hl) = @$x;
+        $pages{ $url->($r) } = {
+            status => 200, depth => $d, out_targets => [ $url->('/') ], out_internal_unique => 3,
+            out_chrome => 2, out_body => 1, in_unique => 2, in_body => 1, inbound => [],
+            has_breadcrumb_visible => ($vis ? JSON::PP::true : JSON::PP::false),
+            has_breadcrumb_schema  => ($sch ? JSON::PP::true : JSON::PP::false),
+            ($hl ? (hreflang => [ map { [ $_->[0], $url->($_->[1]) ] } @$hl ]) : ()),
+        };
+    }
+    open my $h, '>', $f or die $!;
+    print $h JSON::PP->new->encode({ site => $HOST, start => $url->('/'),
+                                     sitemap => [ sort keys %pages ], pages => \%pages });
+    close $h;
+    my $log = `perl "$GATE" "$f" 2>&1`;
+    my ($linea) = $log =~ /^(PASA|FALLA|AVISO|NOVERIF)\s+R6\b.*$/m;
+    my $real = $linea // 'SIN LINEA R6';
+    if ($real eq $espera) { printf "  OK    %-52s R6=%s\n", $eti, $real; $ok++ }
+    else { printf "  MAL   %-52s esperaba R6=%s y salio %s\n", $eti, $espera, $real; $ko++ }
+}
+my $HL = [ ['es', '/es'], ['nl', '/nl'], ['x-default', '/'] ];
+caso_r6('la raiz lista /es y /nl: sus portadas no piden miga', 'PASA',
+        [ ['/', 0, 0, 0, $HL], ['/es', 1, 0, 0, $HL], ['/nl', 1, 0, 0, $HL] ]);
+caso_r6('la raiz sin hreflang; /es la lista como en', 'PASA',
+        [ ['/', 0, 0, 0, undef], ['/es', 1, 0, 0, [ ['es', '/es'], ['en', '/'] ]] ]);
+caso_r6('una pagina interna del idioma sigue pidiendo miga', 'AVISO',
+        [ ['/', 0, 0, 0, $HL], ['/es', 1, 0, 0, $HL], ['/es/servicios', 2, 0, 0, [ ['es', '/es/servicios'] ]] ]);
+caso_r6('/blog no es un idioma: sigue pidiendo miga', 'AVISO',
+        [ ['/', 0, 0, 0, $HL], ['/es', 1, 0, 0, $HL], ['/blog', 1, 0, 0, undef] ]);
+caso_r6('el x-default de una interna a la raiz no la exime', 'AVISO',
+        [ ['/', 0, 0, 0, undef], ['/servicios', 1, 0, 0, [ ['es', '/servicios'], ['x-default', '/'] ]] ]);
+caso_r6('portada de idioma con schema de migas sin miga: FALLA', 'FALLA',
+        [ ['/', 0, 0, 0, $HL], ['/es', 1, 0, 1, $HL], ['/nl', 1, 0, 0, $HL] ]);
+
+# Y el rastreador las lee: <link rel="alternate" hreflang> del <head>, internas y en canon.
+{
+    my $tmp = tempdir(CLEANUP => 1); my $cache = "$tmp/c"; make_path($cache); my $out = "$tmp/g.json";
+    my $html = qq{<!DOCTYPE html><html lang="es"><head><title>T</title>}
+             . qq{<link rel="alternate" hreflang="es" href="https://www.$HOST/es/">}
+             . qq{<link hreflang='NL' rel='alternate' href='/nl/'>}
+             . qq{<link rel="alternate" hreflang="fr" href="https://otra.test/fr/">}
+             . qq{<link rel="canonical" href="https://$HOST/"></head><body><main><p>Hola</p></main></body></html>};
+    seed($cache, "https://$HOST/sitemap.xml", 404, '', 'text/html');
+    seed($cache, $START, 200, $html);
+    my $log = `perl "$CRAWL" "$START" "$cache" "$out" 1 2>&1`;
+    my $g = eval { JSON::PP->new->decode(do { local $/; open my $h, '<', $out or die; <$h> }) } || {};
+    my $hl = ($g->{pages}{"https://$HOST/"} || {})->{hreflang} || [];
+    my $got = join ' ', map { "$_->[0]=$_->[1]" } @$hl;
+    my $want = "es=https://$HOST/es nl=https://$HOST/nl";
+    if ($got eq $want) { printf "  OK    %-52s %s\n", 'el rastreador lee hreflang (interno, en canon)', $got; $ok++ }
+    else { printf "  MAL   %-52s esperaba «%s» y salio «%s»\n", 'el rastreador lee hreflang (interno, en canon)', $want, $got; $ko++ }
+}
+
+# =============================================================================
 print "\n== R2 · R3 · R4 · LA PAGINA DE CAPTACION QUE NADIE ENLAZA · 27-oct\n";
 # 🔴 EL DEFECTO: una web que solo se navega por el menu, o una pagina de ciudad
 #    que solo trae el sitemap. Medido en una web real: 7 paginas huerfanas (las

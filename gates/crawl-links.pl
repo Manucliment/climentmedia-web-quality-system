@@ -343,6 +343,23 @@ sub process {
         ($html =~ m{<script\b[^>]*type\s*=\s*["']application/ld\+json["'][^>]*>(.*?)</script>}gsi);
     $rec->{has_breadcrumb_schema} = ($ld =~ /BreadcrumbList/ ? JSON::PP::true : JSON::PP::false);
     $rec->{has_breadcrumb_visible} = has_visible_breadcrumb($clean) ? JSON::PP::true : JSON::PP::false;
+    # 6-nov-2026 · LAS VERSIONES DE IDIOMA (hreflang), del HTML crudo como el schema: viven
+    #    en el <head>. Con ellas linking-gate sabe que /es/ y /nl/ son la portada de su
+    #    idioma, a un clic de la raiz y sin migas, y R6 deja de pedirles una (31-oct, una
+    #    web con dos idiomas: AVISO en cada subida por sus dos portadas). Solo las internas.
+    my @hl;
+    while ($html =~ m{<link\b([^>]*)>}gsi) {
+        my $at = $1;
+        next unless $at =~ m{\brel\s*=\s*["']?alternate\b}i;
+        my ($lg) = $at =~ m{\bhreflang\s*=\s*["']?([A-Za-z0-9-]+)}i;
+        my ($hr) = $at =~ m{\bhref\s*=\s*"([^"]*)"}i;
+        ($hr) = $at =~ m{\bhref\s*=\s*'([^']*)'}i unless defined $hr;
+        next unless defined $lg && defined $hr;
+        my $a = abs_url($hr, $eff);
+        next unless defined $a && is_internal($a);
+        push @hl, [ lc $lg, canon($a) ];
+    }
+    $rec->{hreflang} = \@hl if @hl;
     # 🔴 Cuantos <a href> trae el HTML SERVIDO, sin filtrar nada. Es el unico
     #    dato que distingue "esta pagina no enlaza a nada" de "esta pagina no la
     #    ha pintado nadie todavia": shop.site-b.example/loja.html son 1.574 bytes
