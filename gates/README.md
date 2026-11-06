@@ -443,6 +443,11 @@ there, and its candidate receipt was replaced by one the door would have accepte
   `deploy.conf` says `MARCA_GATE=para`, which the site sets once its brand file
   (`_diseno/MARCA.md`) is done: a door that stopped every site on day one, for something none of
   them had, would teach everyone to step around it.
+- `botones-gate.js` at 1366 and 390 (since 2026-11-06), and then `botones-sitio.js` over all of
+  its readings together, so a button that is coherent on each page and not across them is seen.
+  It **only warns** until `deploy.conf` says `BOTONES_GATE=para`; `BOTONES_FAMILIAS` names the
+  site's button families. Measured that day on ten home pages, three sites had one button class
+  with two shapes (a smaller header call to action, a form button in another size or in Arial).
 
 They run on every page in `URLS_NAVEGADOR` (`/` if none).
 
@@ -619,6 +624,9 @@ without blocking. Why the order changed is trap §89.
 | `mobile-gate.js` | An action that **converts** whole on the first screen at 360, 390, 1366 and 1440 (a form, a phone, a message app, a booking platform, a contact path of the same site), and calls to action nothing covers. |
 | `mobile-menu-gate.js` | The mobile menu at 390: the menu fits in one row or sits behind a button with `aria-expanded` that opens it; closed, its links are out of the Tab order; open, Tab never sends the focus to a page element the menu covers or that is off screen (WCAG 2.4.11), and Escape closes it when it is modal (`role=dialog`, a scroll lock, an inert page, or 60 % of the screen covered; a warning otherwise). Measures the menu half of `A11Y-13`, not the rest. |
 | `marca-gate.js` | The brand, whole and alone: a logo in the header (a mark made of text and CSS warns), a tab icon in SVG and in PNG or ICO of 32 px or more, an `apple-touch-icon`, a manifest naming 192 and 512, all of them **loading**, `theme-color`, and no colour or typeface outside the site's brand file (`_diseno/MARCA.md`: the `#hex` under «## Colores», the backticked names under «## Tipos»). Without that file the two palette rules say `NOT MEASURED`. The social image is not measured here: S2.9, SEO-06 and SEO-08 already do. |
+| `botones-gate.js` | One button, one look, on the page: the same group (its family from `BOTONES_FAMILIAS`, or its classes) keeps one **shape** everywhere (size, weight, typeface, case, radius, border, padding, with 1 px of size and 2 of padding as tolerance) and one **paint** on the same background (fill, text and border colour; the inverted button of a dark band is the same button). A button of one line keeps its height. With families, a button of none warns. Not hover, not focus. |
+| `botones-sitio.js` | The same comparison (`compara`, exported by the gate: one copy of the rule) over the readings of several pages, by width; it reports only what appears when they are put together, and a reading that is not valid is named and left out. |
+| `botones-barrido.sh` | Every page of the served sitemap (40 by default) through both, at 1366 and 390: the monthly design pass. |
 | `measure-screens.js` | Density: how much page per screen, measured against the moulds. |
 | `anatomy.pl` | One table of page anatomies, three consumers, and they must agree. |
 | `roles.pl` | The role vocabulary (`roles.tsv` = 09 §1), and it generates one reference sheet per page type into `blueprint/moulds/types/`. `--gate` re-derives all thirteen and fails on any difference, so a sheet edited by hand does not survive a battery. |

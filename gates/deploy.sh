@@ -59,6 +59,11 @@
 #  manifest que cargan, theme-color, nada fuera de la paleta de _diseno/MARCA.md).
 #  SOLO AVISA hasta que la web pone MARCA_GATE=para (cuando su _diseno/ esta hecho);
 #  MARCA_IGNORAR= lista los selectores de widgets de terceros que no cuentan.
+#  6-nov-2026 · y los botones (botones-gate.js a 1366 y 390: un mismo boton con la
+#  misma forma en la pagina, y la misma pintura sobre el mismo fondo; y botones-sitio.js,
+#  lo mismo ENTRE las paginas medidas). Avisa hasta que la web pone BOTONES_GATE=para;
+#  BOTONES_FAMILIAS="primario=.btn-primary,.btn-download; secundario=.btn-ghost" nombra
+#  sus familias (sin ellas, el grupo de un boton son sus clases).
 #  EL FALLO QUE ESTO ARREGLA, encontrado en el primer uso real de la puerta: el
 #  recibo sellaba el arbol del repo con un veredicto sacado de medir PRODUCCION.
 #  site-d salio «VEREDICTO: FALLA» por los 11 defectos que el despliegue
@@ -540,6 +545,19 @@ MARCA_CFG="$(IGN="$MARCA_IGNORAR" LV="$MARCA_VECTOR" perl -e '
   my $lv = ($ENV{LV} // "") eq "true" ? "true" : "false";
   print "{\"colores\":[", $l->(map { "#$_" } @col), "],\"tipos\":[", $l->(@tip), "],\"ignorar\":[", $l->(@ign), "],\"logoVector\":$lv}";
 ' "$REPO/_diseno/MARCA.md" 2>/dev/null)"
+# 6-nov-2026 · LOS BOTONES. botones-gate.js (y botones-sitio.js entre paginas). Como la
+#    marca, al principio SOLO AVISA: medido ese dia en diez portadas, tres webs tenian un
+#    mismo boton con dos formas (un CTA de cabecera mas pequeño, el boton del formulario
+#    con otro cuerpo o con Arial). Para la subida cuando la web pone BOTONES_GATE=para.
+#    BOTONES_FAMILIAS: «nombre=selector,selector; nombre=selector». Solo letras, cifras,
+#    espacio y . # _ - , = ; (va dentro de un JSON y de comillas simples del shell remoto).
+BOTONES_GATE="${BOTONES_GATE:-avisa}"
+BOTONES_CFG="$(FAM="$(printf '%s' "${BOTONES_FAMILIAS:-}" | tr -cd 'A-Za-z0-9#._, =;-')" IGN="$MARCA_IGNORAR" perl -e '
+  my @f = grep { length $_->[0] && length $_->[1] } map { my ($n, $s) = split /=/, $_, 2; [ ($n // "") =~ s/^\s+|\s+$//gr, ($s // "") =~ s/^\s+|\s+$//gr ] } split /;/, ($ENV{FAM} // "");
+  my @ign = grep { length } map { s/^\s+|\s+$//gr } split /,/, ($ENV{IGN} // "");
+  print "{", (@f ? "\"familias\":{" . join(",", map { "\"$_->[0]\":\"$_->[1]\"" } @f) . "}," : ""),
+        "\"ignorar\":[", join(",", map { "\"$_\"" } @ign), "]}";
+' 2>/dev/null)"
 . "$REF/nav-host.sh"
 NAV_HOST="$(nav_host "$REF")"
 NAV_HOST_CONF="$(nav_host_conf "$REF")"
@@ -624,7 +642,7 @@ nav_empuja() {   # los gates y el corredor, canonicos, al servidor (dos copias d
   ssh -n -o BatchMode=yes "$NAV_HOST" 'mkdir -p ~/webtools/gates' >/dev/null 2>&1 || return 1
   scp -q "$REF/run-gate.js" "$NAV_HOST:webtools/run-gate.js" </dev/null 2>/dev/null || return 1
   local g
-  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js marca-gate.js; do
+  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js marca-gate.js botones-gate.js; do
     [ -f "$REF/$g" ] && { scp -q "$REF/$g" "$NAV_HOST:webtools/gates/$g" </dev/null 2>/dev/null || return 1; }
   done
   return 0
@@ -683,9 +701,11 @@ nav_lee() {      # <fichero> <gate> <ruta> <ancho> -> imprime la linea; NAV_R = 
   NAV_R="$ver"
   # 1-nov-2026 · marca-gate solo avisa hasta MARCA_GATE=para: su FALLA se ensena
   #    entero, pero cuenta como AVISO y no para la subida.
-  if [ "$ver" = FALLA ] && [ "$2" = marca-gate.js ] && [ "${MARCA_GATE:-avisa}" != para ]; then
+  #    6-nov-2026 · y botones-gate, igual, hasta BOTONES_GATE=para.
+  if [ "$ver" = FALLA ] && { { [ "$2" = marca-gate.js ] && [ "${MARCA_GATE:-avisa}" != para ]; } ||
+                             { [ "$2" = botones-gate.js ] && [ "${BOTONES_GATE:-avisa}" != para ]; }; }; then
     NAV_R="AVISO"
-    printf '    %-22s %-26s %4spx  AVISO (solo avisa hasta MARCA_GATE=para)\n' "$2" "$3" "$4"
+    printf '    %-22s %-26s %4spx  AVISO (solo avisa hasta %s=para)\n' "$2" "$3" "$4" "$( [ "$2" = marca-gate.js ] && echo MARCA_GATE || echo BOTONES_GATE )"
     printf '%s' "$out" | grep -A6 '"fallos"' | head -7 | sed 's/^/        /'
     return 0
   fi
@@ -699,7 +719,7 @@ nav_corre() {    # <dir> <lista: n ruta gate ancho alto conCfg>  -> mide en para
   while read -r n r g w h c; do
     # `wait -n` es de bash 4.3; sin el (bash 3 de macOS) se espera a todas: mas lento, igual de correcto
     while [ "$(jobs -rp | wc -l)" -ge "$NAV_PARALELO" ]; do wait -n 2>/dev/null || wait; done
-    nav_mide "$1/$n.out" "${SITIO%/}$r" "$g" "$w" "$h" "$( [ "$c" = c ] && printf '%s' "$NAV_CFG"; [ "$c" = m ] && printf '%s' "$MARCA_CFG" )" &
+    nav_mide "$1/$n.out" "${SITIO%/}$r" "$g" "$w" "$h" "$( [ "$c" = c ] && printf '%s' "$NAV_CFG"; [ "$c" = m ] && printf '%s' "$MARCA_CFG"; [ "$c" = b ] && printf '%s' "$BOTONES_CFG" )" &
   done < "$2"
   wait
 }
@@ -825,12 +845,14 @@ else
       # a 390 y la marca a 1366 y 390. `c` = esa medida recibe NAV_CFG (que cuenta como
       # convertir); `m`, MARCA_CFG (la paleta y los tipos).
       echo "  marca-gate: $( [ "$MARCA_GATE" = para ] && echo 'PARA la subida (MARCA_GATE=para)' || echo 'solo avisa (MARCA_GATE=para cuando _diseno/ este hecho)' )$( [ -f "$REPO/_diseno/MARCA.md" ] || echo '; sin _diseno/MARCA.md: colores y tipos NO MEDIDO' )"
+      echo "  botones-gate: $( [ "$BOTONES_GATE" = para ] && echo 'PARA la subida (BOTONES_GATE=para)' || echo 'solo avisa (BOTONES_GATE=para cuando sus botones esten unificados)' )$( [ -n "${BOTONES_FAMILIAS:-}" ] || echo '; sin BOTONES_FAMILIAS: el grupo de un boton son sus clases' )"
       : > "$NAVC_DIR/lista"; n=0
       for r in $(urls_navegador); do
         for m in "structure-gate.js 1298 720 c" "measure-screens.js 1298 720 -" "measure-screens.js 390 844 -" \
                  "mobile-gate.js 360 740 c" "mobile-gate.js 390 844 c" "mobile-gate.js 1366 768 c" \
                  "mobile-gate.js 1440 900 c" "mobile-menu-gate.js 390 844 -" \
-                 "marca-gate.js 1366 768 m" "marca-gate.js 390 844 m"; do
+                 "marca-gate.js 1366 768 m" "marca-gate.js 390 844 m" \
+                 "botones-gate.js 1366 768 b" "botones-gate.js 390 844 b"; do
           n=$((n+1)); printf '%s %s %s\n' "$n" "$r" "$m" >> "$NAVC_DIR/lista"
         done
       done
@@ -851,8 +873,33 @@ else
           NAVC_MENU_TOTAL=$((NAVC_MENU_TOTAL+1)); [ "$NAV_R" = PASA ] && NAVC_MENU_PASA=$((NAVC_MENU_PASA+1))
         fi
       done < "$NAVC_DIR/lista"
+      # 6-nov-2026 · LOS BOTONES ENTRE PAGINAS: cada pagina sola puede ser coherente y el
+      #    sitio no. botones-sitio.js junta las salidas de botones-gate (por ancho) y les
+      #    pasa la MISMA comparacion; solo cuenta lo que sale al juntarlas. Corre aqui, en
+      #    node local: sin node, NO MEDIDO (y hueco solo si la web ya pide BOTONES_GATE=para).
+      NAVC_BOT_OUT="$(awk '$3 == "botones-gate.js" { print $1 }' "$NAVC_DIR/lista" | while read -r k; do printf '%s ' "$NAVC_DIR/$k.out"; done)"
+      if [ -n "$NAVC_BOT_OUT" ]; then
+        echo
+        if ! command -v node >/dev/null 2>&1; then
+          echo "    botones-sitio.js       entre paginas               NO MEDIDO (sin node en esta maquina)"
+          [ "$BOTONES_GATE" = para ] && NAVC_HUECOS="${NAVC_HUECOS:+$NAVC_HUECOS, }botones-sitio (sin node)"
+        else
+          # shellcheck disable=SC2086
+          BOT_SAL="$(node "$REF/botones-sitio.js" $NAVC_BOT_OUT 2>&1)"; BOT_RC=$?
+          printf '%s\n' "$BOT_SAL" | grep -v '^VEREDICTO' | sed 's/^/  /' | head -12
+          if [ "$BOT_RC" = 1 ]; then
+            if [ "$BOTONES_GATE" = para ]; then
+              echo "    botones-sitio.js       entre paginas               FALLA"
+              NAVC_FALLOS=$((NAVC_FALLOS+1)); NAVC_ROJOS="${NAVC_ROJOS:+$NAVC_ROJOS }botones-sitio"
+            else
+              echo "    botones-sitio.js       entre paginas               AVISO (solo avisa hasta BOTONES_GATE=para)"
+              NAVC_MARCA_AVISOS=$((NAVC_MARCA_AVISOS+1))
+            fi
+          fi
+        fi
+      fi
       echo
-      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca (no paran)" )}"
+      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca o de botones (no paran)" )}"
     fi
     ssh -n -o BatchMode=yes "$NAV_HOST" "rm -rf '$NAVC_R'" >/dev/null 2>&1
     rm -rf "$NAVC_DIR"
