@@ -512,6 +512,50 @@ else
   cierra "arbol de redirecciones: PASA sin navegador ni enlazado" "REDIR=1"                                 "PASA" "redirecciones" "NO MEDIDO"
 fi
 rm -f "$CIE"
+# =============================================================================
+#  EL MENU QUE «NO ABRE» CON EL HOST CARGADO (6-nov-2026). El 5-nov la puerta paro una
+#  subida por N3 de mobile-menu-gate con el servidor a carga 20 en 4 nucleos; la misma
+#  medida con carga 1,9 dio 5 de 5 PASA. nav_mide repite UNA vez la medida con N3 y anota
+#  la carga; nav_lee ensena la nota. Los bytes de la puerta, de nav_mide a nav_corre, con
+#  un ssh de mentira que contesta en orden (y la carga, 19.8 en 4 nucleos).
+# =============================================================================
+NMD="$(mktemp -t navmide-XXXXXXXX)"; NDIR="$(mktemp -d -t navmide-XXXXXXXX)"
+A8=$(grep -n '^nav_mide() {' "$PUERTA" | head -1 | cut -d: -f1)
+B8=$(grep -n '^nav_corre() {' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A8:-}" ] || [ -z "${B8:-}" ] || [ "$A8" -ge "$B8" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro nav_mide y nav_corre en $PUERTA (renombradas o movidas)"
+else
+  sed -n "${A8},$((B8-1))p" "$PUERTA" > "$NMD"
+  N3='{"VEREDICTO":"FALLA","fallos":["N3 · el boton de menu NO ABRE: tras pulsarlo y esperar 1500 ms no aparece ningun enlace nuevo"]}'
+  N5='{"VEREDICTO":"FALLA","fallos":["N5 · con el menu cerrado, 4 enlace(s) que no se ven siguen en el orden de Tab"]}'
+  BIEN='{"VEREDICTO":"PASA","fallos":[]}'
+  menu() { # nombre · gate · respuestas del gate, en orden (separadas por |) · veredicto · medidas pedidas · la nota dice («» = ninguna)
+    local n="$1" got veces
+    rm -f "$NDIR"/*
+    printf '%s\n' "$3" | tr '|' '\n' > "$NDIR/cola"
+    ( NAV_HOST=h; NAV_ENV=""; . "$NMD"
+      sleep() { :; }
+      ssh() { local c="${!#}"
+        case "$c" in *loadavg*) printf '19.8\n4\n'; return 0 ;; esac
+        k=$(( $(cat "$NDIR/n" 2>/dev/null || echo 0) + 1 )); echo "$k" > "$NDIR/n"
+        echo '{"coincide":true,"anchoPedido":390}'; sed -n "${k}p" "$NDIR/cola"; }
+      nav_mide "$NDIR/out" "https://www.ejemplo.test/" "$2" 390 844
+      nav_lee "$NDIR/out" "$2" / 390; echo "R=$NAV_R" ) > "$TMP" 2>&1
+    veces="$(cat "$NDIR/n" 2>/dev/null || echo 0)"
+    got="$(grep -o '^R=.*' "$TMP")|$veces|$(grep -o 'nota: .*' "$TMP" | head -1)"
+    if [ "$got" = "R=$4|$5|$6" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s\n' "$n" "$got" "R=$4|$5|$6"; sed 's/^/          /' "$TMP" | head -8; fi
+  }
+  # 🔴 EL CASO DEL 5-NOV, visto en ROJO contra la puerta de antes (FALLA, 1 medida).
+  menu "N3 y luego abre: PASA, con la carga anotada"   mobile-menu-gate.js "$N3|$BIEN" PASA  2 "nota: la primera medida dio N3 con carga 19.8/4 (1 min/nucleos); repetida, abre"
+  menu "N3 dos veces: FALLA, con la carga de las dos"  mobile-menu-gate.js "$N3|$N3"   FALLA 2 "nota: N3 dos veces; carga del host (1 min/nucleos): 19.8/4, luego 19.8/4"
+  # NEGATIVOS: repetir no puede tapar otro fallo del menu, ni el N3 de otro gate.
+  menu "N5 no se repite: FALLA a la primera"           mobile-menu-gate.js "$N5|$BIEN"  FALLA 1 ""
+  menu "un PASA no se repite"                          mobile-menu-gate.js "$BIEN|$N3"  PASA  1 ""
+  menu "el mismo texto en otro gate no se repite"      mobile-gate.js      "$N3|$BIEN"  FALLA 1 ""
+fi
+rm -rf "$NMD" "$NDIR"
+
 # Y nadie mas en la puerta dice «verificado» de una subida (lo hacian tres lineas).
 VER=$(grep -nE '^[[:space:]]*echo .*(G11 lo ha verificado|desplegado y verificado)' "$PUERTA" | head -3)
 if [ -z "$VER" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "ninguna linea de la puerta dice «verificado» de la subida"

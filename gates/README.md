@@ -452,7 +452,14 @@ there, and its candidate receipt was replaced by one the door would have accepte
   site's button families. Measured that day on ten home pages, three sites had one button class
   with two shapes (a smaller header call to action, a form button in another size or in Arial).
 
-They run on every page in `URLS_NAVEGADOR` (`/` if none).
+They run on every page in `URLS_NAVEGADOR` (`/` if none). And once per upload, on the home page:
+
+- `banner-probe.js` at 1298 and 390 (since 2026-11-06), on the same tree, served by the same
+  function as the gates (`servir` in `run-gate.js`). Before, it measured only what was
+  online, so a change to the banner or to the footer that lost the way to reopen it was seen
+  after the upload. It says how much it served from the tree; with 0 it is NOT MEASURED, never
+  a pass. It **only warns** until `deploy.conf` says `BANNER_GATE=para`, and until then its
+  NOT MEASURED (a consent platform inside an iframe, for one) is not a hole.
 
 - **A FAIL stops `--upload`.** It goes through only with an `--anyway` that **names every red
   gate**.
@@ -675,7 +682,7 @@ without blocking. Why the order changed is trap §89.
 |---|---|
 | `forms-gate.js` | The form in the DOM: labels, consent, a real submit button, a visible honeypot. |
 | `form-handler.php` | The reference handler the gate is written against. |
-| `banner-probe.js` | The cookie banner as a first-time visitor meets it, on the measurement host: nothing tracks before the choice, Accept and Reject in the first layer with the same weight, no wall, the page's language, Reject really rejects and is remembered, and a way to reopen it outside the banner. It never clicks Accept. Bench: `banner-probe-tests/`. |
+| `banner-probe.js` | The cookie banner as a first-time visitor meets it, on the measurement host: nothing tracks before the choice, Accept and Reject in the first layer with the same weight, no wall, the page's language, Reject really rejects and is remembered, and a way to reopen it outside the banner. It never clicks Accept. With `GATE_CANDIDATO` it measures a tree, as the door does. Outside its fixtures it aborts the banner's counter (`/consent-count.php`) and GA4's `collect` hits, so a probe that rejects is not counted as a visitor who did (2026-11-05: the first site with a counter). Bench: `banner-probe-tests/`, in its own folder on the host with this tree's `run-gate.js`. |
 | `consent-count.php` | The anonymous accept/reject counter the banner calls with `sendBeacon`: one row per day with three totals, «date TAB accept TAB reject TAB partial», rewritten under a lock (one line per choice could be matched to the access log by its order), no cookie, no IP, no time of day, outside the docroot. Copied to `_deploy/` of each site. Bench: `consent-count-tests/` (on the measurement host). |
 
 ### Migration
@@ -703,7 +710,7 @@ without blocking. Why the order changed is trap §89.
 | `compliance-selftest.pl` | Its own self-test. |
 | `audit-vs-spec.pl` | The spec against the tree. **26 of 26 checks have a case.** |
 | `audit.sh`, `qa-final.sh` | The site auditor, and the last look before publishing. |
-| `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. |
+| `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. In both modes, candidate and production, it aborts the same measurement hits as `banner-probe.js` (`"medicionAbortada": N`): the gates click the banner, and each click counted as a visitor on the site's counter and in its GA4. As a module it gives `servir` and `MEDICION`, so there is one copy of how a tree is served. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
 The coverage figure has a scope you should know: **95% is measured over 5 programs of 46**,

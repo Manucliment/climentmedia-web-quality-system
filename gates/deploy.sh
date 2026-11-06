@@ -64,6 +64,8 @@
 #  lo mismo ENTRE las paginas medidas). Avisa hasta que la web pone BOTONES_GATE=para;
 #  BOTONES_FAMILIAS="primario=.btn-primary,.btn-download; secundario=.btn-ghost" nombra
 #  sus familias (sin ellas, el grupo de un boton son sus clases).
+#  6-nov-2026 · y el aviso de cookies (banner-probe.js en la portada, a 1298 y 390: B0-B8,
+#  como lo vive un visitante que rechaza). Avisa hasta que la web pone BANNER_GATE=para.
 #  EL FALLO QUE ESTO ARREGLA, encontrado en el primer uso real de la puerta: el
 #  recibo sellaba el arbol del repo con un veredicto sacado de medir PRODUCCION.
 #  site-d salio «VEREDICTO: FALLA» por los 11 defectos que el despliegue
@@ -552,6 +554,11 @@ MARCA_CFG="$(IGN="$MARCA_IGNORAR" LV="$MARCA_VECTOR" perl -e '
 #    BOTONES_FAMILIAS: «nombre=selector,selector; nombre=selector». Solo letras, cifras,
 #    espacio y . # _ - , = ; (va dentro de un JSON y de comillas simples del shell remoto).
 BOTONES_GATE="${BOTONES_GATE:-avisa}"
+# 6-nov-2026 · EL AVISO DE COOKIES. banner-probe.js media solo lo servido, y por eso el B8 de
+#    un cambio de aviso o de pie se veia despues de subir. Ahora mide el candidato, una vez por
+#    subida (el aviso es de todo el sitio). Como marca y botones, al principio SOLO AVISA, y su
+#    NO MEDIDO (una CMP en un iframe, por ejemplo) no es un hueco hasta BANNER_GATE=para.
+BANNER_GATE="${BANNER_GATE:-avisa}"
 BOTONES_CFG="$(FAM="$(printf '%s' "${BOTONES_FAMILIAS:-}" | tr -cd 'A-Za-z0-9#._, =;-')" IGN="$MARCA_IGNORAR" perl -e '
   my @f = grep { length $_->[0] && length $_->[1] } map { my ($n, $s) = split /=/, $_, 2; [ ($n // "") =~ s/^\s+|\s+$//gr, ($s // "") =~ s/^\s+|\s+$//gr ] } split /;/, ($ENV{FAM} // "");
   my @ign = grep { length } map { s/^\s+|\s+$//gr } split /,/, ($ENV{IGN} // "");
@@ -645,6 +652,8 @@ nav_empuja() {   # los gates y el corredor, canonicos, al servidor (dos copias d
   for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js marca-gate.js botones-gate.js; do
     [ -f "$REF/$g" ] && { scp -q "$REF/$g" "$NAV_HOST:webtools/gates/$g" </dev/null 2>/dev/null || return 1; }
   done
+  # banner-probe.js va al lado de run-gate.js, no en gates/: de el saca como servir el arbol.
+  [ -f "$REF/banner-probe.js" ] && { scp -q "$REF/banner-probe.js" "$NAV_HOST:webtools/banner-probe.js" </dev/null 2>/dev/null || return 1; }
   return 0
 }
 
@@ -658,11 +667,25 @@ nav_mide() {     # <fichero de salida> <url> <gate> <ancho> <alto> [json de __GA
   # Una medida que no llega a dar veredicto, o que mide un muro, se repite UNA vez:
   # el barrido del 1-nov-2026 dio cuatro «504 Gateway Time-out» seguidos de un host
   # compartido que poco despues servia bien. La segunda tambien mal = NO MEDIDO.
-  local i
+  # 6-nov-2026 · Y EL MENU QUE «NO ABRE» SE REPITE UNA VEZ, CON LA CARGA ANOTADA. El 5-nov
+  #    mobile-menu-gate dio N3 (nada nuevo en 1500 ms) con el host a carga 20 en 4 nucleos,
+  #    y la misma medida, con carga 1,9, dio 5 de 5 PASA. Una espera que vence porque el
+  #    servidor va lento no es un menu roto. Si la segunda tambien falla, cuenta, y lleva
+  #    la carga de las dos al lado para que quien lo lea sepa con que se midio.
+  local i carga=""
   for i in 1 2; do
     ssh -n -o BatchMode=yes "$NAV_HOST" \
         "cd ~/webtools && ${NAV_ENV}node run-gate.js '$2' $4 $5 gates/$3 ${6:+'$6'}" > "$1" 2>&1
-    grep -q '"VEREDICTO"' "$1" && ! grep -q '"sospechoso":true' "$1" && return 0
+    if grep -q '"VEREDICTO"' "$1" && ! grep -q '"sospechoso":true' "$1"; then
+      if [ "$3" = mobile-menu-gate.js ] && grep -q 'N3 · el boton de menu NO ABRE' "$1"; then
+        carga="${carga:+$carga, luego }$(ssh -n -o BatchMode=yes "$NAV_HOST" 'cut -d" " -f1 /proc/loadavg; nproc' 2>/dev/null | paste -sd/ -)"
+        if [ "$i" = 1 ]; then sleep 5; continue; fi
+        echo "NAV-NOTA: N3 dos veces; carga del host (1 min/nucleos): $carga" >> "$1"
+      elif [ -n "$carga" ]; then
+        echo "NAV-NOTA: la primera medida dio N3 con carga $carga (1 min/nucleos); repetida, abre" >> "$1"
+      fi
+      return 0
+    fi
     [ "$i" = 1 ] && sleep 5
   done
   return 0
@@ -711,6 +734,7 @@ nav_lee() {      # <fichero> <gate> <ruta> <ancho> -> imprime la linea; NAV_R = 
   fi
   printf '    %-22s %-26s %4spx  %s\n' "$2" "$3" "$4" "$ver"
   [ "$ver" = FALLA ] && printf '%s' "$out" | grep -A6 '"fallos"' | head -7 | sed 's/^/        /'
+  printf '%s\n' "$out" | grep '^NAV-NOTA: ' | sed 's/^NAV-NOTA: /        nota: /'
   return 0
 }
 
@@ -898,8 +922,45 @@ else
           fi
         fi
       fi
+      # 6-nov-2026 · EL AVISO DE COOKIES, SOBRE EL CANDIDATO. banner-probe.js no es un gate de
+      #    run-gate.js: es una sonda con su Chrome, que rechaza el aviso, recarga y lo reabre.
+      #    Se le pasa el mismo arbol (GATE_CANDIDATO) y dice cuanto sirvio del disco; con 0,
+      #    NO VALE. La portada, a 1298 y a 390. FALLA = AVISO hasta BANNER_GATE=para; NO
+      #    MEDIDO, hueco solo con BANNER_GATE=para. Tope de 300 s: sus tres cargas esperan
+      #    60 s cada una, y el banco del 6-nov estuvo 15 min sin dar una linea con el host
+      #    cargado (a la segunda, 2 min 19 s); colgada, sale NO MEDIDO (rc 124).
+      if [ -f "$REF/banner-probe.js" ]; then
+        echo
+        for bwh in 1298:900 390:844; do
+          bw="${bwh%%:*}"; bh="${bwh##*:}"; NAVC_TOTAL=$((NAVC_TOTAL+1))
+          ssh -n -o BatchMode=yes "$NAV_HOST" \
+              "cd ~/webtools && GATE_CANDIDATO='$NAVC_R/arbol' GATE_SITIO='${SITIO%/}' timeout 300 node banner-probe.js '${SITIO%/}/' $bw $bh" \
+              > "$NAVC_DIR/banner-$bw.out" 2>&1
+          BAN_RC=$?
+          BAN_V="$(grep -m1 '^VEREDICTO:' "$NAVC_DIR/banner-$bw.out" | sed 's/^VEREDICTO: //')"
+          if [ "$BAN_RC" = 0 ]; then
+            printf '    %-22s %-26s %4spx  PASA%s\n' banner-probe.js / "$bw" "$( [ "$BAN_V" = PASA ] || echo " ($BAN_V)" )"
+            NAVC_MIRADAS=$((NAVC_MIRADAS+1))
+          elif [ "$BAN_RC" = 1 ]; then
+            NAVC_MIRADAS=$((NAVC_MIRADAS+1))
+            if [ "$BANNER_GATE" = para ]; then
+              printf '    %-22s %-26s %4spx  FALLA\n' banner-probe.js / "$bw"
+              NAVC_FALLOS=$((NAVC_FALLOS+1))
+              case " $NAVC_ROJOS " in *" banner-probe "*) ;; *) NAVC_ROJOS="${NAVC_ROJOS:+$NAVC_ROJOS }banner-probe" ;; esac
+            else
+              printf '    %-22s %-26s %4spx  AVISO (solo avisa hasta BANNER_GATE=para)\n' banner-probe.js / "$bw"
+              NAVC_MARCA_AVISOS=$((NAVC_MARCA_AVISOS+1))
+            fi
+            grep -E '^FALLA +B[0-9]' "$NAVC_DIR/banner-$bw.out" | head -6 | sed 's/^/        /'
+          else
+            printf '    %-22s %-26s %4spx  NO MEDIDO (%s)\n' banner-probe.js / "$bw" \
+                   "${BAN_V:-$(grep -m1 'RUNNER-ERROR' "$NAVC_DIR/banner-$bw.out" | cut -c1-60)}"
+            [ "$BANNER_GATE" = para ] && NAVC_HUECOS="${NAVC_HUECOS:+$NAVC_HUECOS, }banner-probe / ${bw}px"
+          fi
+        done
+      fi
       echo
-      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca o de botones (no paran)" )}"
+      echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca, botones o aviso de cookies (no paran)" )}"
     fi
     ssh -n -o BatchMode=yes "$NAV_HOST" "rm -rf '$NAVC_R'" >/dev/null 2>&1
     rm -rf "$NAVC_DIR"

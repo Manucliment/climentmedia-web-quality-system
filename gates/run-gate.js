@@ -13,7 +13,64 @@
 // REGLA DE LA CASA: innerWidth SIEMPRE, y `coincide`. Si no coincide, es basura.
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
-(async () => {
+// 🔴 6-nov-2026 · UN SOLO SITIO QUE SIRVE UN ARBOL. banner-probe.js tenia su propia copia
+//  (sin 301 ni 404.html) para sus fixturas, y por eso la puerta no podia medirle el
+//  candidato. Ahora las dos sondas usan esta, que es la del candidato de mas abajo:
+//    servir(p, { raiz, sitio, fuera, medicion }) -> { servidas, abortadas } (contadores vivos)
+//    raiz      el arbol del disco ("" = no se sirve nada del disco)
+//    sitio     el origen que se contesta desde el disco (la URL de produccion)
+//    fuera     "red": lo demas sale como siempre · "abortar": no sale nada (fixturas)
+//    medicion  true: se abortan los envios de medicion, el contador del aviso de cookies
+//              (/consent-count.php) y los de GA4 (/g/collect). 5-nov: la primera web con
+//              contador; una sonda que pulsa el aviso contaba como una visita. Las cookies
+//              que juzgan las sondas no salen de esos envios (_ga la pone el JS), asi que
+//              abortarlos no esconde nada de lo que se mide.
+const MEDICION = (u) => /\/consent-count\.php$/i.test(u.pathname) ||
+  (/(^|\.)google-analytics\.com$|^analytics\.google\.com$/i.test(u.hostname) && /\/(g\/)?collect$/i.test(u.pathname));
+async function servir(p, { raiz = "", sitio = "", fuera = "red", medicion = false } = {}) {
+  const path = require("path");
+  const n = { servidas: 0, abortadas: 0 };
+  const origen = raiz && sitio ? new URL(sitio).origin : null;
+  const TIPOS = { html: "text/html; charset=utf-8", htm: "text/html; charset=utf-8",
+    css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", mjs: "text/javascript; charset=utf-8",
+    json: "application/json; charset=utf-8", xml: "application/xml; charset=utf-8", txt: "text/plain; charset=utf-8",
+    svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
+    webp: "image/webp", avif: "image/avif", ico: "image/x-icon", woff: "font/woff", woff2: "font/woff2",
+    ttf: "font/ttf", otf: "font/otf", mp4: "video/mp4", webm: "video/webm", pdf: "application/pdf",
+    webmanifest: "application/manifest+json" };
+  const dir = origen ? path.resolve(raiz) : "";
+  const esFichero = f => { try { return fs.statSync(f).isFile(); } catch (e) { return false; } };
+  const resolver = ruta => {   // -> [fichero|null, redireccion|null]
+    let r; try { r = decodeURIComponent(ruta); } catch (e) { r = ruta; }
+    if (/(^|\/)\.\.(\/|$)/.test(r)) return [null, null];
+    if (r === "/") return [path.join(dir, "index.html"), null];
+    const limpia = r.replace(/\/+$/, "");
+    if (esFichero(path.join(dir, limpia))) return [path.join(dir, limpia), null];
+    if (esFichero(path.join(dir, limpia + ".html"))) return [path.join(dir, limpia + ".html"), null];
+    if (esFichero(path.join(dir, limpia, "index.html")))
+      return [path.join(dir, limpia, "index.html"), /\/$/.test(r) ? null : limpia + "/"];
+    return [null, null];
+  };
+  await p.setRequestInterception(true);
+  p.on("request", req => {
+    let u; try { u = new URL(req.url()); } catch (e) { return req.continue(); }
+    if (medicion && MEDICION(u)) { n.abortadas++; return req.abort(); }
+    if (!origen || u.origin !== origen) return fuera === "abortar" ? req.abort() : req.continue();
+    const [f, redir] = resolver(u.pathname);
+    n.servidas++;
+    if (redir) return req.respond({ status: 301, headers: { location: origen + redir + u.search }, body: "" });
+    if (f) {
+      const ext = (f.match(/\.([a-z0-9]+)$/i) || [, ""])[1].toLowerCase();
+      return req.respond({ status: 200, contentType: TIPOS[ext] || "application/octet-stream", body: fs.readFileSync(f) });
+    }
+    const e404 = path.join(dir, "404.html");
+    return req.respond({ status: 404, contentType: "text/html; charset=utf-8",
+                         body: esFichero(e404) ? fs.readFileSync(e404) : "" });
+  });
+  return n;
+}
+// Como modulo (banner-probe.js), solo da servir y MEDICION; como orden, mide.
+if (require.main === module) (async () => {
   const [url, w, h, gateFile, gateCfg] = process.argv.slice(2);
   const src = fs.readFileSync(gateFile, "utf8");
   const b = await puppeteer.launch({
@@ -56,46 +113,10 @@ const fs = require("fs");
   //  `candidato` en la linea de diagnostico cuenta las respuestas servidas del disco:
   //  si es 0, lo medido NO es el candidato, y quien llama no puede darlo por medido.
   const CAND = process.env.GATE_CANDIDATO || "", SITIO = process.env.GATE_SITIO || "";
-  let servidas = 0;
-  if (CAND && SITIO) {
-    const path = require("path");
-    const origen = new URL(SITIO).origin;
-    const TIPOS = { html: "text/html; charset=utf-8", htm: "text/html; charset=utf-8",
-      css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", mjs: "text/javascript; charset=utf-8",
-      json: "application/json; charset=utf-8", xml: "application/xml; charset=utf-8", txt: "text/plain; charset=utf-8",
-      svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
-      webp: "image/webp", avif: "image/avif", ico: "image/x-icon", woff: "font/woff", woff2: "font/woff2",
-      ttf: "font/ttf", otf: "font/otf", mp4: "video/mp4", webm: "video/webm", pdf: "application/pdf",
-      webmanifest: "application/manifest+json" };
-    const raiz = path.resolve(CAND);
-    const esFichero = f => { try { return fs.statSync(f).isFile(); } catch (e) { return false; } };
-    const resolver = ruta => {   // -> [fichero|null, redireccion|null]
-      let r; try { r = decodeURIComponent(ruta); } catch (e) { r = ruta; }
-      if (/(^|\/)\.\.(\/|$)/.test(r)) return [null, null];
-      if (r === "/") return [path.join(raiz, "index.html"), null];
-      const limpia = r.replace(/\/+$/, "");
-      if (esFichero(path.join(raiz, limpia))) return [path.join(raiz, limpia), null];
-      if (esFichero(path.join(raiz, limpia + ".html"))) return [path.join(raiz, limpia + ".html"), null];
-      if (esFichero(path.join(raiz, limpia, "index.html")))
-        return [path.join(raiz, limpia, "index.html"), /\/$/.test(r) ? null : limpia + "/"];
-      return [null, null];
-    };
-    await p.setRequestInterception(true);
-    p.on("request", req => {
-      let u; try { u = new URL(req.url()); } catch (e) { return req.continue(); }
-      if (u.origin !== origen) return req.continue();
-      const [f, redir] = resolver(u.pathname);
-      servidas++;
-      if (redir) return req.respond({ status: 301, headers: { location: origen + redir + u.search }, body: "" });
-      if (f) {
-        const ext = (f.match(/\.([a-z0-9]+)$/i) || [, ""])[1].toLowerCase();
-        return req.respond({ status: 200, contentType: TIPOS[ext] || "application/octet-stream", body: fs.readFileSync(f) });
-      }
-      const e404 = path.join(raiz, "404.html");
-      return req.respond({ status: 404, contentType: "text/html; charset=utf-8",
-                           body: esFichero(e404) ? fs.readFileSync(e404) : "" });
-    });
-  }
+  //  6-nov-2026 · y en produccion (el paso 6 de la puerta, lo que mide lo servido) los
+  //  envios de medicion tambien se abortan: mobile-gate y structure-gate pulsan el aviso,
+  //  y cada pulsacion contaba en el contador de la web y en su GA4. Nada mas se toca.
+  const red = await servir(p, CAND && SITIO ? { raiz: CAND, sitio: SITIO, medicion: true } : { medicion: true });
   // 🔴 3-nov-2026 · EL CODIGO HTTP VIAJA. Antes solo se miraba el titulo y el render:
   //  un 403 con una pagina de error bien maquetada (titulo propio, un <main>, texto)
   //  pasaba como la web. Un documento que no contesta 2xx no es la pagina medida.
@@ -149,7 +170,7 @@ const fs = require("fs");
   catch (e) { out = JSON.stringify({ ERROR: String(e && e.message || e) }); }
   console.log(JSON.stringify({
     url, pedido: +w, innerWidth: iw, coincide: iw === +w,
-    ...(CAND && SITIO ? { candidato: servidas } : {}),
+    ...(CAND && SITIO ? { candidato: red.servidas } : {}), medicionAbortada: red.abortadas,
     http, titulo: diag.titulo, secciones: diag.secciones, hayMain: diag.main,
     sospechoso,
     ...(sospechoso ? { AVISO: 'esto NO parece la pagina: HTTP no 2xx, muro anti-bot o render vacio. La medida NO vale como veredicto.' } : {}),
@@ -157,3 +178,4 @@ const fs = require("fs");
   console.log(typeof out === "string" ? out : JSON.stringify(out, null, 1));
   await b.close();
 })().catch(e => { console.error("RUNNER-ERROR " + e.message); process.exit(3); });
+module.exports = { servir, MEDICION };

@@ -1,7 +1,9 @@
 // banner-probe.js <URL> [W H]  ·  el aviso de cookies, mirado como lo vive un visitante
 // =============================================================================
 // Corre en el host de medida (NAV_HOST, ~/webtools), con el Chrome de run-gate.js:
-//   scp gates/banner-probe.js NAV_HOST:webtools/ && ssh NAV_HOST 'cd ~/webtools && node banner-probe.js https://dominio.tld/'
+//   scp gates/banner-probe.js gates/run-gate.js NAV_HOST:webtools/ && ssh NAV_HOST 'cd ~/webtools && node banner-probe.js https://dominio.tld/'
+//   (necesita run-gate.js al lado: de ahi saca como servir un arbol). Con GATE_CANDIDATO=<dir> mide ese arbol
+//   con la URL de produccion, como la puerta en el paso 1-quater; sin el, lo servido.
 // Sale 0 si todo PASA o AVISA, 1 si algo FALLA, 3 si el instrumento no pudo medir.
 //
 // POR QUE EXISTE (3-nov-2026)
@@ -40,6 +42,8 @@
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 const path = require("path");
+// Va al lado de run-gate.js (en gates/ y en ~/webtools del host de medida): sin el, no mide.
+const { servir } = require("./run-gate.js");
 
 const [url, W = "1298", H = "900"] = process.argv.slice(2);
 if (!url) { console.error("uso: node banner-probe.js <URL> [W H]"); process.exit(2); }
@@ -89,23 +93,17 @@ const res = (estado, id, texto, dato) => {
     : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36");
   await p.setViewport({ width: +W, height: +H, deviceScaleFactor: 1 });
 
-  // Las pruebas sirven un arbol del disco con el origen de la URL (BANNER_DIR),
-  // como run-gate.js con el candidato: index.html, x.html, dir/index.html.
-  const DIR = process.env.BANNER_DIR || "";
-  if (DIR) {
-    const origen = new URL(url).origin, raiz = path.resolve(DIR);
-    await p.setRequestInterception(true);
-    p.on("request", (req) => {
-      let u; try { u = new URL(req.url()); } catch (e) { return req.continue(); }
-      if (u.origin !== origen) return req.abort();   // en una prueba no sale nada a la red
-      let r = decodeURIComponent(u.pathname).replace(/\/+$/, "") || "/index";
-      const cand = [r, r + ".html", r + "/index.html"].map((x) => path.join(raiz, x));
-      const f = cand.find((x) => { try { return fs.statSync(x).isFile(); } catch (e) { return false; } });
-      if (!f) return req.respond({ status: 404, contentType: "text/html", body: "" });
-      const tipo = /\.js$/.test(f) ? "text/javascript" : /\.css$/.test(f) ? "text/css" : "text/html; charset=utf-8";
-      return req.respond({ status: 200, contentType: tipo, body: fs.readFileSync(f) });
-    });
-  }
+  // El arbol del disco, con la funcion de run-gate.js (6-nov-2026: una sola copia; esta
+  // tenia la suya, sin 301 ni 404.html):
+  //   BANNER_DIR      las fixturas del banco: el origen de la URL sale del disco, y nada a la red
+  //   GATE_CANDIDATO  el candidato de la puerta, servido con la URL de produccion (GATE_SITIO,
+  //                   o el origen de la URL); lo demas (GTM, fuentes) va a la red, como en run-gate
+  //   ninguno         lo servido
+  // Fuera de las fixturas se abortan los envios de medicion (el contador del aviso y GA4):
+  // esta sonda rechaza el aviso, y ese rechazo contaba como una visita en el contador.
+  const DIR = process.env.BANNER_DIR || "", CAND = process.env.GATE_CANDIDATO || "";
+  const red = DIR ? await servir(p, { raiz: DIR, sitio: url, fuera: "abortar" })
+    : await servir(p, { raiz: CAND, sitio: CAND ? (process.env.GATE_SITIO || url) : "", medicion: true });
 
   const cdp = await p.target().createCDPSession();
   const cookiesRastreo = async () => {
@@ -286,10 +284,14 @@ const res = (estado, id, texto, dato) => {
     }
   }
 
-  console.log(JSON.stringify({ url, pedido: +W, innerWidth: iw, coincide: iw === +W, lang }));
+  // `candidato` cuenta lo servido del disco: 0 con GATE_CANDIDATO es que no se midio el candidato.
+  console.log(JSON.stringify({ url, pedido: +W, innerWidth: iw, coincide: iw === +W, lang,
+    ...(CAND && !DIR ? { candidato: red.servidas } : {}), ...(!DIR ? { medicionAbortada: red.abortadas } : {}) }));
   for (const l of lineas) console.log(`${l.estado.padEnd(9)} ${l.id}  ${l.texto}${l.dato ? `  · ${l.dato}` : ""}`);
-  const v = iw !== +W ? "NO VALE (el ancho no es el pedido)" : falla ? `FALLA (${falla})` : nomedido ? `PASA CON ${nomedido} SIN MEDIR` : "PASA";
+  const sinCandidato = CAND && !DIR && !red.servidas;
+  const v = iw !== +W ? "NO VALE (el ancho no es el pedido)" : sinCandidato ? "NO VALE (no se sirvio nada del candidato: lo medido es otra cosa)"
+    : falla ? `FALLA (${falla})` : nomedido ? `PASA CON ${nomedido} SIN MEDIR` : "PASA";
   console.log(`VEREDICTO: ${v}`);
   await b.close();
-  process.exit(iw !== +W ? 3 : falla ? 1 : 0);
+  process.exit(iw !== +W || sinCandidato ? 3 : falla ? 1 : 0);
 })().catch((e) => { console.error("RUNNER-ERROR " + e.message); process.exit(3); });

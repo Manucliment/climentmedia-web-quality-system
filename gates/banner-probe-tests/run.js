@@ -37,6 +37,7 @@ function pagina(o = {}) {
   <script>
     var c = document.getElementById("cookie-consent"), velo = document.querySelector(".velo");
     function ver(v){ (velo || c).style.display = v ? "" : "none"; }
+    ${o.contador ? 'navigator.sendBeacon("/consent-count.php", "visita");' : ""}
     ${o.olvida ? "" : 'if (localStorage.getItem("cc")) ver(false);'}
     document.addEventListener("click", function (e) {
       var b = e.target.closest("[data-cc-act]"); if (!b) return; var a = b.getAttribute("data-cc-act");
@@ -88,6 +89,33 @@ for (const [nom, o, pol, espera] of CASOS) {
     else { mal++; console.log(`  MAL   ${nom.padEnd(44)} ${id} esperaba ${quiero} y salio ${real}`); console.log("        " + (m ? m[0] : salida.split("\n").slice(0, 3).join(" | "))); }
   }
 }
+// 6-nov-2026 · EL CANDIDATO Y LA MEDICION. La puerta mide el aviso del arbol que va a subir
+// (GATE_CANDIDATO), servido con la URL de produccion por la funcion de run-gate.js; y fuera de
+// las fixturas, la sonda aborta el contador del aviso y GA4. El host .invalid no existe: si la
+// sonda no sirve el candidato, no hay pagina (visto en ROJO con la sonda sin GATE_CANDIDATO).
+const ver = (nom, bien, dato) => { if (bien) { ok++; console.log(`  OK    ${nom}`); } else { mal++; console.log(`  MAL   ${nom}  · ${dato}`); } };
+const { MEDICION } = require(path.join(__dirname, "..", "run-gate.js"));
+const esMed = (u) => MEDICION(new URL(u));
+ver("MEDICION: el contador del aviso y los envios de GA4", esMed("https://fx.test/consent-count.php") && esMed("https://region1.google-analytics.com/g/collect?v=2")
+  && esMed("https://www.google-analytics.com/collect") && esMed("https://analytics.google.com/g/collect"), "alguno no se aborta");
+ver("MEDICION: ni gtag.js, ni un /collect ajeno, ni doubleclick (sus cookies si se juzgan)", !esMed("https://www.googletagmanager.com/gtag/js?id=G-X")
+  && !esMed("https://fx.test/api/collect") && !esMed("https://stats.g.doubleclick.net/g/collect") && !esMed("https://fx.test/consent-count.php.bak"), "alguno se abortaria");
+const candidato = (nom, o) => {
+  const dir = path.join(raiz, "cand-" + nom.replace(/\W+/g, "-"));
+  fs.mkdirSync(path.join(dir, "politica-cookies"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "index.html"), pagina(o));
+  fs.writeFileSync(path.join(dir, "politica-cookies", "index.html"), politica());
+  const env = { ...process.env, GATE_CANDIDATO: dir, GATE_SITIO: "https://candidato.invalid" }; delete env.BANNER_DIR;
+  const r = spawnSync("node", [SONDA, "https://candidato.invalid/"], { env, encoding: "utf8", timeout: 120000 });
+  const salida = (r.stdout || "") + (r.stderr || "");
+  let j = {}; try { j = JSON.parse(salida.split("\n").find((l) => l.startsWith("{")) || "{}"); } catch (e) { /* sin JSON */ }
+  return { salida, j, veredicto: (salida.match(/^VEREDICTO: (.+)$/m) || [])[1] || "AUSENTE", rc: r.status };
+};
+const c1 = candidato("bueno", {});
+ver("candidato: el arbol, servido con la URL de produccion, PASA y dice cuanto sirvio", c1.veredicto === "PASA" && c1.j.candidato > 0, `${c1.veredicto} · candidato ${c1.j.candidato} · ${c1.salida.split("\n")[0].slice(0, 120)}`);
+const c2 = candidato("contador", { contador: true });
+ver("candidato: el envio al contador del aviso se aborta y se cuenta", c2.j.medicionAbortada >= 1 && c2.veredicto === "PASA", `${c2.veredicto} · medicionAbortada ${c2.j.medicionAbortada}`);
+
 fs.rmSync(raiz, { recursive: true, force: true });
 console.log(`\n  OK ${ok}  ·  MAL ${mal}`);
 process.exit(mal ? 1 : 0);
