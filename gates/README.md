@@ -1,13 +1,16 @@
 # The gates
 
-43 programs and 40 test batteries. This file is the index: what each program is for,
+46 programs and 42 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
 > Both figures are **derivable, and the recipe is here** so the next person can re-derive
 > them instead of trusting the sentence above. Programs:
-> `find gates -name '*-tests' -prune -o \( -name '*.pl' -o -name '*.js' -o -name '*.sh' \) -type f -print | wc -l`.
+> `find gates -maxdepth 1 \( -name '*.pl' -o -name '*.js' -o -name '*.sh' \) ! -name '*selftest*' -type f | wc -l`.
 > Batteries: the rows of `BANCOS` in `run-all.sh`.
+> Until 2026-11-06 the recipe went into `hooks/` and counted `compliance-selftest.pl`, and gave
+> 48 where `coverage.pl` (the count the documentation gate compares against) gave 46: the hook
+> and the self-test are not programs of their own. Same lesson as the line below.
 > It said **37 and 28** until 2026-09-01, and 37 matched no definition anybody could
 > reconstruct — 35 counting `run-all.sh` itself, 34 without it. A count written by hand
 > next to the thing it counts does not stay true; it just stops being checked.
@@ -27,24 +30,24 @@ bash gates/run-all.sh
 bash gates/run-all.sh --fast
 ```
 
-`--fast` skips the fourteen slow batteries: the ones that need a browser, a host, or the network. On a clean
-install the fast run is **1077 cases green, 0 red**, with the deploy-history bank reporting
+`--fast` skips the fifteen slow batteries: the ones that need a browser, a host, or the network. On a clean
+install the fast run is **1089 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **1869 cases green, 0 red**, with **nine** banks reported as
-`NOT MEASURED`: the seven that measure on a Linux host (`measure-screens`, `mobile-gate`,
-`mobile-menu-gate`, `marca-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
+a clean install it reads **1883 cases green, 0 red**, with **ten** banks reported as
+`NOT MEASURED`: the eight that measure on a Linux host (`measure-screens`, `mobile-gate`,
+`mobile-menu-gate`, `marca-gate`, `botones-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
 Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
 `structure-gate` later: see below.)
 
-> **A machine with a measurement host reads more, and that is expected.** The seven host
+> **A machine with a measurement host reads more, and that is expected.** The eight host
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **2049**: 1869 plus 178 host cases plus the 2 of the deploy-history bank. `run-all.sh`
-> counts all eight banks (the seven, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
+> **2089**: 1883 plus 204 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> counts all nine banks (the eight, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
 > Until 21-sep-2026 those three banks looked for a placeholder host left behind when this
@@ -73,7 +76,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-1079, not 1077, because that machine has deployed. `run-all.sh`
+1091, not 1089, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -95,14 +98,14 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  1077 casos en verde · 0 en rojo
+  1089 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
 ```
 $ bash gates/run-all.sh
-  1869 casos en verde · 0 en rojo
-  NO MEDIDOS: medir-pantallas gate-movil gate-menu conformidad historial form-handler banner-cookies contador-consentimiento
+  1883 casos en verde · 0 en rojo
+  NO MEDIDOS: medir-pantallas gate-movil gate-menu gate-marca gate-botones conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
 > **The very first run on a clean install also lists `doc-gate(skill)`**, whichever of the two
@@ -469,7 +472,7 @@ Three `deploy.conf` keys tune it:
 The step after the upload (6) still measures what the host actually serves, and records it
 without blocking. Why the order changed is trap §89.
 
-**Sixteen more since 2026-11-05**, all from one week of real deploys:
+**Nineteen more since 2026-11-05**, all from one week of real deploys:
 
 - **A configurator page is not "0 CTA" (`measure-screens.js`).** A shop's made-to-measure
   page paints its steps with JavaScript as `<button class="choice">`: six choice buttons on
@@ -601,6 +604,25 @@ without blocking. Why the order changed is trap §89.
 - **The bench's acceptances are dated today.** The acceptance block wrote a fixed
   2026-08-11 with no expiry, and an acceptance lasts 90 days: four of its cases would have
   failed together on 2026-11-10 with nothing changed in the gate.
+- **A form's privacy checkbox is not the cookie banner (`banner-probe.js`).** The probe
+  took the first block, in document order, whose name says cookies or consent and whose
+  text says cookies or privacy. A contact form's "I accept the privacy policy" row comes
+  before the banner, which is painted at the end of the body: B2 FAIL on one of our
+  contact pages, with its banner fine. Now the block with an Accept or Reject button wins;
+  with none, the first one not inside a form; and when every one is inside a form there is
+  no banner, so a page that measures is a B1 FAIL. The bench puts the checkbox before a
+  full banner (red against the old probe), before a banner without Reject (still FAIL) and
+  on a page with no banner (red against the old probe).
+- **A form row is not a grid of cards (`structure-gate.js`, ANCHO-MIN).** Two fields side
+  by side passed for two cards: the text of a field with a `<select>` carries all its
+  options, and that reaches the 20 characters a card needs. A 704 px form was a "section
+  WITH GRID" too narrow for the site, and the same form passed on another page only
+  because its options were shorter. A cell that is a form control or holds one, and has
+  no heading, is a field and not a cell. Its mirror: cards with a heading and an input,
+  squeezed into 510 px, still FAIL.
+- **The anatomy bench removes its whole temp root.** It removed only the copied gates and
+  left its copy of `blueprint/09-page-types.md` behind, ignored by git, where a site
+  generator reading this repository's disk published it as documentation.
 
 ---
 
@@ -684,7 +706,7 @@ without blocking. Why the order changed is trap §89.
 | `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **95% is measured over 5 programs of 43**,
+The coverage figure has a scope you should know: **95% is measured over 5 programs of 46**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 
