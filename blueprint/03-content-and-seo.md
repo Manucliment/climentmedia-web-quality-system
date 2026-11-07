@@ -580,3 +580,69 @@ reports as `POLISH`, not `BLOCKS`.
 > positive it replaced, because nothing in the output says so. The quote is now stripped
 > *before* judging, and the paragraph is judged and then downgraded. **Exempt on purpose
 > and exempt by accident look identical in a report and are not remotely the same thing.**
+
+### 8.4 · The question bank, and the page it tells you to build
+
+`citable.pl` says whether a paragraph survives being lifted out. It cannot say whether an
+engine **lifts it** — and the only way to know that is to ask the engines, the same
+questions, every month. That is the question bank: buyer questions, not keywords ("how do I
+see who changed the budgets in my account", not "change history"), each one tied to the page
+that should win it. It lives in the site repo, next to the rest of the SEO state.
+
+**The bank is not the deliverable; the plan row is.** A bank that is measured and filed
+changes nothing. Every question where the site does not appear gets one line in that
+month's report, and the line closes in one of two ways:
+
+- **a row in the site's plan, with a date** — the page or block that is missing, or "get
+  named by <the list the engine cites instead>", with its owner; or
+- **"nothing to move", with the reason** — the question is not the business, the engine
+  already names the brand, or what it cites is a directory the site is already in.
+
+A line left open is the bank failing silently: the next month measures the same absence and
+nobody acted on the first one.
+
+**Every bank carries a choosing cluster — at least five questions from someone already
+deciding.** These are the questions that end in a lead, and the ones a bank written from the
+site's own pages forgets, because the site's pages describe the product, not the choice. By
+sector:
+
+| Sector | The choosing questions | What the engines cite instead, typically |
+|---|---|---|
+| Software and service | "alternatives to X", "X vs Y", "best X for Y" | review platforms, "best …" listicles, alternatives pages |
+| Local business | "best X in <town>" | directories and map listings |
+| Shop | "where to buy X", "best X for Y" | comparison sites and the big retailers |
+
+On the first site where this was measured, the choosing questions scored **0 of 10** in both
+engines, and roughly a third of the pages cited in its place were lists, alternatives pages
+or directories. The engines cite what already ranks and what already compares. **Research
+the sector before writing the row:** open what the engine cited instead and write down what it
+has that the site's page does not — a table, a figure, a source, a date, a name on a list.
+
+**The comparison page has a fixed shape**, because it is the page an engine quotes when
+someone is choosing. In this order:
+
+1. **The table**, at the top, with the same rows for every option — yours included.
+2. **The verdict**, two or three sentences under the table: who each option is for, and who
+   you are *not* for.
+3. **The date** the data was last read, visible on the page, and the same date in
+   `dateModified`.
+4. **The sources**: where each fact about the others comes from (their pricing page, their
+   documentation, a dated review), listed under the table.
+5. **An FAQ with the bank's questions** this page has to win, in the bank's exact words,
+   with `FAQPage` in the markup.
+
+**Competitors are named with a source and a date, and linked once** — where they are first
+cited, with `rel="nofollow"`. Not their logo, not their brand in your title as if it were
+yours. A rigged comparison is spotted, and it burns the citation it was built to win.
+
+`NO GATE — method:` a monthly run of the bank against the engines (an API that asks them as
+a visitor would, with search on and the site's market), one pass per question and engine;
+the first month by API is a new baseline, not comparable with hand runs. **The trend is read
+from the third edition.** One month without a citation says nothing about the strategy; the
+"who is cited instead" column can be acted on from the first.
+
+**The rules that keep a bank honest:**
+- Never rephrase a question so the site appears — that measures your creativity, not your
+  position.
+- Questions do not change between months. New ones go at the end, with their start month.
+- A question that could not be asked is `NOT MEASURED`, never a zero.

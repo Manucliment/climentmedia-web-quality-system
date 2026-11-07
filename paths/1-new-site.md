@@ -276,6 +276,16 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   `NO GATE — method:` every number, superlative and promise (price, financing, delivery,
   guarantee) that the new site publishes is searched in the frozen source (`grep -c`). **0
   occurrences → the client confirms it, or it does not ship.**
+- **AND THE QUESTION BANK, BORN WITH THE SITE** · A site that goes live without one has no
+  baseline for the first month it is asked about, and the choosing questions — the ones that
+  end in a lead — are exactly the ones nobody writes later. Before publishing, the site repo
+  gets its bank: buyer questions tied to the page that should win each one, with **at least
+  five from someone already choosing** ("alternatives to X", "best X in <town>", "where to
+  buy X", by sector). Its first monthly run is the baseline, and every question where the
+  site does not appear closes as a plan row with a date, or "nothing to move" with the reason.
+  `NO GATE — method:` the bank file exists in the repo with its choosing cluster before the
+  first upload; a comparison page that the plan calls for is built to the fixed shape.
+  → `blueprint/03-content-and-seo.md` §8.4
 - → `blueprint/03-content-and-seo.md` · `blueprint/18-page-standard.md`
 
 ## Step 7 · Measurement

@@ -327,6 +327,10 @@ repeated here.** What is added is the layout, and that is where it fails:
 not a section boundary** · exceeding the height budget (6 screens plus one per 80 visible words past
 400, capped at 12) · more than 2.5 consecutive screens with nothing to click.
 
+**A comparison also has a fixed order of content** — the table, a verdict under it, the date
+the data was read, the sources, and an FAQ in the question bank's own words — and competitors
+are linked once, where first cited, with `rel="nofollow"`: `blueprint/03-content-and-seo.md §8.4`.
+
 > **The real state, counted.** One guide had **36 paragraphs as direct children** of the wrapper and
 > zero sections. Another had 37; another, 30; another, 27. They satisfy the entire content layer —
 > capsule, table, FAQ, article schema, dates — and are prose anyway. **Satisfying the content layer
