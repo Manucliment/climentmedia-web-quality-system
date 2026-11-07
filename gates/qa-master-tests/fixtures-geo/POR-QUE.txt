@@ -10,8 +10,10 @@ Las genera fixturas-geo.cjs (scratchpad de la sesion del 7-nov); se editan aqui 
 SEO-22 (7-nov-2026, D-065 punto 8): el autor y la fecha de un articulo.
 art-mal avisa en sus cuatro articulos: el usuario del gestor como autor («Marca Admin») y una modificacion dos anos
 antes de la publicacion; el autor solo por un @id de otro sitio y la pagina ensenando otro mes que el marcado; un
-autor que se ve y no enlaza a nada, sin fecha en el marcado; y un autor del marcado que no sale en la pagina.
+autor que se ve y no enlaza a nada, sin fecha en el marcado; un autor del marcado que no sale en la pagina; y, desde
+el 7-nov, un articulo que ensena octubre con dateModified en noviembre (antes bastaba con que se viera una de las dos).
 art-bien pasa con lo que NO debe contar: el enlace al autor por su url sin barra final (con otro texto), un @id que
 la pagina si define, la fecha solo por <time datetime> o escrita al mes, una organizacion como autor enlazada desde la
-cabecera, y una pagina noindex con todo mal.
+cabecera, una pagina noindex con todo mal, y una modificacion del mismo mes con la fecha
+en cifras (06/10/2026: al mes no se ve, asi que es la excepcion del mes la que la deja pasar; el mutante sin ella sale en rojo).
 Las genera fixturas-art.cjs (scratchpad de la sesion del 7-nov); se editan aqui a mano si cambian.

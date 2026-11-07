@@ -665,7 +665,7 @@ before it was written, so the numbers below are what the rule actually catches.
 | **SEO-19** | every page read | a data table with no `<th>` | 9 tables, 0 without a header: it stays as a guard |
 | **SEO-20** | the site | the brand named more than one way across `og:site_name`, the Organization name in the markup and the end of the `<title>` first live run, 8 pages each of 6 sites: 4 warned (two of them missed by a hand census the day before) |
 | **SEO-21** | the site | an `hreflang` alternate that does not answer 200, does not link back, or carries less than 40 % of the source page's words | 1 site with `hreflang`: 10 alternates, 96–103 % of the words, all reciprocal |
-| **SEO-22** | every article read | on a page marked `Article`, `BlogPosting` or `TechArticle`: an author with no name in the markup, a placeholder author, an author not shown or not linked to their page; a date not written on the page, or modified before it was published | 42 articles on 5 sites: 9 of 9 signed by the CMS's default user; 5 of 5 with the author only as an `@id` defined on another site; 15 of 15 with an author that links nowhere, 13 of them "modified" years before they were published (the publication date was the migration's); 3 guides showing a different month than their markup |
+| **SEO-22** | every article read | on a page marked `Article`, `BlogPosting` or `TechArticle`: an author with no name in the markup, a placeholder author, an author not shown or not linked to their page; a date not written on the page, a `dateModified` in another month that the page does not show, or modified before it was published | 42 articles on 5 sites: 9 of 9 signed by the CMS's default user; 5 of 5 with the author only as an `@id` defined on another site; 15 of 15 with an author that links nowhere, 13 of them "modified" years before they were published (the publication date was the migration's); 3 guides showing a different month than their markup |
 
 **What each one deliberately does not count**, because each is a false positive seen in the
 census or built into the fixtures:
@@ -694,6 +694,8 @@ census or built into the fixtures:
   the author's name; an `@id` counts when the page itself defines it. An organization as the
   author is allowed, linked like a person. The date counts when `datePublished` or
   `dateModified` is written on the page in any of five languages, at day or at month ("October
-  2026"), or sits in a `<time datetime>`. **What it does not check:** that the author's page
+  2026"), or sits in a `<time datetime>`. When the page shows only the publication date, a
+  `dateModified` in the same month needs nothing; one in a later month must be shown too
+  ("updated on …"), or the markup announces an update the reader cannot find. **What it does not check:** that the author's page
   says who they are, and what the JavaScript paints. A name like "Admin" is the CMS user, not
   an author: an engine that weighs who wrote it gets nobody.

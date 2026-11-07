@@ -1867,12 +1867,19 @@ sub _autor_y_fecha {
         my ($dp) = ($pub // '') =~ /^(\d{4}-\d{2}-\d{2})/; my ($dm) = ($mod // '') =~ /^(\d{4}-\d{2}-\d{2})/;
         push @mal, "modificado antes de publicado: publicado $dp, modificado $dm" if $dp && $dm && $dm lt $dp;
         my @times = map { attr($_, 'datetime') // '' } ($cuerpo =~ /(<time\b[^>]*>)/gi);
-        my $cuadra = grep { my $f = $_; defined $f && ( _fecha_escrita($f, $vis)
-                            || grep { my $t = substr($_, 0, 10); $t ne '' && (index($f, $t) == 0 || index($t, substr($f, 0, 10)) == 0) } @times ) } ($pub, $mod);
-        unless ($cuadra) {
-            my ($tt) = $cuerpo =~ m{<time\b[^>]*>(.*?)</time>}si;
-            $tt = defined $tt ? _ent(_dec(tag_text($tt))) : ''; $tt =~ s/^\s+|\s+$//g;
-            push @mal, 'la fecha no se ve: el marcado dice '.($dp // $dm // $pub // $mod).($tt ne '' ? ", la pagina ensena «$tt»" : '');
+        my $se_ve = sub { my $f = shift; defined $f && ( _fecha_escrita($f, $vis)
+                            || grep { my $t = substr($_, 0, 10); $t ne '' && (index($f, $t) == 0 || index($t, substr($f, 0, 10)) == 0) } @times ) };
+        my ($tt) = $cuerpo =~ m{<time\b[^>]*>(.*?)</time>}si;
+        $tt = defined $tt ? _ent(_dec(tag_text($tt))) : ''; $tt =~ s/^\s+|\s+$//g;
+        my $ensena = $tt ne '' ? ", la pagina ensena «$tt»" : '';
+        if (!grep { $se_ve->($_) } ($pub, $mod)) {
+            push @mal, 'la fecha no se ve: el marcado dice '.($dp // $dm // $pub // $mod).$ensena;
+        }
+        # Se ve la publicacion y no la modificacion, de otro mes (7-nov-2026: una guia con «octubre de 2026» a la vista
+        # y dateModified el 1 de noviembre; antes bastaba con que se viera una de las dos). El marcado anuncia una
+        # puesta al dia que el lector no encuentra. Una modificacion del mismo mes que la publicacion no pide nada.
+        elsif ($dp && $dm && substr($dm, 0, 7) ne substr($dp, 0, 7) && !$se_ve->($mod)) {
+            push @mal, "la modificacion no se ve: el marcado dice modificado $dm$ensena";
         }
     }
     return (1, @mal);
@@ -2469,9 +2476,9 @@ sub lente_seo {
               dato=>scalar(@art_mal)." de $n_articulos articulo(s): ".join(' · ', map { "$cuenta{$_} $_" } sort { $cuenta{$b} <=> $cuenta{$a} || $a cmp $b } keys %cuenta),
               donde=>join(' · ', map { "$_->[0] (".join('; ', @{$_}[1..$#$_]).')' } @art_mal[0..($#art_mal>2?2:$#art_mal)]),
               ev=>[map { $_->[0] } @art_mal],
-              umbral=>'en cada articulo: el autor del marcado con nombre, que se ve y enlaza a su pagina; y la fecha del marcado escrita en la pagina, sin modificar antes de publicar',
+              umbral=>'en cada articulo: el autor del marcado con nombre, que se ve y enlaza a su pagina; y la fecha del marcado escrita en la pagina (tambien la de modificacion, si cae en otro mes), sin modificar antes de publicar',
               proc=>'D-065 punto 8 · benchmark GEO: autor con su pagina y fecha visible en noticias y articulos',
-              hacer=>'el nombre del autor visible y enlazado a su pagina (la de autor o la de quien somos), el mismo en el marcado; la fecha del marcado escrita en la pagina. Un autor «Admin» es el usuario del gestor: se cambia por la persona. dateModified nunca antes que datePublished');
+              hacer=>'el nombre del autor visible y enlazado a su pagina (la de autor o la de quien somos), el mismo en el marcado; la fecha del marcado escrita en la pagina, y si dateModified cae en otro mes, tambien esa («actualizado el …»); si no hubo un cambio de verdad, dateModified vuelve a la de publicacion. Un autor «Admin» es el usuario del gestor: se cambia por la persona. dateModified nunca antes que datePublished');
     } else {
         pasa(lente=>'SEO', id=>'SEO-22', titulo=>'cada articulo ensena su autor, que enlaza, y su fecha',
              dato=>"$n_articulos articulo(s) · no se pide la pagina del autor: que diga quien es se mira a mano");
