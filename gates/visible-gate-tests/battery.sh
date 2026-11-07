@@ -26,6 +26,14 @@
 #         a 1366 y a 390 (FALLA) · el aviso de cookies (AVISO) · tapado en parte
 #         (AVISO, no FALLA). Cada fixtura de VI2 se paso el 6-nov por Tab y Shift+Tab
 #         DE VERDAD (puppeteer keyboard) en el mismo Chrome: mismo veredicto.
+#    VI3  (7-nov) el anillo claro sobre blanco, a 1366 y a 390, el oscuro sobre una
+#         seccion oscura, el escrito en oklch y el de una sombra al 30 % (FALLA) · el
+#         oscuro sobre blanco, el par de dos tonos sobre oscuro y unos botones oscuros
+#         pegados (PASA: el vecino no es el fondo) · el foco que no cambia nada (AVISO)
+#         y el que cambia el fondo (PASA, contado aparte) · los campos de borde claro y
+#         los rellenos casi blancos sin borde (FALLA) · el borde gris oscuro, la sombra
+#         que hace de borde y el campo blanco en una caja oscura (PASA) · sobre un
+#         degradado (PASA, NO MEDIDO dicho).
 # =============================================================================
 set -u
 D="$(cd "$(dirname "$0")" && pwd)"
@@ -95,6 +103,24 @@ res BARRA              foco-barra.html         FALLA 'tapadas enteras por la bar
 TAM="390 844" res BARRA-390 foco-barra.html    FALLA 'tapadas enteras por la barra fija de abajo (div.barra-llamar, 80 px)'
 res COOKIES            foco-cookies.html       PASA  'por el aviso de cookies mientras esta abierto' 'tapadas enteras por la barra'
 res PARCIAL            foco-parcial.html       PASA  'en mas de la mitad' 'tapadas enteras por'
+echo
+echo "=========== VI3 · el anillo de foco y el borde de los campos (WCAG 1.4.11) ==========="
+res ANILLO-FLOJO       anillo-flojo.html       FALLA 'el anillo #9fd3e6 sobre #ffffff'
+TAM="390 844" res ANILLO-FLOJO-390 anillo-flojo.html FALLA 'el anillo #9fd3e6 sobre #ffffff'
+res ANILLO-BUENO       anillo-bueno.html       PASA  '"medidos": 4' 'parada(s) de Tab con el anillo'
+res ANILLO-OSCURO      anillo-oscuro.html      FALLA 'sobre #10243e'
+res DOS-TONOS          anillo-dos-tonos.html   PASA  '"medidos": 4' 'parada(s) de Tab con el anillo'
+res OKLCH              anillo-oklch.html       FALLA 'parada(s) de Tab con el anillo'
+res ALFA               anillo-alfa.html        FALLA 'al 30 % sobre #ffffff, 1.6'   # el lienzo da #1a4c8e y 1.68 (redondeo de la alfa); a mano, #1a4d8f y 1.67
+res VECINOS            anillo-vecinos.html     PASA  '"medidos": 4' 'parada(s) de Tab con el anillo'
+res SIN-CAMBIO         foco-sin-cambio.html    PASA  'no cambian nada al recibir el foco'
+res OTRO-INDICADOR     foco-otro.html          PASA  'otra cosa que un anillo' 'no cambian nada'
+res CAMPOS-FLOJOS      campos-flojos.html      FALLA '3 campo(s) del formulario no se distinguen'
+res CAMPOS-BUENOS      campos-buenos.html      PASA  '"camposFlojos": 0' 'no se distinguen'
+res CAMPOS-RELLENO     campos-relleno.html     FALLA 'campo(s) del formulario no se distinguen'
+res CAMPOS-SOMBRA      campos-sombra.html      PASA  '"camposFlojos": 0' 'no se distinguen'
+res CAMPOS-OSCURO      campos-oscuro.html      PASA  '"camposFlojos": 0' 'no se distinguen'
+res CAMPOS-IMAGEN      campos-imagen.html      PASA  'sobre una imagen, un degradado' 'no se distinguen'
 echo
 ssh "$HOST" "rm -rf $REMOTO ~/webtools/banco-visible" >/dev/null 2>&1
 echo "  $OK OK · $MAL MAL"

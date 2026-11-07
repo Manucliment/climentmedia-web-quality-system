@@ -42,8 +42,21 @@
 //  Las paradas que viven DENTRO de algo fijo (los enlaces de la propia cabecera)
 //  no se miden: no las tapa lo que las contiene.
 //
-//  LO QUE NO MIDE, dicho en cada corrida: si el foco se ve (el anillo, su
-//  contraste: eso es A11Y-03b), el orden de Tab de un script que lo cambia, lo
+//    VI3  LO QUE SE VE DE UN CONTROL (WCAG 1.4.11, AA, 7-nov-2026). El anillo de
+//         foco tiene que llegar a 3:1 con lo que tiene al lado, y un campo del
+//         formulario, por su borde o por su fondo, a 3:1 con lo de fuera. Una web
+//         nuestra tenia los campos a 2,52:1 y el anillo a 2,77:1, y A11Y-03 pasaba:
+//         solo cuenta texto. El gate da el foco a cada parada (todas, tambien las
+//         de lo fijo), lee el outline y las sombras sin desenfoque, y los compara
+//         con lo que se ve justo fuera, que tiene que estar DETRAS del elemento
+//         (un vecino no es su fondo). Un par de dos tonos (un aro blanco debajo de
+//         un anillo oscuro) vale si uno de sus cambios llega a 3:1. El anillo del
+//         navegador (outline auto) se da por bueno. Sobre una imagen o un
+//         degradado, NO MEDIDO. FALLA bajo 3:1. Una parada que no cambia nada al
+//         recibir el foco, AVISO (2.4.7): puede ir en un hijo o en ::after.
+//
+//  LO QUE NO MIDE, dicho en cada corrida: el contraste del TEXTO en hover y en
+//  foco (eso es A11Y-03b), el orden de Tab de un script que lo cambia, lo
 //  que esta en un iframe o en shadow DOM, y si una aparicion se ve bien a medias.
 //  Mira el texto, no las imagenes. El texto de una capa absoluta o fija que se
 //  oculta (la de una tarjeta que sale al pasar el raton) no cuenta en VI1: no es
@@ -266,6 +279,160 @@
       } else if (t.cubiertos >= 5) apunta(parciales, el, t.obs[0]);
     }
   }
+
+  // ── VI3 · el anillo de foco y el borde de los campos (WCAG 1.4.11, AA) ─────
+  // Lo que dice «aqui estas» y «aqui se escribe» tiene que llegar a 3:1 con lo que tiene al lado: el anillo de foco,
+  // contra lo que hay detras de el; un campo, por su borde o por su fondo, contra lo de fuera. 6-nov-2026: una web
+  // nuestra con los campos a 2,52:1 y el anillo a 2,77:1 pasaba A11Y-03, que solo cuenta texto.
+  // Los colores, por el lienzo: cualquier color de CSS (oklch, color-mix) sale en sRGB. Leer los digitos de
+  // «oklch(...)» da un numero falso con aplomo (5-nov, una sonda copiada de otra web daba 1:1). Lo que lleva alfa se
+  // mezcla con lo de debajo antes de comparar.
+  const lienzo = document.createElement('canvas'); lienzo.width = lienzo.height = 1;
+  const cx = lienzo.getContext('2d', { willReadFrequently: true });
+  const rgba = c => { if (!c || c === 'transparent' || c === 'none') return null; cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000';
+    cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data; return d[3] < 3 ? null : [d[0], d[1], d[2], d[3] / 255]; };
+  const sobre = (a, b) => a ? [0, 1, 2].map(i => a[i] * a[3] + b[i] * (1 - a[3])) : b;    // a, con su alfa, encima de b
+  const lum = c => { const x = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * x[0] + 0.7152 * x[1] + 0.0722 * x[2]; };
+  const ratio = (a, b) => { const x = lum(a), y = lum(b); return Math.round((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) * 100) / 100; };
+  // Con su alfa, si la lleva: «#1877d2» a secas por un anillo al 55 % hacia creer que el 2,19:1 era un error (7-nov).
+  const hex = c => '#' + c.slice(0, 3).map(n => Math.round(n).toString(16).padStart(2, '0')).join('') +
+    (c.length > 3 && c[3] < 0.99 ? ` al ${Math.round(c[3] * 100)} %` : '');
+  const MEDIA = /^(IMG|PICTURE|VIDEO|CANVAS|SVG|IFRAME|OBJECT|EMBED)$/;
+  // El color de lo que se ve en n: sus fondos y los de sus antecesores, mezclados de fuera adentro hasta el primero
+  // opaco. Una imagen, un degradado o un medio en el camino lo hace aproximado: entonces no se juzga, se cuenta.
+  const fondoDe = n => {
+    const capas = []; let aprox = !!(n && n.tagName && MEDIA.test(n.tagName.toUpperCase()));
+    for (; n && n.nodeType === 1 && !aprox; n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') aprox = true;
+      const b = rgba(cs.backgroundColor);
+      if (b) { capas.push(b); if (b[3] >= 0.99) break; }
+    }
+    let c = [255, 255, 255];
+    for (let i = capas.length - 1; i >= 0; i--) c = sobre(capas[i], c);
+    return { c, aprox };
+  };
+  // Lo que hay justo fuera de la caja (a `hueco` px): lo primero que se ve en ese punto tiene que estar DETRAS del
+  // elemento en su centro (un antecesor, o la seccion que tiene debajo si flota). Un vecino (el boton de al lado) no es
+  // su fondo: se prueba el siguiente lado. Sin ninguno, el fondo del padre, y aproximado.
+  const fueraDe = (el, hueco) => {
+    const r = el.getBoundingClientRect();
+    const cxp = Math.min(vw - 1, Math.max(0, r.left + r.width / 2)), cyp = Math.min(vh - 1, Math.max(0, r.top + r.height / 2));
+    const enCentro = document.elementsFromPoint(cxp, cyp);
+    const i = enCentro.findIndex(k => k === el || el.contains(k));
+    const atras = new Set(i >= 0 ? enCentro.slice(i + 1) : []);
+    for (const [a, b] of [[r.left - hueco - 2, cyp], [r.right + hueco + 2, cyp], [cxp, r.top - hueco - 2], [cxp, r.bottom + hueco + 2]]) {
+      if (a < 0 || a >= vw || b < 0 || b >= vh) continue;
+      const hits = document.elementsFromPoint(a, b).filter(k => k !== el && !el.contains(k));
+      if (hits.length && atras.has(hits[0])) return fondoDe(hits[0]);
+    }
+    return Object.assign(fondoDe(el.parentElement), { aprox: true });
+  };
+  const partirSombras = s => (!s || s === 'none') ? [] : s.split(/,(?![^(]*\))/).map(t => {
+    const color = (t.match(/(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^)]*\)|#[0-9a-f]{3,8}\b/i) || [''])[0];
+    const n = (t.replace(color, '').match(/-?[\d.]+px/g) || []).map(parseFloat);
+    return { color: rgba(color), inset: /\binset\b/.test(t), x: n[0] || 0, y: n[1] || 0, blur: n[2] || 0, spread: n[3] || 0 };
+  });
+  // El anillo, como bandas desde el borde de la caja hacia fuera: las sombras sin desenfoque ni desplazamiento (la
+  // primera de la lista, encima) y el outline, que se pinta sobre ellas. «auto» es el del navegador: dos tonos, vale.
+  const anilloDe = cs => {
+    const bandas = partirSombras(cs.boxShadow).filter(s => !s.inset && s.color && s.spread > 0 && s.blur <= 1 && !s.x && !s.y)
+      .map(s => ({ de: 0, a: s.spread, color: s.color, sombra: true }));
+    const ow = parseFloat(cs.outlineWidth) || 0;
+    if (cs.outlineStyle !== 'none' && ow > 0) {
+      if (cs.outlineStyle === 'auto') return { navegador: true, bandas };
+      const off = parseFloat(cs.outlineOffset) || 0, oc = rgba(cs.outlineColor);
+      if (oc) bandas.push({ de: off, a: off + ow, color: oc, outline: true });
+    }
+    return { navegador: false, bandas };
+  };
+  // Cada cambio de color del perfil, de dentro afuera hasta lo de fuera: el anillo se ve si UNO llega a 3:1 (un anillo
+  // claro sobre oscuro, o el oscuro de un par de dos tonos sobre su aro blanco). Dentro de la caja (un outline con
+  // offset negativo), lo de debajo es el fondo del propio elemento.
+  const mejorBorde = (bandas, fuera, propio) => {
+    const hasta = Math.max(...bandas.map(b => b.a)), desde = Math.min(0, ...bandas.map(b => b.de));
+    const colorEn = r => {
+      const o = bandas.find(b => b.outline && r >= b.de && r < b.a);
+      const ss = bandas.filter(b => b.sombra && r >= 0 && r < b.a);
+      let c = r < 0 ? propio : fuera;
+      for (let k = ss.length - 1; k >= 0; k--) c = sobre(ss[k].color, c);
+      return o ? sobre(o.color, c) : c;
+    };
+    const perfil = [];
+    for (let r = desde + 0.25; r < hasta; r += 0.5) perfil.push(colorEn(r));
+    perfil.push(fuera);
+    let mejor = 1;
+    for (let k = 1; k < perfil.length; k++) mejor = Math.max(mejor, ratio(perfil[k - 1], perfil[k]));
+    return { v: mejor, anillo: (bandas.find(b => b.outline) || bandas[0]).color };
+  };
+  // Lo que SE VE del estado, nada mas: `outline: none` no reinicia outline-offset, y el del navegador cambia al recibir
+  // el foco sin que se vea nada (7-nov: «no cambia nada» salia como «otro indicador»). Un outline o un borde solo cuentan
+  // si tienen estilo y ancho.
+  const firmaDe = cs => [
+    cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 ? `${cs.outlineStyle} ${cs.outlineWidth} ${cs.outlineColor} ${cs.outlineOffset}` : 'sin outline',
+    cs.boxShadow, cs.backgroundColor, cs.color, `${cs.textDecorationLine} ${cs.textDecorationColor}`,
+    ['Top', 'Right', 'Bottom', 'Left'].map(l => parseFloat(cs[`border${l}Width`]) > 0 && !/none|hidden/.test(cs[`border${l}Style`])
+      ? `${cs[`border${l}Width`]} ${cs[`border${l}Color`]}` : '-').join(',')].join('|');
+  const flojos = new Map(), sinCambio = [];
+  const vi3 = { medidos: 0, delNavegador: 0, otroIndicador: 0, sobreImagen: 0, sinCambio: 0, flojos: 0 };
+  // La pasada hacia atras de VI2 acaba con el foco en la PRIMERA parada: sin soltarlo, su estado «antes» ya es el del
+  // foco y sale como «no cambia nada» (7-nov, el banco lo vio en cuatro fixturas). Medido ese dia: tras blur(), el
+  // focus() de la pagina sigue pintando :focus-visible, igual que la tecla Tab (55 de 55 paradas).
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  scrollTo(0, 0);
+  await esperar(60);
+  for (const el of enOrden().slice(0, CFG.maxParadas)) {
+    const antes = firmaDe(getComputedStyle(el));
+    try { el.focus({ preventScroll: true }); } catch (e) { continue; }
+    if (document.activeElement !== el) continue;
+    llevaElFoco(el);
+    const cs = getComputedStyle(el);
+    if (firmaDe(cs) === antes) { vi3.sinCambio++; sinCambio.push(el); continue; }
+    const an = anilloDe(cs);
+    if (an.navegador) { vi3.delNavegador++; continue; }
+    if (!an.bandas.length) { vi3.otroIndicador++; continue; }
+    const hueco = Math.max(...an.bandas.map(b => b.a));
+    const fu = fueraDe(el, hueco);
+    if (fu.aprox) { vi3.sobreImagen++; continue; }
+    vi3.medidos++;
+    const m = mejorBorde(an.bandas, fu.c, sobre(rgba(cs.backgroundColor), fu.c));
+    if (m.v < 3) {
+      vi3.flojos++;
+      const k = `el anillo ${hex(m.anillo)} sobre ${hex(fu.c)}, ${m.v}:1`;
+      if (!flojos.has(k)) flojos.set(k, []);
+      flojos.get(k).push(el);
+    }
+  }
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  // Los campos, en reposo: se distinguen por el borde (o una sombra que hace de borde) o por su fondo. Basta uno.
+  const CAMPO = 'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"])' +
+    ':not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), select, textarea';
+  const camposFlojos = new Map();
+  const vi3b = { campos: 0, flojos: 0, sobreImagen: 0 };
+  for (const f of document.querySelectorAll(CAMPO)) {
+    if (f.disabled || !conCaja(f) || !seVe(f) || f.closest('[inert], [aria-hidden="true"]')) continue;
+    f.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const cs = getComputedStyle(f), fu = fueraDe(f, 0);
+    if (fu.aprox || (cs.backgroundImage && cs.backgroundImage !== 'none')) { vi3b.sobreImagen++; continue; }
+    vi3b.campos++;
+    const suyo = sobre(rgba(cs.backgroundColor), fu.c);
+    const vals = [ratio(suyo, fu.c)];
+    for (const lado of ['Top', 'Right', 'Bottom', 'Left']) {
+      const w = parseFloat(cs[`border${lado}Width`]) || 0, st = cs[`border${lado}Style`];
+      const b = rgba(cs[`border${lado}Color`]);
+      if (w >= 1 && b && st !== 'none' && st !== 'hidden') vals.push(ratio(sobre(b, suyo), fu.c));
+    }
+    for (const s of partirSombras(cs.boxShadow))
+      if (s.color && s.spread >= 1 && s.blur <= 1) vals.push(ratio(sobre(s.color, s.inset ? suyo : fu.c), fu.c));
+    const v = Math.max(...vals);
+    if (v < 3) {
+      vi3b.flojos++;
+      const k = `${v}:1 (borde ${rgba(cs.borderBottomColor) ? hex(sobre(rgba(cs.borderBottomColor), suyo)) : 'ninguno'}, fondo ${hex(suyo)}, fuera ${hex(fu.c)})`;
+      if (!camposFlojos.has(k)) camposFlojos.set(k, []);
+      camposFlojos.get(k).push(f);
+    }
+  }
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   scrollTo(0, 0);
   html.style.scrollBehavior = antesScroll;
@@ -283,10 +450,28 @@
   for (const [k, els] of parciales)
     avisos.push(`VI2 · ${els.length} parada(s) de Tab quedan tapadas en mas de la mitad por ${k}: ${ejemplos(els)} (2.4.12, AAA)`);
 
+  resumen.VI3 = Object.assign({}, vi3, { campos: vi3b.campos, camposFlojos: vi3b.flojos, camposSobreImagen: vi3b.sobreImagen });
+  for (const [k, els] of flojos)
+    fallos.push(`VI3 · ${els.length} parada(s) de Tab con ${k} (WCAG 1.4.11 pide 3:1 con lo que tiene al lado): ${ejemplos(els)}. ` +
+      'El arreglo: un anillo que llegue a 3:1 con ese fondo, o un aro de otro color debajo (box-shadow sin desenfoque) que lo separe');
+  for (const [k, els] of camposFlojos)
+    fallos.push(`VI3 · ${els.length} campo(s) del formulario no se distinguen de lo de fuera: el mejor de su borde y su fondo da ${k} ` +
+      `(WCAG 1.4.11 pide 3:1): ${ejemplos(els)}. El arreglo: un borde que llegue a 3:1 con el fondo de fuera`);
+  if (sinCambio.length)
+    avisos.push(`VI3 · ${sinCambio.length} parada(s) de Tab no cambian nada al recibir el foco (ni anillo, ni fondo, ni color, ni subrayado): ` +
+      `${ejemplos(sinCambio)} (WCAG 2.4.7). Puede ir en un hijo, en ::after o en un antecesor con :focus-within: eso no se mira aqui`);
+  if (vi3.sobreImagen || vi3b.sobreImagen)
+    notas.push(`VI3 · NO MEDIDO: ${vi3.sobreImagen} anillo(s) y ${vi3b.sobreImagen} campo(s) sobre una imagen, un degradado o un fondo que no se ` +
+      'pudo leer. El color de debajo no se sabe por la hoja: se mira a ojo o con una captura del inspector.');
+  if (vi3.otroIndicador)
+    notas.push(`VI3 · ${vi3.otroIndicador} parada(s) marcan el foco con otra cosa que un anillo (fondo, color, subrayado): su contraste no se mide aqui.`);
+  if (vi3.delNavegador) notas.push(`VI3 · ${vi3.delNavegador} parada(s) con el anillo del navegador (outline auto, dos tonos): se da por bueno.`);
+
   if (CFG.anchoPedido && vw !== CFG.anchoPedido)
     notas.push(`MEDIDO A ${vw} px cuando se pidieron ${CFG.anchoPedido}. Una medida que no coincide con lo PEDIDO no es un resultado.`);
-  notas.push('VI1 y VI2 · mira el texto del contenido y el orden de Tab del HTML. NO mide si el anillo de foco se ve (A11Y-03b), ' +
-    'el orden que cambia un script, iframes ni shadow DOM, ni las imagenes.');
+  notas.push('VI1, VI2 y VI3 · mira el texto del contenido, el orden de Tab del HTML, el anillo de foco y el borde de los campos. ' +
+    'NO mide el contraste del texto en hover y en foco (A11Y-03b), el orden que cambia un script, iframes ni shadow DOM, ' +
+    'las casillas y los botones de opcion (van con el dibujo del navegador), ni las imagenes.');
 
   return JSON.stringify({
     url: location.href, innerWidth: vw, innerHeight: vh,
