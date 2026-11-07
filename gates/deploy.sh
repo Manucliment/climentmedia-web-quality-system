@@ -684,13 +684,22 @@ NAV_ENV=""   # en el 1-quater lleva GATE_CANDIDATO y GATE_SITIO; en el 6, nada
 #    Tope: URLS_CAMBIADAS_MAX (8 por defecto), altas primero. Un cambio de plantilla
 #    toca todas las paginas y medirlas todas a ocho anchos tarda; las que quedan
 #    fuera se dicen y se anotan, no se callan.
+#    🔴 7-nov-2026 · LA MEDIDA CORTA PARA LAS DE MAS. Una subida cambio 28 paginas, el
+#    1-quater midio 8 y las otras 20 subieron sin medir: entre ellas iba un FALLA nuevo
+#    de structure-gate (PROSA-1) en la pieza de contenido de esa subida, y el cierre lo
+#    dijo con todo ya subido. Las que pasan del tope se miden ahora con la medida corta
+#    (structure-gate a 1298, measure-screens y mobile-gate a 390: lo que caza un defecto
+#    de contenido), hasta URLS_CAMBIADAS_CORTA_MAX (40); solo las que pasan de los dos
+#    topes quedan fuera, dichas y anotadas como antes.
 # >>> paginas-cambiadas (marca del banco deploy-tests: no la muevas sin moverlo)
 HUELLAS_ANT="$REPO/_deploy/.desplegado-huellas.txt"
 # La primera linea dice como se tomaron. Unas huellas de otra version (las del 1-nov
 # por la manana llevaban el ?v= dentro) no se comparan: daria la web entera por cambiada.
 HUELLAS_VERSION="# huellas-v2 (html sin sellos ?v=)"
 URLS_CAMBIADAS_MAX="${URLS_CAMBIADAS_MAX:-${CHANGED_URLS_MAX:-8}}"
+URLS_CAMBIADAS_CORTA_MAX="${URLS_CAMBIADAS_CORTA_MAX:-${CHANGED_URLS_SHORT_MAX:-40}}"
 URLS_CAMBIADAS=""; CAMBIADAS_ALTAS=0; CAMBIADAS_N=0; CAMBIADAS_FUERA=0; CAMBIADAS_NOTA=""; CAMBIADAS_TODAS=""
+URLS_CAMBIADAS_CORTA=""; CAMBIADAS_CORTA_N=0
 #    🔴 EL SELLO ?v= NO ES UN CAMBIO DE PAGINA (1-nov, el mismo dia): cambiar el CSS
 #    reescribe `styles.css?v=…` en TODAS las paginas, y con el hash del fichero cada
 #    subida «cambiaba» la web entera, llenaba el tope con las primeras por orden
@@ -712,7 +721,7 @@ pagina_ruta() {     # como sirve run-gate el candidato: index.html -> / · sub/i
     *)            printf '/%s\n' "${1%.html}" ;;
   esac
 }
-paginas_cambiadas() {   # -> URLS_CAMBIADAS, CAMBIADAS_ALTAS, CAMBIADAS_N, CAMBIADAS_FUERA, CAMBIADAS_NOTA
+paginas_cambiadas() {   # -> URLS_CAMBIADAS, CAMBIADAS_ALTAS, CAMBIADAS_N, URLS_CAMBIADAS_CORTA, CAMBIADAS_FUERA, CAMBIADAS_NOTA
   local hoy lista tipo rel r d decl=" "
   hoy="$(arbol_huellas)"
   if [ -s "$HUELLAS_ANT" ] && [ "$(head -1 "$HUELLAS_ANT")" = "$HUELLAS_VERSION" ]; then
@@ -736,6 +745,9 @@ paginas_cambiadas() {   # -> URLS_CAMBIADAS, CAMBIADAS_ALTAS, CAMBIADAS_N, CAMBI
     if [ "$CAMBIADAS_N" -lt "$URLS_CAMBIADAS_MAX" ]; then
       URLS_CAMBIADAS="${URLS_CAMBIADAS:+$URLS_CAMBIADAS }$r"; decl="$decl$d| "
       CAMBIADAS_N=$((CAMBIADAS_N+1)); [ "$tipo" = 0 ] && CAMBIADAS_ALTAS=$((CAMBIADAS_ALTAS+1))
+    elif [ "$CAMBIADAS_CORTA_N" -lt "$URLS_CAMBIADAS_CORTA_MAX" ]; then
+      URLS_CAMBIADAS_CORTA="${URLS_CAMBIADAS_CORTA:+$URLS_CAMBIADAS_CORTA }$r"; decl="$decl$d| "
+      CAMBIADAS_CORTA_N=$((CAMBIADAS_CORTA_N+1))
     else
       CAMBIADAS_FUERA=$((CAMBIADAS_FUERA+1))
     fi
@@ -987,7 +999,8 @@ elif [ "${SIN_NAVEGADOR:-0}" = 1 ]; then
 else
   linea; echo "  1-quater · maqueta, pantallas, movil y menu, sobre el CANDIDATO"; linea
   echo "  paginas: ${URLS_NAVEGADOR:-/} (declaradas)${URLS_CAMBIADAS:+ + $URLS_CAMBIADAS (las que cambia esta subida: $CAMBIADAS_ALTAS altas)}"
-  [ "$CAMBIADAS_FUERA" -gt 0 ] && echo "  ⚠ $CAMBIADAS_FUERA paginas cambiadas mas quedan SIN MEDIR por el tope (URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX)"
+  [ "$CAMBIADAS_CORTA_N" -gt 0 ] && echo "  + $CAMBIADAS_CORTA_N cambiadas mas con la medida corta (structure-gate a 1298, measure-screens y mobile-gate a 390; pasan de URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX): $URLS_CAMBIADAS_CORTA"
+  [ "$CAMBIADAS_FUERA" -gt 0 ] && echo "  ⚠ $CAMBIADAS_FUERA paginas cambiadas mas quedan SIN MEDIR por los dos topes (URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX, URLS_CAMBIADAS_CORTA_MAX=$URLS_CAMBIADAS_CORTA_MAX)"
   [ -n "$CAMBIADAS_NOTA" ] && echo "  ($CAMBIADAS_NOTA)"
   if [ -z "${NAV_HOST:-}" ]; then
     NAVC_HUECOS="todo (NAV_HOST sin configurar)"
@@ -1030,6 +1043,12 @@ else
                  "botones-gate.js 1366 768 b" "botones-gate.js 390 844 b" \
                  "visible-gate.js 1366 768 -" "visible-gate.js 390 844 -" \
                  "huellas-gate.js 1366 768 -" "huellas-gate.js 390 844 -"; do
+          n=$((n+1)); printf '%s %s %s\n' "$n" "$r" "$m" >> "$NAVC_DIR/lista"
+        done
+      done
+      # la medida corta, para las cambiadas que pasan del tope (7-nov-2026, arriba)
+      for r in $URLS_CAMBIADAS_CORTA; do
+        for m in "structure-gate.js 1298 720 c" "measure-screens.js 390 844 -" "mobile-gate.js 390 844 c"; do
           n=$((n+1)); printf '%s %s %s\n' "$n" "$r" "$m" >> "$NAVC_DIR/lista"
         done
       done
@@ -1143,11 +1162,11 @@ if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ "$REDIR" != 1 ]; then
   echo
   nav_decide || exit 1
   if [ "$SUBIR" = 1 ]; then
-    perl "$REF/receipt.pl" --anotar "NAVEGADOR-CANDIDATO $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA$( [ "$NAVC_D057_N" -gt 0 ] && echo " · $NAVC_D057_N viejas por D-057")${NAVC_HUECOS:+ · sin medir: $NAVC_HUECOS}${URLS_CAMBIADAS:+ · cambiadas: $URLS_CAMBIADAS}" \
+    perl "$REF/receipt.pl" --anotar "NAVEGADOR-CANDIDATO $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA$( [ "$NAVC_D057_N" -gt 0 ] && echo " · $NAVC_D057_N viejas por D-057")${NAVC_HUECOS:+ · sin medir: $NAVC_HUECOS}${URLS_CAMBIADAS:+ · cambiadas: $URLS_CAMBIADAS}${URLS_CAMBIADAS_CORTA:+ · con la medida corta: $URLS_CAMBIADAS_CORTA}" \
          --repo "$REPO" >/dev/null 2>&1
     [ -n "$NAVC_D057" ] && perl "$REF/receipt.pl" --anotar "NAVEGADOR D-057 [$NAVC_D057] igual en produccion y con fila (gates/d057.pl --navegador)" \
          --repo "$REPO" >/dev/null 2>&1
-    [ "$CAMBIADAS_FUERA" -gt 0 ] && perl "$REF/receipt.pl" --anotar "CAMBIADAS sin medir por el tope: $CAMBIADAS_FUERA (URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX)" \
+    [ "$CAMBIADAS_FUERA" -gt 0 ] && perl "$REF/receipt.pl" --anotar "CAMBIADAS sin medir por los dos topes: $CAMBIADAS_FUERA (URLS_CAMBIADAS_MAX=$URLS_CAMBIADAS_MAX, URLS_CAMBIADAS_CORTA_MAX=$URLS_CAMBIADAS_CORTA_MAX)" \
          --repo "$REPO" >/dev/null 2>&1
     [ -n "$NAVC_NOTA" ] && perl "$REF/receipt.pl" --anotar "$NAVC_NOTA" --repo "$REPO" >/dev/null 2>&1 \
       && echo "  (anotado en el historial)"

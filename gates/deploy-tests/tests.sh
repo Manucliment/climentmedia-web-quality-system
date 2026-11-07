@@ -178,11 +178,11 @@ if [ -z "${A3:-}" ] || [ -z "${B3:-}" ] || [ "$A3" -ge "$B3" ]; then
 else
   sed -n "${A3},${B3}p" "$PUERTA" > "$PC"
   mkdir -p "$RP/_deploy"
-  cambia() { # nombre · URLS_NAVEGADOR · tope · lo que TIENE que dar `urls_navegador` (en una linea) · y en la nota
-    local n="$1" got
-    ( REPO="$RP"; URLS_NAVEGADOR="$2"; URLS_CAMBIADAS_MAX="$3"; . "$PC"
+  cambia() { # nombre · URLS_NAVEGADOR · tope · lo que TIENE que dar: `urls_navegador` (en una linea)|la medida corta|fuera|la nota
+    local n="$1" got   # CMAX: el tope de la medida corta (sin el, el de la puerta)
+    ( REPO="$RP"; URLS_NAVEGADOR="$2"; URLS_CAMBIADAS_MAX="$3"; URLS_CAMBIADAS_CORTA_MAX="${CMAX:-}"; . "$PC"
       arbol_huellas() { cat "$RP/hoy"; }
-      paginas_cambiadas; printf '%s|%s|%s\n' "$(urls_navegador | tr '\n' ' ' | sed 's/ $//')" "$CAMBIADAS_FUERA" "$CAMBIADAS_NOTA" ) > "$TMP" 2>&1
+      paginas_cambiadas; printf '%s|%s|%s|%s\n' "$(urls_navegador | tr '\n' ' ' | sed 's/ $//')" "${URLS_CAMBIADAS_CORTA:-}" "$CAMBIADAS_FUERA" "$CAMBIADAS_NOTA" ) > "$TMP" 2>&1
     got="$(cat "$TMP")"
     if [ "$got" = "$4" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$n"
     else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s\n' "$n" "$got" "$4"; fi
@@ -192,21 +192,29 @@ else
     "eeeeeeee 10 estilo.css" > "$RP/_deploy/.desplegado-huellas.txt"
   printf '%s\n' "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "cccccccc 10 guias/index.html" "dddddddd 10 404.html" \
     "eeeeeeee 10 estilo.css" > "$RP/hoy"
-  cambia "nada cambia: solo las declaradas"                "/ /contact" 8 "/ /contact|0|"
+  cambia "nada cambia: solo las declaradas"                "/ /contact" 8 "/ /contact||0|"
   # 🔴 EL CASO DE INFI: una guia nueva, que no esta en URLS_NAVEGADOR, se mide.
   printf '%s\n' "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "c2c2c2c2 11 guias/index.html" "dddddddd 10 404.html" \
     "e2e2e2e2 10 estilo.css" "ffffffff 10 guias/reembolso.html" "11111111 10 _og/x.html" "22222222 10 google0a1b2c.html" > "$RP/hoy"
-  cambia "un alta y su hub cambiado entran; ni CSS, ni _, ni 404, ni la de Google" "/ /contact" 8 "/ /contact /guias/reembolso /guias/|0|"
-  cambia "lo ya declarado no se repite (con o sin barra)"  "/ /contact /guias" 8 "/ /contact /guias /guias/reembolso|0|"
-  cambia "el tope deja fuera y lo cuenta (altas primero)"  "/" 1 "/ /guias/reembolso|1|"
+  cambia "un alta y su hub cambiado entran; ni CSS, ni _, ni 404, ni la de Google" "/ /contact" 8 "/ /contact /guias/reembolso /guias/||0|"
+  cambia "lo ya declarado no se repite (con o sin barra)"  "/ /contact /guias" 8 "/ /contact /guias /guias/reembolso||0|"
+  # 🔴 7-nov-2026 · LA MEDIDA CORTA: una subida de 28 paginas midio 8 y subio 20 sin medir,
+  #    una con un FALLA nuevo. Pasado el tope, la medida corta; fuera, solo pasados los dos.
+  cambia "pasado el tope, la medida corta (altas primero)" "/" 1 "/ /guias/reembolso|/guias/|0|"
+  CMAX=0 cambia "sin medida corta, fuera y contada"           "/" 1 "/ /guias/reembolso||1|"
+  printf '%s\n' "aaaaaaaa 10 index.html" "b2b2b2b2 10 contact.html" "c2c2c2c2 11 guias/index.html" "dddddddd 10 404.html" \
+    "ffffffff 10 guias/reembolso.html" "12121212 10 guias/plazos.html" > "$RP/hoy"
+  CMAX=1 cambia "pasados los dos topes, fuera y contada"      "/" 1 "/ /guias/plazos|/guias/reembolso|2|"
+  printf '%s\n' "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "c2c2c2c2 11 guias/index.html" "dddddddd 10 404.html" \
+    "e2e2e2e2 10 estilo.css" "ffffffff 10 guias/reembolso.html" "11111111 10 _og/x.html" "22222222 10 google0a1b2c.html" > "$RP/hoy"
   printf '%s\n' "index.html" "contact.html" "guias/index.html" > "$RP/_deploy/.desplegado.txt"
   # Unas huellas de la version vieja (sin cabecera, con el ?v= dentro) no se comparan.
   sed -i 1d "$RP/_deploy/.desplegado-huellas.txt"
-  cambia "huellas de otra version: solo las altas"         "/" 8 "/ /guias/reembolso|0|sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
+  cambia "huellas de otra version: solo las altas"         "/" 8 "/ /guias/reembolso||0|sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
   rm -f "$RP/_deploy/.desplegado-huellas.txt"
-  cambia "sin huellas: solo las altas, y lo dice"          "/" 8 "/ /guias/reembolso|0|sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
+  cambia "sin huellas: solo las altas, y lo dice"          "/" 8 "/ /guias/reembolso||0|sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
   rm -f "$RP/_deploy/.desplegado.txt"
-  cambia "sin ninguna lista: las declaradas, y lo dice"    "/" 8 "/|0|sin lista de la subida anterior: solo URLS_NAVEGADOR"
+  cambia "sin ninguna lista: las declaradas, y lo dice"    "/" 8 "/||0|sin lista de la subida anterior: solo URLS_NAVEGADOR"
   # 🔴 EL SELLO ?v= (1-nov, kine): cambiar el CSS reescribe `styles.css?v=` en todas las paginas.
   #    arbol_huellas de verdad (no la fingida), con un receipt.pl de mentira que solo lista.
   HREF="$(mktemp -d -t ref-XXXXXXXX)"

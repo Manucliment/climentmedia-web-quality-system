@@ -478,7 +478,13 @@ The census on the nine sites that upload this way: 0 extra files, so it stops fr
   heading that ends on a single word) and the phone field that will not take a number typed the
   visitor's way. It **only warns** until `deploy.conf` says `HUELLAS_GATE=para`.
 
-They run on every page in `URLS_NAVEGADOR` (`/` if none). And once per upload, on the home page:
+They run on every page in `URLS_NAVEGADOR` (`/` if none) and on the pages this upload adds or
+changes, new ones first, up to `CHANGED_URLS_MAX` (8). Past that cap a changed page gets the
+**short measurement** (since 2026-11-07): `structure-gate.js` at 1298, `measure-screens.js` and
+`mobile-gate.js` at 390, up to `CHANGED_URLS_SHORT_MAX` (40). Before, an upload that changed 28
+pages measured 8 and sent 20 up unmeasured, one of them with a new `structure-gate` FAIL in the
+very piece of content the upload was for. Only what is past both caps goes up unmeasured, said
+in the output, the history and the closing line. And once per upload, on the home page:
 
 - `banner-probe.js` at 1298 and 390 (since 2026-11-06), on the same tree, served by the same
   function as the gates (`servir` in `run-gate.js`). Before, it measured only what was
