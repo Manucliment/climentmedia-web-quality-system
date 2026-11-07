@@ -718,6 +718,20 @@ caso_cli('un bloque desconocido sale con 2',
 caso_cli('un bloque que no aplica en el modo: NO MEDIDO, no PASA',
          '--modo migracion --solo esqueleto', { 2 => 1 }, qr/VEREDICTO: NO MEDIDO/);
 
+# La ruta del script con barras de Windows (7-nov-2026). anatomia_cargar sacaba
+# su carpeta de $0 con un patron que solo partia por «/»: lanzado por su ruta de
+# Windows salia «.», y desde el repo de mentira paraba con «no encuentro
+# anatomy.tsv», o leia una copia vieja si la habia. Solo en Windows: en Linux
+# «\» no separa directorios y $0 no lo lleva.
+{
+    my $win = `cygpath -w "$GATE" 2>/dev/null` // ''; chomp $win;
+    if ($win ne '') {
+        my $g = $GATE; $GATE = $win;
+        caso_cli('por su ruta de Windows, encuentra anatomy.tsv', '--modo greenfield --solo esqueleto', { 0 => 1, 1 => 1 }, qr/ESQ-01/);
+        $GATE = $g;
+    } else { printf "  --    %-54s solo en Windows\n", 'por su ruta de Windows' }
+}
+
 printf "\n-----------------------------------------------------------------\n";
 printf "  OK %-3d  ·  MAL %d\n", $ok, $ko;
 print $ko ? "  🔴 HAY FALLOS.\n"

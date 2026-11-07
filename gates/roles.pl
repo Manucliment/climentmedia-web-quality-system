@@ -24,10 +24,9 @@
 #  dos fuentes que ya existen no es una segunda respuesta a la pregunta: es la
 #  misma respuesta, montada.
 use strict; use warnings;
-use File::Basename qw(dirname);
 use File::Path qw(make_path);
 
-my $DIR = dirname($0);
+my ($DIR) = $0 =~ m{^(.*)[\\/][^\\/]+$}; $DIR = "." unless defined $DIR && $DIR ne "";
 my $TSV_R = "$DIR/roles.tsv";
 my $TSV_A = "$DIR/anatomy.tsv";
 my $MOLDES = "$DIR/../blueprint/moulds";

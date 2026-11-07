@@ -1511,7 +1511,7 @@ sub urls_del_doc {
 #  Fuente unica: anatomy.tsv, al lado de este script. Guarda: anatomy.pl --gate.
 sub anatomia_cargar {
     my $quiero = shift; $quiero = 'roles' unless defined $quiero;
-    my ($midir) = $0 =~ m{^(.*)[\/][^\/]+$}; $midir = '.' unless defined $midir;
+    my ($midir) = $0 =~ m{^(.*)[\\/][^\\/]+$}; $midir = '.' unless defined $midir;
     my $f = "$midir/anatomy.tsv";
     open my $fh, '<', $f or die
         "no encuentro anatomy.tsv junto al script ($f).\n"
@@ -1553,7 +1553,7 @@ my @TIPO_SIN_ANAT;          # paginas con un tipo valido que no tiene anatomia m
 my %TIPO_SIN_ANAT;          # tipo de page-types.tsv sin fila en anatomy.tsv
 my %ALIAS_PT;               # nombre (tipo o alias) de page-types.tsv -> su tipo
 {
-    my ($midir) = $0 =~ m{^(.*)[\/][^\/]+$}; $midir = '.' unless defined $midir;
+    my ($midir) = $0 =~ m{^(.*)[\\/][^\\/]+$}; $midir = '.' unless defined $midir;
     if (open my $fh, '<', "$midir/page-types.tsv") {
         while (my $l = <$fh>) {
             chomp $l; $l =~ s/\r$//;

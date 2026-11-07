@@ -363,7 +363,7 @@ my @HTML;
 #  Fuente unica: anatomy.tsv, al lado de este script. Guarda: anatomy.pl --gate.
 sub anatomia_cargar {
     my $quiero = shift; $quiero = 'roles' unless defined $quiero;
-    my ($midir) = $0 =~ m{^(.*)[\/][^\/]+$}; $midir = '.' unless defined $midir;
+    my ($midir) = $0 =~ m{^(.*)[\\/][^\\/]+$}; $midir = '.' unless defined $midir;
     my $f = "$midir/anatomy.tsv";
     open my $fh, '<', $f or die
         "no encuentro anatomy.tsv junto al script ($f).\n"

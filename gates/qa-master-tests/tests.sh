@@ -3318,6 +3318,27 @@ espera "comentarios · MED-02 no se cree la prosa"   AUSENTE MED-02 \
 espera "comentarios · MED-01 tampoco: prosa no es contenedor" AVISO MED-01 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/comentarios --candidato --una-sola --solo medicion --sin-recibo
 echo
+echo "== LA RUTA DEL SCRIPT CON BARRAS DE WINDOWS · 7-nov-2026"
+# 🔴 qa-master.pl buscaba anatomy.tsv y page-types.tsv junto a $0 con un patron
+#    que solo partia por «/». Lanzado por su ruta de Windows (C:\...\gates\...,
+#    o gates\qa-master.pl desde PowerShell), $0 lleva «\» y el directorio salia
+#    «.»: desde una carpeta sin las tablas paraba con «no encuentro anatomy.tsv»,
+#    y desde una con copias viejas (una carpeta de trabajo, 7-nov) las leia sin
+#    decir nada y medía con las tablas de otro dia. Solo en Windows: en Linux «\»
+#    no separa directorios, y ahi este caso no tiene nada que medir.
+if command -v cygpath >/dev/null 2>&1; then
+  WIN_QA="$(cygpath -w "$(cd .. && pwd)/qa-master.pl")"
+  WIN_VACIO="$(mktemp -d)"
+  texto "por su ruta de Windows, desde una carpeta sin tablas" SI "QA MAESTRO" \
+    bash -c 'cd "$1" && perl "$2" http://site-a.example/ --solo a11y --sin-recibo --cache "$3"' _ "$WIN_VACIO" "$WIN_QA" "$CACHE"
+  # page-types.tsv, igual, pero callado: sin el, «plp» volvia a ser un valor que no existe.
+  texto "...y lee page-types.tsv (plp es un tipo)" SI "tipos: plp x1" \
+    bash -c 'cd "$1" && perl "$2" https://climentmedia.com --repo "$3" --candidato --una-sola --solo estructura --sin-recibo' _ "$WIN_VACIO" "$WIN_QA" "$(pwd)/fixtures-type/plp"
+  rm -rf "$WIN_VACIO"
+else
+  printf '  --    %-46s solo en Windows: aqui «\\» no separa directorios\n' "la ruta del script con barras de Windows"
+fi
+
 echo "== LA PRODUCCION DE MENTIRA NO HA TENIDO QUE INVENTARSE NADA · 22-sep-2026"
 # 🔴 EL HEREDERO DEL «FIXTURE DE KINE HERMETICO» (11-ago-2026). Aquel contaba
 #    los ficheros de la cache congelada antes y despues: uno nuevo solo podia

@@ -266,6 +266,22 @@ caso('F · cambiar la anatomia deja la plantilla obsoleta',
      sub { cambiar("$G/anatomy.tsv", 'home|hero prueba oferta proceso cierre',
                                      'home|hero oferta prueba proceso cierre') });
 
+# La ruta del script con barras de Windows (7-nov-2026). roles.pl sacaba su
+# carpeta con dirname($0), que aqui no parte por «\»: lanzado por su ruta de
+# Windows salia «.», y desde otra carpeta buscaba alli roles.tsv («no puedo
+# leer ./roles.tsv»), o leia una copia vieja si la habia. Solo en Windows: en
+# Linux «\» no separa directorios y $0 no lo lleva.
+my $WIN = `cygpath -w "$G/roles.pl" 2>/dev/null` // ''; chomp $WIN;
+if ($WIN ne '') {
+    fresco();
+    my $vacio = "$ROOT/vacio"; make_path($vacio);
+    my $o = `cd "$vacio" && "$^X" "$WIN" --gate 2>&1`; my $rc = $? >> 8;
+    if ($rc == 0 && $o =~ /ROLES OK/) { printf "  ok    %-52s %s\n", 'por su ruta de Windows, desde una carpeta sin tablas', 'verde'; $OK++ }
+    else { printf "  MAL   %-52s esperaba verde · rc=%s\n        %s\n", 'por su ruta de Windows, desde una carpeta sin tablas', $rc, (split /\n/, $o)[0] // '(sin salida)'; $MAL++ }
+} else {
+    printf "  --    %-52s solo en Windows\n", 'por su ruta de Windows';
+}
+
 remove_tree($ROOT) if -d $ROOT;
 print "\n  OK $OK · MAL $MAL\n";
 exit($MAL ? 1 : 0);
