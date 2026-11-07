@@ -35,7 +35,7 @@ install the fast run is **1169 cases green, 0 red**, with the deploy-history ban
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **2109 cases green, 0 red**, with **twelve** banks reported as
+a clean install it reads **2137 cases green, 0 red**, with **twelve** banks reported as
 `NOT MEASURED`: the ten that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `botones-gate`, `visible-gate`, `huellas-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -46,7 +46,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **2371**: 2109 plus 260 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **2399**: 2137 plus 260 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eleven banks (the ten, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -104,7 +104,7 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  2109 casos en verde · 0 en rojo
+  2137 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu gate-marca gate-botones gate-visible gate-huellas conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
@@ -380,8 +380,8 @@ rules no machine will ever measure.
 **It never asked the reverse: does this check that RUNS have a rule behind it?**
 
 ```
-  checks emitted .......... 163
-  with no rule claiming it .. 95   (58%)
+  checks emitted .......... 168
+  with no rule claiming it .. 100  (60%)
 ```
 
 **That is not a tidiness complaint.** A gate nobody's rule asked for is an opinion with
@@ -838,7 +838,7 @@ without blocking. Why the order changed is trap §89.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6), of the coverage (D8) and of one instrument or one bank (D9) must be the last one measured. |
-| `coverage.pl` | How many checks have a test case. Today: **151 of 158 (95%)**. |
+| `coverage.pl` | How many checks have a test case. Today: **156 of 163 (95%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **162 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
@@ -1002,7 +1002,7 @@ excluded.
   repository, or a live site — runs against a **synthetic site** in
   `qa-master-tests/fixtures-sites/` (and `fixtures-repos/`), served as production by
   `fake-production.pl`. Its README says how to add one. On a clean clone the bank runs
-  **625 cases** and exits **0**. A case that names a host with no fixture is still reported
+  **653 cases** and exits **0**. A case that names a host with no fixture is still reported
   `NOT MEASURED` by name, and the bank then exits 3; a measured case that fails exits **1**,
   never 3 — a real defect must not come out dressed as a declared gap.
   How it got here: until 2026-09-01 it bailed on line 98 with `OK 0 · MAL 0`; until
