@@ -593,8 +593,11 @@ without blocking. Why the order changed is trap §89.
   written from scratch, and the upload door never saw them. A batch is now a committed
   folder, `_deploy/wp/<batch>/`, whose `tanda.sh` has three modes (`--medir` reads only,
   no flag writes, `--volver` undoes), plus an approval file outside it that names the
-  folder's git tree. The door refuses an unapproved or changed tree, takes a lock on the
-  host, uploads the committed tree to a temp folder (never a docroot) and measures before.
+  folder's git tree. The door refuses an unapproved or changed tree, packs the committed
+  tree locally with no line-ending conversion and checks every packed file against its
+  blob (a subtree archive does not read the root `.gitattributes`, so with
+  `core.autocrlf=true` it used to ship `tanda.sh` in CRLF), takes a lock on the host,
+  uploads that package to a temp folder (never a docroot) and measures before.
   With `--escribir` it applies, **proves the undo** (undo, measure: it must give the
   before, line by line), applies again and measures: a red that was not there before, or
   more reds than `ROJOS_DESPUES`, undoes it and says VUELTO or VUELTA-INCOMPLETA. One row

@@ -27,10 +27,11 @@
 #
 #  PASOS
 #    1. La carpeta y su .aprobado, limpios y commiteados; el aprobado nombra el árbol de hoy.
-#    2. `bash -n` de tanda.sh, aquí.
+#    2. Empaqueta aquí el árbol APROBADO (git archive de HEAD, no la carpeta de trabajo, y sin convertir finales de
+#       línea) y comprueba que cada fichero del paquete da su blob del árbol: si no, NO MEDIDO y no sube nada.
+#       `bash -n` del tanda.sh del paquete, que es el que va a correr.
 #    3. Cerrojo en el host: una tanda a la vez por web; uno de más de 15 min se da por muerto (y se dice).
-#    4. Sube el árbol APROBADO (git archive de HEAD, no la carpeta de trabajo) a $WP_TMP/wp-<tanda>-<ts>/: no es un
-#       docroot. `php -l` de cada .php, allí.
+#    4. Sube ese paquete a $WP_TMP/wp-<tanda>-<ts>/: no es un docroot. `php -l` de cada .php, allí.
 #    5. --medir → antes.  Sin --escribir, CIERRE ENSAYO.
 #    6. Con --escribir:
 #       a. aplicar → --medir (después-1);
@@ -113,9 +114,27 @@ if [ "$VOLVER" = 0 ]; then
   [ "$A" = "$ARBOL" ] || cierre "FALLA" "el aprobado es de otro árbol (${A:0:12}; hoy ${ARBOL:0:12}): la tanda cambió después de aprobarla"
 fi
 
-# ── 2. bash -n ───────────────────────────────────────────────────────────────
+# ── 2. el paquete, aquí: los bytes del árbol aprobado, y bash -n ─────────────
+# 7-nov-2026: `git archive` de un SUBÁRBOL no lee la .gitattributes de la raíz, y con core.autocrlf=true (el de Git
+# for Windows) convierte LF en CRLF: una tanda aprobada subió con su tanda.sh en CRLF y en el host `set -o pipefail`
+# no valía y cada línea arrastraba un $'\r' (dos NO MEDIDO). Sin conversión, y con testigo: cada fichero del
+# paquete tiene que dar el blob del árbol aprobado; si no, lo que subiría no es lo aprobado.
 mkdir -p "$OUT" || { echo "no se pudo crear $OUT" >&2; exit 64; }
-bash -n "$DIR/tanda.sh" 2>"$OUT/bash-n.txt" || cierre "FALLA" "bash -n de tanda.sh: $(head -1 "$OUT/bash-n.txt")"
+git -C "$REPO" -c core.autocrlf=false archive --format=tar -o "$OUT/tanda.tar" "HEAD:$REL" || cierre "NO MEDIDO" "git archive de $REL" 2
+PAQ="$OUT/paquete"
+{ mkdir -p "$PAQ" && tar -xf "$OUT/tanda.tar" -C "$PAQ"; } || cierre "NO MEDIDO" "no se pudo abrir aquí el paquete para comprobarlo" 2
+DISTINTOS=""
+while IFS= read -r -d '' linea; do
+  read -r modo tipo blob <<<"${linea%%$'\t'*}"; f="${linea#*$'\t'}"
+  [ "$tipo" = blob ] && [ "$modo" != 120000 ] || continue
+  [ "$(git -C "$REPO" hash-object --no-filters -- "$PAQ/$f" 2>/dev/null)" = "$blob" ] || DISTINTOS="$DISTINTOS $f"
+done < <(git -C "$REPO" ls-tree -r -z "HEAD:$REL")
+if [ -n "$DISTINTOS" ]; then
+  rm -rf "$PAQ"
+  cierre "NO MEDIDO" "el paquete no lleva los bytes del árbol aprobado en:$DISTINTOS (una conversión de git: eol o filter en una .gitattributes de la tanda)" 2
+fi
+bash -n "$PAQ/tanda.sh" 2>"$OUT/bash-n.txt" || { rm -rf "$PAQ"; cierre "FALLA" "bash -n de tanda.sh: $(head -1 "$OUT/bash-n.txt")"; }
+rm -rf "$PAQ"
 
 # ── 3. el cerrojo, en el host ────────────────────────────────────────────────
 CERR="$WP_TMP/wp-door-$NOMBRE.cerrojo"
@@ -130,9 +149,8 @@ if ! rem "mkdir '$CERR'" 2>/dev/null; then
 fi
 trap 'rem "rmdir '"'$CERR'"'" >/dev/null 2>&1' EXIT
 
-# ── 4. subir el árbol aprobado ───────────────────────────────────────────────
+# ── 4. subir el paquete del paso 2 ───────────────────────────────────────────
 R="$WP_TMP/wp-$TANDA-$TS"
-git -C "$REPO" archive --format=tar -o "$OUT/tanda.tar" "HEAD:$REL" || cierre "NO MEDIDO" "git archive de $REL" 2
 rem "mkdir -p '$R'" || cierre "NO MEDIDO" "no se pudo crear $R en $WP_HOST" 2
 "$SCP" -q "$OUT/tanda.tar" "$WP_HOST:$R.tar" || cierre "NO MEDIDO" "scp a $WP_HOST:$R.tar" 2
 rem "tar -xf '$R.tar' -C '$R' && rm -f '$R.tar'" || cierre "NO MEDIDO" "no se pudo abrir la tanda en $R" 2

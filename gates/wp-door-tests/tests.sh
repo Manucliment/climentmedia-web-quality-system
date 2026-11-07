@@ -167,6 +167,14 @@ caso "php -l de un .php de la tanda falla: para antes de medir" "$( [ $EX = 1 ] 
 nuevo sube-head; puerta
 caso "lo que sube es el árbol de HEAD, con sus ficheros" "$(ls -d "$TM"/wp-t1-*/ >/dev/null 2>&1 && [ -f "$(ls -d "$TM"/wp-t1-*/ | head -1)/TANDA.md" ] && echo 1 || echo 0)"
 
+# 7-nov: con core.autocrlf=true (el de Git for Windows), `git archive` de un subárbol subía tanda.sh en CRLF. Los
+# repos de este banco ponían autocrlf=false, y por eso no se veía.
+nuevo crlf; git -C "$R" config core.autocrlf true; puerta
+SUB=$(ls -d "$TM"/wp-t1-*/ 2>/dev/null | head -1)
+caso "core.autocrlf=true: sube los bytes del árbol (sin un CR) y ensaya" "$( [ $EX = 0 ] && dice 'CIERRE: ENSAYO' && [ -n "$SUB" ] && [ "$(tr -cd '\r' < "$SUB/tanda.sh" | wc -c)" = 0 ] && [ "$(wc -c < "$SUB/tanda.sh")" = "$(git -C "$R" cat-file -s HEAD:_deploy/wp/t1/tanda.sh)" ] && echo 1 || echo 0)" "exit $EX · ${SUB:-(no subió)} · $(tail -1 <<<"$SAL")"
+nuevo eol-crlf; printf 'tanda.sh text eol=crlf\n' > "$R/_deploy/wp/t1/.gitattributes"; git -C "$R" add -- _deploy 2>/dev/null; git -C "$R" commit -q -m eol; aprobar; puerta
+caso "una .gitattributes de la tanda que convierte: NO MEDIDO (2), nombra el fichero y no sube nada" "$( [ $EX = 2 ] && dice 'bytes del árbol aprobado en: tanda.sh' && [ -z "$(ls "$TM")" ] && [ "$(llamadas)" = '(ninguna)' ] && echo 1 || echo 0)" "exit $EX · $(ls "$TM" | tr '\n' ' ') · $(tail -1 <<<"$SAL")"
+
 nuevo sin-host; sed -i '/^WP_HOST=/d' "$R/_deploy/deploy.conf"; puerta --escribir
 caso "sin WP_HOST en deploy.conf: NO MEDIDO (2)" "$( [ $EX = 2 ] && dice 'falta WP_HOST' && echo 1 || echo 0)" "exit $EX"
 nuevo host-raro; sed -i 's/^WP_HOST=.*/WP_HOST=host;rm/' "$R/_deploy/deploy.conf"; puerta --escribir
