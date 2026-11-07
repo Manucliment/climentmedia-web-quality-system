@@ -35,7 +35,7 @@ install the fast run is **1182 cases green, 0 red**, with the deploy-history ban
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **2160 cases green, 0 red**, with **twelve** banks reported as
+a clean install it reads **2162 cases green, 0 red**, with **twelve** banks reported as
 `NOT MEASURED`: the ten that measure on a Linux host (`measure-screens`, `mobile-gate`,
 `mobile-menu-gate`, `marca-gate`, `botones-gate`, `visible-gate`, `huellas-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
@@ -46,7 +46,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 > banks read the host from `gates/config/nav-host.local.conf` (copy the `.example`; it is
 > gitignored, because a machine name has no place in a public repository). Where it
 > exists they run, so on the machine these figures were taken from the full total is
-> **2445**: 2160 plus 283 host cases plus the 2 of the deploy-history bank. `run-all.sh`
+> **2447**: 2162 plus 283 host cases plus the 2 of the deploy-history bank. `run-all.sh`
 > counts all eleven banks (the ten, plus deploy history) as *machine-dependent*, and the documentation gate accepts either
 > figure.
 >
@@ -104,7 +104,7 @@ $ bash gates/run-all.sh --fast
 
 ```
 $ bash gates/run-all.sh
-  2160 casos en verde · 0 en rojo
+  2162 casos en verde · 0 en rojo
   NO MEDIDOS: medir-pantallas gate-movil gate-menu gate-marca gate-botones gate-visible gate-huellas conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
