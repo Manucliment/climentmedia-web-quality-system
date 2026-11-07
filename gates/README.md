@@ -539,7 +539,10 @@ without blocking. Why the order changed is trap §89.
   GA4 and no Ads by decision declares `NO_GA4_OR_ADS="reason"` and MED-13 is NOT
   APPLICABLE, after checking the tree carries no tag. What came from the browser snapshot
   (EST-05/06/07, REN-11) is compared only with production's own snapshot
-  (`D057_PRODUCTION_DOM`: same page, width and height, under 12 hours old). Production
+  (`D057_PRODUCTION_DOM`: same page, width and height, under 12 hours old), and its row
+  has to name the check **and** that page, with the browser rule below: a row for the
+  same check on the home page let another page through on one site, and a row for one page
+  would have let the same old FAIL through on any other. Production
   that does not answer, another `qa-master` or an older receipt is NOT MEASURED, never
   "old" and never "new". Each finding let through is written to the history and the
   closing line signed "D-057", with how many production FAILs the upload removes.

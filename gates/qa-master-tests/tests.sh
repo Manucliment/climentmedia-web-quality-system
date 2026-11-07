@@ -2706,6 +2706,27 @@ if mide_bloque "D-057 · d057.pl contra la produccion de mentira" http://d057.ex
   d57 "D-057 · el DOM del candidato como produccion"    2 "es el del candidato, no el de produccion" dom --dom-produccion "$D57/dom-local.json"
   d57_dom "$D57/dom-otra.json" 390 https://d057.example/canto/ 1
   d57 "D-057 · DOM de produccion de otra pagina"        2 "otra pagina"               dom --dom-produccion "$D57/dom-otra.json"
+  # 🔴 7-nov-2026 · LA FILA DE OTRA PAGINA NO VALE PARA ESTA. Lo que sale del DOM es
+  #    de una pagina, y la fila se buscaba solo por el ID del check: en una web,
+  #    EST-06 de una guia salio «igual en produccion» con la fila de EST-06 de la
+  #    portada. Con la fila de una sola pagina, el mismo FALLO viejo pasaba en
+  #    cualquier otra. Ahora la fila nombra el check Y la pagina del DOM, con la
+  #    regla del navegador (1-quater): la ruta entera, no la de una hija.
+  d57_dom "$D57/dom-canto-cand.json" 390 https://d057.example/canto/ 0
+  rm -rf "${D57:?}/dom-canto"; cp -r fixtures-d057/igual "$D57/dom-canto"
+  QA_RECIBOS_DIR="$D57/recibos" perl $QA http://d057.example/canto/ --repo "$D57/dom-canto" --candidato --solo estructura \
+    --dom "$D57/dom-canto-cand.json" > "$D57/dom-canto.qa.txt" 2>&1
+  d57_dom "$D57/dom-canto-prod.json" 390 https://d057.example/canto/ 1
+  d57_fila dom-canto BASE.md "$B57" "| 2 · Puerta | EST-01, EST-06, EST-07 y EST-12 de la portada | qa-master | pendiente | 2099-12-31 | diseno |"
+  d57 "D-057 · la fila de la portada no vale en /canto/" 1 "PARA      FALLO EST-07    ninguna fila de _seo/BASE.md ni del plan nombra EST-07 y la pagina /canto" \
+      dom-canto --dom-produccion "$D57/dom-canto-prod.json"
+  # EST-01 y EST-12 no salen del DOM: su fila se sigue buscando solo por el ID
+  d57_fila dom-canto BASE.md "$B57" "| 2 · Puerta | EST-01 y EST-12 del sitio; EST-06 y EST-07 de \`/canto/\` a 390 | qa-master | pendiente | 2099-12-31 | diseno |"
+  d57 "D-057 · la fila de /canto/ si vale"              0 "D-057     FALLO EST-07"    dom-canto --dom-produccion "$D57/dom-canto-prod.json"
+  d57_fila dom-canto BASE.md "$B57" "| 2 · Puerta | EST-01 y EST-12 del sitio; EST-06 y EST-07 de \`/canto/coro/\` a 390 | qa-master | pendiente | 2099-12-31 | diseno |"
+  d57 "D-057 · ni la de una pagina hija"                1 "PARA      FALLO EST-07    ninguna fila de _seo/BASE.md ni del plan nombra EST-07 y la pagina /canto" \
+      dom-canto --dom-produccion "$D57/dom-canto-prod.json"
+  d57 "D-057 · y el check del sitio, por su ID"         1 "D-057     FALLO EST-01"    dom-canto --dom-produccion "$D57/dom-canto-prod.json"
 fi
 
 echo

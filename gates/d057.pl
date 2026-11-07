@@ -396,11 +396,17 @@ for my $h (@H) {
 #  no dice como esta produccion hoy.
 my $dom_mal = '';
 my @dom_arg;
+my $dom_ruta;   # la ruta de la pagina del DOM: su fila tiene que nombrarla (abajo, 3c)
 if (($R->{'ALCANCE-DOM'} // '') ne '' && grep { $_->{dom} } @pendientes) {
     my $al = $R->{'ALCANCE-DOM'};
     my ($cw) = $al =~ /innerWidth=(\d+)/;
     my ($ch) = $al =~ /innerHeight=(\d+)/;
     my ($cp) = $al =~ /pagina=(\S+?)\)\s*$/;
+    if (defined $cp) {
+        ($dom_ruta) = $cp =~ m{^[a-z]+://[^/?#]+(/[^?#]*)?}i;
+        $dom_ruta //= '/';
+        $dom_ruta =~ s{/index\.html?$}{/};
+    }
     my $sitio_de = sub { my $u = lc(shift // ''); $u =~ s{^[a-z]+://}{}; $u =~ s{[?#].*$}{}; $u =~ s{/+$}{}; $u =~ s{/index\.html?$}{}; return $u };
     if (!defined $cw || !defined $ch || !defined $cp) {
         $dom_mal = "el recibo no dice a que ancho, alto y pagina se midio el DOM del candidato (ALCANCE-DOM: $al): vuelve a medir el candidato";
@@ -500,7 +506,14 @@ for my $h (@pendientes) {
                             scalar(@{ $h->{ins} }), solo_ascii(substr(d57_des($nuevas[0]), 0, 90)));
         next;
     }
-    my ($ok, $fila) = d57_fila_de($h->{id});
+    # 7-nov-2026 · Lo que sale del DOM es de UNA pagina: su fila tiene que nombrar el
+    # check Y esa pagina, como en el navegador (1-quater). Antes valia la fila del
+    # mismo check de otra pagina: en una web, EST-06 de una pagina salio «igual en
+    # produccion» con la fila de EST-06 de la portada, y con la fila de una sola pagina el
+    # mismo FALLO viejo pasaba en cualquier otra.
+    my ($ok, $fila) = ($h->{dom} && defined $dom_ruta)
+        ? d57_fila_por("$h->{id} y la pagina $dom_ruta", sub { d57_nombra_pagina($_[0], $h->{id}, $dom_ruta) })
+        : d57_fila_de($h->{id});
     unless ($ok) { $h->{r} = $es_f ? 'PARA' : 'SIGUE'; $h->{por} = $fila; next }
     $h->{r} = 'D-057';
     $h->{por} = sprintf('igual en produccion (%d de %d, produccion tiene %d) · %s', scalar(@{ $h->{ins} }),
