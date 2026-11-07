@@ -6,3 +6,12 @@ geo-bien pasa los cuatro con lo que NO debe contar: la cifra del <summary> cerra
 open> tambien, la que sale fuera no cuenta, la tabla role=presentation no cuenta, la organizacion anidada (la
 sociedad) no es otra forma del nombre, y «Madrid» al final de dos titles es el lugar, no el nombre.
 Las genera fixturas-geo.cjs (scratchpad de la sesion del 7-nov); se editan aqui a mano si cambian.
+
+SEO-22 (7-nov-2026, D-065 punto 8): el autor y la fecha de un articulo.
+art-mal avisa en sus cuatro articulos: el usuario del gestor como autor («Marca Admin») y una modificacion dos anos
+antes de la publicacion; el autor solo por un @id de otro sitio y la pagina ensenando otro mes que el marcado; un
+autor que se ve y no enlaza a nada, sin fecha en el marcado; y un autor del marcado que no sale en la pagina.
+art-bien pasa con lo que NO debe contar: el enlace al autor por su url sin barra final (con otro texto), un @id que
+la pagina si define, la fecha solo por <time datetime> o escrita al mes, una organizacion como autor enlazada desde la
+cabecera, y una pagina noindex con todo mal.
+Las genera fixturas-art.cjs (scratchpad de la sesion del 7-nov); se editan aqui a mano si cambian.

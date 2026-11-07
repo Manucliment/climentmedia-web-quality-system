@@ -543,8 +543,8 @@ my $TECHO_RECORTO = 0;    # 1 = fue --max-urls quien corto, no otra cosa
 #  apunta aqui, su hallazgo saldra sin declarar el recorte: al tocar `alcance()`
 #  hay que mirar esta lista.
 my %POR_PAGINA = map { $_ => 1 } (
-    # SEO-01..14, 18 y 19 sobre todas las de la lista · 15/16/17/20/21 son del sitio
-    (map { sprintf('SEO-%02d', $_) } 1 .. 14),
+    # SEO-01..14, 18, 19 y 22 sobre todas las de la lista · 15/16/17/20/21 son del sitio
+    (map { sprintf('SEO-%02d', $_) } 1 .. 14), qw(SEO-18 SEO-19 SEO-22),
     # A11Y-01/02/05/06/07/08 sobre todas las leidas; 03/04 son la PALETA, que
     # sale de la union de las hojas DE ESAS PAGINAS: una hoja que solo usa la
     # pagina 30 no entra en la union, asi que tambien la recorta el techo.
@@ -1779,6 +1779,105 @@ sub _nombres_org {
     return @n;
 }
 
+# SEO-22 · el autor y la fecha de un articulo (D-065 punto 8). Censo antes del check, el 7-nov,
+# sobre las paginas con Article/BlogPosting/TechArticle de 10 sitios (HTML servido; 42 en 5 sitios):
+# un autor que es «<marca> Admin», el usuario por defecto del gestor (9 de 9 en un sitio); un autor
+# que el marcado solo nombra por un @id de OTRO sitio, sin nombre en la pagina (5 de 5); un autor que
+# no enlaza a ninguna pagina suya (15 de 15); 13 articulos «modificados» anos antes de su
+# publicacion (la fecha de publicacion es la de la migracion); y 3 guias que ensenan «octubre de
+# 2026» con el marcado en el 1 de noviembre. Lo que no ve: si la pagina del autor dice quien es, y
+# lo que pinta el JavaScript.
+sub _plano { my $s = lc(_ent(_dec(shift // '')));
+    if (eval { require Unicode::Normalize; 1 }) { $s = Unicode::Normalize::NFD($s); $s =~ s/\p{Mn}//g }
+    $s =~ s/\s+/ /g; return $s }
+my %MESES = (
+    es => [qw(enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre)],
+    fr => [qw(janvier fevrier mars avril mai juin juillet aout septembre octobre novembre decembre)],
+    en => [qw(january february march april may june july august september october november december)],
+    pt => [qw(janeiro fevereiro marco abril maio junho julho agosto setembro outubro novembro dezembro)],
+    nl => [qw(januari februari maart april mei juni juli augustus september oktober november december)],
+);
+# ¿Esta escrita en el texto (ya _plano) la fecha ISO? Al dia, o al mes («octubre de 2026»).
+sub _fecha_escrita {
+    my ($iso, $txt) = @_;
+    my ($y, $m, $d) = ($iso // '') =~ /^(\d{4})-(\d{2})(?:-(\d{2}))?/ or return 0;
+    my @mes = map { $MESES{$_}[$m - 1] } sort keys %MESES;
+    my $M = join '|', map { my $f = $_; ($f, substr($f, 0, 3).'\.?') } @mes;
+    if (defined $d) {
+        my ($dd, $mo) = (0 + $d, 0 + $m);
+        return 1 if $txt =~ /\b$y-$m-$d\b/;
+        return 1 if $txt =~ /(?<!\d)0?$dd[\/.\-]0?$mo[\/.\-]$y(?!\d)/;
+        return 1 if $txt =~ /(?<!\d)0?$dd(?:er|º|o)?\s*(?:de\s+)?(?:$M)\s*(?:de\s+|,\s*)?$y\b/;
+        return 1 if $txt =~ /\b(?:$M)\s+0?$dd(?:st|nd|rd|th)?,?\s+$y\b/;
+    }
+    return 1 if $txt =~ /\b(?:$M)\s+(?:de\s+)?$y\b/;
+    return 0;
+}
+my $RE_ART = qr/^(?:Article|BlogPosting|NewsArticle|TechArticle|Report|ScholarlyArticle|AnalysisNewsArticle)$/;
+my $RE_RELLENO = qr/\b(?:admin|administrador|administrator|administrateur|webmaster|wordpress|user|usuario|utilisateur|default)\b/i;
+# Los problemas de autor y fecha de una pagina, o () si no es un articulo. Devuelve (es_articulo, @problemas).
+sub _autor_y_fecha {
+    my ($h, $base) = @_;
+    my ($origen) = ($base // '') =~ m{^(https?://[^/?#]+)}i; $origen //= '';
+    my ($dir) = ($base // '') =~ m{^(https?://[^?#]*/)}i; $dir //= "$origen/";
+    my $abs = sub { my $x = shift // ''; $x =~ s/^\s+|\s+$//g;
+        return $x if $x =~ m{^https?://}i; return "https:$x" if $x =~ m{^//}; return "$origen$x" if $x =~ m{^/}; return "$dir$x" };
+    my (@nodos, %por_id);
+    for my $raw ($h =~ m{<script[^>]*application/ld\+json[^>]*>(.*?)</script>}gsi) {
+        my $j = eval { JSON::PP->new->utf8->relaxed->decode($raw) } // eval { JSON::PP->new->relaxed->decode($raw) };
+        next unless ref $j;
+        my @p = ref $j eq 'ARRAY' ? @$j : ($j);
+        while (@p) { my $n = shift @p; next unless ref $n eq 'HASH'; push @nodos, $n; push @p, @{ $n->{'@graph'} } if ref $n->{'@graph'} eq 'ARRAY' }
+    }
+    for my $n (@nodos) { $por_id{ $n->{'@id'} } = $n if defined $n->{'@id'} && !ref $n->{'@id'} }
+    my $tipos = sub { my $o = shift; ref $o->{'@type'} eq 'ARRAY' ? @{ $o->{'@type'} } : ($o->{'@type'} // '') };
+    my ($art) = grep { my $o = $_; grep { /$RE_ART/ } $tipos->($o) } @nodos;
+    return (0) unless $art;
+    my ($cuerpo) = $h =~ m{(<body\b.*</body>)}si; $cuerpo //= $h;
+    my $vis = _plano(tag_text($cuerpo));
+    my @as = map { [ attr($_->[0], 'href'), _plano(tag_text($_->[1])) ] } map { [ $_ =~ m{^(<a\b[^>]*>)(.*)</a>$}si ] } ($cuerpo =~ m{(<a\b[^>]*>.*?</a>)}gsi);
+    my $sin_barra = sub { my $x = $abs->(shift); $x =~ s{[?#].*$}{}; $x =~ s{/+$}{}; return lc $x };
+    my @mal;
+    # el autor
+    my $au = $art->{author};
+    my @au = !defined $au ? () : ref $au eq 'ARRAY' ? @$au : ($au);
+    my @con_nombre;
+    for my $a (@au) {
+        if (!ref $a) { push @con_nombre, { name => $a } if $a =~ /\S/; next }
+        next unless ref $a eq 'HASH';
+        my $r = (defined $a->{'@id'} && !ref $a->{'@id'} && $por_id{ $a->{'@id'} }) || {};
+        my $nom = $a->{name} // $r->{name}; my $url = $a->{url} // $r->{url};
+        push @con_nombre, { name => $nom, url => $url } if defined $nom && !ref $nom && $nom =~ /\S/;
+    }
+    if (!@au) { push @mal, 'sin autor en el marcado' }
+    elsif (!@con_nombre) { push @mal, 'autor sin nombre en el marcado: solo un @id que esta pagina no define' }
+    for my $a (@con_nombre) {
+        my $nom = _ent(_dec($a->{name})); my $p = _plano($nom); $p =~ s/^\s+|\s+$//g;
+        if ($nom =~ $RE_RELLENO) { push @mal, "autor de relleno «$nom»"; next }
+        unless (index($vis, $p) >= 0) { push @mal, "el autor no se ve «$nom»"; next }
+        my $u = defined $a->{url} && !ref $a->{url} ? $sin_barra->($a->{url}) : '';
+        my $enlaza = grep { my ($hr, $tx) = @$_; defined $hr && $hr !~ /^\s*(?:#|javascript:)/i
+                            && (($u ne '' && $sin_barra->($hr) eq $u) || ($tx =~ /^\s*\Q$p\E\s*$/)) } @as;
+        push @mal, "el autor no enlaza a su pagina «$nom»" unless $enlaza;
+    }
+    # la fecha
+    my ($pub, $mod) = map { defined $_ && !ref $_ ? $_ : undef } ($art->{datePublished}, $art->{dateModified});
+    if (!defined $pub && !defined $mod) { push @mal, 'sin fecha en el marcado' }
+    else {
+        my ($dp) = ($pub // '') =~ /^(\d{4}-\d{2}-\d{2})/; my ($dm) = ($mod // '') =~ /^(\d{4}-\d{2}-\d{2})/;
+        push @mal, "modificado antes de publicado: publicado $dp, modificado $dm" if $dp && $dm && $dm lt $dp;
+        my @times = map { attr($_, 'datetime') // '' } ($cuerpo =~ /(<time\b[^>]*>)/gi);
+        my $cuadra = grep { my $f = $_; defined $f && ( _fecha_escrita($f, $vis)
+                            || grep { my $t = substr($_, 0, 10); $t ne '' && (index($f, $t) == 0 || index($t, substr($f, 0, 10)) == 0) } @times ) } ($pub, $mod);
+        unless ($cuadra) {
+            my ($tt) = $cuerpo =~ m{<time\b[^>]*>(.*?)</time>}si;
+            $tt = defined $tt ? _ent(_dec(tag_text($tt))) : ''; $tt =~ s/^\s+|\s+$//g;
+            push @mal, 'la fecha no se ve: el marcado dice '.($dp // $dm // $pub // $mod).($tt ne '' ? ", la pagina ensena «$tt»" : '');
+        }
+    }
+    return (1, @mal);
+}
+
 sub lente_seo {
     unless ($NET_OK) {
         nv(lente=>'SEO', id=>'SEO-00', titulo=>'la lente entera',
@@ -1789,9 +1888,9 @@ sub lente_seo {
     my (@titles, %ogimg, @sin_ogalt, @sin_twimg, @sin_can, @sin_desc, @sin_h1, @multi_h1,
         @img_sin_alt, @sin_jsonld, @sin_bread, @solo_js, @desc_corta, @title_largo, @sin_title);
     my @meta3;   # [url, title, h1, description] -> SEO-02b y SEO-05/05b
-    # SEO-18 a SEO-20 (7-nov-2026, ver encima de esta lente)
-    my (@cifra_cerrada, @tabla_sin_th, %nom_og, %nom_org, %nom_suf);
-    my ($n_cerrados, $n_tablas) = (0, 0);
+    # SEO-18 a SEO-20 y SEO-22 (7-nov-2026, ver encima de esta lente)
+    my (@cifra_cerrada, @tabla_sin_th, %nom_og, %nom_org, %nom_suf, @art_mal);
+    my ($n_cerrados, $n_tablas, $n_articulos) = (0, 0, 0);
 
     # 🔴 EL TEXTO QUE SALE DE LA PAGINA LLEGA EN BYTES, Y STDOUT YA CODIFICA.
     #    Con `use utf8` (226) los literales de este fichero son CARACTERES y la
@@ -1963,6 +2062,12 @@ sub lente_seo {
             if (@trozos >= 2 && $trozos[-1] =~ /\p{L}/) { my $k = _norm_nombre($trozos[-1]); $nom_suf{$k}{n}++; $nom_suf{$k}{ver} //= $trozos[-1] }
         }
 
+        # SEO-22 · el autor y la fecha de un articulo (ver _autor_y_fecha). Una pagina noindex no cuenta.
+        {
+            my ($es, @mal) = _autor_y_fecha($h, $u);
+            if ($es && !$noindex) { $n_articulos++; push @art_mal, [$u, @mal] if @mal }
+        }
+
         # G10 · el HTML SERVIDO frente al DOM. produto.html de site-b pesa 1.503
         # bytes en vivo: mismo <title> para 52 SKU, sin h1, sin JSON-LD. El JS lo
         # arregla — y los scrapers de WhatsApp y LinkedIn no ejecutan JS.
@@ -1998,7 +2103,7 @@ sub lente_seo {
         }
     }
 
-    alcance('SEO', [@leidas_seo], undef, 'SEO-01..14, 18 y 19 sobre todas las leidas de la lista · SEO-15/16/17/20/21 son del sitio');
+    alcance('SEO', [@leidas_seo], undef, 'SEO-01..14, 18, 19 y 22 sobre todas las leidas de la lista · SEO-15/16/17/20/21 son del sitio');
     @no_leidas_seo and nv(lente=>'SEO', id=>'SEO-0x', titulo=>'paginas que no he podido leer',
                           donde=>join(' · ', @no_leidas_seo[0..($#no_leidas_seo>3?3:$#no_leidas_seo)]),
                           ev=>[@no_leidas_seo],
@@ -2351,6 +2456,25 @@ sub lente_seo {
             pasa(lente=>'SEO', id=>'SEO-20', titulo=>'la marca se nombra de una sola forma',
                  dato=>(@f ? $dice : 'sin og:site_name, organizacion ni final de title repetido: nada que comparar'));
         }
+    }
+
+    # SEO-22 · D-065 punto 8 (ver _autor_y_fecha, encima de esta lente)
+    if (!$n_articulos) {
+        pasa(lente=>'SEO', id=>'SEO-22', titulo=>'autor y fecha: ninguna pagina leida es un articulo',
+             dato=>'sin Article, BlogPosting ni TechArticle en el marcado de las paginas leidas');
+    } elsif (@art_mal) {
+        my %cuenta;
+        for my $f (@art_mal) { my ($x, @m) = @$f; my %una; for (@m) { (my $k = $_) =~ s/\s*[«:].*$//; $cuenta{$k}++ unless $una{$k}++ } }
+        aviso(lente=>'SEO', id=>'SEO-22', titulo=>'articulo sin autor que se vea y enlace, o sin fecha que se vea y cuadre',
+              dato=>scalar(@art_mal)." de $n_articulos articulo(s): ".join(' · ', map { "$cuenta{$_} $_" } sort { $cuenta{$b} <=> $cuenta{$a} || $a cmp $b } keys %cuenta),
+              donde=>join(' · ', map { "$_->[0] (".join('; ', @{$_}[1..$#$_]).')' } @art_mal[0..($#art_mal>2?2:$#art_mal)]),
+              ev=>[map { $_->[0] } @art_mal],
+              umbral=>'en cada articulo: el autor del marcado con nombre, que se ve y enlaza a su pagina; y la fecha del marcado escrita en la pagina, sin modificar antes de publicar',
+              proc=>'D-065 punto 8 · benchmark GEO: autor con su pagina y fecha visible en noticias y articulos',
+              hacer=>'el nombre del autor visible y enlazado a su pagina (la de autor o la de quien somos), el mismo en el marcado; la fecha del marcado escrita en la pagina. Un autor «Admin» es el usuario del gestor: se cambia por la persona. dateModified nunca antes que datePublished');
+    } else {
+        pasa(lente=>'SEO', id=>'SEO-22', titulo=>'cada articulo ensena su autor, que enlaza, y su fecha',
+             dato=>"$n_articulos articulo(s) · no se pide la pagina del autor: que diga quien es se mira a mano");
     }
 
     # robots / sitemap

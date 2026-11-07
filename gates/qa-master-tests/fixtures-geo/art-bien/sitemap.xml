@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://fixture.test/</loc></url>
+  <url><loc>https://fixture.test/blog/uno/</loc></url>
+  <url><loc>https://fixture.test/blog/dos/</loc></url>
+  <url><loc>https://fixture.test/blog/tres/</loc></url>
+  <url><loc>https://fixture.test/blog/borrador/</loc></url>
+  <url><loc>https://fixture.test/equipo/ana/</loc></url>
+</urlset>

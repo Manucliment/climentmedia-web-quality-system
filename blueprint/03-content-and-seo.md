@@ -646,3 +646,54 @@ from the third edition.** One month without a citation says nothing about the st
   position.
 - Questions do not change between months. New ones go at the end, with their start month.
 - A question that could not be asked is `NOT MEASURED`, never a zero.
+
+### 8.5 · What an engine takes from the page — `qa-master` SEO-18 to SEO-22
+
+```bash
+perl gates/qa-master.pl <URL> --repo DIR --candidate --only seo
+```
+
+Five checks for what an extractor keeps when it lifts a page, added on 2026-11-07 after
+comparing this system against a published GEO checklist. **All five warn; none blocks.**
+None of them is a measured ranking factor. Each one names a way the page can say less to a
+machine than it says to a reader, and each one was censused on 50 live pages of 10 sites
+before it was written, so the numbers below are what the rule actually catches.
+
+| Check | Scope | What warns | Census, 2026-11-07 |
+|---|---|---|---|
+| **SEO-18** | every page read | a figure (price, %, time, distance, weight, area) that appears **only** inside a closed `<details>` | 174 closed blocks on 41 pages; 36 hold a figure; **23 figures live only inside**, on 9 pages of 7 sites |
+| **SEO-19** | every page read | a data table with no `<th>` | 9 tables, 0 without a header: it stays as a guard |
+| **SEO-20** | the site | the brand named more than one way across `og:site_name`, the Organization name in the markup and the end of the `<title>` first live run, 8 pages each of 6 sites: 4 warned (two of them missed by a hand census the day before) |
+| **SEO-21** | the site | an `hreflang` alternate that does not answer 200, does not link back, or carries less than 40 % of the source page's words | 1 site with `hreflang`: 10 alternates, 96–103 % of the words, all reciprocal |
+| **SEO-22** | every article read | on a page marked `Article`, `BlogPosting` or `TechArticle`: an author with no name in the markup, a placeholder author, an author not shown or not linked to their page; a date not written on the page, or modified before it was published | 42 articles on 5 sites: 9 of 9 signed by the CMS's default user; 5 of 5 with the author only as an `@id` defined on another site; 15 of 15 with an author that links nowhere, 13 of them "modified" years before they were published (the publication date was the migration's); 3 guides showing a different month than their markup |
+
+**What each one deliberately does not count**, because each is a false positive seen in the
+census or built into the fixtures:
+
+- **SEO-18.** The `<summary>` of a closed block is visible, so its figure counts as seen. An
+  open `<details>` is visible. A figure that also appears outside the block is not "only
+  inside". Collapsed content is indexed by Google; the warning is for the extractor that keeps
+  the visible text, and for the visitor deciding on the price, who should not have to click to
+  find it. **Fix:** the figure the buyer decides on goes in the visible text too; the FAQ can
+  keep its copy.
+- **SEO-19.** A table with `role="presentation"` or `role="none"` is layout, not data. A table
+  of cells is a grid of values with no names: an extractor that keeps it keeps the numbers
+  without what they are.
+- **SEO-20.** Only top-level nodes and `@graph` nodes of an organization type count. A nested
+  `parentOrganization` (the company behind the brand) is not another form of the name. The end
+  of a title counts only if it repeats on two or more pages **and** shares a word of three
+  letters or more with the `og:site_name` or the markup name: "| Madrid" at the end of every
+  title is the place, not the brand. An engine resolves an entity by its name; three forms of
+  it are three candidates.
+- **SEO-21.** `x-default` and the page's own URL are skipped, and at most 60 alternates are
+  fetched. **SEO-17 does not change:** whether the site should be in another language at all is
+  a decision, `NOT VERIFIED` until someone signs it in `_deploy/measured.conf`. SEO-21 only
+  checks that the versions it points to exist and are not shells.
+- **SEO-22.** A page marked `noindex` does not count. The author link is accepted by the
+  author's `url` (relative, with or without the trailing slash) or by an `<a>` whose text is
+  the author's name; an `@id` counts when the page itself defines it. An organization as the
+  author is allowed, linked like a person. The date counts when `datePublished` or
+  `dateModified` is written on the page in any of five languages, at day or at month ("October
+  2026"), or sits in a `<time datetime>`. **What it does not check:** that the author's page
+  says who they are, and what the JavaScript paints. A name like "Admin" is the CMS user, not
+  an author: an engine that weighs who wrote it gets nobody.

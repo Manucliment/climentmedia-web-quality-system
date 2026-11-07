@@ -3035,7 +3035,7 @@ espera "SEO-08 · una por pagina, PASA"                PASA  SEO-08 \
        perl $QA https://climentmedia.com --repo fixtures-seo08/ogimg-varias --candidato --solo seo --sin-recibo --max-urls 10
 
 echo
-echo "== SEO-18 a SEO-21 · LO QUE UN MOTOR DE RESPUESTAS SACA DE LA PAGINA · 7-nov-2026"
+echo "== SEO-18 a SEO-22 · LO QUE UN MOTOR DE RESPUESTAS SACA DE LA PAGINA · 7-nov-2026"
 # 🔴 Un benchmark GEO para una universidad: los costes de la carrera, todos dentro de un acordeon cerrado;
 #    17 paginas en ingles que eran cascaras; la marca nombrada de dos formas. Antes del check, un censo en
 #    50 paginas de 10 sitios: 23 cifras que solo vivian dentro de un <details> cerrado, en 9 paginas, y dos
@@ -3059,6 +3059,25 @@ espera "SEO-21 · la cascara en ingles: AVISO"          AVISO SEO-21 perl $QA $F
 texto  "SEO-21 · vacia y sin vuelta, contadas"         SI "1 con menos del 40 % de las palabras, 0 sin 200, 1 sin vuelta" perl $QA $FU --repo fixtures-geo/geo-mal $QG
 espera "SEO-21 · traducida y con vuelta: PASA"         PASA  SEO-21 perl $QA $FU --repo fixtures-geo/geo-bien $QG
 espera "SEO-21 · sin hreflang: PASA (decide SEO-17)"   PASA  SEO-21 perl $QA $FU --repo "$FSEO05/alineado" $QG
+# SEO-22 · el autor y la fecha de un articulo (D-065 punto 8). Censo antes del check: un sitio firma sus 9
+#    articulos como «<marca> Admin», otro nombra al autor solo por un @id de otra web, otro tiene 13 articulos
+#    «modificados» anos antes de publicarse, y tres guias ensenan otro mes que su marcado. art-mal lleva un
+#    articulo por cada cosa; art-bien, lo que NO debe contar (enlace por url sin barra final, @id definido en la
+#    pagina, fecha solo por <time> o al mes, organizacion como autor, una pagina noindex). Los 9 mutantes de
+#    sus excepciones salieron en rojo (7-nov).
+espera "SEO-22 · autor y fecha mal: AVISO"             AVISO SEO-22 perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · los cuatro articulos, contados"       SI "4 de 4 articulo(s)" perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · el usuario del gestor como autor"     SI "autor de relleno «Marca Admin»" perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · modificado antes de publicado"        SI "publicado 2026-08-28, modificado 2024-05-06" perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · el autor por un @id de otra web"      SI "1 autor sin nombre en el marcado" perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · la pagina ensena otro mes"            SI "el marcado dice 2026-11-01, la pagina ensena «octubre de 2026»" perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · se ve y no enlaza"                    SI "1 el autor no enlaza a su pagina" perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · sin fecha en el marcado"              SI "1 sin fecha en el marcado" perl $QA $FU --repo fixtures-geo/art-mal $QG
+texto  "SEO-22 · el autor que no sale en la pagina"    SI "1 el autor no se ve" perl $QA $FU --repo fixtures-geo/art-mal $QG
+espera "SEO-22 · lo que no cuenta: PASA"               PASA  SEO-22 perl $QA $FU --repo fixtures-geo/art-bien $QG
+texto  "SEO-22 · la pagina noindex no cuenta"          SI "DATO   3 articulo(s)" perl $QA $FU --repo fixtures-geo/art-bien $QG
+espera "SEO-22 · sin articulos: PASA"                  PASA  SEO-22 perl $QA $FU --repo fixtures-geo/geo-bien $QG
+texto  "SEO-22 · y dice por que"                       SI "ninguna pagina leida es un articulo" perl $QA $FU --repo fixtures-geo/geo-bien $QG
 
 echo
 
