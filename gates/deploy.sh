@@ -69,6 +69,10 @@
 #  6-nov-2026 · y lo que se ve (visible-gate.js a 1366 y 390: el contenido que sigue
 #  invisible tras bajar y esperar a las apariciones, y la parada de Tab que queda entera
 #  debajo de la cabecera pegada o de la barra fija). Avisa hasta que la web pone VISIBLE_GATE=para.
+#  7-nov-2026 · y las huellas (huellas-gate.js a 1366 y 390: el antetitulo encima de cada
+#  h2, el texto en degradado, el borde de un lado, el halo de color, transition: all, el
+#  interlineado, el titulo con una palabra sola y el telefono que no acepta un numero
+#  escrito a su manera). Avisa hasta que la web pone HUELLAS_GATE=para.
 #  EL FALLO QUE ESTO ARREGLA, encontrado en el primer uso real de la puerta: el
 #  recibo sellaba el arbol del repo con un veredicto sacado de medir PRODUCCION.
 #  site-d salio «VEREDICTO: FALLA» por los 11 defectos que el despliegue
@@ -637,6 +641,13 @@ BANNER_GATE="${BANNER_GATE:-avisa}"
 #    dejaban paradas de Tab enteras debajo de la cabecera pegada (con Shift+Tab, en 6 webs);
 #    la unica con scroll-padding-top, limpia. Para la subida cuando la web pone VISIBLE_GATE=para.
 VISIBLE_GATE="${VISIBLE_GATE:-avisa}"
+# 7-nov-2026 · LAS HUELLAS DE UNA PAGINA HECHA EN SERIE. huellas-gate.js (HU1-HU5, las huellas;
+#    HU6-HU7, la lectura; HU8, el telefono). Al principio SOLO AVISA, como marca y botones:
+#    medido ese dia en 10 webs (5 paginas cada una, a 1366 y 390), 18 paginas en FALLA a 1366
+#    y 22 a 390, en 6 webs (halos de color en los botones, antetitulos encima de cada h2, un
+#    telefono cuyo pattern rechaza un numero internacional valido); 4 webs, limpias. Para la
+#    subida cuando la web pone HUELLAS_GATE=para.
+HUELLAS_GATE="${HUELLAS_GATE:-avisa}"
 # 6-nov-2026 · EL CONTRASTE DEL CROMO. structure-gate.js media el contraste de <main> y nada
 #    mas: una miga fuera de <main> estaba a 3,6:1 en cuatro paginas de una tienda y ningun
 #    gate lo veia. Ahora mide tambien la cabecera, la miga y el pie, y lo deja aparte, en
@@ -739,7 +750,7 @@ nav_empuja() {   # los gates y el corredor, canonicos, al servidor (dos copias d
   ssh -n -o BatchMode=yes "$NAV_HOST" 'mkdir -p ~/webtools/gates' >/dev/null 2>&1 || return 1
   scp -q "$REF/run-gate.js" "$NAV_HOST:webtools/run-gate.js" </dev/null 2>/dev/null || return 1
   local g
-  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js marca-gate.js botones-gate.js visible-gate.js; do
+  for g in structure-gate.js measure-screens.js forms-gate.js mobile-gate.js mobile-menu-gate.js marca-gate.js botones-gate.js visible-gate.js huellas-gate.js; do
     [ -f "$REF/$g" ] && { scp -q "$REF/$g" "$NAV_HOST:webtools/gates/$g" </dev/null 2>/dev/null || return 1; }
   done
   # banner-probe.js va al lado de run-gate.js, no en gates/: de el saca como servir el arbol.
@@ -815,11 +826,13 @@ nav_lee() {      # <fichero> <gate> <ruta> <ancho> -> imprime la linea; NAV_R = 
   # 1-nov-2026 · marca-gate solo avisa hasta MARCA_GATE=para: su FALLA se ensena
   #    entero, pero cuenta como AVISO y no para la subida.
   #    6-nov-2026 · y botones-gate, igual, hasta BOTONES_GATE=para; y visible-gate, hasta VISIBLE_GATE=para.
+  #    7-nov-2026 · y huellas-gate, hasta HUELLAS_GATE=para.
   local clave=""
   case "$2" in
     marca-gate.js)   [ "${MARCA_GATE:-avisa}" != para ]   && clave=MARCA_GATE ;;
     botones-gate.js) [ "${BOTONES_GATE:-avisa}" != para ] && clave=BOTONES_GATE ;;
     visible-gate.js) [ "${VISIBLE_GATE:-avisa}" != para ] && clave=VISIBLE_GATE ;;
+    huellas-gate.js) [ "${HUELLAS_GATE:-avisa}" != para ] && clave=HUELLAS_GATE ;;
   esac
   if [ "$ver" = FALLA ] && [ -n "$clave" ]; then
     NAV_R="AVISO"
@@ -1007,6 +1020,7 @@ else
       echo "  marca-gate: $( [ "$MARCA_GATE" = para ] && echo 'PARA la subida (MARCA_GATE=para)' || echo 'solo avisa (MARCA_GATE=para cuando _diseno/ este hecho)' )$( [ -f "$REPO/_diseno/MARCA.md" ] || echo '; sin _diseno/MARCA.md: colores y tipos NO MEDIDO' )"
       echo "  botones-gate: $( [ "$BOTONES_GATE" = para ] && echo 'PARA la subida (BOTONES_GATE=para)' || echo 'solo avisa (BOTONES_GATE=para cuando sus botones esten unificados)' )$( [ -n "${BOTONES_FAMILIAS:-}" ] || echo '; sin BOTONES_FAMILIAS: el grupo de un boton son sus clases' )"
       echo "  visible-gate: $( [ "$VISIBLE_GATE" = para ] && echo 'PARA la subida (VISIBLE_GATE=para)' || echo 'solo avisa (VISIBLE_GATE=para cuando nada quede invisible ni tapado)' )"
+      echo "  huellas-gate: $( [ "$HUELLAS_GATE" = para ] && echo 'PARA la subida (HUELLAS_GATE=para)' || echo 'solo avisa (HUELLAS_GATE=para cuando la web no lleve huellas de plantilla)' )"
       : > "$NAVC_DIR/lista"; n=0
       for r in $(urls_navegador); do
         for m in "structure-gate.js 1298 720 c" "measure-screens.js 1298 720 -" "measure-screens.js 390 844 -" \
@@ -1014,7 +1028,8 @@ else
                  "mobile-gate.js 1440 900 c" "mobile-menu-gate.js 390 844 -" \
                  "marca-gate.js 1366 768 m" "marca-gate.js 390 844 m" \
                  "botones-gate.js 1366 768 b" "botones-gate.js 390 844 b" \
-                 "visible-gate.js 1366 768 -" "visible-gate.js 390 844 -"; do
+                 "visible-gate.js 1366 768 -" "visible-gate.js 390 844 -" \
+                 "huellas-gate.js 1366 768 -" "huellas-gate.js 390 844 -"; do
           n=$((n+1)); printf '%s %s %s\n' "$n" "$r" "$m" >> "$NAVC_DIR/lista"
         done
       done

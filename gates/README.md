@@ -35,9 +35,9 @@ install the fast run is **1169 cases green, 0 red**, with the deploy-history ban
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
-a clean install it reads **2064 cases green, 0 red**, with **eleven** banks reported as
-`NOT MEASURED`: the nine that measure on a Linux host (`measure-screens`, `mobile-gate`,
-`mobile-menu-gate`, `marca-gate`, `botones-gate`, `visible-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
+a clean install it reads **2064 cases green, 0 red**, with **twelve** banks reported as
+`NOT MEASURED`: the ten that measure on a Linux host (`measure-screens`, `mobile-gate`,
+`mobile-menu-gate`, `marca-gate`, `botones-gate`, `visible-gate`, `huellas-gate`, `form-handler`, `banner-probe`, `consent-count`), the one that needs a client repository this public repository does not
 ship (`compliance`), plus `extract-wordpress`, which needs a real `python3` (the Microsoft
 Store shortcut on Windows does not count). (`qa-master` left that list on 2026-09-22 and
 `structure-gate` later: see below.)
@@ -105,7 +105,7 @@ $ bash gates/run-all.sh --fast
 ```
 $ bash gates/run-all.sh
   2064 casos en verde · 0 en rojo
-  NO MEDIDOS: medir-pantallas gate-movil gate-menu gate-marca gate-botones gate-visible conformidad historial form-handler banner-cookies contador-consentimiento
+  NO MEDIDOS: medir-pantallas gate-movil gate-menu gate-marca gate-botones gate-visible gate-huellas conformidad historial form-handler banner-cookies contador-consentimiento
 ```
 
 > **The very first run on a clean install also lists `doc-gate(skill)`**, whichever of the two
@@ -472,6 +472,11 @@ The census on the nine sites that upload this way: 0 extra files, so it stops fr
 - `visible-gate.js` at 1366 and 390 (since 2026-11-06): the content that is still invisible after
   walking the page down and waiting for its reveals, and the Tab stop left whole under a sticky
   header or a fixed bar. It **only warns** until `deploy.conf` says `VISIBLE_GATE=para`.
+- `huellas-gate.js` at 1366 and 390 (since 2026-11-07): the marks of a page made in series (a
+  spaced-capitals kicker over every section heading, gradient text, a thick border on one side
+  of a rounded box, a coloured glow, `transition: all`), the reading (body text set below 1.3, a
+  heading that ends on a single word) and the phone field that will not take a number typed the
+  visitor's way. It **only warns** until `deploy.conf` says `HUELLAS_GATE=para`.
 
 They run on every page in `URLS_NAVEGADOR` (`/` if none). And once per upload, on the home page:
 
@@ -788,6 +793,7 @@ without blocking. Why the order changed is trap §89.
 | `botones-sitio.js` | The same comparison (`compara`, exported by the gate: one copy of the rule) over the readings of several pages, by width; it reports only what appears when they are put together, and a reading that is not valid is named and left out. |
 | `botones-barrido.sh` | Every page of the served sitemap (40 by default) through both, at 1366 and 390: the monthly design pass. |
 | `visible-gate.js` | What the visitor actually sees. **VI1**: the page is walked down in steps of 0.8 screens and every container never seen is centred and waited for; text of the content that is still at opacity 0 or visibility hidden counts (FAIL from 200 characters or with an h1/h2, WARN from 40), and what is hidden on purpose does not (display none, `[hidden]`, `[inert]`, aria-hidden, closed details, dialogs, menus, tab panels, carousels, the cookie notice, hover layers). **VI2** (WCAG 2.4.11): the Tab order, forward and backward, scrolled the way Chrome scrolls a focused element (inside the viewport minus the root's scroll-padding: no scroll; partly out: nearest edge; fully out: centred, checked key press by key press against real Tab); a stop whose nine points all fall on a fixed or sticky element is a FAIL, the cookie notice a WARN, five of nine a WARN (2.4.12). Not the focus ring (A11Y-03b), not iframes or shadow DOM. |
+| `huellas-gate.js` | The marks of a page made in series, in computed styles at rest. **HU1** a kicker in spaced capitals right above an h2, smaller and within 40 px (FAIL with 3 or more and on half the section headings or more; WARN with 2; the one above the H1 does not count: it carries the brand or the category; the one above an h3 is a card label such as «MIT» or «New» and goes to the notes: counted over h2 and h3 together, a home page with a kicker on 9 of its 13 sections read «9 of 28» and passed). **HU2** gradient text (`background-clip: text`, FAIL). **HU3** a border of 2 px or more on one side only of a box with a 4 px corner (FAIL; a quote with no radius passes). **HU4** a coloured, blurred shadow (chroma, 8 px blur or more, FAIL; grey shadows, rings and inset pass). **HU5** `transition: all` with a duration (WARN). **HU6** running text of two lines or more below 1.3 line height, measured from the real line pitch when it says `normal` (FAIL). **HU7** an h1-h3 whose last line is under 35 % of the one above, without `text-wrap: balance`/`pretty` or a `<br>` (WARN). **HU8** the phone field, given `+34 600 12 34 56` by an input event: rejected by its `pattern`, cut by `maxlength` or stripped of digits is a FAIL; reformatted, or with mask attributes or a mask placeholder, a WARN. Opacity is not looked at on purpose: a reveal that never fires has the same CSS. The cookie notice is left out by its ancestors, never by `<body>`. Not hover or focus, not images, not iframes or shadow DOM. |
 | `measure-screens.js` | Density: how much page per screen, measured against the moulds. |
 | `anatomy.pl` | One table of page anatomies, three consumers, and they must agree. |
 | `roles.pl` | The role vocabulary (`roles.tsv` = 09 §1), and it generates one reference sheet per page type into `blueprint/moulds/types/`. `--gate` re-derives all thirteen and fails on any difference, so a sheet edited by hand does not survive a battery. |

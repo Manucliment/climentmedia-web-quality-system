@@ -57,6 +57,7 @@ gate-menu|bash mobile-menu-gate-tests/battery.sh|1|menu movil a 390: una fila o 
 gate-marca|bash marca-gate-tests/battery.sh|1|la marca: logo en la cabecera, iconos y manifest que cargan, theme-color, nada fuera de la paleta (mide en el SERVIDOR)
 gate-botones|bash botones-gate-tests/battery.sh|1|los botones: un mismo boton con la misma forma, y la misma pintura sobre el mismo fondo (mide en el SERVIDOR)
 gate-visible|bash visible-gate-tests/battery.sh|1|lo que se ve: el contenido que sigue invisible tras bajar y esperar, y la parada de Tab tapada entera por lo fijo, con el desplazamiento de Chrome (mide en el SERVIDOR)
+gate-huellas|bash huellas-gate-tests/battery.sh|1|las huellas de una pagina hecha en serie, la lectura y el telefono que no acepta un numero escrito a su manera (mide en el SERVIDOR)
 botones-sitio|node botones-gate-tests/sitio.test.js|0|los botones entre paginas: la misma regla del gate sobre varias salidas, y lo que no vale no se junta
 banner-cookies|bash banner-probe-tests/tests.sh|1|el aviso de cookies como lo ve un visitante: primera capa, mismo peso, sin muro, idioma, Rechazar, recordar y retirar (mide en el SERVIDOR)
 contador-consentimiento|bash consent-count-tests/tests.sh|1|el contador anonimo del aviso de cookies: php -l, ejecucion y nada de la persona en el disco (mide en el SERVIDOR)
@@ -93,7 +94,8 @@ echo "==========================================================================
 # 3-nov-2026 · banner-cookies mide en el servidor como los otros: si no se aparta, la
 #    instalacion limpia contaria sus 20 casos sin poder correrlos.
 # 6-nov-2026 · gate-botones tambien (botones-sitio no: corre en node, sin servidor). Y gate-visible.
-DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil gate-menu gate-marca gate-botones gate-visible form-handler banner-cookies contador-consentimiento"
+# 7-nov-2026 · y gate-huellas.
+DEPENDE_DEL_ESTADO="historial medir-pantallas gate-movil gate-menu gate-marca gate-botones gate-visible gate-huellas form-handler banner-cookies contador-consentimiento"
 TOT_ESTADO=0
 TOT_OK=0; TOT_MAL=0; ROTOS=""; NO_MEDIDOS=""
 # 28-sep-2026 · para D9: el recuento de cada banco que PASA, los que esta

@@ -82,10 +82,15 @@ BROWSER_URLS="/ /contact/"
 # the buttons (botones-gate.js, once its buttons are unified), the cookie notice
 # (banner-probe.js) and what the visitor sees (visible-gate.js: content still
 # invisible after scrolling, a Tab stop hidden whole under a sticky header or a
-# fixed bar; the usual fix is html{scroll-padding-top:<header height>}).
+# fixed bar; the usual fix is html{scroll-padding-top:<header height>}), and the
+# marks of a page made in series (huellas-gate.js: a kicker over every section
+# heading, gradient text, a one-sided border on a rounded box, a coloured glow,
+# transition: all, tight leading, a heading ending on one word, a phone field that
+# rejects a valid number).
 # BOTONES_GATE=para
 # BANNER_GATE=para
 # VISIBLE_GATE=para
+# HUELLAS_GATE=para
 
 # Which pages have a form. On these, the form step is REQUIRED: a page here that
 # ends up without a working form is a FAIL, not a "does not apply". Without this
