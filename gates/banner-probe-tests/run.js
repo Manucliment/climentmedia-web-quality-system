@@ -8,7 +8,7 @@
 //    y de toda la pantalla, que se leia como muro; y un «Rechazar» mas estrecho que
 //    «Aceptar todo» solo porque su texto es mas corto, que se leia como menos peso.
 const fs = require("fs"), os = require("os"), path = require("path");
-const { spawnSync } = require("child_process");
+const { spawnSync, spawn } = require("child_process");
 
 const SONDA = path.join(__dirname, "..", "banner-probe.js");
 const raiz = fs.mkdtempSync(path.join(os.tmpdir(), "banner-probe-"));
@@ -116,6 +116,68 @@ ver("candidato: el arbol, servido con la URL de produccion, PASA y dice cuanto s
 const c2 = candidato("contador", { contador: true });
 ver("candidato: el envio al contador del aviso se aborta y se cuenta", c2.j.medicionAbortada >= 1 && c2.veredicto === "PASA", `${c2.veredicto} · medicionAbortada ${c2.j.medicionAbortada}`);
 
-fs.rmSync(raiz, { recursive: true, force: true });
-console.log(`\n  OK ${ok}  ·  MAL ${mal}`);
-process.exit(mal ? 1 : 0);
+// 7-nov-2026 · EL PERFIL DE CHROME (lanzar() de run-gate.js, el que usan las dos sondas). El disco
+// del servidor llego al 100 % con 120 perfiles de sondas muertas en /tmp. Cada caso mide en una
+// carpeta propia (GATE_PERFILES). Contra el run-gate.js de antes, los de SIGKILL, SIGTERM y el
+// barrido salen en ROJO: aquel nunca escribia en esa carpeta ni barria nada.
+const RG = path.join(__dirname, "..", "run-gate.js");
+const gateJs = path.join(raiz, "gate-minimo.js");
+fs.writeFileSync(gateJs, '({ VEREDICTO: "PASA" })');
+const fxDir = path.join(raiz, "perfil-fx");
+fs.mkdirSync(fxDir, { recursive: true });
+fs.writeFileSync(path.join(fxDir, "index.html"), '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Perfil</title></head><body><main><h1>Perfil</h1><p>Texto de la pagina.</p></main></body></html>');
+const perfiles = (d) => fs.readdirSync(d).sort();
+const nueva = (n) => { const d = path.join(raiz, "perfiles-" + n); fs.mkdirSync(d); return d; };
+const envRG = (d) => ({ ...process.env, GATE_PERFILES: d, GATE_CANDIDATO: fxDir, GATE_SITIO: "https://perfil.invalid" });
+const medir = (d, env) => spawnSync("node", [RG, "https://perfil.invalid/", "1366", "768", gateJs], { env: env || envRG(d), encoding: "utf8", timeout: 120000 });
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+// Lanza run-gate, espera a que Chrome haya escrito en su perfil y le manda la senal.
+async function cortar(d, senal) {
+  const c = spawn("node", [RG, "https://perfil.invalid/", "1366", "768", gateJs], { env: envRG(d), stdio: "ignore" });
+  const fin = new Promise((r) => c.on("exit", (code, sig) => r({ code, sig })));
+  let visto = null;
+  for (let i = 0; i < 400 && !visto; i++) {
+    await esperar(25);
+    const p = perfiles(d).find((n) => n.startsWith("wqs-chrome-" + c.pid + "-"));
+    try { if (p && fs.readdirSync(path.join(d, p)).length) visto = p; } catch (e) { /* aun no */ }
+  }
+  c.kill(senal);
+  return { visto, ...(await fin), quedan: perfiles(d) };
+}
+(async () => {
+  const d1 = nueva("bien"), r1 = medir(d1);
+  ver("perfil: la medida que acaba bien no deja el suyo", r1.status === 0 && /"candidato":[1-9]/.test(r1.stdout) && !perfiles(d1).length,
+    `rc ${r1.status} · quedan [${perfiles(d1)}] · ${(r1.stderr || "").slice(0, 120)}`);
+  const d2 = nueva("error"), r2 = medir(d2, { ...process.env, GATE_PERFILES: d2 });   // nada.invalid no existe: el goto falla
+  ver("perfil: un goto que falla (sale por process.exit(3)) no deja el suyo", r2.status === 3 && !perfiles(d2).length, `rc ${r2.status} · quedan [${perfiles(d2)}]`);
+  const d3 = nueva("kill"), r3 = await cortar(d3, "SIGKILL");
+  ver("perfil: un SIGKILL lo deja, con su nombre y el pid de su sonda", !!r3.visto && r3.quedan.join() === r3.visto, `visto ${r3.visto} · quedan [${r3.quedan}]`);
+  // Quien tiene el perfil abierto se mira con un cotejo PROPIO (la ruta en cualquier sitio del
+  // cmdline): con el de run-gate, un cotejo ciego daba «no queda ninguno» y el caso pasaba en vacio.
+  const ruta4 = r3.visto ? path.join(d3, r3.visto) : "";
+  const conRuta = (ruta) => fs.readdirSync("/proc").filter((x) => /^\d+$/.test(x) && +x !== process.pid).filter((x) => {
+    try { return fs.readFileSync(`/proc/${x}/cmdline`, "latin1").includes(ruta); } catch (e) { return false; } }).map(Number);
+  const { procesosCon } = require(RG);
+  const vivos3 = ruta4 ? conRuta(ruta4) : [], vistos3 = ruta4 ? procesosCon(ruta4) : [];
+  ver("perfil: tras el SIGKILL su Chrome sigue vivo, y run-gate ve cada proceso que lo tiene", vivos3.length > 0 && vivos3.every((p) => vistos3.includes(p)),
+    `vivos ${vivos3.length} [${vivos3.slice(0, 6)}] · run-gate ve ${vistos3.length}`);
+  const r4 = medir(d3);
+  ver("perfil: la sonda siguiente se lo lleva, y para el Chrome que lo tenia abierto", r4.status === 0 && !perfiles(d3).length && vivos3.length > 0 && !(ruta4 && conRuta(ruta4).length),
+    `rc ${r4.status} · quedan [${perfiles(d3)}] · antes ${vivos3.length} · despues ${ruta4 ? conRuta(ruta4) : "-"}`);
+  const d5 = nueva("term"), r5 = await cortar(d5, "SIGTERM");
+  await esperar(500);   // lo que siguiera vivo tendria tiempo de volver a escribir
+  const q5 = perfiles(d5), v5 = r5.visto ? conRuta(path.join(d5, r5.visto)) : [];
+  ver("perfil: un SIGTERM (un timeout; un ssh que cae es SIGHUP) no lo deja, ni deja a su Chrome", !!r5.visto && r5.code === 3 && !r5.quedan.length && !q5.length && !v5.length,
+    `visto ${r5.visto} · rc ${r5.code} · quedan [${r5.quedan}] · a los 500 ms [${q5}] · procesos [${v5}]`);
+  const d6 = nueva("ajenos");
+  const muerto = spawnSync("node", ["-e", "process.stdout.write(String(process.pid))"], { encoding: "utf8" }).stdout.trim();
+  fs.mkdirSync(path.join(d6, `wqs-chrome-${process.pid}-vivo`));       // su sonda vive (este banco)
+  fs.mkdirSync(path.join(d6, "puppeteer_dev_chrome_profile-ajeno"));    // no es nuestro
+  fs.mkdirSync(path.join(d6, `wqs-chrome-${muerto}-muerto`));           // su sonda ya no existe
+  const r6 = medir(d6), q6 = perfiles(d6).join();
+  ver("perfil: el barrido deja el de una sonda viva y el ajeno, y se lleva el de la muerta", r6.status === 0 && q6 === ["puppeteer_dev_chrome_profile-ajeno", `wqs-chrome-${process.pid}-vivo`].sort().join(), `rc ${r6.status} · quedan [${q6}]`);
+
+  fs.rmSync(raiz, { recursive: true, force: true });
+  console.log(`\n  OK ${ok}  ·  MAL ${mal}`);
+  process.exit(mal ? 1 : 0);
+})();

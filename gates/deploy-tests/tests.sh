@@ -585,6 +585,44 @@ else
   cromo "el mismo texto en otro gate: ninguna linea"     mobile-gate.js    "$C1" PASA ""
 fi
 rm -rf "$NMD" "$NDIR"
+# 7-nov-2026 · EL DISCO DEL SERVIDOR DE MEDIR. Llego al 100 %: el 1-quater copiaba el candidato
+#    sin mirar df y lo borraba solo si acababa. Se ejecutan los bytes de navc_disco. En ROJO contra
+#    la puerta de antes (no hay navc_disco: «no encuentro»).
+NVD="$(mktemp -t navdisco-XXXXXXXX)"
+A9=$(grep -n '^# >>> navc_disco' "$PUERTA" | head -1 | cut -d: -f1)
+B9=$(grep -n '^# <<< navc_disco' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${A9:-}" ] || [ -z "${B9:-}" ] || [ "$A9" -ge "$B9" ]; then
+  ko=$((ko+1)); echo "  MAL   no encuentro el bloque navc_disco en $PUERTA (renombrado o movido)"
+else
+  sed -n "${A9},${B9}p" "$PUERTA" > "$NVD"
+  sitio() { # nombre · MB libres · MB del candidato · entorno · codigo esperado · la frase dice («» = vacia)
+    local got frase bien=0
+    got="$( eval "$4"; NAV_HOST=h; . "$NVD"; navc_hay_sitio "$2" "$3"; c=$?; printf '%s|%s' "$c" "$NAVC_DISCO" )"
+    frase="${got#*|}"
+    if [ "${got%%|*}" = "$5" ]; then
+      if [ -z "$6" ]; then [ -z "$frase" ] && bien=1; else printf '%s' "$frase" | grep -qF -- "$6" && bien=1; fi
+    fi
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s\n        esperaba: %s|%s\n' "$1" "$got" "$5" "$6"; fi
+  }
+  sitio "el 7-nov: 3500 libres, 300 de candidato: se mide y avisa"  3500 300 ""                          0 "⚠ disco de h: 3500 MB libres"
+  sitio "quedarian menos de 2 GB: no se copia"                      2500 300 ""                          1 "quedarian 1900, menos de CANDIDATO_LIBRE_MIN_MB=2048"
+  sitio "con sitio de sobra: ni aviso"                              9000 300 ""                          0 ""
+  sitio "df no contesta: NO MEDIDO dicho, y se copia"               ""   300 ""                          0 "NO MEDIDO (df no ha contestado)"
+  sitio "el tope se cambia por el deploy.conf o el entorno"         2500 300 "CANDIDATO_LIBRE_MIN_MB=1000" 0 "⚠"
+  # navc_limpia: borra en el servidor SOLO una ruta /tmp/wqs-candidato-*, y dos veces no hace nada.
+  limpia() { # nombre · NAVC_R · ordenes ssh esperadas
+    local got
+    got="$( NAV_HOST=h; . "$NVD"; n=0; ssh() { n=$((n+1)); }; NAVC_DIR=""; NAVC_R="$2"; navc_limpia; navc_limpia; echo "$n" )"
+    if [ "$got" = "$3" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+    else ko=$((ko+1)); printf '  MAL   %s\n        sale:     %s ordenes ssh\n        esperaba: %s\n' "$1" "$got" "$3"; fi
+  }
+  limpia "la copia del candidato: una orden, aunque se llame dos veces"  "/tmp/wqs-candidato-web-12-34" 1
+  limpia "una ruta que no es nuestra no se borra"                         "/tmp/otra-cosa"               0
+  limpia "ni una que sale de /tmp con .."                                 "/tmp/wqs-candidato-x/../.."   0
+  limpia "ni la vacia"                                                    ""                             0
+fi
+rm -f "$NVD"
 # Y CROMO_GATE=para llega al gate: cromo_cfg anade "cromo":"para" a NAV_CFG, sin romper lo que
 # ya llevaba (reservas, tienda). En ROJO contra la puerta de antes (no hay cromo_cfg).
 CCF="$(mktemp -t cromocfg-XXXXXXXX)"

@@ -936,6 +936,49 @@ nav_decide() {
 }
 # <<< nav_decide
 
+# >>> navc_disco · el disco del servidor de medir (deploy-tests/tests.sh ejecuta estos bytes)
+# 🔴 7-nov-2026 · EL DISCO DEL SERVIDOR DE MEDIR LLEGO AL 100 %. Alli corren las sondas de
+#    todas las webs y otras herramientas de la casa, y un disco lleno las tumba a todas. La
+#    puerta copiaba el candidato a /tmp sin mirar cuanto quedaba, y lo borraba solo si llegaba
+#    al final del 1-quater: una puerta cortada a medias (Ctrl-C, un ssh que cae) lo dejaba alli.
+#    Ahora: antes de copiar, df de /tmp; si tras el candidato (dos veces su tamano: el arbol y
+#    lo que escribe Chrome al medirlo) quedan menos de CANDIDATO_LIBRE_MIN_MB, no se copia y el
+#    1-quater sale NO MEDIDO, que para la subida de una web con URLS_NAVEGADOR como cualquier
+#    otro hueco. Por debajo de CANDIDATO_LIBRE_AVISO_MB se mide y se avisa. Y se borra con un
+#    trap, salga la puerta por donde salga. Lo viejo nuestro (wqs-candidato-* de mas de 6 h) se
+#    barre antes de copiar; lo que no lleva ese nombre no se toca.
+#    ⚠️ El 7-nov quedaban 3,5 GB: un tope de 5 GB para copiar habria dejado sin 1-quater a todas
+#       las webs por un disco que llenan otros. Por eso el tope es lo que QUEDA (2 GB) y los 5 GB
+#       son el aviso.
+# navc_hay_sitio <MB libres en /tmp> <MB del candidato> -> 0 si se copia; la frase, en NAVC_DISCO
+navc_hay_sitio() {
+  local libre="$1" cand="${2:-0}" min="${CANDIDATO_LIBRE_MIN_MB:-2048}" aviso="${CANDIDATO_LIBRE_AVISO_MB:-5120}" queda
+  NAVC_DISCO=""
+  if ! printf '%s' "$libre" | grep -qE '^[0-9]+$'; then
+    NAVC_DISCO="disco de ${NAV_HOST:-el servidor}: NO MEDIDO (df no ha contestado); se copia igual"; return 0
+  fi
+  printf '%s' "$cand" | grep -qE '^[0-9]+$' || cand=0
+  queda=$(( libre - 2 * cand ))
+  if [ "$queda" -lt "$min" ]; then
+    NAVC_DISCO="disco de ${NAV_HOST:-el servidor}: $libre MB libres en /tmp; con el candidato ($cand MB, dos veces) quedarian $queda, menos de CANDIDATO_LIBRE_MIN_MB=$min. No se copia: un disco lleno tumba todo lo que mide alli"
+    return 1
+  fi
+  [ "$libre" -lt "$aviso" ] && NAVC_DISCO="⚠ disco de ${NAV_HOST:-el servidor}: $libre MB libres en /tmp, menos de CANDIDATO_LIBRE_AVISO_MB=$aviso. Se mide igual"
+  return 0
+}
+# navc_limpia: borra la copia del candidato en el servidor (solo una ruta /tmp/wqs-candidato-*) y la
+# carpeta local. Se llama al final del 1-quater y desde el trap; dos veces no hace nada.
+navc_limpia() {
+  case "${NAVC_R:-}" in
+    /tmp/wqs-candidato-?*) case "$NAVC_R" in *..*|*\'*|*" "*) ;; *) ssh -n -o BatchMode=yes "$NAV_HOST" "rm -rf '$NAVC_R'" >/dev/null 2>&1 ;; esac ;;
+  esac
+  NAVC_R=""
+  [ -n "${NAVC_DIR:-}" ] && rm -rf "$NAVC_DIR"
+  NAVC_DIR=""
+  return 0
+}
+# <<< navc_disco
+
 # >>> nav_d057 · D-057 en el 1-quater (deploy-tests/tests.sh ejecuta estos bytes)
 # 🔴 6-nov-2026 · Una pieza de 5 lineas en el <head> de 89 paginas paso el paso 1-D057
 #    y la paro el 1-quater: 5 FALLA en 4 paginas, las cinco iguales en produccion y con
@@ -1013,11 +1056,20 @@ else
     echo "  NO MEDIDO: falta $REF/run-gate.js."
   else
     NAVC_DIR="$(mktemp -d -t navcand-XXXXXXXX)"
-    NAVC_R="/tmp/wqs-candidato-$$-$(date +%s)"
+    NAVC_R="/tmp/wqs-candidato-$(printf '%s' "${REPO%/}" | sed 's|.*/||; s/[^A-Za-z0-9._-]/_/g')-$$-$(date +%s)"
+    # El de EXIT encadena el que ya habia (en_curso_fin, la marca de puerta en curso con --subir):
+    # pisarlo dejaria la marca puesta si la puerta sale durante el 1-quater.
+    trap 'navc_limpia; declare -F en_curso_fin >/dev/null && [ "$SUBIR" = 1 ] && en_curso_fin' EXIT
+    trap 'navc_limpia; exit 130' INT; trap 'navc_limpia; exit 143' TERM; trap 'navc_limpia; exit 129' HUP
     NAVC_ARBOL="$(perl "$REF/receipt.pl" --arbol --repo "$REPO" --listar 2>/dev/null | awk '$1 ~ /^[0-9a-f]{8}$/ && $2 ~ /^[0-9]+$/ { $1=""; $2=""; sub(/^  */, ""); print }')"
+    NAVC_MB="$( (cd "$REPO" && printf '%s\n' "$NAVC_ARBOL" | tr '\n' '\0' | xargs -0 -r du -ck -- 2>/dev/null) | awk '$2 == "total" { s += $1 } END { print int((s + 1023) / 1024) }')"
+    NAVC_LIBRE="$(ssh -n -o BatchMode=yes "$NAV_HOST" "find /tmp -maxdepth 1 -name 'wqs-candidato-*' -mmin +360 -exec rm -rf {} + 2>/dev/null; df -P -m /tmp | awk 'NR == 2 { print \$4 }'" 2>/dev/null)"
     if [ -z "$NAVC_ARBOL" ]; then
       NAVC_HUECOS="todo (receipt.pl no lista el arbol)"
       echo "  NO MEDIDO: receipt.pl --arbol --listar no devuelve ningun fichero."
+    elif ! navc_hay_sitio "$NAVC_LIBRE" "$NAVC_MB"; then
+      NAVC_HUECOS="todo ($NAVC_DISCO)"
+      echo "  NO MEDIDO: $NAVC_DISCO."
     elif ! nav_empuja \
          || ! ssh -n -o BatchMode=yes "$NAV_HOST" "mkdir -p '$NAVC_R/arbol'" 2>/dev/null \
          || ! printf '%s\n' "$NAVC_ARBOL" | (cd "$REPO" && tar -cf - -T -) 2>/dev/null \
@@ -1025,7 +1077,8 @@ else
       NAVC_HUECOS="todo (no se ha podido copiar el candidato a $NAV_HOST)"
       echo "  NO MEDIDO: no se ha podido copiar el arbol ni los gates a $NAV_HOST."
     else
-      echo "  $(printf '%s\n' "$NAVC_ARBOL" | grep -c .) ficheros del arbol copiados a $NAV_HOST; se sirven con el origen $SITIO"
+      echo "  $(printf '%s\n' "$NAVC_ARBOL" | grep -c .) ficheros del arbol copiados a $NAV_HOST (${NAVC_MB:-?} MB, en $NAVC_R); se sirven con el origen $SITIO"
+      [ -n "$NAVC_DISCO" ] && echo "  $NAVC_DISCO"
       [ -n "$NAV_CFG" ] && echo "  configuracion de los gates de conversion: $NAV_CFG"
       # Los cuatro anchos del primer pantallazo (mobile-gate M1, 1-nov-2026), el menu
       # a 390 y la marca a 1366 y 390. `c` = esa medida recibe NAV_CFG (que cuenta como
@@ -1154,8 +1207,8 @@ else
       echo
       echo "  $NAVC_MIRADAS medidas · $NAVC_FALLOS FALLA · $(( NAVC_TOTAL - NAVC_MIRADAS )) sin medir$( [ "$NAVC_D057_N" -gt 0 ] && echo " · $NAVC_D057_N FALLA viejas por D-057 (no paran)" )${NAVC_MARCA_AVISOS:+$( [ "$NAVC_MARCA_AVISOS" -gt 0 ] && echo " · $NAVC_MARCA_AVISOS AVISO de marca, botones o aviso de cookies (no paran)" )}"
     fi
-    ssh -n -o BatchMode=yes "$NAV_HOST" "rm -rf '$NAVC_R'" >/dev/null 2>&1
-    rm -rf "$NAVC_DIR"
+    navc_limpia; trap - INT TERM HUP
+    if [ "$SUBIR" = 1 ]; then trap en_curso_fin EXIT; else trap - EXIT; fi
   fi
 fi
 if [ "${SIN_NAVEGADOR:-0}" != 1 ] && [ "$REDIR" != 1 ]; then

@@ -69,11 +69,103 @@ async function servir(p, { raiz = "", sitio = "", fuera = "red", medicion = fals
   });
   return n;
 }
-// Como modulo (banner-probe.js), solo da servir y MEDICION; como orden, mide.
+// 🔴 7-nov-2026 · EL PERFIL DE CHROME ES NUESTRO, CON NOMBRE, Y SE VA CON LA SONDA.
+//  El disco del servidor de medir llego al 100 %. En /tmp habia 120 perfiles
+//  `puppeteer_dev_chrome_profile-*` de sondas muertas (unos 920 MB, del 20-oct en adelante).
+//  Puppeteer solo borra el perfil que crea si el navegador se cierra bien: cualquier error
+//  (un goto que pasa de 60 s), un `timeout` o un ssh que se corta salia por
+//  `process.exit(3)` y lo dejaba alli. Y con ese nombre no se sabe de quien es: otras
+//  herramientas de la maquina usan el mismo Chrome con el mismo prefijo.
+//  Ahora el perfil lo crea la sonda, `wqs-chrome-<pid>-XXXXXX`, y se borra al salir por
+//  donde sea (exit, SIGINT, SIGTERM, SIGHUP). Lo que deja un SIGKILL lo barre la siguiente
+//  sonda: solo los `wqs-chrome-*` cuyo proceso ya no existe, nunca uno ajeno.
+//    lanzar({ executablePath, args }) -> el navegador. GATE_PERFILES = otra carpeta (bancos).
+const PERFIL_PREFIJO = "wqs-chrome-";
+//  Los procesos cuyo cmdline nombra ese perfil (Linux, /proc; en otro sistema, ninguno). Puppeteer
+//  lanza Chrome separado de la sonda: si a la sonda la matan con SIGKILL, Chrome puede seguir vivo
+//  con el perfil abierto, y borrarselo debajo no lo para. Y no solo Chrome: su chrome_crashpad_handler
+//  lleva `--database=<perfil>/Crashpad`, no `--user-data-dir`, y al matar a Chrome ESCRIBE el informe
+//  del cuelgue en el perfil mientras se borra (medido el 7-nov: el perfil se quedaba tras un error y
+//  tras un SIGTERM). Por eso casa la ruta en cualquier argumento, seguida de fin, «/» o separador.
+//  ⚠️ El separador es un ESPACIO casi siempre: Chrome reescribe su titulo al arrancar y su cmdline
+//  queda «chrome --a --user-data-dir=<perfil> --b» con un solo NUL al final (medido el 7-nov en sus
+//  11 procesos). Solo un proceso recien nacido trae los NUL de exec. Un cotejo que no aceptaba el
+//  espacio no veia ningun Chrome vivo, y el banco lo daba por bueno porque «no queda ninguno».
+function procesosCon(ruta) {
+  const out = [];
+  let ps = [];
+  try { ps = fs.readdirSync("/proc").filter(x => /^\d+$/.test(x)); } catch (x) { return out; }
+  for (const p of ps) {
+    let t = "";
+    try { t = fs.readFileSync("/proc/" + p + "/cmdline", "latin1"); } catch (x) { continue; }   // ya no esta
+    for (let i = t.indexOf(ruta); i >= 0; i = t.indexOf(ruta, i + 1)) {
+      const c = t[i + ruta.length];
+      if (c === undefined || c === "\0" || c === "/" || c === " ") { out.push(+p); break; }
+    }
+  }
+  return out;
+}
+//  El grupo de un proceso (Linux, /proc/<pid>/stat, campo 5; 0 si no se puede leer).
+function grupoDe(p) {
+  try { const s = fs.readFileSync("/proc/" + p + "/stat", "utf8"); return +s.slice(s.lastIndexOf(")") + 2).split(" ")[2] || 0; }
+  catch (x) { return 0; }
+}
+//  Los mata y espera a que no quede ninguno (hasta 2 s). Sincrono: tambien vale desde «exit».
+//  Puppeteer lanza Chrome como jefe de un grupo propio, y en el van todos sus hijos (zygote,
+//  renderers, red, GPU y dos `cat` que no nombran el perfil): al jefe se le mata el grupo entero.
+//  Nunca el grupo de esta sonda, ni uno cuyo jefe no nombre el perfil.
+function matarCon(ruta) {
+  const dormir = ms => { try { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); } catch (x) { /* sin espera */ } };
+  const mio = grupoDe(process.pid);
+  for (let i = 0; i < 40; i++) {
+    const ps = procesosCon(ruta).filter(p => p !== process.pid);
+    if (!ps.length) return true;
+    for (const p of ps) {
+      const g = grupoDe(p);
+      try { process.kill(g === p && g > 1 && g !== mio ? -g : p, "SIGKILL"); } catch (x) { /* ya salio */ }
+    }
+    dormir(50);
+  }
+  return false;
+}
+function barrerPerfiles(dir) {
+  const path = require("path");
+  let n = 0;
+  for (const e of (() => { try { return fs.readdirSync(dir); } catch (x) { return []; } })()) {
+    const m = new RegExp("^" + PERFIL_PREFIJO + "(\\d+)-").exec(e);
+    if (!m || +m[1] === process.pid) continue;
+    try { process.kill(+m[1], 0); continue; }            // su sonda sigue viva: no es basura
+    catch (x) { if (x.code === "EPERM") continue; }       // viva, de otro usuario
+    const ruta = path.join(dir, e);
+    matarCon(ruta);
+    try { fs.rmSync(ruta, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); n++; } catch (x) { /* el siguiente */ }
+  }
+  return n;
+}
+async function lanzar({ executablePath = "/usr/bin/google-chrome", args = [] } = {}) {
+  const os = require("os"), path = require("path");
+  const dir = process.env.GATE_PERFILES || os.tmpdir();
+  barrerPerfiles(dir);
+  const perfil = fs.mkdtempSync(path.join(dir, PERFIL_PREFIJO + process.pid + "-"));
+  let b = null;
+  const limpiar = () => {
+    try { const c = b && b.process(); if (c && c.exitCode === null) c.kill("SIGKILL"); } catch (x) { /* ya no esta */ }
+    matarCon(perfil);
+    try { fs.rmSync(perfil, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }); } catch (x) { /* el barrido */ }
+  };
+  process.on("exit", limpiar);
+  for (const s of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(s, () => { limpiar(); process.exit(3); });
+  try {
+    b = await puppeteer.launch({ executablePath, args, userDataDir: perfil,
+                                 handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
+  } catch (e) { limpiar(); throw e; }
+  return b;
+}
+// Como modulo (banner-probe.js), da servir, MEDICION y lanzar; como orden, mide.
 if (require.main === module) (async () => {
   const [url, w, h, gateFile, gateCfg] = process.argv.slice(2);
   const src = fs.readFileSync(gateFile, "utf8");
-  const b = await puppeteer.launch({
+  const b = await lanzar({
     executablePath: "/usr/bin/google-chrome",
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--hide-scrollbars"],
   });
@@ -178,4 +270,4 @@ if (require.main === module) (async () => {
   console.log(typeof out === "string" ? out : JSON.stringify(out, null, 1));
   await b.close();
 })().catch(e => { console.error("RUNNER-ERROR " + e.message); process.exit(3); });
-module.exports = { servir, MEDICION };
+module.exports = { servir, MEDICION, lanzar, barrerPerfiles, procesosCon };

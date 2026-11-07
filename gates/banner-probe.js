@@ -43,7 +43,7 @@ const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 const path = require("path");
 // Va al lado de run-gate.js (en gates/ y en ~/webtools del host de medida): sin el, no mide.
-const { servir } = require("./run-gate.js");
+const { servir, lanzar } = require("./run-gate.js");
 
 const [url, W = "1298", H = "900"] = process.argv.slice(2);
 if (!url) { console.error("uso: node banner-probe.js <URL> [W H]"); process.exit(2); }
@@ -82,7 +82,8 @@ const res = (estado, id, texto, dato) => {
 };
 
 (async () => {
-  const b = await puppeteer.launch({
+  // 7-nov-2026 · por lanzar() de run-gate.js: su perfil se borra al salir por donde sea.
+  const b = await lanzar({
     executablePath: process.env.CHROME || "/usr/bin/google-chrome",
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--hide-scrollbars"],
   });
