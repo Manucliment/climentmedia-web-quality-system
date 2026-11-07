@@ -3035,6 +3035,32 @@ espera "SEO-08 · una por pagina, PASA"                PASA  SEO-08 \
        perl $QA https://climentmedia.com --repo fixtures-seo08/ogimg-varias --candidato --solo seo --sin-recibo --max-urls 10
 
 echo
+echo "== SEO-18 a SEO-21 · LO QUE UN MOTOR DE RESPUESTAS SACA DE LA PAGINA · 7-nov-2026"
+# 🔴 Un benchmark GEO para una universidad: los costes de la carrera, todos dentro de un acordeon cerrado;
+#    17 paginas en ingles que eran cascaras; la marca nombrada de dos formas. Antes del check, un censo en
+#    50 paginas de 10 sitios: 23 cifras que solo vivian dentro de un <details> cerrado, en 9 paginas, y dos
+#    sitios con el nombre repartido. geo-mal tiene que avisar en los cuatro (son checks nuevos: contra el
+#    gate anterior salen AUSENTE, en rojo); geo-bien lleva dentro lo que NO debe contar (el summary de un
+#    bloque cerrado, un <details open>, la cifra que tambien sale fuera, la tabla de maqueta, la sociedad
+#    anidada en el schema y el lugar al final de dos titles). Ver fixtures-geo/POR-QUE.txt.
+QG="--candidato --solo seo --sin-recibo"
+espera "SEO-18 · cifra solo en un bloque cerrado: AVISO" AVISO SEO-18 perl $QA $FU --repo fixtures-geo/geo-mal $QG
+texto  "SEO-18 · nombra la de dentro, no la de fuera"  SI "(1: 14 días)" perl $QA $FU --repo fixtures-geo/geo-mal $QG
+espera "SEO-18 · summary, open y la de fuera: PASA"    PASA  SEO-18 perl $QA $FU --repo fixtures-geo/geo-bien $QG
+espera "SEO-19 · tabla sin <th>: AVISO"                AVISO SEO-19 perl $QA $FU --repo fixtures-geo/geo-mal $QG
+espera "SEO-19 · con <th>: PASA"                       PASA  SEO-19 perl $QA $FU --repo fixtures-geo/geo-bien $QG
+texto  "SEO-19 · la tabla de maqueta no se cuenta"     SI "DATO   1 tabla(s)" perl $QA $FU --repo fixtures-geo/geo-bien $QG
+espera "SEO-20 · la marca de dos formas: AVISO"        AVISO SEO-20 perl $QA $FU --repo fixtures-geo/geo-mal $QG
+texto  "SEO-20 · el final del title es una forma"      SI "«Marca» (title en 3)" perl $QA $FU --repo fixtures-geo/geo-mal $QG
+espera "SEO-20 · una sola forma: PASA"                 PASA  SEO-20 perl $QA $FU --repo fixtures-geo/geo-bien $QG
+texto  "SEO-20 · ni la sociedad anidada ni el lugar"   SI "«Marca Real» (og:site_name en 4, schema en 4, title en 2)" perl $QA $FU --repo fixtures-geo/geo-bien $QG
+texto  "SEO-20 · la sociedad anidada no sale"          NO "Sociedad Detras" perl $QA $FU --repo fixtures-geo/geo-bien $QG
+espera "SEO-21 · la cascara en ingles: AVISO"          AVISO SEO-21 perl $QA $FU --repo fixtures-geo/geo-mal $QG
+texto  "SEO-21 · vacia y sin vuelta, contadas"         SI "1 con menos del 40 % de las palabras, 0 sin 200, 1 sin vuelta" perl $QA $FU --repo fixtures-geo/geo-mal $QG
+espera "SEO-21 · traducida y con vuelta: PASA"         PASA  SEO-21 perl $QA $FU --repo fixtures-geo/geo-bien $QG
+espera "SEO-21 · sin hreflang: PASA (decide SEO-17)"   PASA  SEO-21 perl $QA $FU --repo "$FSEO05/alineado" $QG
+
+echo
 
 echo
 echo "== LA LENTE DE MEDICION · lo que decide si el sitio cumple y si mide"

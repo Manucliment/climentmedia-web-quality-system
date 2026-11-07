@@ -543,7 +543,7 @@ my $TECHO_RECORTO = 0;    # 1 = fue --max-urls quien corto, no otra cosa
 #  apunta aqui, su hallazgo saldra sin declarar el recorte: al tocar `alcance()`
 #  hay que mirar esta lista.
 my %POR_PAGINA = map { $_ => 1 } (
-    # SEO-01..14 sobre todas las de la lista · 15/16/17 son del sitio
+    # SEO-01..14, 18 y 19 sobre todas las de la lista · 15/16/17/20/21 son del sitio
     (map { sprintf('SEO-%02d', $_) } 1 .. 14),
     # A11Y-01/02/05/06/07/08 sobre todas las leidas; 03/04 son la PALETA, que
     # sale de la union de las hojas DE ESAS PAGINAS: una hoja que solo usa la
@@ -1697,6 +1697,88 @@ my $VACIA_CAR = 40;
 #     Procedencia: 03-contenido-y-seo.md · web-page-standard SKILL.md ·
 #                  09-tipos-de-pagina.md · G4 · G5 · G10 · X3 · X4
 # =============================================================================
+# =============================================================================
+#  GEO · LO QUE UN MOTOR DE RESPUESTAS SACA DE LA PAGINA (7-nov-2026)
+#  SEO-18 a SEO-21. Vienen de un benchmark GEO hecho para una universidad: los
+#  costes de la carrera, todos en un acordeon cerrado; 17 paginas en ingles que
+#  eran cascaras y mandaban a la holandesa; la marca nombrada de dos formas, y
+#  la respuesta de la IA partida entre las dos. Censo antes del check, el 7-nov,
+#  sobre 50 paginas de 10 sitios (HTML servido): 23 cifras que solo estaban
+#  dentro de un <details> cerrado, en 9 paginas (plazos, impuestos, la zona);
+#  0 tablas sin cabecera de 9; 0 alternativas vacias de 10; y dos sitios con su
+#  nombre repartido entre el title, el schema y og:site_name.
+#  Lo que no ven: lo que pinta el JavaScript (un acordeon que no es <details>),
+#  y lo que un motor hace de verdad con un bloque cerrado. Los cuatro AVISAN.
+# =============================================================================
+sub _dec { my $s = shift // ''; return $s if Encode::is_utf8($s); return eval { Encode::decode('UTF-8', $s, Encode::FB_CROAK()) } // $s }
+sub _ent { my $s = shift // ''; $s =~ s/&nbsp;|&#160;|&#xa0;/ /gi; $s =~ s/&amp;/&/g; $s =~ s/&(?:#0*39|apos|rsquo);/'/g; $s =~ s/&(?:#\d+|#x[0-9a-f]+|[a-z][a-z0-9]{1,7});/ /gi; return $s }
+# La clase de una unidad: lo que convierte un numero en un dato que alguien cita.
+sub _clase_unidad {
+    my $x = lc(shift // '');
+    return 'eur' if $x =~ /^(?:€|eur|euros?)$/;
+    return 'pct' if $x eq '%';
+    return $x    if $x eq 'km' || $x eq 'kg';
+    return 'm2'  if $x =~ /^m(?:²|2)$/;
+    return 'h'   if $x =~ /^(?:h|hrs?|horas?|heures?|hours?|uur)$/;
+    return 'min' if $x =~ /^min/;
+    return 'dia' if $x =~ /^(?:d[i\x{ed}]as?|jours?|days?|dagen|dag)$/;
+    return 'sem' if $x =~ /^(?:semanas?|semaines?|weeks?|weken)$/;
+    return 'mes' if $x =~ /^(?:mes|meses|mois|months?|maanden)$/;
+    return 'ano' if $x =~ /^(?:a[\x{f1}n]os?|ans|years?|jaar)$/;
+    return '';
+}
+# Las cifras con unidad de un texto: {"14|dia" => "14 dias", ...}. Un numero
+# suelo (un telefono, un ano, el numero de una calle) no es una cifra que decida.
+# La unidad casa con limite de palabra: la primera pasada del censo contaba
+# «4 an» (de «4 and») como cuatro anos.
+sub cifras_de {
+    my $t = _ent(_dec(shift)); my %v;
+    my $num = sub { my $n = shift; $n =~ tr/,/./; $n =~ s/\.0+$//; return $n };
+    while ($t =~ /(?<![\p{L}\d.,])(\d+(?:[.,]\d+)?)\s?(€|eur(?:os?)?|%|km|kg|m²|m2|h|hrs?|horas?|heures?|hours?|uur|min(?:utos?|utes?)?|d[i\x{ed}]as?|jours?|days?|dagen|dag|semanas?|semaines?|weeks?|weken|mes(?:es)?|mois|months?|maanden|a[\x{f1}n]os?|ans|years?|jaar)(?![\p{L}\d])/gi) {
+        my ($n, $un) = ($1, $2); my $c = _clase_unidad($un); next unless $c;
+        $v{$num->($n).'|'.$c} //= "$n $un";
+    }
+    while ($t =~ /€\s?(\d+(?:[.,]\d+)?)(?!\d)/g) { $v{$num->($1).'|eur'} //= "€$1" }
+    return %v;
+}
+# Parte la region en lo que se ve y lo que queda dentro de un <details> cerrado.
+# El <summary> de un bloque cerrado SE VE; el de uno abierto, todo.
+sub _details_cerrados {
+    my $m = shift // ''; my ($fuera, $pos, @dentro) = ('', 0);
+    while ($m =~ m{<details\b([^>]*)>(.*?)</details>}gsi) {
+        my ($at, $in, $ini, $fin) = ($1, $2, $-[0], $+[0]);
+        $fuera .= substr($m, $pos, $ini - $pos); $pos = $fin;
+        if ($at =~ /\bopen\b/i) { $fuera .= " $in "; next }
+        my ($sum) = $in =~ m{(<summary\b.*?</summary>)}si;
+        $fuera .= ' '.($sum // '').' ';
+        (my $resto = $in) =~ s{<summary\b.*?</summary>}{ }si;
+        push @dentro, $resto;
+    }
+    $fuera .= substr($m, $pos);
+    return ($fuera, @dentro);
+}
+sub _palabras { my $t = _dec(tag_text(shift)); my $n = () = $t =~ /\S*\p{L}\S*/g; return $n }
+sub _norm_nombre { my $s = lc(_ent(_dec(shift))); $s =~ s/\s+/ /g; $s =~ s/^[\s"'«»“”]+|[\s"'«»“”.,;:]+$//g; return $s }
+# Los nombres de organizacion del JSON-LD: solo los nodos de primer nivel (y los
+# de @graph). Uno anidado -el editor, la sociedad que esta detras- es otra
+# entidad, no otra forma del nombre.
+my $RE_ORG = qr/^(?:Organization|Corporation|LocalBusiness|OnlineStore|Store|ProfessionalService|MedicalBusiness|MedicalClinic|MedicalOrganization|Dentist|Physician|EducationalOrganization|NGO|\w+(?:Business|Organization|Store))$/;
+sub _nombres_org {
+    my $h = shift; my @n;
+    for my $raw ($h =~ m{<script[^>]*application/ld\+json[^>]*>(.*?)</script>}gsi) {
+        my $j = eval { JSON::PP->new->utf8->relaxed->decode($raw) } // eval { JSON::PP->new->relaxed->decode($raw) };
+        next unless ref $j;
+        my @nodos = ref $j eq 'ARRAY' ? @$j : ($j);
+        @nodos = map { ref $_ eq 'HASH' && ref $_->{'@graph'} eq 'ARRAY' ? ($_, @{ $_->{'@graph'} }) : ($_) } @nodos;
+        for my $o (grep { ref $_ eq 'HASH' } @nodos) {
+            my @t = ref $o->{'@type'} eq 'ARRAY' ? @{ $o->{'@type'} } : ($o->{'@type'} // '');
+            next unless grep { /$RE_ORG/ } @t;
+            push @n, $o->{name} if defined $o->{name} && !ref $o->{name} && $o->{name} =~ /\S/;
+        }
+    }
+    return @n;
+}
+
 sub lente_seo {
     unless ($NET_OK) {
         nv(lente=>'SEO', id=>'SEO-00', titulo=>'la lente entera',
@@ -1707,6 +1789,9 @@ sub lente_seo {
     my (@titles, %ogimg, @sin_ogalt, @sin_twimg, @sin_can, @sin_desc, @sin_h1, @multi_h1,
         @img_sin_alt, @sin_jsonld, @sin_bread, @solo_js, @desc_corta, @title_largo, @sin_title);
     my @meta3;   # [url, title, h1, description] -> SEO-02b y SEO-05/05b
+    # SEO-18 a SEO-20 (7-nov-2026, ver encima de esta lente)
+    my (@cifra_cerrada, @tabla_sin_th, %nom_og, %nom_org, %nom_suf);
+    my ($n_cerrados, $n_tablas) = (0, 0);
 
     # 🔴 EL TEXTO QUE SALE DE LA PAGINA LLEGA EN BYTES, Y STDOUT YA CODIFICA.
     #    Con `use utf8` (226) los literales de este fichero son CARACTERES y la
@@ -1847,6 +1932,37 @@ sub lente_seo {
         my ($ruta_b) = $u =~ m{^https?://[^/?#]+(/[^?#]*)?}; $ruta_b //= '/';
         push @sin_bread,  $u if $tipo ne 'home' && $ruta_b ne '/' && $ld !~ /BreadcrumbList/ && !$noindex;
 
+        # SEO-18 · la cifra que solo esta dentro de un bloque cerrado. SEO-19 · la tabla sin una sola celda <th>:
+        # nadie (ni un lector de pantalla ni el que convierte la pagina en texto) sabe cual es la fila de cabecera.
+        # <thead> es como lo escribe la plantilla del benchmark; lo que se mide es lo que lo hace legible, el <th>.
+        {
+            my ($mreg) = $h =~ m{<main\b[^>]*>(.*?)</main>}si; $mreg //= $h;
+            my ($fuera, @dentro) = _details_cerrados($mreg);
+            $n_cerrados += @dentro;
+            my %den; for my $d (@dentro) { my %c = cifras_de(tag_text($d)); @den{keys %c} = values %c }
+            if (%den) {
+                my %fue = cifras_de(tag_text($fuera));
+                my @solo = sort grep { !exists $fue{$_} } keys %den;
+                push @cifra_cerrada, "$u (".scalar(@solo).': '.join(', ', map { $den{$_} } @solo[0..($#solo>3?3:$#solo)]).')' if @solo;
+            }
+            my ($nt, $ns) = (0, 0);
+            for my $tb ($mreg =~ m{(<table\b.*?</table>)}gsi) {
+                my ($ab) = $tb =~ /^(<table\b[^>]*>)/i;
+                next if ($ab // '') =~ /\brole\s*=\s*["']?(?:presentation|none)\b/i;
+                $nt++; $ns++ unless $tb =~ /<th\b/i;
+            }
+            $n_tablas += $nt;
+            push @tabla_sin_th, "$u ($ns de $nt)" if $ns;
+        }
+        # SEO-20 · las formas del nombre: og:site_name, el name de la organizacion del JSON-LD y el final del title.
+        {
+            my $og = meta_of($h, 'og:site_name');
+            if (defined $og && $og =~ /\S/) { my $k = _norm_nombre($og); $nom_og{$k}{n}++; $nom_og{$k}{ver} //= _ent(_dec($og)) }
+            for my $on (_nombres_org($h)) { my $k = _norm_nombre($on); $nom_org{$k}{n}++; $nom_org{$k}{ver} //= $on }
+            my @trozos = split /\s+[|\x{2013}\x{2014}\x{b7}-]\s+|\s*::\s*/, _ent(_dec($t));
+            if (@trozos >= 2 && $trozos[-1] =~ /\p{L}/) { my $k = _norm_nombre($trozos[-1]); $nom_suf{$k}{n}++; $nom_suf{$k}{ver} //= $trozos[-1] }
+        }
+
         # G10 · el HTML SERVIDO frente al DOM. produto.html de site-b pesa 1.503
         # bytes en vivo: mismo <title> para 52 SKU, sin h1, sin JSON-LD. El JS lo
         # arregla — y los scrapers de WhatsApp y LinkedIn no ejecutan JS.
@@ -1882,7 +1998,7 @@ sub lente_seo {
         }
     }
 
-    alcance('SEO', [@leidas_seo], undef, 'SEO-01..14 sobre todas las leidas de la lista · SEO-15/16/17 son del sitio');
+    alcance('SEO', [@leidas_seo], undef, 'SEO-01..14, 18 y 19 sobre todas las leidas de la lista · SEO-15/16/17/20/21 son del sitio');
     @no_leidas_seo and nv(lente=>'SEO', id=>'SEO-0x', titulo=>'paginas que no he podido leer',
                           donde=>join(' · ', @no_leidas_seo[0..($#no_leidas_seo>3?3:$#no_leidas_seo)]),
                           ev=>[@no_leidas_seo],
@@ -2192,6 +2308,51 @@ sub lente_seo {
                      hacer=>'title, canonical, h1, og y JSON-LD tienen que estar en el HTML servido: los scrapers de WhatsApp y LinkedIn no ejecutan JS')
              : pasa(lente=>'SEO', id=>'SEO-14', titulo=>'el HTML servido ya trae la pagina');
 
+    # SEO-18 / SEO-19 / SEO-20 · D-065 puntos 4 y 7 (ver encima de esta lente)
+    @cifra_cerrada ? aviso(lente=>'SEO', id=>'SEO-18', titulo=>'cifra que solo esta dentro de un bloque cerrado',
+                           donde=>join(' · ', @cifra_cerrada[0..($#cifra_cerrada>2?2:$#cifra_cerrada)]),
+                           ev=>[@cifra_cerrada],
+                           dato=>scalar(@cifra_cerrada)." pagina(s) · $n_cerrados <details> cerrado(s) en total",
+                           umbral=>'la cifra que decide (precio, plazo, porcentaje, zona) sale tambien en el texto que se ve',
+                           proc=>'D-065 punto 4 · benchmark GEO: los costes de la carrera, todos dentro de un acordeon cerrado',
+                           hacer=>'una frase visible con la cifra, o una tabla; la pregunta frecuente se queda como esta. Una pregunta cerrada es normal: lo que no vale es que el dato solo viva ahi')
+                   : pasa(lente=>'SEO', id=>'SEO-18', titulo=>'ninguna cifra vive solo dentro de un bloque cerrado',
+                          dato=>"$n_cerrados <details> cerrado(s) mirados · lo que pinta el JS no se ve");
+    @tabla_sin_th ? aviso(lente=>'SEO', id=>'SEO-19', titulo=>'tabla sin celda de cabecera (<th>)',
+                          donde=>join(' · ', @tabla_sin_th[0..($#tabla_sin_th>2?2:$#tabla_sin_th)]),
+                          ev=>[@tabla_sin_th], dato=>"$n_tablas tabla(s) mirada(s)",
+                          umbral=>'cada tabla de datos con su fila (o columna) de cabecera en <th>; role="presentation" no cuenta',
+                          proc=>'D-065 punto 4 · la 52 de la plantilla GEO (tablas con <thead>), escrita sin instrumento',
+                          hacer=>'la primera fila en <thead> con <th scope="col">: es como un motor (y un lector de pantalla) sabe que dice cada columna')
+                  : pasa(lente=>'SEO', id=>'SEO-19', titulo=>'toda tabla lleva su cabecera en <th>', dato=>"$n_tablas tabla(s)");
+    {
+        # Cuenta como forma del nombre: todo og:site_name, todo name de organizacion y el final del title que
+        # se repite en dos paginas o mas Y comparte una palabra con uno de los otros dos (sin ellos, el que se
+        # repite). Un final de title que es el lugar o la categoria no es el nombre.
+        my %pal; for my $k (keys %nom_og, keys %nom_org) { $pal{$_} = 1 for grep { length($_) >= 3 } split /[^\p{L}\d]+/, $k }
+        my %forma;
+        for my $k (keys %nom_og)  { $forma{$k}{og}  = $nom_og{$k}{n};  $forma{$k}{ver} //= $nom_og{$k}{ver} }
+        for my $k (keys %nom_org) { $forma{$k}{org} = $nom_org{$k}{n}; $forma{$k}{ver} //= $nom_org{$k}{ver} }
+        for my $k (keys %nom_suf) {
+            next unless $nom_suf{$k}{n} >= 2 || exists $forma{$k};
+            next if %pal && !grep { $pal{$_} } split /[^\p{L}\d]+/, $k;
+            $forma{$k}{title} = $nom_suf{$k}{n}; $forma{$k}{ver} //= $nom_suf{$k}{ver};
+        }
+        my @f = sort { ($forma{$b}{og}//0)+($forma{$b}{org}//0)+($forma{$b}{title}//0) <=> ($forma{$a}{og}//0)+($forma{$a}{org}//0)+($forma{$a}{title}//0) || $a cmp $b } keys %forma;
+        my $dice = join(' · ', map { my $x = $forma{$_}; "«$x->{ver}» (".join(', ', map { "$_ en $x->{$_}" } grep { $x->{$_} } qw(og org title)).')' } @f);
+        $dice =~ s/\bog en/og:site_name en/g; $dice =~ s/\borg en/schema en/g;
+        if (@f > 1) {
+            aviso(lente=>'SEO', id=>'SEO-20', titulo=>'la marca se nombra de mas de una forma',
+                  dato=>scalar(@f)." formas: $dice",
+                  umbral=>'og:site_name, el name de la organizacion del schema y el final del title dicen lo mismo',
+                  proc=>'D-065 punto 7 · benchmark GEO: la IA nombraba a la universidad de dos formas y partia su propia senal',
+                  hacer=>'una sola forma en los tres sitios. Si la larga es la de la ficha de Google a proposito, que sea esa en los tres; la corta, en el texto');
+        } else {
+            pasa(lente=>'SEO', id=>'SEO-20', titulo=>'la marca se nombra de una sola forma',
+                 dato=>(@f ? $dice : 'sin og:site_name, organizacion ni final de title repetido: nada que comparar'));
+        }
+    }
+
     # robots / sitemap
     my $rb = fetch("$ROOT/robots.txt");
     if ($rb->{code} != 200) {
@@ -2235,6 +2396,54 @@ sub lente_seo {
        umbral=>'decidir y DECLARAR: o el sitio es monolingue a proposito, o hay hreflang reciproco',
        proc=>'PC14 · 0 de 148 paginas nuestras lo ejercitan · site-a.example sirve Belgica solo en frances',
        hacer=>'escribir la decision en el CLAUDE.md del proyecto. Un sitio belga solo en frances es una decision, pero hoy no consta que se tomara');
+
+    # SEO-21 · D-065 punto 5. SEO-17 sigue siendo la DECISION de idiomas (se firma a mano); esto mide lo que se
+    #    publico: cada alternativa del hreflang (no x-default, no ella misma) responde 200, enlaza de vuelta y
+    #    tiene el 40 % de las palabras de su par o mas. En el benchmark, 17 paginas en ingles eran cascaras.
+    my (@hl_mal, @hl_vacia, @hl_vuelta); my ($hl_n, $hl_tope) = (0, 0);
+    my $nrm = sub { my $x = lc(shift // ''); $x =~ s/#.*//; $x =~ s{/$}{}; return $x };
+    for my $u (@leidas_seo) {
+        my $r = fetch($u); my $h = sin_com($r->{body} // '');
+        next unless $h =~ /hreflang=/i;
+        my %yo = map { $nrm->($_) => 1 } grep { defined } ($u, $r->{url});
+        my ($mreg) = $h =~ m{<main\b[^>]*>(.*?)</main>}si; my $w = _palabras($mreg // $h);
+        for my $l ($h =~ /(<link\b[^>]*>)/gi) {
+            my $hl = attr($l, 'hreflang') // next; my $rel = attr($l, 'rel') // '';
+            next unless $rel =~ /\balternate\b/i && $hl !~ /^x-default$/i;
+            my $alt = abs_url(attr($l, 'href'), $r->{url} // $u) // next;
+            next if $yo{$nrm->($alt)};
+            if ($hl_n >= 60) { $hl_tope++; next }
+            $hl_n++;
+            my $ra = fetch($alt);
+            if (($ra->{code} // 0) != 200) { push @hl_mal, "$u -> $alt ($hl, HTTP ".($ra->{code} // 0).')'; next }
+            my $ha = sin_com($ra->{body} // '');
+            my $vuelve = 0;
+            for my $la ($ha =~ /(<link\b[^>]*>)/gi) {
+                next unless defined attr($la, 'hreflang');
+                my $b = abs_url(attr($la, 'href'), $ra->{url} // $alt);
+                $vuelve = 1, last if defined $b && $yo{$nrm->($b)};
+            }
+            push @hl_vuelta, "$u -> $alt ($hl)" unless $vuelve;
+            my ($ma) = $ha =~ m{<main\b[^>]*>(.*?)</main>}si; my $wa = _palabras($ma // $ha);
+            push @hl_vacia, "$u -> $alt ($hl: $wa palabras de $w, ".int(100 * $wa / $w).' %)' if $w && $wa < 0.4 * $w;
+        }
+    }
+    my $tope = $hl_tope ? " · $hl_tope sin pedir (tope de 60)" : '';
+    if (!$hl_n && !$hl_tope) {
+        pasa(lente=>'SEO', id=>'SEO-21', titulo=>'hreflang: ninguna alternativa que medir',
+             dato=>'sin hreflang hacia otra pagina · la decision de idiomas es SEO-17');
+    } elsif (@hl_mal || @hl_vacia || @hl_vuelta) {
+        my @todo = (@hl_vacia, @hl_mal, map { "$_ sin enlace de vuelta" } @hl_vuelta);
+        aviso(lente=>'SEO', id=>'SEO-21', titulo=>'hreflang hacia una version que no responde, no vuelve o esta vacia',
+              donde=>join(' · ', @todo[0..($#todo>2?2:$#todo)]), ev=>[@todo],
+              dato=>"$hl_n alternativa(s) pedidas: ".scalar(@hl_vacia).' con menos del 40 % de las palabras, '.scalar(@hl_mal).' sin 200, '.scalar(@hl_vuelta)." sin vuelta$tope",
+              umbral=>'cada alternativa responde 200, enlaza de vuelta con su hreflang y tiene el 40 % de las palabras de su par o mas',
+              proc=>'D-065 punto 5 · benchmark GEO: 17 paginas en ingles eran cascaras que mandaban a la holandesa',
+              hacer=>'una version de otro idioma o se escribe entera o sale del hreflang: una cascara manda la pregunta de ese idioma a una pagina vacia');
+    } else {
+        pasa(lente=>'SEO', id=>'SEO-21', titulo=>'hreflang: cada alternativa responde, vuelve y tiene texto',
+             dato=>"$hl_n alternativa(s) pedidas$tope");
+    }
 }
 
 # =============================================================================

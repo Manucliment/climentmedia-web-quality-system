@@ -1,0 +1,8 @@
+SEO-18 a SEO-21 de qa-master (7-nov-2026, D-065 puntos 4, 5 y 7 del benchmark GEO).
+geo-mal avisa en los cuatro: una cifra (14 dias) que solo vive dentro de un <details> cerrado, una tabla sin <th>,
+la marca de dos formas («Marca Real» en og:site_name y schema, «Marca» al final del title en tres paginas) y una
+version en ingles que es una cascara sin enlace de vuelta.
+geo-bien pasa los cuatro con lo que NO debe contar: la cifra del <summary> cerrado (24 h) se ve, la de un <details
+open> tambien, la que sale fuera no cuenta, la tabla role=presentation no cuenta, la organizacion anidada (la
+sociedad) no es otra forma del nombre, y «Madrid» al final de dos titles es el lugar, no el nombre.
+Las genera fixturas-geo.cjs (scratchpad de la sesion del 7-nov); se editan aqui a mano si cambian.
