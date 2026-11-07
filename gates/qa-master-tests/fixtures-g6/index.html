@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rejillas de un elemento · banco de EST-07</title>
+<style>
+  body { margin: 0; font: 16px/1.5 sans-serif; }
+  main { width: 700px; padding: 20px; }
+  .caja { width: 600px; margin: 0 0 40px; }
+  .hijo { width: 200px; height: 50px; background: #ddd; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Rejillas de un elemento</h1>
+  <!-- 1 · NO cuenta: un parrafo con «grid» en la clase y un enlace en bloque dentro (el caso del 7-nov) -->
+  <p class="grid__more caja"><a href="/cursos/" style="display:block;width:250px">Ver todos los cursos</a></p>
+  <!-- 2 · SI cuenta: grid de dos pistas con un hijo -->
+  <div class="grid caja" style="display:grid;grid-template-columns:1fr 1fr"><div class="hijo">uno</div></div>
+  <!-- 3 · SI cuenta: lista en dos columnas con un elemento. Sin break-inside, Chrome parte el
+       elemento de 50 px entre las dos columnas (25 + 25) y lo mide de 600 px: llena las dos, y
+       ese no es el caso. Uno de una linea no se parte, y break-inside:avoid es lo mismo. -->
+  <ul class="col-2 caja" style="column-count:2;padding:0;margin-left:0"><li style="height:50px;break-inside:avoid">uno</li></ul>
+  <!-- 4 · SI cuenta: flex en fila con un hijo -->
+  <div class="cards caja" style="display:flex"><div class="hijo">uno</div></div>
+  <!-- 5 · NO cuenta: flex en columna con un hijo (apila, no reparte en columnas) -->
+  <div class="cards caja" style="display:flex;flex-direction:column"><div class="hijo">uno</div></div>
+  <!-- 6 · NO cuenta: grid de una sola pista -->
+  <div class="grid caja" style="display:grid;grid-template-columns:1fr"><div class="hijo">uno</div></div>
+</main>
+</body>
+</html>

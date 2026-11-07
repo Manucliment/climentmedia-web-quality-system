@@ -1,0 +1,26 @@
+Banco de la «rejilla con 1 elemento» de EST-07 (snippet de qa-master, bucle G6), 7-nov-2026.
+
+El bucle cogia todo [class*="grid"] y contaba como rejilla de un elemento cualquier caja con un
+solo hijo 1,6 veces mas estrecho que ella. En una portada cogio un <p class="grid__more">
+(display: block, 578 px) con su enlace de 250 px dentro: un parrafo no es una rejilla, y el umbral
+de EST-07 dice «ninguna rejilla de >=2 columnas con 1 hijo». Ahora solo cuenta una caja que
+reparte en columnas: grid con >=2 pistas, flex en fila o column-count >=2.
+
+index.html tiene seis cajas de 600 px con un hijo de 200 px:
+  1 · <p class="grid__more">, en bloque ............ no cuenta (antes, si)
+  2 · grid de dos pistas ............................ cuenta
+  3 · ul con column-count: 2 ........................ cuenta
+  4 · flex en fila .................................. cuenta
+  5 · flex en columna ............................... no cuenta (antes, si)
+  6 · grid de una pista .............................. no cuenta (antes, si)
+Con el snippet de hoy, listas_de_uno = 3; con el de antes, 6. Medido el 7-nov en el Chrome del
+servidor, a 1298 (innerWidth 1298), en modo candidato: 3 y 6.
+
+La primera medida dio 2 y 5, y el roto era la fixtura: un <li> de 50 px en una lista de dos
+columnas lo parte Chrome en dos trozos de 25, uno en cada columna, y lo mide de 600 px. Llena las
+dos columnas, asi que no es una rejilla de un elemento. Por eso lleva break-inside:avoid (un
+elemento de una sola linea tampoco se parte).
+
+Se mide en el Chrome del servidor (Windows recorta el ancho), sirviendo esta carpeta:
+  perl gates/qa-master.pl --snippet > qa.js
+  node gates/run-gate.js http://127.0.0.1:<puerto>/ 1298 900 qa.js | tail -n +2   -> "listas_de_uno": 3

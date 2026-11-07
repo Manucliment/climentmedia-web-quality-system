@@ -893,6 +893,13 @@ espera "contenedor de 3,4 pantallas (regla de la puerta)" FALLO EST-06    perl $
 texto  "...y cae POR el contenedor, no por otra cosa"     SI "contenedor > 3 pantallas: 1" perl $QA http://site-c.example/ --solo estructura --dom dom-contenedor-gigante.json --cache "$CACHE"
 espera "measure-screens no corrio: no hay veredicto"      NOVERIF EST-06  perl $QA http://site-c.example/ --solo estructura --dom dom-densidad-sin-medir.json --cache "$CACHE"
 texto  "el snippet lleva dentro la regla de la puerta"    SI "tramoSinParada" perl $QA --snippet
+# 7-nov-2026 · UN PARRAFO NO ES UNA REJILLA. La «rejilla con 1 elemento» de EST-07 contaba
+#    cualquier [class*="grid"] con un hijo estrecho, y en una portada cogio un
+#    <p class="grid__more"> en bloque. El umbral dice «de >=2 columnas»: ahora solo cuenta
+#    una caja que reparte en columnas. Su comportamiento se mide en Chrome con
+#    fixtures-g6/ (seis cajas: 3 cuentan; con el snippet de antes, 6), ver su POR-QUE.txt.
+texto  "EST-07 · una rejilla de 1 tiene que ser de columnas" SI "if (deColumnas && cols === 1 && hijos.length === 1" perl $QA --snippet
+texto  "...y lo mira por el display, no por la clase"      SI "/grid/.test(cs.display) ? cs.gridTemplateColumns" perl $QA --snippet
 espera "hover sin fondo declarado: no se acusa"           NOVERIF A11Y-03b perl $QA http://site-a.example/ --solo a11y --cache "$CACHE"
 
 echo

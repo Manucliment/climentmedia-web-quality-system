@@ -6701,7 +6701,15 @@ sub snippet_js_plantilla {
       const ultima = filas[claves[claves.length-1]].length;
       if (ultima < cols) cojas++;
     }
-    if (cols === 1 && hijos.length === 1 && g.getBoundingClientRect().width > hijos[0].getBoundingClientRect().width * 1.6) unos++;
+    // «rejilla con 1 elemento»: una rejilla DE COLUMNAS (grid con >=2 pistas, flex en fila o
+    // column-count >=2) con un solo hijo. 7-nov-2026: contaba cualquier elemento con «grid» en la
+    // clase, y en una portada cogio un <p class="grid__more"> (display: block, 578 px) con su
+    // enlace de 250 px dentro: un parrafo no es una rejilla, y el umbral dice «de >=2 columnas».
+    const cs = getComputedStyle(g);
+    const deColumnas = /grid/.test(cs.display) ? cs.gridTemplateColumns.split(/\s+/).filter(x => x && x !== 'none').length >= 2
+                     : /flex/.test(cs.display) ? !/column/.test(cs.flexDirection)
+                     : (parseInt(cs.columnCount, 10) || 1) >= 2;
+    if (deColumnas && cols === 1 && hijos.length === 1 && g.getBoundingClientRect().width > hijos[0].getBoundingClientRect().width * 1.6) unos++;
     for (const k of claves) {
       const hs = filas[k].map(e => e.getBoundingClientRect().height);
       if (hs.length >= 2 && Math.max(...hs) > Math.min(...hs) * 1.25) { alturas++; break; }
