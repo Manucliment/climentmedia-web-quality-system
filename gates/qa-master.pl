@@ -5271,7 +5271,18 @@ sub lente_medicion {
                 #    ⚠️ Los generadores NUESTROS (`_gen.ps1`) SIGUEN escaneandose:
                 #       la exclusion es por carpeta de ORIGEN, no por «lo que
                 #       empieza por guion bajo».
+                # 🔴 7-nov-2026 · Y LA EVIDENCIA Y LAS MAQUETAS, por NOMBRE y en lista
+                #    cerrada, por lo mismo que `_migrate/`: no se despliegan. Una hoja de
+                #    `_diseno/` (D-039) emitia el `data-dc-drop` de su herramienta de
+                #    maquetar y una tienda salia FALLO; y al reves, una copia de ANTES en
+                #    `_medicion/` que si leia un atributo absolvia al arbol que sube sin el.
+                #    Fixtures maqueta-interna y lector-en-evidencia, en rojo contra la regla
+                #    de antes. ⚠️ Fuera de la lista, a proposito: `_spec/` (plantillas del
+                #    generador en cinco webs), `_src/`, `_og/` y `_candidato/` (el arbol
+                #    generado), que son codigo o lo que sube.
                 next if $e =~ /^\.|^node_modules$|^_deploy$|^_migrate$/;
+                next if $d eq $opt{repo}
+                     && $e =~ /^_(diseno|design|qa|medicion|seo|cro|notas|tareas|research|archivo|audit-arbol)$/;
                 my $p = "$d/$e";
                 if (-d $p) { push @stack, $p }
                 # 🔴 2-sep-2026 · ENTRA `css`, Y ES UN AGUJERO QUE LLEVABA AQUI DESDE SIEMPRE.

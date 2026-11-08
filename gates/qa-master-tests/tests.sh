@@ -749,6 +749,13 @@ espera "MED-05 · la constante solo escribe: FALLO"        FALLO MED-05 \
 #    los que 4 de los 5 visibles eran de su Elementor.
 texto  "MED-05 · no acusa al HTML del cliente (_migrate)"  NO "_migrate/origen" \
        perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo medicion --sin-recibo --cache "$CACHE"
+# 🔴 7-nov-2026 · Y LAS CARPETAS DE EVIDENCIA Y MAQUETAS, en las dos direcciones. Una hoja de
+#    `_diseno/` emitia `data-dc-drop` (su herramienta de maquetar) y salia FALLO en una tienda; y
+#    una copia de ANTES en `_medicion/` que si leia el atributo absolvia al arbol que sube sin el.
+espera "MED-05 · una maqueta de _diseno/ no se emite: PASA" PASA  MED-05 \
+       perl $QA https://climentmedia.com --repo fixtures-med05/maqueta-interna --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-05 · un lector en _medicion/ no absuelve: FALLO" FALLO MED-05 \
+       perl $QA https://climentmedia.com --repo fixtures-med05/lector-en-evidencia --candidato --una-sola --solo medicion --sin-recibo
 espera "404 malo servido en local · sin h1 ni enlaces"             FALLO EST-03  perl $QA $U404 --solo estructura
 espera "bc · styles.css del repo NO desplegado (G11)"     FALLO EST-09  perl $QA http://site-d.example/ --repo $REPOS/site-d-web --solo estructura --sin-recibo --cache "$CACHE"
 # 🔴 5-nov-2026 · EST-09 PIDE LA URL SELLADA, COMO EL NAVEGADOR. Una tienda servia
