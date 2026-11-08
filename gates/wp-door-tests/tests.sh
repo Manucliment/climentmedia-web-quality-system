@@ -5,6 +5,8 @@
 # escribe un fichero «estado» en vez de una base de datos. Cada caso mira el CIERRE, el código de salida y lo que pasó
 # en el host (qué modos se llamaron, en qué estado quedó), no solo lo que la puerta dice.
 set -u
+# Con un LANG UTF-8, que es como corren los chats: con LANG vacío este banco daba verde y la puerta decía PASA con rojos.
+unset LC_ALL LC_CTYPE; export LANG=es_ES.UTF-8
 AQUI=$(cd "$(dirname "$0")" && pwd)
 PUERTA="${WP_DOOR:-$AQUI/../wp-door.sh}"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
@@ -183,6 +185,37 @@ SAL=$(bash "$PUERTA" "$R" "../t1" --escribir 2>&1); EX=$?
 caso "nombre de tanda con «..»: uso (64)" "$( [ $EX = 64 ] && echo 1 || echo 0)" "exit $EX"
 SAL=$(bash "$PUERTA" "$R" t1 --escribir --volver 2>&1); EX=$?
 caso "--escribir y --volver a la vez: uso (64)" "$( [ $EX = 64 ] && echo 1 || echo 0)" "exit $EX"
+
+# 8-nov: en Git Bash, con un LANG UTF-8, grep, sed y awk no casan un 🔴 escrito en el patrón: la puerta contaba 0 rojos y
+# cerraba en PASA con la tanda en rojo. Las tres formas medidas: un rojo que sigue tras aplicar da FALLA en todas.
+i=0
+for L in es_ES.UTF-8 C.UTF-8 ""; do
+  i=$((i+1)); nuevo "locale-$i" 0 no-arregla
+  SAL=$(LANG="$L" bash "$PUERTA" "$R" t1 --escribir 2>&1); EX=$?
+  caso "un 🔴 que sigue tras aplicar, con LANG=«$L»: FALLA, lo cuenta y deshace" "$( [ $EX = 1 ] && dice 'admite 0' && dice 'VUELTO' && [ "$(estado)" = viejo ] && echo 1 || echo 0)" "exit $EX · $(tail -1 <<<"$SAL")"
+done
+
+# Un shell en el que el rojo no se cuenta no puede cerrar en PASA: el testigo para antes de tocar el host.
+export GREP_REAL; GREP_REAL=$(command -v grep)
+mkdir -p "$T/grep-ciego"
+cat > "$T/grep-ciego/grep" <<'EOF'
+#!/usr/bin/env bash
+for a in "$@"; do
+  case "$a" in *$'\xF0\x9F\x94\xB4'*) case " $* " in *" -c "*) echo 0 ;; esac; exit 1 ;; esac
+done
+exec "$GREP_REAL" "$@"
+EOF
+chmod +x "$T/grep-ciego/grep"
+nuevo testigo; SAL=$(PATH="$T/grep-ciego:$PATH" bash "$PUERTA" "$R" t1 --escribir 2>&1); EX=$?
+caso "un shell que no cuenta el 🔴: NO MEDIDO (2) y el host ni se toca" "$( [ $EX = 2 ] && dice 'no cuenta' && [ "$(llamadas)" = '(ninguna)' ] && [ "$(estado)" = "(sin tocar)" ] && echo 1 || echo 0)" "exit $EX · $(llamadas) · $(tail -1 <<<"$SAL")"
+
+# 8-nov: GNU tar lee «C:/…» como host:ruta, y scp igual. Solo se puede dar así en Git Bash.
+if command -v cygpath >/dev/null 2>&1; then
+  nuevo ruta-win; SAL=$(bash "$PUERTA" "$(cygpath -m "$R")" t1 2>&1); EX=$?
+  caso "repo dado como C:/…: abre el paquete, lo sube y ensaya" "$( [ $EX = 0 ] && dice 'CIERRE: ENSAYO' && [ "$(llamadas)" = '--medir' ] && echo 1 || echo 0)" "exit $EX · $(tail -1 <<<"$SAL")"
+else
+  caso "repo dado como C:/… (solo en Git Bash: aquí no aplica)" 1
+fi
 
 echo "OK $ok · MAL $mal"
 [ "$mal" = 0 ]

@@ -65,6 +65,8 @@ done
 [ "$ESCRIBIR" = 1 ] && [ "$VOLVER" = 1 ] && uso
 [ -n "$SIN_PROBAR" ] && [ "$ESCRIBIR" = 0 ] && { echo "--sin-probar-volver va con --escribir" >&2; exit 64; }
 [[ "$TANDA" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || { echo "nombre de tanda no válido: $TANDA (letras, números, . _ -)" >&2; exit 64; }
+# 8-nov-2026: GNU tar y scp leen «C:/…» como host:ruta. En Git Bash, la ruta de Windows pasa a /c/….
+command -v cygpath >/dev/null 2>&1 && REPO=$(cygpath -u "$REPO")
 
 SSH="${WP_SSH:-ssh}"; SCP="${WP_SCP:-scp}"; LINT="${WP_PHP_LINT:-php -l}"
 REL="_deploy/wp/$TANDA"; DIR="$REPO/$REL"; APR="$REPO/_deploy/wp/$TANDA.aprobado"
@@ -84,6 +86,15 @@ cierre() { # estado motivo [exit]
   if [ -z "$ex" ]; then case "$est" in PASA|ENSAYO) ex=0 ;; FALLA) ex=1 ;; *) ex=2 ;; esac; fi
   exit "$ex"
 }
+
+# Lo medido: solo las líneas OK y 🔴, sin horas ni fechas (la vuelta se compara con el antes línea a línea).
+# 8-nov-2026: en Git Bash, con un LANG UTF-8 (el de los chats), grep, sed y awk no casan un carácter de fuera del BMP
+# escrito en el patrón: el 🔴 contaba 0 y la puerta cerraba en PASA con la tanda en rojo. Se busca por sus bytes, con
+# LC_ALL=C solo en estas órdenes (uno global viajaría por ssh al host). `grep -P` no vale: con LANG vacío no arranca.
+ROJO=$'\xF0\x9F\x94\xB4'
+norma() { LC_ALL=C grep -E "^[[:space:]]*(OK|$ROJO)" "$1" | LC_ALL=C sed -E 's/^[[:space:]]+//; s/[0-9]{4}-[0-9]{2}-[0-9]{2}([ T][0-9]{2}:[0-9]{2}(:[0-9]{2})?)?/<fecha>/g; s/\b[0-9]{1,2}:[0-9]{2}(:[0-9]{2})?\b/<hora>/g'; }
+rojos() { norma "$1" | LC_ALL=C grep -c "^$ROJO"; }
+lineas_rojas() { norma "$1" | LC_ALL=C grep "^$ROJO" | LC_ALL=C sort -u; }
 
 # ── 1. el contrato, aquí ─────────────────────────────────────────────────────
 [ -d "$REPO/.git" ] || [ -f "$REPO/.git" ] || { echo "no es un repo git: $REPO" >&2; exit 64; }
@@ -136,6 +147,11 @@ fi
 bash -n "$PAQ/tanda.sh" 2>"$OUT/bash-n.txt" || { rm -rf "$PAQ"; cierre "FALLA" "bash -n de tanda.sh: $(head -1 "$OUT/bash-n.txt")"; }
 rm -rf "$PAQ"
 
+# Testigo del marcador, antes de tocar el host: un shell en el que el rojo no se cuenta no puede cerrar en PASA.
+printf '   OK una\n   %s dos\n' "$ROJO" > "$OUT/testigo.txt"
+[ "$(rojos "$OUT/testigo.txt")" = 1 ] || cierre "NO MEDIDO" "en este shell la puerta no cuenta las líneas en rojo (${OUT#$REPO/}/testigo.txt)" 2
+rm -f "$OUT/testigo.txt"
+
 # ── 3. el cerrojo, en el host ────────────────────────────────────────────────
 CERR="$WP_TMP/wp-door-$NOMBRE.cerrojo"
 rem() { "$SSH" -n "$WP_HOST" "$1"; }
@@ -160,15 +176,12 @@ for f in $(git -C "$REPO" ls-tree -r --name-only "HEAD:$REL" | grep -E '\.php$')
 done
 
 corre() { rem "cd '$R' && TANDA_DIR='$R' bash tanda.sh $1"; }
-# Lo medido: solo las líneas OK y 🔴, sin horas ni fechas (la vuelta se compara con el antes línea a línea).
-norma() { grep -E '^[[:space:]]*(OK|🔴)' "$1" | sed -E 's/^[[:space:]]+//; s/[0-9]{4}-[0-9]{2}-[0-9]{2}([ T][0-9]{2}:[0-9]{2}(:[0-9]{2})?)?/<fecha>/g; s/\b[0-9]{1,2}:[0-9]{2}(:[0-9]{2})?\b/<hora>/g'; }
-rojos() { norma "$1" | grep -c '^🔴'; }
 medir() { # etiqueta → OUT/<etiqueta>.txt; NO MEDIDO si no dio ni una línea
   corre --medir > "$OUT/$1.txt" 2>&1
   [ -n "$(norma "$OUT/$1.txt")" ] || return 1
   return 0
 }
-rojos_nuevos() { comm -13 <(norma "$OUT/antes.txt" | grep '^🔴' | sort -u) <(norma "$1" | grep '^🔴' | sort -u); }
+rojos_nuevos() { LC_ALL=C comm -13 <(lineas_rojas "$OUT/antes.txt") <(lineas_rojas "$1"); }
 
 if [ "$VOLVER" = 1 ]; then
   corre --volver > "$OUT/volver.txt" 2>&1; ev=$?
