@@ -310,7 +310,7 @@ texto() {
   local eti="$1" quiero="$2" lit="$3"; shift 3
   sin_medir "$eti" "$@" && return 0
   local out; out="$("$@" 2>&1)"
-  local hay=NO; printf '%s' "$out" | grep -qF -- "$lit" && hay=SI
+  local hay=NO; printf '%s' "$out" | LC_ALL=C grep -qF -- "$lit" && hay=SI   # bytes: con un LANG UTF-8 no ve un emoji de fuera del BMP
   if [ "$hay" = "$quiero" ]; then
     printf '  OK    %-46s %s "%s"\n' "$eti" "$quiero" "$lit"; ok=$((ok+1))
   else

@@ -20,6 +20,9 @@
 #  Los bancos lentos se saltan con `--rapido`.
 # =============================================================================
 set -u
+# Con un LANG UTF-8, el de los chats que usan las puertas. Con LANG vacío, grep casa un emoji de fuera del BMP y con UTF-8
+# no (Git Bash): la puerta de WordPress decía PASA con rojos y los bancos daban verde (8-nov-2026).
+unset LC_ALL LC_CTYPE; export LANG=es_ES.UTF-8
 cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 REF="$(pwd)"
 RAPIDO=0
