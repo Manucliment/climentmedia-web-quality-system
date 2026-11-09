@@ -3186,6 +3186,30 @@ espera "MED-09 · portugues, «doze meses», PASA"           PASA  MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-pt --candidato --una-sola --solo medicion --sin-recibo
 espera "MED-09 · «o tempo necessário» no es plazo: FALLO" FALLO MED-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-pt-sin-plazo --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 9-nov-2026 · LOS ACENTOS, que no casaban nunca: el texto llega en bytes y el patron eran
+#    caracteres. «2 años» y «três meses» salian «sin plazo». Vistos en ROJO antes.
+espera "MED-09 · «durante 2 años», PASA"                  PASA  MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-anos --candidato --una-sola --solo medicion --sin-recibo
+espera "MED-09 · «três meses», PASA"                      PASA  MED-09 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-plazo-tres-meses --candidato --una-sola --solo medicion --sin-recibo
+# 🔴 9-nov-2026 · LOS DIAS. Un plazo real de 30 dias tuvo que escribirse «30 days (about one month)»
+#    para pasar. Los siete primeros, vistos en ROJO contra el gate anterior; el primero lleva la frase real.
+for par in "med-dias-ingles-real|«kept for 30 days», la frase real" "med-dias-es|«durante 30 días»" \
+           "med-dias-fr-letra|«conservées trente jours», en letra" "med-dias-nl|«Dertig dagen … gewist», el plazo delante" \
+           "med-dias-pt|«conservados durante 30 dias»" "med-dias-guion|«90-day retention»" \
+           "med-dias-motivo|«30 días para responderte»: el motivo no le quita el plazo"; do
+  espera "MED-09 · ${par#*|}, PASA" PASA MED-09 \
+         perl $QA https://climentmedia.com --repo "fixtures-lenses/${par%%|*}" --candidato --una-sola --solo medicion --sin-recibo
+done
+#    Y lo que importa de verdad: «dias» sale en una politica para cosas que no son conservar. Cada uno de
+#    estos pasa a PASA si se apaga su barrera (visto uno a uno): añadir la unidad y nada mas los aprobaria.
+for par in "med-dias-prazo-respuesta|«no prazo de 30 dias» es lo que tardas en contestar" \
+           "med-dias-keep-respuesta|«keep … and respond within 30 days»" "med-dias-cookie|la cookie «stored for 30 days»" \
+           "med-dias-desistimiento|«durante 14 días puedes desistir»" "med-dias-habiles|«15 días hábiles» es un tramite" \
+           "med-dias-articulo|«un día» no es un plazo"; do
+  espera "MED-09 · ${par#*|}, FALLO" FALLO MED-09 \
+         perl $QA https://climentmedia.com --repo "fixtures-lenses/${par%%|*}" --candidato --una-sola --solo medicion --sin-recibo
+done
 # 🔴 MED-11 · cada pulsacion de mas era un correo duplicado a la clinica y una
 #    conversion de mas en su cuenta de Ads.
 espera "MED-11 · sin guarda de doble envio, FALLA"       FALLO MED-11 \

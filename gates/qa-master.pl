@@ -5621,7 +5621,7 @@ sub lente_medicion {
         #    Asistente leyendo la regla, con una web en portugues esperando su plazo).
         #    Fixture med-plazo-pt con la frase de esa web y el plazo puesto, visto en
         #    ROJO antes; su negativo, la frase de hoy sin plazo, sigue FALLO.
-        my $NUM = qr/\d+|veinticuatro|vingt-quatre|twenty-four|vinte[- ]e[- ]quatro|una|uno|une|uma|dos|duas|dois|deux|two|tres|tr[eê]s|trois|three|cuatro|quatre|quatro|four|cinco|cinq|five|seis|six|sete|siete|sept|seven|ocho|oito|huit|eight|nueve|nove|neuf|nine|diez|dez|dix|ten|once|onze|eleven|doce|douze|doze|twelve|one|um|un/i;
+        my $NUM = qr/\d+|veinticuatro|vingt-quatre|twenty-four|vinte[- ]e[- ]quatro|una|uno|une|uma|dos|duas|dois|deux|two|tres|tr(?:e|ê|\xc3\xaa|&ecirc;)s|trois|three|cuatro|quatre|quatro|four|cinco|cinq|five|seis|six|sete|siete|sept|seven|ocho|oito|huit|eight|nueve|nove|neuf|nine|diez|dez|dix|ten|once|onze|eleven|doce|douze|doze|twelve|one|um|un/i;
         # 🔴 Y `conserva\w*` NO CASABA CON EL FRANCES, que era justo el idioma del
         #    caso que motivo el arreglo. «conservées» es conserv + e-acentuada, y
         #    `\w` no casa una vocal acentuada en una cadena de bytes: la palabra
@@ -5641,12 +5641,53 @@ sub lente_medicion {
         # 31-oct-2026 · EN INGLES TAMPOCO HABIA PALABRA DISPARADORA. Ninguna era inglesa, asi que la politica de
         #    climentmedia con «we keep them for 12 months» salia «sin plazo». Fixture med-plazo-ingles, visto en ROJO antes.
         my $DISP = qr/durante|pendant|por un plazo|conserv|prazo|bewaar|bewaren|bewaard|gewist|verwijderd|keep|kept|retain|retention|stored/i;
-        my $UNID = qr/mes|meses|ano|anos|año|años|mois|ans|years?|months?|maand|maanden|jaar|jaren/i;
+        my $UNID = qr/mes|meses|a(?:n|ñ|\xc3\xb1|&ntilde;)os?|mois|ans|years?|months?|maand|maanden|jaar|jaren/i;
+        # 9-nov-2026 · LOS DIAS. Un plazo real de 30 dias tuvo que escribirse «30 days (about one month)»
+        #    para pasar: medir meses y años era medir la unidad, no el hecho. Pero «dias» no se puede
+        #    añadir a $UNID: en una politica aparece para cosas que no son conservar. «No prazo de 30 dias»
+        #    es lo que tardas en contestar un derecho, «durante 14 dias» el desistimiento, «stored for 30
+        #    days» una cookie, y un gate que los aceptara daria por bueno un plazo que no existe. Asi que
+        #    los dias van con reglas propias, cada una con su fixture que tiene que seguir en FALLO:
+        #    - sin «prazo» ni «por un plazo» como disparador (ahi van los plazos de respuesta);
+        #    - la unidad en plural: «un dia» no es un plazo, ni «um dia util»; y sin dias habiles (asi se
+        #      cuentan los plazos de tramite, no los de conservacion);
+        #    - entre el disparador y el numero no puede haber una respuesta (el «para responderte» que
+        #      va DESPUES del plazo es el motivo de guardar, y ese vale);
+        #    - pegado a una cookie o a una compra no cuenta.
+        #    Tras un descarte se reintenta desde la letra siguiente: el primer disparador no se come al bueno.
+        # Y LOS ACENTOS. El texto llega en bytes y estos literales son caracteres (`use utf8`): un «días» escrito
+        #    tal cual no casa nunca. Por eso «2 años» y «três meses» salian «sin plazo» desde que se escribieron;
+        #    se vieron al probar «30 días». Fixtures med-plazo-anos y med-plazo-tres-meses, vistas en ROJO antes.
+        my $DISP_DIA = qr/durante|pendant|conserv|bewaar|bewaren|bewaard|gewist|verwijderd|keep|kept|retain|retention|stored/i;
+        my $NUM_DIA  = qr/(?:$NUM|$NUM_NL|catorce|catorze|quatorze|fourteen|veertien|quince|quinze|fifteen|vijftien|veinte|vingt|vinte|twenty|twintig|treinta|trente|trinta|thirty|dertig|sesenta|sessenta|soixante|sixty|zestig|noventa|ninety|negentig)/i;
+        my $DIAS     = qr/\b$NUM_DIA\b(?:\s*(?:d(?:i|í|\xc3\xad|&iacute;)as|jours|days|dagen)|-day)\b(?!\s+(?:h\S{1,8}biles|laborables|\S{1,8}teis|ouvr))/i;
+        my $RESPUESTA = qr/\b(?:respond|r\S{1,8}pond|response|respuesta|resposta|r\S{1,8}ponse|reply|answer|contest|beantwoord|reageren|reactie)/i;
+        my $AJENO    = qr/cookie|desist|withdraw|\br\S{1,8}tract|herroep|annul|cancel|rembours|refund|reembols|devoluc|garant|trial/i;
+        my $plazo_dias = 0;
+        DIAS: for my $re (qr/$DISP_DIA[^.]{0,80}?$DIAS/, qr/$DIAS[^.]{0,80}?$DISP_DIA/) {
+            pos($pol2) = 0;
+            while ($pol2 =~ /$re/g) {
+                my ($ini, $fin) = ($-[0], $+[0]);
+                my $tramo = substr($pol2, $ini, $fin - $ini);
+                my $antes = substr($pol2, $ini > 60 ? $ini - 60 : 0, $ini > 60 ? 60 : $ini);
+                my $luego = substr($pol2, $fin, 40);
+                $luego =~ s/\..*//s;
+                if ($tramo =~ $RESPUESTA || $tramo =~ $AJENO || $luego =~ $AJENO
+                    || $antes =~ /(?:$AJENO)\S*(?:\s+\S+){0,3}\s*$/i) {
+                    pos($pol2) = $ini + 1;
+                    next;
+                }
+                $plazo_dias = 1;
+                last DIAS;
+            }
+        }
+        pos($pol2) = undef;
         ($pol2 =~ /($DISP)[^.]{0,80}\b(?:$NUM|$NUM_NL)\b\s*($UNID)\b/i
-         || $pol2 =~ /\b(?:$NUM|$NUM_NL)\b\s*($UNID)\b[^.]{0,80}($DISP)/i)
+         || $pol2 =~ /\b(?:$NUM|$NUM_NL)\b\s*($UNID)\b[^.]{0,80}($DISP)/i
+         || $plazo_dias)
           ? pasa(lente=>'MEDICION', id=>'MED-09', titulo=>'plazo de conservacion declarado')
           : fallo(lente=>'MEDICION', id=>'MED-09', titulo=>'sin plazo de conservacion de los datos del formulario',
-                  umbral=>'un plazo en meses, escrito, y un borrado que lo cumpla',
+                  umbral=>'un plazo escrito, en dias, meses o años, y un borrado que lo cumpla',
                   proc=>'PC3 · 4 receptores nuestros escriben nombre, telefono, email, IP y texto libre en _leads/*.jsonl: CERO purga y CERO plazo en los cuatro. En site-a y site-d ese texto libre puede ser dato de salud (categoria especial del RGPD)',
                   hacer=>'un plazo en la politica y un cron de purga. Horas de trabajo, y hoy es el riesgo legal mas grande que tenemos');
     }
