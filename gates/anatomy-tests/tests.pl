@@ -21,7 +21,7 @@ my $ROOT = File::Spec->rel2abs(dirname($0) . '/.tmp-anatomy');
 my $TMP  = "$ROOT/gates";
 my $BP   = "$ROOT/blueprint";
 my $MD   = '09-page-types.md';
-my @FICH = qw(anatomy.pl anatomy.tsv qa-master.pl audit-vs-spec.pl structure-gate.js);
+my @FICH = qw(anatomy.pl anatomy.tsv page-types.tsv qa-master.pl audit-vs-spec.pl structure-gate.js);
 my ($OK, $MAL) = (0, 0);
 
 sub fresco {
@@ -91,6 +91,10 @@ caso('B · un .pl deja de leer la tabla', 'no llama a anatomia_cargar', sub {
 caso('C · el bloque del .js se edita a mano', 'no coincide con anatomy.tsv', sub {
     sust('structure-gate.js', "  hub:          ['hero', 'catalogo', 'calificacion', 'cierre'],",
                                "  hub:          ['hero', 'catalogo', 'cierre'],", 1);
+});
+
+caso('C · page-types.tsv cambia y el bloque del .js no', 'no coincide con', sub {
+    sust('page-types.tsv', "plp|listado categoria|", "plp|listado categoria coleccion|", 1);
 });
 
 caso('C · se borra el bloque marcado del .js', 'no tiene el bloque marcado', sub {

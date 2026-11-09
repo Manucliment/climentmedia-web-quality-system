@@ -91,7 +91,7 @@ function inferirTipo () {
 function tipoDeclarado () {
   const el = document.querySelector('[data-tipo]');
   const t = el ? ((el.getAttribute('data-tipo') || '') + '').trim().toLowerCase() : '';
-  return /^[a-z0-9]+$/.test(t) ? t : '';
+  return /^[a-z0-9-]+$/.test(t) ? t : '';
 }
 const TIPO_DECL = tipoDeclarado();
 // 26-sep-2026 · la documentacion publica escribe `window.__GATE__ = { type: ... }`
@@ -101,6 +101,32 @@ const TIPO_DECL = tipoDeclarado();
 const TIPO_DADO = CFG.tipo || CFG.type || '';
 const TIPO = TIPO_DADO || TIPO_DECL || inferirTipo();
 const TIPO_FUENTE = TIPO_DADO ? 'dado' : (TIPO_DECL ? 'declarado en el marcado' : 'inferido de la ruta');
+
+/* >>> ANATOMIA-GENERADA · sale de anatomy.tsv · no editar a mano
+ * Regenerar:  perl anatomy.pl --regenerar-js
+ * Comprobar:  perl anatomy.pl --gate   (lo corre run-all.sh)
+ * La tabla humana es 09-tipos-de-pagina.md §2 */
+const ANATOMIA = {
+  home:         ['hero', 'prueba', 'oferta', 'proceso', 'cierre'],
+  servicio:     ['hero', 'oferta', 'calificacion', 'proceso', 'objeciones', 'hermanos', 'cierre'],
+  ciudad:       ['hero', 'mapa', 'oferta', 'objeciones', 'hermanos', 'cierre'],
+  ficha:        ['hero', 'oferta', 'prueba', 'objeciones', 'hermanos', 'cierre'],
+  hub:          ['hero', 'catalogo', 'calificacion', 'cierre'],
+  guia:         ['hero', 'objeciones', 'hermanos', 'cierre'],
+  comparativa:  ['hero', 'alternativas', 'objeciones', 'hermanos', 'cierre'],
+  precios:      ['hero', 'oferta', 'prueba', 'proceso', 'objeciones', 'cierre'],
+  contacto:     ['hero', 'prueba'],
+  gracias:      ['hero', 'proceso', 'cierre'],
+  landing:      ['hero', 'recurso'],
+  nosotros:     ['hero', 'contexto', 'prueba', 'cierre'],
+  empleo:       ['hero', 'catalogo', 'oferta'],
+};
+/* Sin anatomia, a proposito: 09 §2.11 */
+const ANATOMIA_SIN = ['legal', '404'];
+const ANATOMIA_ALIAS = { producto: 'ficha', quiz: 'landing', portada: 'home', zona: 'ciudad', pdp: 'ficha', blog: 'guia', articulo: 'guia', contact: 'contacto', 'thank-you': 'gracias', about: 'nosotros', careers: 'empleo' };
+/* Validos en page-types.tsv y sin anatomia medida (09 §2): se aceptan y se dice */
+const TIPOS_SIN_MEDIR = ['envios', 'devoluciones', 'garantia', 'politica-tienda', 'shipping', 'returns', 'plp', 'listado', 'categoria', 'pcp', 'categoria-padre', 'carrito', 'cart', 'checkout', 'pago', 'faq', 'preguntas', 'busqueda', 'search', 'resultados', 'perfil', 'autor', 'profile'];
+/* >>> FIN-ANATOMIA-GENERADA <<< */
 
 /* Perfil por tipo. `estructura:false` = la pagina puede ser prosa legitimamente.
  * minPrim / minEnlaces: ver la tabla de umbrales al final del fichero.       */
@@ -193,7 +219,7 @@ const PERFIL = {
   gracias:     { estructura:false, minPrim:2, minEnlaces:0, cierre:true,  hero:false, lectura:false },
   legal:       { estructura:false, minPrim:0, minEnlaces:0, cierre:false, hero:false, lectura:true  },
   '404':       { estructura:false, minPrim:0, minEnlaces:3, cierre:false, hero:false, lectura:false },
-}[TIPO] || { estructura:true, minPrim:4, minEnlaces:3, cierre:true, hero:true, lectura:true };
+}[ANATOMIA_ALIAS[TIPO] || TIPO] || { estructura:true, minPrim:4, minEnlaces:3, cierre:true, hero:true, lectura:true };
 
 /* ---------------------------------------------------------------------------
  * 1 · BLOQUES — el paso que hace medible la pagina-prosa
@@ -1235,36 +1261,14 @@ for (const el of document.body.querySelectorAll('*')) {
 malCromo.sort((a, b) => a.ratio - b.ratio);
 sonda.remove();
 
-/* >>> ANATOMIA-GENERADA · sale de anatomy.tsv · no editar a mano
- * Regenerar:  perl anatomy.pl --regenerar-js
- * Comprobar:  perl anatomy.pl --gate   (lo corre run-all.sh)
- * La tabla humana es 09-tipos-de-pagina.md §2 */
-const ANATOMIA = {
-  home:         ['hero', 'prueba', 'oferta', 'proceso', 'cierre'],
-  servicio:     ['hero', 'oferta', 'calificacion', 'proceso', 'objeciones', 'hermanos', 'cierre'],
-  ciudad:       ['hero', 'mapa', 'oferta', 'objeciones', 'hermanos', 'cierre'],
-  ficha:        ['hero', 'oferta', 'prueba', 'objeciones', 'hermanos', 'cierre'],
-  hub:          ['hero', 'catalogo', 'calificacion', 'cierre'],
-  guia:         ['hero', 'objeciones', 'hermanos', 'cierre'],
-  comparativa:  ['hero', 'alternativas', 'objeciones', 'hermanos', 'cierre'],
-  precios:      ['hero', 'oferta', 'prueba', 'proceso', 'objeciones', 'cierre'],
-  contacto:     ['hero', 'prueba'],
-  gracias:      ['hero', 'proceso', 'cierre'],
-  landing:      ['hero', 'recurso'],
-  nosotros:     ['hero', 'contexto', 'prueba', 'cierre'],
-  empleo:       ['hero', 'catalogo', 'oferta'],
-};
-/* Sin anatomia, a proposito: 09 §2.11 */
-const ANATOMIA_SIN = ['legal', '404'];
-const ANATOMIA_ALIAS = { producto: 'ficha', quiz: 'landing' };
-/* >>> FIN-ANATOMIA-GENERADA <<< */
 const rolesDeclarados = bloques.map(b => b.rol).filter(Boolean);
 const TIPO_ANAT = ANATOMIA_ALIAS[TIPO] || TIPO;
 const anatomiaEsperada = ANATOMIA[TIPO_ANAT] || null;
 /* Un `data-tipo` que no existe en la tabla no se acepta en silencio: si se
  * aceptara, cualquiera esquiva la anatomia que le moleste escribiendo una
  * palabra nueva. `legal` y `404` son validos y no llevan roles. */
-const TIPO_RARO = (TIPO_DECL && !ANATOMIA[TIPO_ANAT] && !ANATOMIA_SIN.includes(TIPO_ANAT)) ? TIPO_DECL : '';
+const TIPO_SIN_MEDIR = TIPOS_SIN_MEDIR.includes(TIPO_ANAT);
+const TIPO_RARO = (TIPO_DECL && !ANATOMIA[TIPO_ANAT] && !ANATOMIA_SIN.includes(TIPO_ANAT) && !TIPO_SIN_MEDIR) ? TIPO_DECL : '';
 const rolesFaltan = (rolesDeclarados.length && anatomiaEsperada)
   ? anatomiaEsperada.filter(r => !rolesDeclarados.includes(r)) : [];
 
@@ -1550,7 +1554,7 @@ return JSON.stringify({
   url: (location.protocol === 'file:' ? '(copia local) ' : '') + ORIGEN + RUTA,
   innerWidth,                      // ⚠️ COMPROBAR ESTE PRIMERO. Si no es el que
   innerHeight,                     //    se pidio, la medicion se tira entera.
-  tipo: TIPO + ' (' + TIPO_FUENTE + ')',
+  tipo: TIPO + ' (' + TIPO_FUENTE + ')' + (TIPO_SIN_MEDIR ? ' · sin anatomia medida: sus roles no se juzgan' : ''),
   VEREDICTO: fallos.length ? 'FALLA' : 'PASA',
   // La pregunta de Manuel («esto es un articulo de blog disfrazado de pagina»)
   // se contesta SOLA, sin leer la lista de fallos. Separarla importa: un aviso

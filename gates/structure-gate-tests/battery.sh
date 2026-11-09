@@ -371,6 +371,19 @@ regla R1-reserva-ajena  "$FX/m1-reserva-propia.html"        https://www.ejemplo.
 regla R2-reserva-propia "$FX/m1-reserva-propia.html"        https://www.ejemplo.test/x/ '{"tipo":"servicio","hostsReserva":["mijnsalon.example"]}' 'ninguna es mecanismo de conversion' no
 regla R3-reserva-base   "$FX/m1-reserva-externa-verde.html" https://www.ejemplo.test/x/ '{"tipo":"servicio"}'                                  'ninguna es mecanismo de conversion' no
 
+# 8-nov-2026 · el vocabulario de data-tipo es page-types.tsv, también aquí. qa-master aceptaba plp, faq y envios (con su
+# aviso) y este gate los daba por inventados: un FALLO por obedecer al otro gate. Se aceptan y se dice que no hay anatomía
+# medida, pero un tipo inventado sigue fallando y escribir «plp» no libra de las reglas generales.
+tipo_fx(){ mkdir -p "$D/work"; sed "s/@@/$1/" "$D/tipo-declarado.tpl" > "$D/work/tipo-$1.src.html"; printf '%s' "$D/work/tipo-$1.src.html"; }
+TB=https://www.ejemplo.test/x/
+for t in plp faq envios; do regla "T-$t-vale" "$(tipo_fx $t)" $TB '{}' 'no esta en la tabla' no; done
+regla T-plp-lo-dice     "$(tipo_fx plp)"             $TB '{}' 'sin anatomia medida' si
+regla T-plp-juzga       "$(tipo_fx plp)"             $TB '{}' 'VARIEDAD'            si
+regla T-inventado       "$(tipo_fx inventado)"       $TB '{}' 'no esta en la tabla' si
+regla T-alias-blog      "$(tipo_fx blog)"            $TB '{}' 'no esta en la tabla' no
+regla T-alias-guion     "$(tipo_fx politica-tienda)" $TB '{}' 'sin anatomia medida' si
+regla T-servicio-medido "$(tipo_fx servicio)"        $TB '{}' 'sin anatomia medida' no
+
 # --- el numero, que es lo que faltaba ---------------------------------------
 echo
 for c in $CONOCIDOS; do

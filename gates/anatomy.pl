@@ -53,6 +53,23 @@ sub cargar {
 }
 my ($ORDEN, $T) = cargar();
 
+# page-types.tsv: [tipo, alias…] por fila. Sin este fichero no se genera: una lista encogida diría «inventado» a tipos válidos.
+sub cargar_page_types {
+    my $f = "$DIR/page-types.tsv";
+    open my $fh, '<', $f or die "page-types.tsv: no se puede leer ($f): $!\n";
+    my @filas;
+    while (<$fh>) {
+        chomp; s/\r$//;
+        next if /^\s*#/ || !/\S/;
+        my ($tipo, $alias) = split /\|/, $_, 3;
+        die "page-types.tsv: linea sin tipo: $_\n" unless defined $tipo && $tipo =~ /^[a-z0-9-]+$/;
+        push @filas, [ $tipo, grep { /\S/ } split ' ', (defined $alias ? $alias : '') ];
+    }
+    close $fh;
+    die "page-types.tsv: 0 tipos\n" unless @filas;
+    return @filas;
+}
+
 # --- el bloque que se incrusta en el .js ------------------------------------
 #  Se genera aqui para que solo exista UNA forma de escribirlo: si se generase
 #  en dos sitios, volveriamos al problema que este fichero viene a cerrar.
@@ -87,7 +104,21 @@ sub bloque_js {
         my $nota = $T->{$tipo}{nota} // '';
         push @alias, "$1: '$tipo'" if $nota =~ /alias\s+aceptado:\s*([a-z0-9_-]+)/i;
     }
-    $s .= "const ANATOMIA_ALIAS = { " . join(', ', @alias) . " };\n" . $CIER;
+    # 8-nov-2026 · el vocabulario de data-tipo es page-types.tsv, y este bloque solo conocía anatomy.tsv: un tipo que
+    # qa-master aceptaba (plp, faq, envios) salía aquí como inventado. Una sola fuente: se genera, no se copia.
+    my %visto = map { (/^'?([a-z0-9-]+)/)[0] => 1 } @alias;
+    my @sin_medir;
+    for my $fila (cargar_page_types()) {
+        my ($tipo, @nombres) = @$fila;
+        if ($T->{$tipo}) {
+            for my $a (grep { !$visto{$_}++ } @nombres) { push @alias, ($a =~ /-/ ? "'$a'" : $a) . ": '$tipo'"; }
+        } else {
+            push @sin_medir, $tipo, @nombres;
+        }
+    }
+    $s .= "const ANATOMIA_ALIAS = { " . join(', ', @alias) . " };\n"
+        . "/* Validos en page-types.tsv y sin anatomia medida (09 §2): se aceptan y se dice */\n"
+        . "const TIPOS_SIN_MEDIR = [" . join(', ', map { "'$_'" } @sin_medir) . "];\n" . $CIER;
     return $s;
 }
 
@@ -161,7 +192,7 @@ sub gate {
     #      pagina declarada `quiz` se media como servicio. El comentario del propio
     #      fichero avisaba del riesgo; nada lo comprobaba. Ahora si.
     if (defined $js) {
-        my ($perfil) = $js =~ /const PERFIL = \{(.*?)\}\[TIPO\] \|\|/s;
+        my ($perfil) = $js =~ /const PERFIL = \{(.*?)\}\[ANATOMIA_ALIAS\[TIPO\] \|\| TIPO\] \|\|/s;
         if (!defined $perfil) {
             mal("C2 · no encuentro la tabla PERFIL de structure-gate.js: no puedo comprobar que cada tipo tenga perfil");
         } else {
