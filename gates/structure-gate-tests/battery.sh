@@ -162,6 +162,10 @@ echo "=========== FRONTERA (textual legitima: NO acusar) ======"
 # 27-oct-2026 · la legal es la privacidad de una web propia (la de site-d no se publica), congelada con su CSS.
 res F1-legal     own-legal.html           https://manucliment.com/privacy/                          '{}'                         PASA
 res F1b-forzad   own-legal.html           https://manucliment.com/privacy/                          '{"tipo":"servicio"}'        FALLA
+# 11-nov-2026 · una legal larga partida en 4 bloques sin imagen: su ruta francesa la reconoce como legal y el
+#   aviso de imagenes no cuenta en una legal (antes: «servicio» y FALLA). Y la misma pagina forzada a guia SIGUE fallando.
+res F1c-legal4   legal-split-4.html       https://ejemplo.test/conditions-generales/                '{}'                         PASA
+res F1d-guia4    legal-split-4.html       https://ejemplo.test/guia-x/                              '{"tipo":"guia"}'            FALLA
 res F2-guialar   guide-laid-out.html  https://climentmedia.com/learn/guia-roas-maquetada/           '{}'                         PASA
 # 🔴 20-ago-2026 · El MISMO fichero de arriba con las primeras palabras de cada
 # parrafo envueltas en <strong>: mismo texto visible, mismo ancho, misma

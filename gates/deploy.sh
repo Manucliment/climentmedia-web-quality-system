@@ -565,7 +565,15 @@ fi
 SIN_COMMIT_LISTA=""
 if git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   ARBOL_LISTA="$(perl "$REF/receipt.pl" --arbol --repo "$REPO" --listar 2>/dev/null | awk '$1 ~ /^[0-9a-f]{8}$/ && $2 ~ /^[0-9]+$/ { $1=""; $2=""; sub(/^  */, ""); print }')"
-  SUCIOS="$(git -C "$REPO" -c core.quotepath=off status --porcelain --untracked-files=all 2>/dev/null | sed -E 's/^.{3}//; s/^.* -> //; s/^"(.*)"$/\1/')"
+  # 11-nov-2026 · Si el arbol es una SUBCARPETA del repo git (un _candidato/, un dominio
+  # dentro de un repo de varios), `status --porcelain` da las rutas desde la RAIZ del repo
+  # y receipt.pl las da desde el arbol: el grep -Fx de abajo no casaba nunca y un fichero
+  # sin commitear subia sin aviso (medido el 2-nov con un fichero de prueba). Se limita a
+  # la carpeta del arbol (`-- .`) y se le quita el prefijo, comparado como TEXTO (un
+  # dominio lleva puntos, que en un patron casarian con cualquier cosa).
+  PREF_G1="$(git -C "$REPO" rev-parse --show-prefix 2>/dev/null)"
+  SUCIOS="$(git -C "$REPO" -c core.quotepath=off status --porcelain --untracked-files=all -- . 2>/dev/null | sed -E 's/^.{3}//; s/^.* -> //; s/^"(.*)"$/\1/' \
+    | P="$PREF_G1" awk 'BEGIN { p = ENVIRON["P"] } { if (p != "" && index($0, p) == 1) print substr($0, length(p) + 1); else print }')"
   if [ -n "$SUCIOS" ] && [ -n "$ARBOL_LISTA" ]; then
     SIN_COMMIT_LISTA="$(printf '%s\n' "$SUCIOS" | grep -Fx -f <(printf '%s\n' "$ARBOL_LISTA") || true)"
   fi

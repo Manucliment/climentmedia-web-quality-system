@@ -65,7 +65,9 @@ const RUTA = (CFG.ruta || (() => { try { return new URL(BASE).pathname; }
 // El tipo decide QUE se exige. Un aviso legal es prosa a proposito; una guia no.
 // La ruta de una pagina LEGAL, en una sola expresion: la usan el tipo inferido y
 // el tope de ENLACES (seccion 3), y dos copias de una regla divergen (§60).
-const RE_RUTA_LEGAL = /legal|privac|cookie|terms|termino|condicion|mentions|rgpd|gdpr|impressum/;
+// 11-nov-2026 · «condition» (francés e inglés: /conditions-generales/, /conditions-of-use/): solo
+// estaba «condicion», y la legal francesa de una web real salía como «servicio».
+const RE_RUTA_LEGAL = /legal|privac|cookie|terms|termino|condicion|condition|mentions|rgpd|gdpr|impressum/;
 function inferirTipo () {
   const h1 = document.querySelector('h1');
   const rotulo = ((document.title || '') + ' ' + (h1 ? h1.innerText : '')).toLowerCase();
@@ -1499,7 +1501,13 @@ if (PERFIL.lectura !== false && lectura.length < 3)
 // informa de nada. Sin este suelo, TODA pagina de un solo bloque (un aviso
 // legal) arrancaba con un aviso regalado — y con el aviso nuevo de arriba
 // sumaba 2 y fallaba sin tener un solo defecto.
-if (bloques.length >= 4 && sinMedia / bloques.length >= 0.75)
+// 11-nov-2026 · Y en una legal o una 404 (ANATOMIA_SIN) no cuenta nunca: no se espera
+// imagen, igual que no se espera anatomia. El suelo de 4 bloques no bastaba: una legal
+// larga partida en hero + 3 para pasar measure-screens (un bloque de >3 pantallas a 390)
+// daba «4/4 bloques sin imagen», y con el de «cpl no calculada» sumaba los 2 avisos que
+// bastan para fallar. Los dos gates no se podian pasar a la vez (medido el 2-nov en una
+// web real). Una guia o una ficha con 4/4 sin imagen SIGUE avisando.
+if (!ANATOMIA_SIN.includes(ANATOMIA_ALIAS[TIPO] || TIPO) && bloques.length >= 4 && sinMedia / bloques.length >= 0.75)
   avisos.push(`${sinMedia}/${bloques.length} bloques sin una sola imagen ni svg (aviso >=75 %)`);
 if (primitivas.length <= 2 && PERFIL.estructura)
   avisos.push(`variedad efectiva de ${primitivas.length} primitivas`);
