@@ -107,7 +107,7 @@
 set -u
 
 REF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0; SIN_COMMIT=""; OTRA_VEZ=""; PARAR=""
+REPO=""; SUBIR=0; SOLO_SERVIDO=0; AUN_ASI=""; PIERDE_TEXTO=""; HORAS=12; VER_SUBIDA=0; SIN_COMMIT=""; OTRA_VEZ=""; PARAR=""; RETIRAR=0
 
 while [ $# -gt 0 ]; do
   # English aliases. Additive: they cannot break an existing invocation.
@@ -122,11 +122,13 @@ while [ $# -gt 0 ]; do
     --hours)       set -- "--horas" "${@:2}" ;;
     --again)       set -- "--otra-vez" "${@:2}" ;;
     --stop)        set -- "--parar" "${@:2}" ;;
+    --retire)      set -- "--retirar" "${@:2}" ;;
   esac
   case "$1" in
     --subir)    SUBIR=1 ;;
     --servido)  SOLO_SERVIDO=1 ;;
     --ver-subida) VER_SUBIDA=1 ;;
+    --retirar)  RETIRAR=1 ;;
     --aun-asi)  shift; AUN_ASI="${1:-}" ;;
     --pierde-texto) shift; PIERDE_TEXTO="${1:-}" ;;
     --sin-commit) shift; SIN_COMMIT="${1:-}" ;;
@@ -350,6 +352,90 @@ if [ "$VER_SUBIDA" = 1 ]; then
   echo "  Esto NO sustituye al gate. Para desplegar sigue haciendo falta recibo"
   echo "  verde: deploy.sh \"$REPO\" --subir"
   exit $RC
+fi
+
+# ── modo «retirar lo que sobra» (11-nov-2026, t-20261110-rt4int, sí de Manuel) ─
+#    El paso 4-bis dice QUE sobra (estaba en el despliegue anterior, ya no esta en
+#    el arbol y produccion lo sigue sirviendo) y lo apunta en _deploy/.retirar.txt.
+#    Este modo lo QUITA, y solo eso:
+#      · cada ruta se valida: relativa, sin «..», con caracteres de ruta web, que NO
+#        este en el arbol de hoy y que produccion la sirva (2xx/3xx) ahora mismo;
+#      · no borra: el subidor del repo la MUEVE a una carpeta de copias fuera del
+#        docroot, asi que se devuelve con un mv. Es el subidor quien tiene las
+#        credenciales; si no declara que sabe retirar, aqui no se hace nada;
+#      · sin --subir es EN SECO (el subidor con --ensayo); con --subir mueve y
+#        despues vuelve a pedir cada ruta: tiene que dar 4xx.
+#    Por que no se borra «lo que no este en el arbol» del docroot: hay ficheros
+#    legitimos que no estan en el arbol (receptores, leads escritos en ejecucion).
+#    Solo se retira lo que ESTE sistema subio una vez y dejo de subir.
+#    No pasa por el recibo: no sube ni cambia nada del arbol, y el recibo mide el
+#    arbol. Lo que comprueba es la lista, y la comprueba ruta a ruta contra produccion.
+if [ "$RETIRAR" = 1 ]; then
+  linea; echo "  RETIRAR · lo que ya no esta en el arbol y $SITIO sigue sirviendo"; linea
+  LISTA_R="$REPO/_deploy/.retirar.txt"
+  if [ "${SUBIDA_ENSAYO:-0}" != 1 ] || [ -z "$SUBIDA" ] || [ ! -f "$REPO/$SUBIDA" ] || ! grep -q -- '--retirar' "$REPO/$SUBIDA"; then
+    echo "  El subidor de este repo no declara que sabe retirar (SUBIDA_ENSAYO=1, un script"
+    echo "  propio en SUBIDA y un modo --retirar dentro). No se toca nada: un comando que no"
+    echo "  entiende --retirar se comeria la bandera y SUBIRIA el arbol de verdad."
+    exit 2
+  fi
+  [ -s "$LISTA_R" ] || { echo "  no hay $LISTA_R: no hay nada apuntado para retirar."; exit 0; }
+  HOY_R="$(mktemp -t arbol-XXXXXXXX)"; VALIDAS="$(mktemp -t retirar-XXXXXXXX)"
+  # con --subir ya hay un trap (en_curso_fin, el cerrojo de la puerta): se encadena, no se pisa
+  if [ "$SUBIR" = 1 ]; then trap 'rm -f "$HOY_R" "$VALIDAS"; en_curso_fin' EXIT; else trap 'rm -f "$HOY_R" "$VALIDAS"' EXIT; fi
+  perl "$REF/receipt.pl" --arbol --listar --repo "$REPO" 2>/dev/null \
+    | sed -nE 's/^[0-9a-f]+[[:space:]]+[0-9]+[[:space:]]+//p' | LC_ALL=C sort > "$HOY_R"
+  [ -s "$HOY_R" ] || { echo "  NO MEDIDO: no se pudo listar el arbol de hoy. No se retira nada."; exit 3; }
+  MAL_R=0
+  while IFS= read -r f || [ -n "$f" ]; do
+    f="${f%$'\r'}"
+    case "$f" in ''|'#'*) continue ;; esac
+    if ! printf '%s' "$f" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._/-]*$' || printf '%s' "$f" | grep -Eq '(^|/)\.\.(/|$)|//'; then
+      echo "    🔴 RECHAZADA (forma): $f"; MAL_R=1; continue
+    fi
+    if grep -Fxq -- "$f" "$HOY_R"; then echo "    🔴 RECHAZADA (sigue en el arbol): $f"; MAL_R=1; continue; fi
+    # al ORIGEN (consulta nueva, salta la cache del CDN): lo que importa es lo que hay en el docroot
+    cod="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -A 'Mozilla/5.0' "$SITIO/$f?retirado=$(date +%s)" 2>/dev/null)"
+    case "$cod" in
+      2*|3*) echo "       $cod  $f  → se retira"; printf '%s\n' "$f" >> "$VALIDAS" ;;
+      404|410) echo "       $cod  $f  → ya no se sirve, nada que hacer" ;;
+      *) echo "    ⚠ $cod  $f  → NO MEDIDO, no se toca"; MAL_R=1 ;;
+    esac
+  done < "$LISTA_R"
+  [ "$MAL_R" = 0 ] || { echo; echo "  Hay rutas rechazadas o sin medir: no se retira NINGUNA. Corrige $LISTA_R."; exit 1; }
+  N_R="$(grep -c . "$VALIDAS" 2>/dev/null)"; N_R="${N_R:-0}"   # grep -c ya imprime 0 (y sale con 1): sin «|| echo 0»
+  [ "$N_R" -gt 0 ] || { echo "  Nada que retirar: todo lo apuntado ya da 4xx."; rm -f "$LISTA_R"; exit 0; }
+  if [ "$SUBIR" != 1 ]; then
+    echo; echo "  EN SECO ($N_R ruta(s)). Lo que haria el subidor:"
+    bash "$REPO/$SUBIDA" --ensayo --retirar "$VALIDAS"; RC=$?
+    echo; echo "  Para hacerlo de verdad: deploy.sh \"$REPO\" --retirar --subir"
+    exit $RC
+  fi
+  en_curso_escribe SUBIENDO
+  bash "$REPO/$SUBIDA" --retirar "$VALIDAS"; RC=$?
+  [ "$RC" = 0 ] || { echo "  🔴 el subidor salio con $RC. Se pide cada ruta igualmente:"; }
+  # Se pide DOS veces: con una cadena de consulta nueva (salta la cache del CDN y mide el
+  # ORIGEN, que es lo que el subidor cambio) y tal cual. Medido el 11-nov en Hostinger: el
+  # origen ya daba 404 y el CDN seguia sirviendo la copia (HIT, max-age de un año). El
+  # veredicto es el del origen; lo del CDN se dice aparte, porque se arregla purgando.
+  SIGUEN=0; CACHE=0
+  while IFS= read -r f; do
+    org="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -A 'Mozilla/5.0' "$SITIO/$f?retirado=$(date +%s)" 2>/dev/null)"
+    cdn="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -A 'Mozilla/5.0' "$SITIO/$f" 2>/dev/null)"
+    case "$org" in
+      4*) case "$cdn" in 4*) echo "       $org  $f  ✓ ya no se sirve" ;;
+                          *) echo "       $org  $f  ✓ fuera del origen · ⚠ el CDN aun da $cdn (cache)"; CACHE=$((CACHE+1)) ;; esac ;;
+      *)  echo "    🔴 $org  $f  SIGUE en el origen"; SIGUEN=$((SIGUEN+1)) ;;
+    esac
+  done < "$VALIDAS"
+  [ "$CACHE" = 0 ] || echo "  ⚠ $CACHE siguen en la cache del CDN: se van al purgarla (o al caducar). No afecta a ninguna pagina."
+  if [ "$SIGUEN" = 0 ] && [ "$RC" = 0 ]; then
+    rm -f "$LISTA_R"
+    perl "$REF/receipt.pl" --anotar "RETIRADOS $N_R que sobraban (movidos a copias fuera del docroot)" --repo "$REPO" >/dev/null 2>&1
+    echo; echo "  RESULTADO OK: $N_R retirado(s). Lista vaciada. La vuelta atras la imprime el subidor."
+    exit 0
+  fi
+  echo; echo "  RESULTADO MAL: $SIGUEN de $N_R siguen servidos. La lista se conserva."; exit 1
 fi
 
 # ── modo «solo verificar lo servido» ─────────────────────────────────────────
@@ -2075,7 +2161,12 @@ else
     [ -n "$f" ] || continue
     cod="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITIO/$f" 2>/dev/null)"
     case "$cod" in
-      2*|3*) VIVAS=$((VIVAS+1)); echo "    🔴 $cod  $SITIO/$f" ;;
+      2*|3*) VIVAS=$((VIVAS+1)); echo "    🔴 $cod  $SITIO/$f"
+             # 11-nov-2026: se APUNTA para el modo --retirar. Sin esto, el proximo despliegue
+             # reescribe la lista de lo desplegado y lo que sobra deja de verse para siempre
+             # (paso en una web real: una fuente retirada el 9-nov, olvidada el 10).
+             mkdir -p "$REPO/_deploy" 2>/dev/null
+             grep -Fxq -- "$f" "$REPO/_deploy/.retirar.txt" 2>/dev/null || printf '%s\n' "$f" >> "$REPO/_deploy/.retirar.txt" ;;
       *)     echo "       $cod  $f" ;;
     esac
   done < "$RETIRADAS"
@@ -2085,11 +2176,12 @@ else
   else
     echo "  🔴 $VIVAS de $N_RET SIGUEN SERVIDOS. El arbol y el destino NO cuadran."
     echo "     No es un fallo de la subida: el tar no borra, y G11 no mira lo que"
-    echo "     sobra. Hay que quitarlos en el destino, y eso lo hace el subidor de"
-    echo "     este repo, que es quien tiene las credenciales."
-    echo "     La lista exacta esta arriba, con su URL. Antes de borrar ninguno:"
-    echo "     mirar QUE es. Hoy un 'resto' resulto ser el fichero de licencia que"
-    echo "     la OFL exige que acompane a las fuentes."
+    echo "     sobra. Quedan apuntados en _deploy/.retirar.txt. Antes de quitarlos:"
+    echo "     mirar QUE es cada uno (un 'resto' resulto ser el fichero de licencia que"
+    echo "     la OFL exige junto a las fuentes) y borrar de la lista lo que se queda."
+    echo "     Se quitan, moviendolos a copias fuera del docroot, con:"
+    echo "         deploy.sh \"$REPO\" --retirar            (en seco)"
+    echo "         deploy.sh \"$REPO\" --retirar --subir    (de verdad)"
     perl "$REF/receipt.pl" --anotar "SOBRAN $VIVAS de $N_RET retirados siguen servidos" --repo "$REPO" >/dev/null 2>&1
   fi
 fi

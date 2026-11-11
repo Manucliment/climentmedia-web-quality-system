@@ -103,6 +103,17 @@ espera "un retirado ya borrado NO da falso rojo" "El destino cuadra" "SIGUEN SER
 RETIRADAS="$RET"; printf 'viva.css\nborrada-de-verdad.css\n' > "$RET"
 espera "cuenta solo los vivos: 1 de 2" "1 de 2 SIGUEN SERVIDOS" ""
 
+# 11-nov-2026 · lo vivo se APUNTA en _deploy/.retirar.txt para `deploy.sh --retirar`: solo
+#    lo vivo, una vez aunque se repita, y nunca lo ya borrado. Sin esto, el siguiente
+#    despliegue reescribe la lista de lo desplegado y lo que sobra se olvida para siempre.
+rm -f "$DIR/_deploy/.retirar.txt"
+RETIRADAS="$RET"; printf 'viva.css\nborrada-de-verdad.css\n' > "$RET"
+( . "$BLOQUE" ) > /dev/null 2>&1; ( . "$BLOQUE" ) > /dev/null 2>&1
+apunta="$(cat "$DIR/_deploy/.retirar.txt" 2>/dev/null)"
+if [ "$apunta" = "viva.css" ]; then ok=$((ok+1)); echo "  PASA  apunta lo vivo en .retirar.txt, una vez, y no lo ya borrado"
+else ko=$((ko+1)); echo "  MAL   .retirar.txt tenia que ser «viva.css» y es: «$apunta»"; fi
+rm -f "$DIR/_deploy/.retirar.txt"
+
 # =============================================================================
 #  EL BLOQUE nav_decide (1-quater, 1-nov-2026): los gates de navegador sobre el
 #  CANDIDATO, ¿paran la subida? Los mismos bytes de la puerta, entre sus marcas.
