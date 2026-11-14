@@ -116,6 +116,7 @@ espera f11-cita-en-parrafo.html           FALLA "SIN UNA PARADA" "la cita en un 
 espera f12-cita-que-envuelve-un-muro.html FALLA "SIN UNA PARADA" "una cita que envuelve un muro no lo tapa"
 echo
 echo "== LO QUE TIENE QUE PASAR"
+espera f26-svg-sin-titular.html PASA  ""                              "un <svg> con class y sin titular entre los bloques: SVGAnimatedString no se parte"
 espera f5-lista-buena.html     PASA  ""                              "tres unidades, dos CTA"
 espera f9-faq-titulares.html   PASA  ""                              "el mismo texto con la pregunta en <h3>"
 # 27-sep-2026 · el gemelo de f11: una cita en <blockquote> parte el tramo (1074 ->

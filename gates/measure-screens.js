@@ -181,7 +181,7 @@
       const uPx = Math.max(...u.map(e => Math.round(e.getBoundingClientRect().height)));
       return {
         n: i + 1,
-        que: (h ? h.innerText : s.tagName.toLowerCase() + '.' + (s.className || '').split(' ')[0]).slice(0, 44),
+        que: (h ? h.innerText : s.tagName.toLowerCase() + '.' + (s.getAttribute('class') || '').split(' ')[0]).slice(0, 44),
         px,
         pantallas: +(px / vh).toFixed(2),
         unidades: u.length,
