@@ -1956,8 +1956,10 @@ fi
 #
 #  🔴 NO BLOQUEA, misma norma que 2-quinquies. 14-nov-2026, medido sobre las
 #  subidas de una semana de las webs de la casa: de 39, el revisor cubria 34,
-#  el aprobado 28, los dos 24 y ninguno 1. Bloquear el primer dia habria parado
-#  15 de 39, y aun no se sabe cuantas de esas eran de verdad sin revisar.
+#  el aprobado 32, los dos 28 y ninguno 1. Bloquear el primer dia habria parado
+#  11 de 39, y las mas de las miradas a mano llevaban un aprobado que no citaba
+#  su commit: revisadas, pero sin nada que atar. Por eso el comando puede dar
+#  una tercera linea (SIN COMMIT) y la puerta la ensena con las otras dos.
 #
 #  De donde sale REVISION_CMD: del deploy.conf o del entorno, y si no, de
 #  config/revision.local.conf (REVISION_CMD=...), fuera de git por `*.conf`
