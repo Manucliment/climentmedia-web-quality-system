@@ -1,0 +1,5 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REN-02 con sizes y width grande</title></head><body><main>
+<!-- 14-nov-2026 · sizes sin auto y un width de 3840 en el marcado. A 1298, 25vw = 324 px: baja pequena.jpg. Con el qa-master de antes: FALLO por grande.jpg, porque el lector de sizes no leia nada (nacia con una entrada vacia) y mandaba siempre al width. -->
+<h1>Tarjeta</h1>
+<img src="grande.jpg" srcset="pequena.jpg 352w, grande.jpg 3840w" sizes="(min-width: 750px) 25vw, 100vw" width="3840" height="8" alt="Granja">
+</main></body></html>

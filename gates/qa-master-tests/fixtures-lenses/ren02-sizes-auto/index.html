@@ -1,0 +1,5 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REN-02 con sizes auto</title></head><body><main>
+<!-- 14-nov-2026 · Horizon con loading=lazy: sizes empieza por «auto». El navegador baja el candidato del resto de la lista (a 1298, 25vw = 324 px: pequena.jpg, 3 KB). Con el qa-master de antes: FALLO por grande.jpg (el auto mandaba al width de 3840). -->
+<h1>Tarjeta</h1>
+<img src="grande.jpg" srcset="pequena.jpg 352w, grande.jpg 3840w" sizes="auto, (min-width: 750px) 25.0vw, 100vw" loading="lazy" width="3840" height="8" alt="Granja">
+</main></body></html>

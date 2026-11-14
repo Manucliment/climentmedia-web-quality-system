@@ -667,6 +667,16 @@ espera "REN-02 · con srcset juzga lo que se baja, PASA"     PASA  REN-02 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-srcset --candidato --una-sola --solo rendimiento --sin-recibo
 espera "REN-02 · y sin srcset, el src, FALLA"              FALLO REN-02 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-sin-srcset --candidato --una-sola --solo rendimiento --sin-recibo
+# 14-nov-2026 · `sizes="auto, …"` (Horizon con loading=lazy): el auto se salta y vale el resto de la lista. Visto en ROJO
+# contra el qa-master de antes (FALLO: el auto mandaba al width de 3840). El espejo: un auto solo sigue yendo al width.
+espera "REN-02 · sizes=auto, … juzga el resto de la lista, PASA" PASA REN-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-sizes-auto --candidato --una-sola --solo rendimiento --sin-recibo
+espera "REN-02 · y un sizes=auto solo, el width, FALLA"     FALLO REN-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-sizes-auto-solo --candidato --una-sola --solo rendimiento --sin-recibo
+# 14-nov-2026 · el lector de sizes nacia con una entrada vacia y mandaba SIEMPRE al width del marcado: ren02-srcset pasaba
+# porque su width=20 daba el mismo candidato. Este lleva width=3840 y sizes sin auto. Visto en ROJO contra el de antes.
+espera "REN-02 · sizes con un width grande: lee sizes, PASA" PASA REN-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-sizes-ancho --candidato --una-sola --solo rendimiento --sin-recibo
 # ⚠️ 22-sep-2026 · `--contenedor` en los casos de site-d que necesitan el
 #    contenedor (MED-03/07/08): antes se descargaba de googletagmanager.com por
 #    HTTPS, y el banco ya no sale a internet. Sin el, esos checks salen NO

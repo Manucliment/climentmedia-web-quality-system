@@ -1052,13 +1052,23 @@ sub hueco_sizes {
     };
     my $fallback = ($wattr && $wattr =~ /^\d+$/) ? $wattr : $vw;
     return $vw unless defined $sizes && $sizes =~ /\S/;
-    my (@ent, $buf, $prof) = ((), '', 0);
+    # 🔴 14-nov-2026 · era `my (@ent, $buf, $prof) = ((), '', 0)`: el array se lo traga todo, @ent nacia con ('', 0) y
+    #    la primera entrada vacia mandaba SIEMPRE al `width` del marcado. El lector de sizes no leyo nunca nada; el caso
+    #    ren02-srcset pasaba porque su width=20 daba el mismo candidato. ren02-sizes-ancho lo distingue.
+    my @ent; my $buf = ''; my $prof = 0;
     for my $c (split //, $sizes) {
         $prof++ if $c eq '('; $prof-- if $c eq ')';
         if ($c eq ',' && $prof == 0) { push @ent, $buf; $buf = ''; next }
         $buf .= $c;
     }
     push @ent, $buf;
+    # 🔴 14-nov-2026 · `sizes="auto, (min-width: 750px) 25.0vw, 100vw"` (Horizon, con loading=lazy): el `auto` de
+    #    delante tiraba la lista entera al `width` del marcado (3840) y REN-02 daba FALLO por una foto que nadie baja.
+    #    El navegador que entiende `auto` usa el ancho pintado; el que no, el resto de la lista, que es la pista del
+    #    autor. Sin pintar no hay ancho, asi que se salta el `auto` y vale el resto (medido en esa tienda: baja el
+    #    candidato que da el resto). Un `auto` solo sigue yendo al `width` del marcado.
+    @ent = grep { !/^\s*auto\s*$/i } @ent;
+    return $fallback unless @ent;
     for my $en (@ent) {
         $en =~ s/^\s+|\s+$//g;
         if ($en =~ /^\((.*?)\)\s*(?:and\s*\((.*?)\)\s*)?(.+)$/i && $en !~ /^\(?calc/i) {
