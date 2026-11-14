@@ -1,0 +1,5 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REN-02 con srcset</title></head><body><main>
+<!-- 14-nov-2026 · Horizon: el src lleva el candidato mayor y el navegador baja el que pide sizes. A 1298, 25vw = 324 px: baja pequena.jpg (3 KB). Con el qa-master de antes: FALLO por grande.jpg. -->
+<h1>Tarjeta</h1>
+<img src="grande.jpg" srcset="pequena.jpg 352w, grande.jpg 3840w" sizes="(min-width: 750px) calc(100vw / 4), 50vw" width="20" height="20" alt="Granja">
+</main></body></html>

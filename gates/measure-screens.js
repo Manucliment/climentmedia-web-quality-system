@@ -129,9 +129,17 @@
   //     no la aprueba; un <h3> que parta la historia, si (467 px).
   const PARADA = 'h1,h2,h3,h4,h5,h6,li,img,picture,figure,blockquote,svg,video,tr,dt,' +
                  'button,summary,label,input,select,textarea';
+  //  🔴 14-nov-2026 · Y UN ENLACE CON FORMA DE BOTON. La lista contaba `button` y `svg`, pero no un `a.btn`: en los
+  //     articulos de una tienda Shopify un «Ver los kits» entre tramos solo partia el tramo si llevaba una flecha
+  //     SVG dentro (su repo, _medicion/cta-blog-20261112/qa-v3.txt). Es un boton, y la regla ya dice que un boton
+  //     es una parada. Va con el mismo selector de CTA de arriba, menos lo que solo es un enlace de texto (tel:, wa.me,
+  //     un form entero), y FUERA de un <p>: un enlace dentro de un parrafo se lee con el parrafo (una web de cliente, 10-nov: los
+  //     botones a mitad de tramo dentro de <p> no partian nada, y asi sigue). Casos f27 y f28 del banco.
+  const PARADA_CTA = 'a.btn,a[class*=btn],a[class*=cta],a[class*=button],[role=button][href]';
+  const esParada = (e) => !e.matches(PARADA_CTA) || !e.closest('p');
   const tramoSinParada = (el) => {
     const r0 = el.getBoundingClientRect();
-    const tops = [...el.querySelectorAll(PARADA)]
+    const tops = [...el.querySelectorAll(PARADA + ',' + PARADA_CTA)].filter(esParada)
       .map(e => e.getBoundingClientRect())
       .filter(r => r.height > 4)
       .map(r => r.top - r0.top)
@@ -161,6 +169,13 @@
     // tiene 2 o mas hijos DIRECTOS que son secciones (<section>, <article> o
     // [data-sec]). Asi una <section> sola llena de tarjetas -f4, doce unidades en
     // cinco pantallas- sigue siendo un bloque y sigue cayendo por el tope.
+    // 🔴 14-nov-2026 · UN CTA QUE NO SE VE NO CORTA NADA. `ctas` era `querySelectorAll(CTA).length`: un boton con
+    // display:none partia un tramo «sin CTA» que el visitante recorre entero. En el listado del blog de una tienda Shopify, a
+    // 1298, 2 de los 5 botones van ocultos a proposito y el gate veia 1 CTA en cada bloque (su repo,
+    // _medicion/cta-listado-20261112/). Se cuentan los que miden algo y no van con visibility:hidden, como las
+    // paradas (height > 4). Caso f26 del banco.
+    const seVe = (e) => { const r = e.getBoundingClientRect();
+      return r.height > 4 && r.width > 4 && getComputedStyle(e).visibility !== 'hidden'; };
     const esSeccion = c => /^(SECTION|ARTICLE)$/.test(c.tagName) || c.hasAttribute('data-sec');
     // 🔴 5-nov-2026 · Y CON UN HERMANO. La misma ficha con un bloque de texto propio
     // al lado (<main><div id="product">…</div><section>…</section></main>, fuera
@@ -189,12 +204,20 @@
         unidadPantallas: +(uPx / vh).toFixed(2),
         tramoPx: tramoSinParada(s),
         tramoPantallas: +(tramoSinParada(s) / vh).toFixed(2),
-        ctas: s.querySelectorAll(CTA).length,
+        ctas: [...s.querySelectorAll(CTA)].filter(seVe).length,
       };
     })
     .filter(b => b.px > 40);
 
-  const alto = Math.round(document.body.scrollHeight);
+  // 🔴 14-nov-2026 · EL ALTO DE LA PAGINA, DE LO QUE SE DESPLAZA. En Horizon (Shopify) html y body van a 100dvh con
+  // overflow:hidden y se mueve .page-wrapper: body.scrollHeight daba una pantalla en una pagina de diez, y el techo de
+  // pantallas no podia caer nunca (memoria shopify-horizon-scroll-y-fondo-hermano). Se toma el mayor entre el body y
+  // el primer antepasado de <main> que se desplaza. Caso f29 del banco.
+  let caja = main.parentElement;
+  while (caja && caja !== document.body && caja !== document.documentElement &&
+    !(caja.scrollHeight > caja.clientHeight + 50 && /(auto|scroll|overlay)/.test(getComputedStyle(caja).overflowY))) caja = caja.parentElement;
+  const alto = Math.round(Math.max(document.body.scrollHeight,
+    caja && caja !== document.body && caja !== document.documentElement ? caja.scrollHeight : 0));
   // 🔴 18-ago-2026 (segunda vuelta del mismo dia) · EL VEREDICTO PASA A SER EL TRAMO.
   //  La medida de la UNIDAD -de esta misma manana- quito 8 acusaciones falsas de
   //  los moldes, pero produjo CINCO nuevas en la web de prueba: dependia de que el

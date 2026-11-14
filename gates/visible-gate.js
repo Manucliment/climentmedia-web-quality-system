@@ -425,10 +425,41 @@
     }
     for (const s of partirSombras(cs.boxShadow))
       if (s.color && s.spread >= 1 && s.blur <= 1) vals.push(ratio(sobre(s.color, s.inset ? suyo : fu.c), fu.c));
-    const v = Math.max(...vals);
+    let v = Math.max(...vals);
+    // 🔴 14-nov-2026 · EL CONTORNO PUEDE SER DEL ENVOLTORIO. En Horizon (Shopify) el campo «Cantidad» es un <input> sin
+    //  borde dentro de quantity-selector-component, que lleva el borde y los botones - y +: el gate daba 1:1 con el color
+    //  de un borde de 0 px, y el envoltorio va a 13,87:1 (su repo, 2276a12, _medicion/vi23-ficha-20261113/). WCAG
+    //  1.4.11 pide que se vea lo que identifica el control, y aqui lo identifica la caja de fuera. Se sube como mucho 3
+    //  niveles mientras el antepasado siga siendo el contorno del campo (no mas del doble de ancho + 120 px ni del doble
+    //  de alto + 40 px), y vale el mejor de su borde y su fondo contra lo de fuera de ESE antepasado. Caso
+    //  CAMPOS-ENVOLTORIO del banco; el espejo, el mismo envoltorio sin borde, sigue cayendo.
+    let envoltorio = null;
+    if (v < 3) {
+      const rf = f.getBoundingClientRect();
+      for (let a = f.parentElement, n = 0; a && n < 3 && a !== document.body; a = a.parentElement, n++) {
+        const ra = a.getBoundingClientRect();
+        if (ra.width > rf.width * 2 + 120 || ra.height > rf.height * 2 + 40) break;
+        const ca = getComputedStyle(a), fa = fueraDe(a, 0);
+        if (fa.aprox || (ca.backgroundImage && ca.backgroundImage !== 'none')) break;
+        const suyoA = sobre(rgba(ca.backgroundColor), fa.c);
+        const valsA = [ratio(suyoA, fa.c)];
+        for (const lado of ['Top', 'Right', 'Bottom', 'Left']) {
+          const w = parseFloat(ca[`border${lado}Width`]) || 0, st = ca[`border${lado}Style`];
+          const b = rgba(ca[`border${lado}Color`]);
+          if (w >= 1 && b && st !== 'none' && st !== 'hidden') valsA.push(ratio(sobre(b, suyoA), fa.c));
+        }
+        for (const s of partirSombras(ca.boxShadow))
+          if (s.color && s.spread >= 1 && s.blur <= 1) valsA.push(ratio(sobre(s.color, s.inset ? suyoA : fa.c), fa.c));
+        const va = Math.max(...valsA);
+        if (va > v) { v = va; envoltorio = a; }
+        if (v >= 3) break;
+      }
+    }
+    if (envoltorio) vi3b.porEnvoltorio = (vi3b.porEnvoltorio || 0) + 1;
     if (v < 3) {
       vi3b.flojos++;
-      const k = `${v}:1 (borde ${rgba(cs.borderBottomColor) ? hex(sobre(rgba(cs.borderBottomColor), suyo)) : 'ninguno'}, fondo ${hex(suyo)}, fuera ${hex(fu.c)})`;
+      const bw = parseFloat(cs.borderBottomWidth) || 0;
+      const k = `${v}:1 (borde ${bw >= 1 && rgba(cs.borderBottomColor) ? hex(sobre(rgba(cs.borderBottomColor), suyo)) : 'ninguno'}, fondo ${hex(suyo)}, fuera ${hex(fu.c)})`;
       if (!camposFlojos.has(k)) camposFlojos.set(k, []);
       camposFlojos.get(k).push(f);
     }
@@ -450,7 +481,8 @@
   for (const [k, els] of parciales)
     avisos.push(`VI2 · ${els.length} parada(s) de Tab quedan tapadas en mas de la mitad por ${k}: ${ejemplos(els)} (2.4.12, AAA)`);
 
-  resumen.VI3 = Object.assign({}, vi3, { campos: vi3b.campos, camposFlojos: vi3b.flojos, camposSobreImagen: vi3b.sobreImagen });
+  resumen.VI3 = Object.assign({}, vi3, { campos: vi3b.campos, camposFlojos: vi3b.flojos, camposSobreImagen: vi3b.sobreImagen,
+    camposPorEnvoltorio: vi3b.porEnvoltorio || 0 });
   for (const [k, els] of flojos)
     fallos.push(`VI3 · ${els.length} parada(s) de Tab con ${k} (WCAG 1.4.11 pide 3:1 con lo que tiene al lado): ${ejemplos(els)}. ` +
       'El arreglo: un anillo que llegue a 3:1 con ese fondo, o un aro de otro color debajo (box-shadow sin desenfoque) que lo separe');

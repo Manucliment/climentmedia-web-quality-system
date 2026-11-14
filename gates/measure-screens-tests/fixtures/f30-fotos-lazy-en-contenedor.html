@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>f29</title>
+<style>body{margin:0;font:16px/1.6 system-ui}main>section{padding:24px}p{margin:0 0 16px}.btn{display:inline-block;padding:12px 20px;background:#123;color:#fff;text-decoration:none}html,body{height:100dvh;overflow:hidden}.page-wrapper{height:100dvh;overflow-y:auto}figure{margin:0 0 16px;background:#ddd}figure.lazy{height:0}figure.cargada{height:200px}</style>
+</head><body><!-- 14-nov-2026 · una tienda Shopify (Horizon): html y body a 100dvh con overflow:hidden y se desplaza .page-wrapper. Las fotos lazy miden 0 px hasta cargar. Con run-gate de antes (scrollTo de la ventana) no carga ninguna de las de abajo y sale FALLA por un tramo sin una parada que con las fotos no existe. -->
+<div class="page-wrapper"><main>
+<section><h2>El espacio</h2>
+<div><a class="btn" href="/kits/">Ver los kits</a></div>
+<p>Hace años pague a una agencia por llevar los anuncios de una tienda pequeña, y en tres meses no trajo ni una sola venta. No era mala suerte: nadie miraba la cuenta, solo el informe que salia de ella cada viernes por la tarde.</p>
+<p>Asi que aprendi a hacerlo yo. Primero con mi propio dinero, que es la forma mas cara y mas rapida de aprender, y despues con el de otros, cuando ya sabia distinguir lo que funcionaba de lo que solo parecia funcionar.</p>
+<p>Lo que mas me costo entender es que una cuenta no se arregla con una receta. Se arregla leyendola entera, con calma, y decidiendo que se toca y que no se toca, y por que, antes de mover un solo euro de sitio.</p>
+<figure class="lazy"></figure>
+<p>Hace años pague a una agencia por llevar los anuncios de una tienda pequeña, y en tres meses no trajo ni una sola venta. No era mala suerte: nadie miraba la cuenta, solo el informe que salia de ella cada viernes por la tarde.</p>
+<p>Asi que aprendi a hacerlo yo. Primero con mi propio dinero, que es la forma mas cara y mas rapida de aprender, y despues con el de otros, cuando ya sabia distinguir lo que funcionaba de lo que solo parecia funcionar.</p>
+<p>Lo que mas me costo entender es que una cuenta no se arregla con una receta. Se arregla leyendola entera, con calma, y decidiendo que se toca y que no se toca, y por que, antes de mover un solo euro de sitio.</p>
+<figure class="lazy"></figure>
+<p>Hace años pague a una agencia por llevar los anuncios de una tienda pequeña, y en tres meses no trajo ni una sola venta. No era mala suerte: nadie miraba la cuenta, solo el informe que salia de ella cada viernes por la tarde.</p>
+<p>Asi que aprendi a hacerlo yo. Primero con mi propio dinero, que es la forma mas cara y mas rapida de aprender, y despues con el de otros, cuando ya sabia distinguir lo que funcionaba de lo que solo parecia funcionar.</p>
+<p>Lo que mas me costo entender es que una cuenta no se arregla con una receta. Se arregla leyendola entera, con calma, y decidiendo que se toca y que no se toca, y por que, antes de mover un solo euro de sitio.</p>
+</section>
+<section><h2>Cierre</h2><p>Ultima llamada.</p><div><a class="btn" href="/contacto/">Escribir</a> <a class="btn" href="/servicios/">Ver servicios</a></div></section>
+</main></div><script>
+const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('cargada'); io.unobserve(e.target); } }), { rootMargin: '200px' });
+document.querySelectorAll('figure.lazy').forEach(f => io.observe(f));</script></body></html>

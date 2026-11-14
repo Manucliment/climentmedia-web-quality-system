@@ -230,11 +230,30 @@ if (require.main === module) (async () => {
   }, gateCfg || null, +w);
   // scroll completo: las animaciones de entrada (IntersectionObserver) dejan
   // opacity:0 en lo que nunca entro en viewport, y eso falsea alturas y contraste
+  //  🔴 14-nov-2026 · Y NO SIEMPRE SE DESPLAZA LA VENTANA. En el tema Horizon de Shopify, html y body van a
+  //  100dvh con overflow:hidden y lo que se mueve es .page-wrapper: scrollTo(0, y) no bajaba nada, las fotos con
+  //  loading="lazy" de mas abajo se quedaban en 0 px (van sin width/height) y measure-screens contaba en un articulo
+  //  de una tienda Shopify 977 px «sin una parada» que con las fotos cargadas son 633 (su repo,
+  //  _medicion/blog-reproduccion-20261114/). El FALLO dependia de donde caia la foto, no de la pagina. Se recorre
+  //  tambien cada contenedor desplazable de al menos media pantalla, y se esperan (2 s como mucho) las imagenes
+  //  pintadas que siguen sin cargar: lo que ve quien baja la pagina entera, que es lo que miden los gates. Las de un
+  //  display:none (offsetParent null) no se esperan: no van a cargar y no ocupan alto.
   await p.evaluate(async () => {
+    const pausa = (ms) => new Promise(r => setTimeout(r, ms));
     for (let y = 0; y < document.body.scrollHeight; y += 500) {
-      scrollTo(0, y); await new Promise(r => setTimeout(r, 40));
+      scrollTo(0, y); await pausa(40);
     }
     scrollTo(0, 0);
+    const cajas = [...document.querySelectorAll("body *")].filter(e => e.clientHeight >= innerHeight / 2 &&
+      e.scrollHeight > e.clientHeight + 50 && /(auto|scroll|overlay)/.test(getComputedStyle(e).overflowY));
+    for (const c of cajas) {
+      for (let y = 0; y < c.scrollHeight; y += 500) { c.scrollTop = y; await pausa(40); }
+      c.scrollTop = 0;
+    }
+    const pendientes = [...document.images].filter(i => !i.complete && i.offsetParent !== null);
+    await Promise.race([pausa(2000), Promise.all(pendientes.map(i => new Promise(r => {
+      i.addEventListener("load", r, { once: true }); i.addEventListener("error", r, { once: true });
+    })))]);
   });
   await new Promise(r => setTimeout(r, 600));
   const iw = await p.evaluate(() => innerWidth);

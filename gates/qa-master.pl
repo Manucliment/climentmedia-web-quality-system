@@ -1027,6 +1027,71 @@ sub meta_of {
     }
     return undef;
 }
+# ── candidato_srcset · la imagen que BAJA el navegador, no el src ─────────────
+#  🔴 14-nov-2026 · REN-02 juzgaba el `src`, y con un `srcset` de descriptores w el navegador no pide el `src`: elige
+#  por `sizes`. Horizon (Shopify) pone en el `src` el candidato mayor (`?width=3840`, 683 KB) y REN-02 daba FALLO por
+#  una foto que no baja nadie: a 1298 se bajan 352 px (39 KB), medido por la red en el Chrome del servidor
+#  (su repo, _medicion/ren02-20261113/imagenes-bajadas.txt). Se elige como el navegador a 1298 px y 1x, el ancho
+#  de escritorio de la puerta: el menor candidato >= el hueco de `sizes`, o el mayor si ninguno llega. A 1x porque
+#  el B/px se mide sobre los pixeles CSS del marcado: el candidato de un movil a 3x trae 9 veces los pixeles A
+#  PROPOSITO, y juzgarlo por B/px seria acusar la nitidez. Sin `sizes` el hueco es 100vw (lo que hace el
+#  navegador); con un `sizes` que no se entiende (o `auto`), el `width` del marcado, y si falta, 100vw.
+#  Devuelve la URL (sin resolver) o undef si no hay srcset de descriptores w.
+sub hueco_sizes {
+    my ($sizes, $vw, $wattr) = @_;
+    my $px = sub {
+        my $e = shift; $e =~ s/^\s+|\s+$//g;
+        return undef if $e eq '' || $e =~ /^auto\b/i;
+        $e =~ s/^calc\((.*)\)$/$1/i;
+        $e =~ s/(\d*\.?\d+)\s*vw/($1*$vw\/100)/gi;
+        $e =~ s/(\d*\.?\d+)\s*r?em/($1*16)/gi;
+        $e =~ s/(\d*\.?\d+)\s*px/($1)/gi;
+        $e =~ s/\bcalc\(/(/gi;
+        return undef unless $e =~ m{^[\d\s.+\-*/()]+$};
+        my $v = eval $e; return (defined $v && $v > 0) ? $v : undef;
+    };
+    my $fallback = ($wattr && $wattr =~ /^\d+$/) ? $wattr : $vw;
+    return $vw unless defined $sizes && $sizes =~ /\S/;
+    my (@ent, $buf, $prof) = ((), '', 0);
+    for my $c (split //, $sizes) {
+        $prof++ if $c eq '('; $prof-- if $c eq ')';
+        if ($c eq ',' && $prof == 0) { push @ent, $buf; $buf = ''; next }
+        $buf .= $c;
+    }
+    push @ent, $buf;
+    for my $en (@ent) {
+        $en =~ s/^\s+|\s+$//g;
+        if ($en =~ /^\((.*?)\)\s*(?:and\s*\((.*?)\)\s*)?(.+)$/i && $en !~ /^\(?calc/i) {
+            my ($c1, $c2, $len) = ($1, $2, $3);
+            my $ok = 1;
+            for my $c (grep { defined } $c1, $c2) {
+                if    ($c =~ /^\s*min-width\s*:\s*(\d+)px\s*$/i)  { $ok = 0 unless $vw >= $1 }
+                elsif ($c =~ /^\s*max-width\s*:\s*(\d+)px\s*$/i)  { $ok = 0 unless $vw <= $1 }
+                elsif ($c =~ /^\s*width\s*>=?\s*(\d+)px\s*$/i)    { $ok = 0 unless $vw >= $1 }
+                elsif ($c =~ /^\s*width\s*<=?\s*(\d+)px\s*$/i)    { $ok = 0 unless $vw <= $1 }
+                else  { return $fallback }                          # una condicion que no se entiende
+            }
+            next unless $ok;
+            my $v = $px->($len); return defined $v ? $v : $fallback;
+        }
+        my $v = $px->($en); return defined $v ? $v : $fallback;
+    }
+    return $vw;
+}
+sub candidato_srcset {
+    my ($t, $vw) = @_;
+    my $ss = attr($t, 'srcset') // attr($t, 'data-srcset');
+    return undef unless defined $ss && $ss =~ /\S/;
+    my @c;
+    # Cada candidato es «URL descriptor»: la URL no lleva espacios, asi que se lee por pares, sin partir por comas
+    # (una URL puede llevar comas dentro).
+    while ($ss =~ /\G\s*,?\s*(\S+?)\s+(\d+)w\s*(?=,|$)/gc) { push @c, [$1, $2] }
+    return undef unless @c;
+    my $hueco = hueco_sizes(attr($t, 'sizes'), $vw, attr($t, 'width'));
+    @c = sort { $a->[1] <=> $b->[1] } @c;
+    for my $c (@c) { return $c->[0] if $c->[1] >= $hueco }
+    return $c[-1][0];
+}
 sub abs_url {
     my ($href, $base) = @_;
     return undef unless defined $href && $href ne '';
@@ -2795,9 +2860,13 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
         }
         for my $t ($hp =~ /(<img\b[^>]*>)/gi) {
             my $src = attr($t,'src') // attr($t,'data-src');
+            # 14-nov-2026 · con srcset de descriptores w, lo que se juzga es lo que se baja a 1298 (ver candidato_srcset).
+            my $cand = candidato_srcset($t, 1298);
+            $src = $cand if defined $cand;
             my $a = abs_url($src, $bp) or next;
             my ($w,$hh) = (attr($t,'width'), attr($t,'height'));
-            push @imgs, { url=>$a, w=>$w, h=>$hh, pag=>$pg, lazy=>((attr($t,'loading')//'') eq 'lazy') };
+            push @imgs, { url=>$a, w=>$w, h=>$hh, pag=>$pg, lazy=>((attr($t,'loading')//'') eq 'lazy'),
+                          (defined $cand ? (srcset=>1) : ()) };
             $anota->($a, $pg, tipo=>'img', w=>$w, h=>$hh) unless (attr($t,'loading')//'') eq 'lazy';
         }
     }
@@ -3849,6 +3918,19 @@ sub lente_a11y {
             my ($open) = $m =~ /^(<[^>]*>)/;
             next if attr($open,'aria-label') || attr($open,'title') || attr($open,'aria-labelledby');
             my $txt = tag_text($m); $txt =~ s/^\s+|\s+$//g;
+            # 🔴 14-nov-2026 · UN ENLACE CON SOLO UNA IMAGEN SE LLAMA COMO SU ALT. tag_text quita las etiquetas, y el
+            #    alt de un <img> se iba con ellas: las 16 tarjetas del blog de una tienda Shopify (un <a> con un <img alt="…">
+            #    dentro) salian mudas, y no lo son (su repo, f7eefc3, _medicion/capa3-20261112/). El nombre se
+            #    calcula del contenido, como el navegador: el alt no vacio de un <img> o <area>, el aria-label de un
+            #    hijo y el <title> de un <svg>. Un alt="" sigue sin dar nombre (es decorativa).
+            if ($txt eq '') {
+                my $nombre = 0;
+                for my $t ($m =~ /(<(?:img|area)\b[^>]*>)/gi) { my $al = attr($t, 'alt'); $nombre = 1 if defined $al && $al =~ /\S/ }
+                my @hijas = $m =~ /(<[a-z][^>]*>)/gi; shift @hijas;    # la primera es la del propio enlace
+                for my $t (@hijas) { my $al = attr($t, 'aria-label'); $nombre = 1 if defined $al && $al =~ /\S/ }
+                $nombre = 1 if $m =~ m{<title\b[^>]*>\s*[^<\s]}i;
+                $txt = 'nombre-del-contenido' if $nombre;
+            }
             push @mudos, substr($open,0,70)." <- $p" if $txt eq '';
         }
 
@@ -6406,10 +6488,18 @@ sub lente_estructura {
                       proc=>'09 §2.10', hacer=>'sin noindex compite con la pagina de contacto en el buscador; sin salida, el visitante que acaba de convertir se queda en blanco');
         }
     } else {
+        # 🔴 14-nov-2026 · Y CUANDO NO HAY URL DE GRACIAS A PROPOSITO. una tienda WooCommerce confirma el pedido en la misma pantalla
+        #    del configurador (plazo «24h uteis» y boton de WhatsApp; la conversion la cuenta generate_lead) y una tienda Shopify
+        #    (Shopify) tiene la de gracias en el checkout, que el tema no sirve y que robots.txt cierra; la compra la
+        #    cuenta purchase. Sin --gracias esto queda NO VERIFICADO para siempre, y no se podia firmar. Desde hoy se firma
+        #    en measured.conf, atado al DATO «sin URL de gracias»: si un dia se pasa --gracias, lo mide el gate y la
+        #    firma no se usa. Lo que se mide a mano es lo mismo que pide el umbral: que diga que pasa ahora y cuando, que
+        #    tenga salida y que la conversion la cuente un evento (y cual).
         nv(lente=>'ESTRUCTURA', id=>'EST-04', titulo=>'pagina de gracias',
+           dato=>'sin URL de gracias',
            umbral=>'noindex + salida + plazo de respuesta',
            proc=>'09 §2.10 · G1 (el fallo mas caro vive en la unica pagina que el gate no visita)',
-           hacer=>'volver a correr con --gracias /ruta. Si no existe la ruta, ESO es el hallazgo');
+           hacer=>'volver a correr con --gracias /ruta. Si no existe la ruta, ESO es el hallazgo. Si no la hay a proposito (la confirmacion sale en la misma pantalla, o la gracias es la del checkout de la plataforma), medir la confirmacion (plazo, salida y el evento que cuenta la conversion) y firmarla en _deploy/measured.conf: CHECK EST-04, DATO sin URL de gracias');
     }
 
     # ── EST-05..07 · lo que necesita DOM ────────────────────────────────────
@@ -7275,7 +7365,7 @@ sub lee_aceptados {
 #
 #  LAS CERRADURAS, mismas ideas que ACEPTADO y por los mismos motivos
 #  ------------------------------------------------------------------
-#   1 · SOLO ESTAS OCHO (siete hasta el 5-nov, mas A11Y-03b). La lista vive AQUI, no en el fichero: un check que el
+#   1 · SOLO ESTAS NUEVE (siete hasta el 5-nov, mas A11Y-03b; EST-04 desde el 14-nov). La lista vive AQUI, no en el fichero: un check que el
 #       gate SI mide no se puede «declarar medido» para callarlo.
 #   2 · CINCO CAMPOS (seis con DATO). Si falta uno, la entrada no vale, se dice,
 #       y el check sigue NO VERIFICADO.
@@ -7294,7 +7384,11 @@ sub lee_aceptados {
 #     pasa el raton por encima: salia NO VERIFICADO en cada recibo (una web nuestra)
 #     sin forma de cerrarlo. Va atada a su DATO («N reglas»): si cambian las
 #     reglas, la firma ya no vale.
-my %MEDIBLE_A_MANO = map { $_ => 1 } qw(SEO-17 A11Y-13 A11Y-14 MED-13 MED-14 EST-08 EST-12f A11Y-03b);
+#  🔴 14-nov-2026 · Y LA NOVENA, EST-04, SOLO SIN URL DE GRACIAS: una confirmacion en la misma pantalla (una tienda WooCommerce) o la
+#     gracias del checkout de la plataforma (Shopify) no tienen ruta que pasar a --gracias, y EST-04 salia NO
+#     VERIFICADO en cada recibo sin forma de cerrarlo. Va atada a su DATO («sin URL de gracias»), que el check solo trae
+#     cuando no se le pasa --gracias: con una ruta lo mide el gate, y una firma no lo puede callar (cerradura 1).
+my %MEDIBLE_A_MANO = map { $_ => 1 } qw(SEO-17 A11Y-13 A11Y-14 MED-13 MED-14 EST-08 EST-12f A11Y-03b EST-04);
 use constant MEDIDO_DIAS => 90;
 
 sub lee_medidos {
@@ -7312,7 +7406,7 @@ sub lee_medidos {
         my @faltan = grep { !defined $e{$_} || $e{$_} =~ /^\s*$/ } qw(CHECK RESULTADO COMO MIDE FECHA);
         if (@faltan) { $e{_mal} = 'faltan campos obligatorios: ' . join(', ', @faltan); push @malas, \%e; return }
         unless ($MEDIBLE_A_MANO{$e{CHECK}}) {
-            $e{_mal} = "$e{CHECK} no se puede declarar medido a mano: o lo mide el gate, o no es de los ocho ("
+            $e{_mal} = "$e{CHECK} no se puede declarar medido a mano: o lo mide el gate, o no es de los nueve ("
                      . join(' ', sort keys %MEDIBLE_A_MANO) . ')';
             push @malas, \%e; return;
         }

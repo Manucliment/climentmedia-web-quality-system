@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Campo sin borde dentro de un envoltorio con borde</title><link rel="stylesheet" href="base.css"><style>
+section{min-height:0;padding:24px}
+/* 14-nov-2026 · como quantity-selector-component de Horizon: el input no tiene borde y es la caja de fuera la que lo
+   lleva, con los botones - y +. Con el gate de antes: FALLA 1:1 (leia el input solo). */
+.cantidad{display:inline-flex;align-items:center;border:1px solid #281c17;background:transparent}
+.cantidad input{border:0;background:transparent;width:40px;text-align:center;padding:6px}
+.cantidad button{border:0;background:transparent;width:36px;height:36px}
+</style></head>
+<body><main>
+<h1>Cantidad</h1>
+<form action="#" onsubmit="return false">
+<label for="q">Cantidad</label>
+<span class="cantidad"><button type="button" aria-label="Menos">-</button><input id="q" name="q" type="number" value="1"><button type="button" aria-label="Mas">+</button></span>
+</form>
+</main>
+</body></html>

@@ -660,6 +660,13 @@ espera "site-a · las 2 fuentes que el navegador SI baja"    PASA  REN-04  perl 
 texto  "site-a · REN-04 dice cuantas descuenta y por que"   SI "2 de 4 NO se bajan" \
        perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
 espera "site-a · PNG de 2,3 MB / logo a 200 B/px"           FALLO REN-02  perl $QA http://site-a.example/ --solo rendimiento --cache "$CACHE"
+# 14-nov-2026 · con srcset de descriptores w el navegador no pide el src: elige por sizes (a 1298, 1x). Horizon pone en el
+# src el candidato mayor (una tienda Shopify, ?width=3840). Visto en ROJO contra el qa-master de antes (FALLO por el src). El espejo:
+# la misma imagen sin srcset baja el src y sigue cayendo.
+espera "REN-02 · con srcset juzga lo que se baja, PASA"     PASA  REN-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-srcset --candidato --una-sola --solo rendimiento --sin-recibo
+espera "REN-02 · y sin srcset, el src, FALLA"              FALLO REN-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-sin-srcset --candidato --una-sola --solo rendimiento --sin-recibo
 # ⚠️ 22-sep-2026 · `--contenedor` en los casos de site-d que necesitan el
 #    contenedor (MED-03/07/08): antes se descargaba de googletagmanager.com por
 #    HTTPS, y el banco ya no sale a internet. Sin el, esos checks salen NO
@@ -1936,6 +1943,18 @@ if mide_bloque "MEDIDO A MANO: las siete y sus cerraduras" http://site-d.example
   printf '<!doctype html><html><head><!-- gtag("config","AW-1234567") --></head><body></body></html>\n' > "$RM/conversion.html"
   texto  "AW- en un comentario · sigue en GA4"          SI "que el lead haya LLEGADO a GA4" $MQA -q
   rm -f "$RM/conversion.html" "$RM/_deploy/deploy.conf" "$RM/_deploy/measured.conf"
+  # 9-quater · 🔴 14-nov-2026 · LA NOVENA, EST-04 SIN URL DE GRACIAS (una tienda WooCommerce confirma en la misma pantalla;
+  #    una tienda Shopify, en el checkout de Shopify). Atada a su DATO, que el check solo trae sin --gracias. Con el programa de
+  #    antes el positivo salia NO VERIFICADO («no se puede declarar medido a mano»). El negativo que importa: con
+  #    --gracias lo mide el gate, y la firma no calla su FALLO.
+  EQA="perl $QA http://site-d.example/ --repo $RM --solo estructura --sin-recibo --cache $CACHE"
+  med EST-04 PASA "$HOY" "DATO=sin URL de gracias"
+  espera "EST-04 · sin --gracias, firmado · PASA"       PASA    EST-04 $EQA
+  med EST-04 PASA "$HOY" "DATO=/gracias/"
+  espera "EST-04 · DATO distinto · NO vale"             NOVERIF EST-04 $EQA -q
+  med EST-04 PASA "$HOY" "DATO=sin URL de gracias"
+  espera "EST-04 · con --gracias lo mide el gate"       FALLO   EST-04 $EQA --gracias /no-existe-gracias/ -q
+  rm -f "$RM/_deploy/measured.conf"
   # 10 · el nombre en castellano tambien vale
   med MED-14 PASA "$HOY"; mv "$RM/_deploy/measured.conf" "$RM/_deploy/medido.conf"
   espera "medido.conf (castellano) tambien vale"        PASA    MED-14 $MQA
@@ -2930,6 +2949,12 @@ espera "A11Y-06 · un enlace solo-icono, FALLA"          FALLO A11Y-06 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/a11y-pobre --candidato --una-sola --solo accesibilidad --sin-recibo
 espera "A11Y-06 · con aria-label, PASA"                 PASA  A11Y-06 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/a11y-bueno --candidato --una-sola --solo accesibilidad --sin-recibo
+# 14-nov-2026 · un enlace con solo un <img alt="…"> se llama como su alt (las tarjetas del blog de una tienda Shopify). Visto en
+# ROJO contra el qa-master de antes (FALLO). El espejo: con alt="" la imagen es decorativa y el enlace sigue mudo.
+espera "A11Y-06 · enlace con una imagen con alt, PASA"   PASA  A11Y-06 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/a11y06-alt --candidato --una-sola --solo accesibilidad --sin-recibo
+espera "A11Y-06 · y con alt vacio, FALLA"                FALLO A11Y-06 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/a11y06-alt-vacio --candidato --una-sola --solo accesibilidad --sin-recibo
 espera "A11Y-07 · dos <main>, FALLA"                    FALLO A11Y-07 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/a11y-pobre --candidato --una-sola --solo accesibilidad --sin-recibo
 # 🔴 ESTE CASO ES EL QUE ENCONTRO UN FALLO DEL GATE. El fixture bueno tiene UN

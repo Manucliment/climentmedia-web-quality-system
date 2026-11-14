@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>El mismo envoltorio sin borde</title><link rel="stylesheet" href="base.css"><style>
+section{min-height:0;padding:24px}
+/* 14-nov-2026 · espejo de campos-envoltorio: la misma caja sin borde. El campo no se distingue: FALLA. */
+.cantidad{display:inline-flex;align-items:center;border:0;background:transparent}
+.cantidad input{border:0;background:transparent;width:40px;text-align:center;padding:6px}
+.cantidad button{border:0;background:transparent;width:36px;height:36px}
+</style></head>
+<body><main>
+<h1>Cantidad</h1>
+<form action="#" onsubmit="return false">
+<label for="q">Cantidad</label>
+<span class="cantidad"><button type="button" aria-label="Menos">-</button><input id="q" name="q" type="number" value="1"><button type="button" aria-label="Mas">+</button></span>
+</form>
+</main>
+</body></html>

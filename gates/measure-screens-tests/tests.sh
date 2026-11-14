@@ -166,6 +166,17 @@ espera f23-configurador.html       PASA  ""                      "cinco botones 
 espera f24-acordeon-sin-cta.html   FALLA "CTA en toda la pagina" "un acordeon no es un configurador"
 espera f25-pestanas-sin-cta.html   FALLA "CTA en toda la pagina" "unas pestanas tampoco"
 echo
+echo "== LO QUE SE VE Y LO QUE SE DESPLAZA (14-nov-2026, casos de una tienda Shopify)"
+#   Cada uno, visto en ROJO contra el gate de antes en el servidor (14-nov): f26 PASA, f27 FALLA, f29 FALLA, f30 PASA.
+#   f27 · dos botones ocultos por seccion contaban como CTA. f28/f29 · un enlace-boton en un <div> es una parada, y el
+#   mismo dentro de un <p> no (una web de cliente, 10-nov). f30/f31 · Horizon: se desplaza .page-wrapper, no la ventana; las fotos
+#   lazy miden 0 hasta cargar (run-gate) y el alto de la pagina es el del contenedor (measure-screens).
+espera f27-cta-oculto.html             FALLA "CTA en toda la pagina" "un CTA oculto no cuenta"
+espera f28-boton-entre-tramos.html     PASA  ""                      "un enlace-boton parte el tramo"
+espera f29-boton-en-parrafo.html       FALLA "SIN UNA PARADA"        "dentro de un parrafo, no"
+espera f30-fotos-lazy-en-contenedor.html PASA ""                     "Horizon: las fotos lazy cargan"
+espera f31-alto-en-contenedor.html     FALLA "pantallas de scroll"   "Horizon: el alto es el del contenedor"
+echo
 # 🔴 Se CUENTAN antes de medir. Con la carpeta equivocada, el patron no casaba,
 #    `sh` dejaba el literal `[0-9]*.html` y el bucle media UN caso inexistente --
 #    un «MAL» que parecia un problema de ancho. Cero moldes no es un repertorio

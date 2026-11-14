@@ -121,6 +121,10 @@ res CAMPOS-RELLENO     campos-relleno.html     FALLA 'campo(s) del formulario no
 res CAMPOS-SOMBRA      campos-sombra.html      PASA  '"camposFlojos": 0' 'no se distinguen'
 res CAMPOS-OSCURO      campos-oscuro.html      PASA  '"camposFlojos": 0' 'no se distinguen'
 res CAMPOS-IMAGEN      campos-imagen.html      PASA  'sobre una imagen, un degradado' 'no se distinguen'
+# 14-nov-2026 · el contorno lo lleva el envoltorio (quantity-selector-component de Horizon). Visto en ROJO contra el
+# gate de antes (1:1). El espejo, la misma caja sin borde, sigue cayendo.
+res CAMPOS-ENVOLTORIO  campos-envoltorio.html  PASA  '"camposPorEnvoltorio": 1' 'no se distinguen'
+res CAMPOS-ENV-SIN-BORDE campos-envoltorio-sin-borde.html FALLA '1 campo(s) del formulario no se distinguen'
 echo
 ssh "$HOST" "rm -rf $REMOTO ~/webtools/banco-visible" >/dev/null 2>&1
 echo "  $OK OK · $MAL MAL"
