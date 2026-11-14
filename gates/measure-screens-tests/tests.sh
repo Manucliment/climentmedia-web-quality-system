@@ -140,6 +140,11 @@ espera f7-largo-pero-denso.html PASA  ""                            "mismo alto,
 # 1-nov-2026 · el presupuesto por palabras tiene techo (12): f7 sigue pasando por debajo
 # de el, y f15 -que sin techo tendria derecho a 78 pantallas y PASA con la regla vieja (medido)- cae por el techo.
 espera f15-techo-de-pantallas.html FALLA "el techo es 12"           "mucho texto no compra pantallas sin fin"
+# 14-nov-2026 · el techo de 12 no va con una pagina legal (la politica de una web propia, a 12,0 a 390, y la ley le pide mas
+# texto): f32 es f15 declarada legal y PASA (con la regla de antes, FALLA por el techo). El presupuesto por palabras sigue: f33,
+# f6 declarada legal, sigue cayendo por aire.
+espera f32-legal-larga.html PASA  ""                              "una pagina legal no tiene techo de 12"
+espera f33-legal-aire.html  FALLA "pantallas de scroll"          "pero el aire sigue cayendo en una legal"
 echo
 echo "== LOS BOTONES QUE NO SE LLAMAN btn (27-oct-2026, trampa de diseno E1)"
 #   «btn» no es subcadena de «button»: con CTA de clase `button` (Shopify) el gate contaba

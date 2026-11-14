@@ -292,7 +292,14 @@
   const textoVisible = (raizTexto.innerText || "").replace(/\s+/g, " ").trim();
   const palabras = textoVisible ? textoVisible.split(" ").length : 0;
   const limiteSinTope = 6 + Math.max(0, palabras - PALABRAS_GRATIS) / PALABRAS_POR_PANTALLA;
-  const limitePantallas = Math.min(TOPE_PANTALLAS, limiteSinTope);
+  // 🔴 14-nov-2026 · EL TECHO NO VA CON UNA PAGINA LEGAL. Una politica de privacidad a 12,0 pantallas a 390, a la que la
+  //  ley le sigue pidiendo texto (novedades, registro), solo podia caber recortando texto legal publicado. El techo existe
+  //  para la pagina que vende y que nadie recorre hasta el boton; una politica no vende ni tiene boton (las reglas de CTA
+  //  ya no van con ella, ver abajo). Lo que la sigue midiendo es el presupuesto POR PALABRAS, que caza el aire (f33), y la
+  //  densidad: unidades y contenedor. El tipo se lee como abajo: declarado en <main>, o la ruta.
+  const esLegal = ((document.querySelector("main") || { getAttribute: () => null }).getAttribute("data-tipo")
+    || (/legal|privac|cookie|condi|terms|mentions|aviso/.test(location.pathname.toLowerCase()) ? "legal" : "")) === "legal";
+  const limitePantallas = esLegal ? limiteSinTope : Math.min(TOPE_PANTALLAS, limiteSinTope);
 
   const fallos = [];
   if (desbordan.length) fallos.push(`${desbordan.length} bloque(s) con mas de una pantalla SIN UNA PARADA`);
@@ -304,7 +311,7 @@
   // el sello ?v= del CSS las cambia en cada subida, paraban todas las de esa web.
   // Una politica o unas condiciones no llevan llamada a la accion. El tipo se lee
   // como en mobile-gate (SIN_CTA_OBLIGATORIO): declarado en <main>, o, si no, la ruta.
-  // La densidad (unidades, contenedor, techo de pantallas) sigue valiendo para ellas.
+  // La densidad (unidades, contenedor, presupuesto por palabras) sigue valiendo para ellas; el techo de 12, no (14-nov).
   const mainTipo = (document.querySelector("main") || {}).getAttribute
     ? document.querySelector("main").getAttribute("data-tipo") : null;
   const rutaMin = location.pathname.toLowerCase();
