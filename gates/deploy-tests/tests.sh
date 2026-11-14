@@ -750,6 +750,49 @@ VER=$(grep -nE '^[[:space:]]*echo .*(G11 lo ha verificado|desplegado y verificad
 if [ -z "$VER" ]; then ok=$((ok+1)); printf '  PASA  %s\n' "ninguna linea de la puerta dice «verificado» de la subida"
 else ko=$((ko+1)); printf '  MAL   %s\n' "ninguna linea de la puerta dice «verificado» de la subida"; printf '%s\n' "$VER" | sed 's/^/        /'; fi
 
+# ── 2-septies (14-nov-2026): el marcado por tipo, AVISO y nunca parada ───────
+#    Los bytes reales del bloque, entre sus marcas, sobre un arbol de prueba: una
+#    portada buena, una con su FALLO (sin WebSite) y una ruta declarada que no esta
+#    en el arbol. En ROJO contra la puerta de antes: no tenia el bloque (MAL abajo).
+PT_A=$(grep -n '^# >>> marcado-por-tipo' "$PUERTA" | head -1 | cut -d: -f1)
+PT_B=$(grep -n '^# <<< marcado-por-tipo' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${PT_A:-}" ] || [ -z "${PT_B:-}" ] || [ "$PT_A" -ge "$PT_B" ]; then
+  ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: no encuentro el bloque marcado-por-tipo en $PUERTA"
+else
+  PT_BLOQUE="$(mktemp -t bloquept-XXXXXXXX)"; sed -n "${PT_A},${PT_B}p" "$PUERTA" > "$PT_BLOQUE"
+  PT_ARBOL="$(mktemp -d -t arbolpt-XXXXXXXX)"; mkdir -p "$PT_ARBOL/sin-website"
+  PT_WS='<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tienda","url":"https://tienda.example/"}</script>'
+  PT_ORG='<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","@id":"https://tienda.example/#org","name":"Tienda","url":"https://tienda.example/","logo":"https://tienda.example/l.png"}</script>'
+  pt_pagina() { printf '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tienda</title><link rel="canonical" href="https://tienda.example/%s">%s%s</head><body><main data-tipo="home"><h1>Tienda de lamparas</h1></main></body></html>\n' "$1" "$2" "$PT_ORG"; }
+  pt_pagina ""             "$PT_WS" > "$PT_ARBOL/index.html"
+  pt_pagina "sin-website/" ""       > "$PT_ARBOL/sin-website/index.html"
+  pt_corre() { ( REPO="$PT_ARBOL"; REDIR="${PT_REDIR:-0}"; SUBIR=0; URLS_NAVEGADOR="$1"; CAMBIADAS_TODAS="${2:-}"
+                 no_aplica() { echo "  $1 · NO APLICA"; }; . "$PT_BLOQUE" ) > "$TMP" 2>&1; }
+  pt_espera() { # nombre · TIENE que salir · NO puede salir
+    local bien=1
+    [ -n "$2" ] && ! grep -q -- "$2" "$TMP" && bien=0
+    [ -n "$3" ] &&   grep -q -- "$3" "$TMP" && bien=0
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+    else ko=$((ko+1)); printf '  MAL   %s\n' "$1"; sed 's/^/        /' "$TMP"; fi
+  }
+  pt_corre "/"
+  pt_espera "2-septies: una portada con WebSite y Organization, 1 medida y sin FALLO" "1 paginas medidas · 0 con FALLO · 0 NO MEDIDO" "AVISO:"
+  pt_corre "/ /sin-website/"
+  pt_espera "2-septies: la portada sin WebSite sale con su PT-03, y es AVISO" "sin-website/index.html · FALLO  PT-03" ""
+  pt_espera "2-septies: y el recuento la cuenta" "2 paginas medidas · 1 con FALLO · 0 NO MEDIDO" ""
+  pt_corre "/ /no-existe/"
+  pt_espera "2-septies: una ruta declarada sin fichero es NO MEDIDO, no un aprobado" "1 paginas medidas · 0 con FALLO · 1 NO MEDIDO" ""
+  pt_corre "/" "sin-website/index.html index.html"
+  pt_espera "2-septies: las cambiadas tambien se miden, y una repetida, una vez" "2 paginas medidas · 1 con FALLO" ""
+  PT_REDIR=1 pt_corre "/"
+  pt_espera "2-septies: un arbol de redirecciones no aplica" "NO APLICA" "paginas medidas"
+  # El bloque nunca para la subida: ni un exit ni un return que no sea el de pt_fichero.
+  if grep -vE '^[[:space:]]*#' "$PT_BLOQUE" | grep -qE '(^|[^_a-z])exit([^_a-z]|$)'; then
+    ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: el bloque lleva un exit (un AVISO no para la subida)"
+  else ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: el bloque no lleva ningun exit: avisa y sigue"; fi
+  rm -rf "$PT_BLOQUE" "$PT_ARBOL"
+fi
+
 rm -f "$TMP" "$VACIO" "$ANT" "$RET"
 echo
 printf '  %d bien · %d mal\n' "$ok" "$ko"

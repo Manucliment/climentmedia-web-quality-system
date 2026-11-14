@@ -1882,6 +1882,69 @@ else
   fi
 fi
 
+# ── 2-septies · EL MARCADO DE CADA PAGINA, JUZGADO POR SU TIPO ───────────────
+#
+#  `page-type-gate.pl` juzga el JSON-LD de una pagina contra schema.org y contra
+#  su TIPO: lo que tiene que llevar, lo que no puede llevar suelto, lo marcado
+#  frente a lo que se ve, las acciones y la indexacion. `qa-master SEO-11` solo
+#  pregunta si hay JSON-LD, y da verde a cualquiera.
+#
+#  🔴 NO BLOQUEA, misma norma que 2-quinquies: se cablea PARA QUE SE VEA.
+#  14-nov-2026, medido sobre lo servido de las webs de la casa (58 paginas que
+#  venden): 4 FALLO y ninguna sin leer. Una portada sin WebSite, real y ya vista
+#  el 5-nov, y tres portadas con un FAQPage suelto, que es la fila de la portada
+#  en page-types.tsv (las preguntas SI se ven: PT-06 pasa). CUANDO PASA A
+#  BLOQUEAR: cuando los FALLO de dos semanas aqui sean todos reales.
+#
+#  Mide el ARBOL, no lo servido: aqui aun se arregla. Las paginas de
+#  URLS_NAVEGADOR y TODAS las que cambian en esta subida, cada una en su fichero.
+#  Sin --sondear (PT-08 pide la web viva). Una ruta declarada sin fichero en el
+#  arbol es NO MEDIDO, y se cuenta: el silencio se leeria como un aprobado.
+# >>> marcado-por-tipo
+pt_fichero() {   # ruta servida -> fichero del arbol: / -> index.html · /sub/ -> sub/index.html · /otra -> otra.html u otra/index.html
+  local r="${1%%[?#]*}"; r="${r#/}"
+  case "$r" in
+    "") printf 'index.html\n' ;;
+    */) printf '%sindex.html\n' "$r" ;;
+    *)  if [ -f "$REPO/$r" ]; then printf '%s\n' "$r"; elif [ -f "$REPO/$r.html" ]; then printf '%s.html\n' "$r"; else printf '%s/index.html\n' "$r"; fi ;;
+  esac
+}
+if [ "$REDIR" = 1 ]; then
+  no_aplica "2-septies · marcado por tipo"
+elif [ ! -f "$REF/page-type-gate.pl" ]; then
+  echo
+  echo "  2-septies · marcado por tipo: no encuentro page-type-gate.pl. NO MEDIDO."
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO no medido: falta el programa" --repo "$REPO" >/dev/null 2>&1
+else
+  linea; echo "  2-septies · el marcado de cada pagina, por su tipo (AVISO)"; linea
+  PT_N=0; PT_FALLO=0; PT_NM=0; PT_LISTA=""; PT_VISTOS=" "
+  for f in $(for r in ${URLS_NAVEGADOR:-/}; do pt_fichero "$r"; done) ${CAMBIADAS_TODAS:-}; do
+    case "$PT_VISTOS" in *" $f "*) continue ;; esac
+    PT_VISTOS="$PT_VISTOS$f "
+    if [ ! -f "$REPO/$f" ]; then
+      PT_NM=$((PT_NM+1)); echo "  NO MEDIDO  $f: no esta en el arbol"; continue
+    fi
+    PT_SAL="$(perl "$REF/page-type-gate.pl" "$REPO/$f" 2>&1)"; PT_RC=$?
+    PT_N=$((PT_N+1))
+    if [ "$PT_RC" = 1 ]; then
+      PT_FALLO=$((PT_FALLO+1)); PT_LISTA="$PT_LISTA $f"
+      printf '%s\n' "$PT_SAL" | grep -E '^[[:space:]]*FALLO[[:space:]]+PT-' | head -3 | sed -E "s|^[[:space:]]*|  $f · |" | cut -c1-200
+    elif [ "$PT_RC" = 3 ]; then
+      PT_NM=$((PT_NM+1)); echo "  NO MEDIDO  $f: page-type-gate no la pudo leer"
+    fi
+  done
+  echo "  $PT_N paginas medidas · $PT_FALLO con FALLO · $PT_NM NO MEDIDO"
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · $PT_FALLO con FALLO${PT_LISTA:+ (${PT_LISTA# })} · $PT_NM no medidas · AVISO, no bloquea" --repo "$REPO" >/dev/null 2>&1
+  if [ "$PT_FALLO" != 0 ]; then
+    echo
+    echo "  ⚠ AVISO: el marcado de esas paginas no es el de su tipo. Queda anotado y"
+    echo "    NO bloquea todavia (el motivo, con fecha, arriba). Se arregla en la"
+    echo "    FUENTE; si es un falso positivo, se arregla EL GATE o su fila de"
+    echo "    page-types.tsv, con su caso rojo."
+  fi
+fi
+# <<< marcado-por-tipo
+
 # ── 3 · subir ────────────────────────────────────────────────────────────────
 linea; echo "  3 · subida"; linea
 if [ -z "$SUBIDA" ]; then
