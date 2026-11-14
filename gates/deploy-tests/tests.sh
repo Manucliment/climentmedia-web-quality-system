@@ -793,6 +793,55 @@ else
   rm -rf "$PT_BLOQUE" "$PT_ARBOL"
 fi
 
+# ── 2-octies (14-nov-2026): la revision de lo que sube, AVISO y nunca parada ─
+#    Los bytes reales del bloque. arbol_huellas y REVISION_CMD son dobles: el
+#    doble del comando escribe la lista que recibe, y asi se ve que la puerta le
+#    pasa lo que cambia y nada mas. En ROJO contra la puerta de antes: no tenia el
+#    bloque (MAL abajo).
+RV_A=$(grep -n '^# >>> revision-de-lo-que-sube' "$PUERTA" | head -1 | cut -d: -f1)
+RV_B=$(grep -n '^# <<< revision-de-lo-que-sube' "$PUERTA" | head -1 | cut -d: -f1)
+if [ -z "${RV_A:-}" ] || [ -z "${RV_B:-}" ] || [ "$RV_A" -ge "$RV_B" ]; then
+  ko=$((ko+1)); printf '  MAL   %s\n' "2-octies: no encuentro el bloque revision-de-lo-que-sube en $PUERTA"
+else
+  RV_BLOQUE="$(mktemp -t bloquerv-XXXXXXXX)"; sed -n "${RV_A},${RV_B}p" "$PUERTA" > "$RV_BLOQUE"
+  RV_DIR="$(mktemp -d -t revision-XXXXXXXX)"
+  printf '%s\n' '# huellas-v2 (html sin sellos ?v=)' 'aaaa1111 10 index.html' 'bbbb2222 20 b.html' 'cccc3333 30 s.css' > "$RV_DIR/ant"
+  RV_DOBLE="$RV_DIR/doble.sh"
+  printf '%s\n' '#!/usr/bin/env bash' 'while [ $# -gt 0 ]; do case "$1" in --cambiados) cp "$2" "${RV_COPIA:?}"; shift ;; esac; shift; done' 'printf "%s\n" "${RV_DICE:-REVISOR: PASA · todo}"' > "$RV_DOBLE"
+  rv_corre() { ( REPO="$RV_DIR"; REDIR="${RV_REDIR:-0}"; SUBIR=0; CONF="deploy.conf"; SITIO="https://x.test"
+                 HUELLAS_ANT="${RV_ANT-$RV_DIR/ant}"; HUELLAS_VERSION='# huellas-v2 (html sin sellos ?v=)'; REF="$RV_DIR"
+                 arbol_huellas() { printf '%s\n' 'aaaa1111 10 index.html' 'bbbb9999 20 b.html' 'cccc3333 30 s.css' 'dddd4444 40 nueva.html'; }
+                 no_aplica() { echo "  $1 · NO APLICA"; }
+                 export RV_COPIA="$RV_DIR/recibida" RV_DICE; . "$RV_BLOQUE" ) > "$TMP" 2>&1; }
+  rv_espera() {
+    local bien=1
+    [ -n "$2" ] && ! grep -q -- "$2" "$TMP" && bien=0
+    [ -n "$3" ] &&   grep -q -- "$3" "$TMP" && bien=0
+    if [ "$bien" = 1 ]; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+    else ko=$((ko+1)); printf '  MAL   %s\n' "$1"; sed 's/^/        /' "$TMP"; fi
+  }
+  REVISION_CMD="" rv_corre
+  rv_espera "2-octies: sin REVISION_CMD es NO MEDIDO, dicho" "sin REVISION_CMD" "AVISO:"
+  REVISION_CMD="bash $RV_DOBLE" RV_ANT="" rv_corre
+  rv_espera "2-octies: sin huellas de la subida anterior es NO MEDIDO" "sin huellas" "fichero(s) cambian"
+  rm -f "$RV_DIR/recibida"; REVISION_CMD="bash $RV_DOBLE" rv_corre
+  rv_espera "2-octies: con el comando, la puerta dice cuantos cambian (2 de 4)" "2 fichero(s) cambian" ""
+  if [ "$(tr '\n' ' ' < "$RV_DIR/recibida" 2>/dev/null)" = "b.html nueva.html " ]; then ok=$((ok+1)); printf '  PASA  %s\n' "2-octies: al comando le llega lo que cambia y lo nuevo, nada mas"
+  else ko=$((ko+1)); printf '  MAL   %s · recibio: %s\n' "2-octies: al comando le llega lo que cambia y lo nuevo, nada mas" "$(tr '\n' ' ' < "$RV_DIR/recibida" 2>/dev/null)"; fi
+  rv_espera "2-octies: un PASA se ensena y no avisa" "REVISOR: PASA" "AVISO:"
+  RV_DICE="REVISOR: FALTA · 1 de 2 sin veredicto: b.html" REVISION_CMD="bash $RV_DOBLE" rv_corre
+  rv_espera "2-octies: un FALTA se ensena y da AVISO" "AVISO: hay ficheros que suben sin un veredicto" ""
+  mkdir -p "$RV_DIR/config"; printf 'REVISION_CMD=bash %s\r\n' "$RV_DOBLE" > "$RV_DIR/config/revision.local.conf"
+  RV_DICE="" REVISION_CMD="" rv_corre
+  rv_espera "2-octies: sin REVISION_CMD en el entorno lo lee de config/revision.local.conf (con CRLF)" "REVISOR: PASA" "sin REVISION_CMD"
+  RV_REDIR=1 REVISION_CMD="bash $RV_DOBLE" rv_corre
+  rv_espera "2-octies: un arbol de redirecciones no aplica" "NO APLICA" "fichero(s) cambian"
+  if grep -vE '^[[:space:]]*#' "$RV_BLOQUE" | grep -qE '(^|[^_a-z])exit([^_a-z]|$)'; then
+    ko=$((ko+1)); printf '  MAL   %s\n' "2-octies: el bloque lleva un exit (un AVISO no para la subida)"
+  else ok=$((ok+1)); printf '  PASA  %s\n' "2-octies: el bloque no lleva ningun exit: avisa y sigue"; fi
+  rm -rf "$RV_BLOQUE" "$RV_DIR"
+fi
+
 rm -f "$TMP" "$VACIO" "$ANT" "$RET"
 echo
 printf '  %d bien · %d mal\n' "$ok" "$ko"

@@ -1945,6 +1945,59 @@ else
 fi
 # <<< marcado-por-tipo
 
+# ── 2-octies · ¿LO QUE SUBE LO HA REVISADO ALGUIEN? ──────────────────────────
+#
+#  La puerta mide el arbol, no si alguien con criterio lo leyo antes. Quien
+#  usa esta puerta con revisores (un revisor de la pieza, un aprobado de quien
+#  decide) declara un REVISION_CMD que contesta, para los ficheros que cambian,
+#  si cada uno lo cubre un veredicto favorable. La puerta le da la lista de lo
+#  que cambia frente a la subida anterior (sus huellas, con el HTML sin los
+#  sellos ?v=) y enseña sus dos lineas.
+#
+#  🔴 NO BLOQUEA, misma norma que 2-quinquies. 14-nov-2026, medido sobre las
+#  subidas de una semana de las webs de la casa: de 39, el revisor cubria 34,
+#  el aprobado 28, los dos 24 y ninguno 1. Bloquear el primer dia habria parado
+#  15 de 39, y aun no se sabe cuantas de esas eran de verdad sin revisar.
+#
+#  De donde sale REVISION_CMD: del deploy.conf o del entorno, y si no, de
+#  config/revision.local.conf (REVISION_CMD=...), fuera de git por `*.conf`
+#  como nav-host. Sin el, NO MEDIDO y se dice: el silencio se leeria como un
+#  aprobado. El comando recibe --repo, --cambiados <fichero> y --sitio, y su
+#  salida se ensena tal cual (4 lineas como mucho).
+# >>> revision-de-lo-que-sube
+REV_CONF="$REF/config/revision.local.conf"
+if [ -z "${REVISION_CMD:-}" ] && [ -f "$REV_CONF" ]; then
+  REVISION_CMD="$(sed -n 's/^REVISION_CMD=//p' "$REV_CONF" | tr -d '\r' | tail -1)"
+fi
+if [ "$REDIR" = 1 ]; then
+  no_aplica "2-octies · la revision de lo que sube"
+elif [ -z "${REVISION_CMD:-}" ]; then
+  echo
+  echo "  2-octies · la revision de lo que sube: sin REVISION_CMD (ni $CONF, ni el entorno, ni $REV_CONF). NO MEDIDO."
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "REVISION no medida: sin REVISION_CMD" --repo "$REPO" >/dev/null 2>&1
+elif [ ! -s "$HUELLAS_ANT" ] || [ "$(head -1 "$HUELLAS_ANT")" != "$HUELLAS_VERSION" ]; then
+  echo
+  echo "  2-octies · la revision de lo que sube: sin huellas (de esta version) de la subida anterior. NO MEDIDO."
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "REVISION no medida: sin huellas de la subida anterior" --repo "$REPO" >/dev/null 2>&1
+else
+  linea; echo "  2-octies · ¿lo que sube lo ha revisado alguien? (AVISO)"; linea
+  REV_LISTA="$(mktemp -t revision-XXXXXXXX)"
+  arbol_huellas | awk 'NR==FNR { if ($0 !~ /^#/) h[$3]=$1; next } !($3 in h) || h[$3] != $1 { print $3 }' "$HUELLAS_ANT" - > "$REV_LISTA"
+  REV_N="$(grep -c . "$REV_LISTA")"
+  REV_SALIDA="$($REVISION_CMD --repo "$REPO" --cambiados "$REV_LISTA" --sitio "$SITIO" 2>&1 | head -4)"
+  rm -f "$REV_LISTA"
+  echo "  $REV_N fichero(s) cambian frente a la subida anterior"
+  printf '%s\n' "${REV_SALIDA:-(REVISION_CMD no dijo nada: NO MEDIDO)}" | sed 's/^/  /' | cut -c1-240
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "REVISION $REV_N cambian · $(printf '%s' "${REV_SALIDA:-sin salida}" | tr '\n' ' ' | cut -c1-300) · AVISO, no bloquea" --repo "$REPO" >/dev/null 2>&1
+  case "$REV_SALIDA" in
+    *FALTA*)
+      echo
+      echo "  ⚠ AVISO: hay ficheros que suben sin un veredicto que los cubra. Queda"
+      echo "    anotado y NO bloquea todavia (el motivo, con fecha, arriba)." ;;
+  esac
+fi
+# <<< revision-de-lo-que-sube
+
 # ── 3 · subir ────────────────────────────────────────────────────────────────
 linea; echo "  3 · subida"; linea
 if [ -z "$SUBIDA" ]; then
