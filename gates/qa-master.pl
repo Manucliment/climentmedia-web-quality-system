@@ -1105,6 +1105,11 @@ sub candidato_srcset {
 sub abs_url {
     my ($href, $base) = @_;
     return undef unless defined $href && $href ne '';
+    # 🔴 14-nov-2026 · en un atributo HTML el `&` va escrito `&amp;`, y el navegador lo descodifica antes de pedir. El gate
+    #    pedia la URL tal cual: Shopify recibia `…?v=1&amp;width=352`, no conocia el parametro `amp;width` y devolvia la
+    #    foto original (683 KB) en vez de la de 352 px (39 KB). REN-02 nombraba el candidato bueno con el peso del malo.
+    #    ren02-srcset-amp lo distingue.
+    $href =~ s/&(?:amp|#0*38|#x0*26);/&/gi;
     return undef if $href =~ /^(mailto:|tel:|javascript:|#|data:)/i;
     return $href if $href =~ m{^https?://};
     return "$SCHEME:$href" if $href =~ m{^//};

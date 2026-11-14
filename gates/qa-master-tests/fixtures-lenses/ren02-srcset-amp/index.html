@@ -1,0 +1,5 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REN-02 con &amp; en el srcset</title></head><body><main>
+<!-- 14-nov-2026 · En un atributo HTML el & va escrito &amp; (Shopify: «?v=1&amp;width=352»). El navegador pide «peq&w.jpg»; el qa-master de antes pedia «peq&amp;w.jpg» tal cual, y en una tienda ese parametro desconocido devuelve la foto original (683 KB por una de 39 KB). Aqui «peq&amp;w.jpg» existe con 10 KB para que el error se vea: con el de antes, FALLO. -->
+<h1>Tarjeta</h1>
+<img src="grande.jpg" srcset="peq&amp;w.jpg 352w, grande.jpg 3840w" sizes="(min-width: 750px) 25vw, 100vw" width="3840" height="8" alt="Granja">
+</main></body></html>

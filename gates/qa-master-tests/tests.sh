@@ -677,6 +677,10 @@ espera "REN-02 · y un sizes=auto solo, el width, FALLA"     FALLO REN-02 \
 # porque su width=20 daba el mismo candidato. Este lleva width=3840 y sizes sin auto. Visto en ROJO contra el de antes.
 espera "REN-02 · sizes con un width grande: lee sizes, PASA" PASA REN-02 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-sizes-ancho --candidato --una-sola --solo rendimiento --sin-recibo
+# 14-nov-2026 · el `&amp;` de un atributo se descodifica antes de pedir, como hace el navegador. Con el de antes, FALLO:
+# pedia «peq&amp;w.jpg» literal (en una tienda, la foto original). Visto en ROJO contra 620c5d8.
+espera "REN-02 · &amp; en el srcset: pide lo que pide el navegador, PASA" PASA REN-02 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-srcset-amp --candidato --una-sola --solo rendimiento --sin-recibo
 # ⚠️ 22-sep-2026 · `--contenedor` en los casos de site-d que necesitan el
 #    contenedor (MED-03/07/08): antes se descargaba de googletagmanager.com por
 #    HTTPS, y el banco ya no sale a internet. Sin el, esos checks salen NO
