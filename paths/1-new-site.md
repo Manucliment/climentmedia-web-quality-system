@@ -304,7 +304,11 @@ Only steps **1a/1b** and **10** fork. Everything else is identical.
   with `run-gate.js`). B0–B8: no tracking cookie before deciding, banner on the first
   visit, Accept and Reject both in the first layer with the same weight, not a wall, in
   the page's language, no tracking cookie after Reject, the choice remembered on reload,
-  and a control that reopens it. **It never clicks Accept**: a probe that accepts is a
+  and a control that reopens it. B9 (since 2026-11-15): what reaches **Google** before
+  deciding and after Reject, read from the `gcs` and `gcd` of its requests — nothing
+  granted, and `ad_user_data` and `ad_personalization` set (Consent Mode v2). Google does
+  not publish the `gcd` letters, so the bench calibrates them against Google's own
+  `gtag.js` on every run. **It never clicks Accept**: a probe that accepts is a
   visit in the client's analytics. Exit 1 on a FAIL. Bench: `gates/banner-probe-tests/tests.sh`.
   `MED-15` in the master gate checks the other side: no event and no tag sends an email,
   a phone or a name.

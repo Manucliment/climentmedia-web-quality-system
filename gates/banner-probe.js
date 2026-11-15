@@ -26,6 +26,9 @@
 //   B6  tras Rechazar, ninguna cookie de medicion o publicidad (MED-14)
 //   B7  la decision se recuerda: al recargar, el aviso no vuelve
 //   B8  se puede retirar: un control fuera del aviso lo vuelve a abrir (ME-07)
+//   B9  lo que llega a GOOGLE antes de decidir y tras Rechazar (gcs y gcd): nada
+//       concedido, y ad_user_data y ad_personalization puestas (Consent Mode v2).
+//       Lee las peticiones, no las toca: las corta o las deja pasar `servir`, como siempre.
 //
 // 🔴 NUNCA PULSA ACEPTAR. Una sonda que acepta cuenta como visita en el GA4 del
 //    cliente (con su sesion, su fuente y su pais): ya paso, y por eso nuestras
@@ -52,6 +55,19 @@ if (!url) { console.error("uso: node banner-probe.js <URL> [W H]"); process.exit
 // (cm_consent, cookie_consent...) y las tecnicas no cuentan.
 const RASTREO = /^(_ga|_ga_.+|_gid|_gat.*|_gcl_.+|_fbp|_fbc|_clck|_clsk|_hj.+|_uet.+|_ttp|_tt_.+|IDE|test_cookie|fr|_pin_unauth|li_sugr|bcookie|_scid.*)$/;
 const CMP = /cookiebot|onetrust|cookielaw|didomi|iubenda|usercentrics|quantcast|consentmanager|trustarc|termly|cookieyes|complianz/i;
+
+// B9 · LO QUE LLEGA A GOOGLE. gcs = «G1» + anuncios + analitica (1 concedido, 0 denegado). gcd = una letra por
+// senal, en este orden: ad_storage, analytics_storage, ad_user_data, ad_personalization (lo demas son cifras y
+// una quinta letra que no es de estas cuatro). Se leen las cuatro primeras LETRAS, no posiciones fijas.
+// 🔴 15-nov-2026 · LA TABLA NO LA PUBLICA GOOGLE. Su ayuda (tag-platform: consent-mode y consent-debugging) dice
+//    que gcd «codifica» la eleccion y que estos campos pueden cambiar, sin tabla; las de terceros no coinciden
+//    entre si (unas dan «11…5»; el gtag.js de ese dia daba «13p3p3p2p5l1»). Esta la midio el banco con el gtag.js
+//    de Google y estados conocidos (banner-probe-tests/gcd-calibracion.js), y la vuelve a medir en cada corrida:
+//    si Google cambia la codificacion, se pone rojo el banco antes de que mienta la sonda.
+const GCD = { l: "no puesta", p: "denegada", q: "denegada", m: "denegada", u: "denegada", t: "concedida", r: "concedida", n: "concedida", v: "concedida" };
+const SENALES = ["ad_storage", "analytics_storage", "ad_user_data", "ad_personalization"];
+const GOOGLE = /(^|\.)(google-analytics\.com|analytics\.google\.com|googletagmanager\.com|google\.[a-z]{2,3}(\.[a-z]{2})?|googlesyndication\.com|doubleclick\.net|googleadservices\.com)$/i;
+const letrasGcd = (g) => { const l = (String(g).match(/[a-z]/g) || []).slice(0, 4); return l.length === 4 ? l : null; };
 
 // Textos de los botones, por idioma. Se comparan ENTEROS (normalizados): una
 // frase que contiene «accept» no es el boton Aceptar.
@@ -105,6 +121,18 @@ const res = (estado, id, texto, dato) => {
   const DIR = process.env.BANNER_DIR || "", CAND = process.env.GATE_CANDIDATO || "";
   const red = DIR ? await servir(p, { raiz: DIR, sitio: url, fuera: "abortar" })
     : await servir(p, { raiz: CAND, sitio: CAND ? (process.env.GATE_SITIO || url) : "", medicion: true });
+
+  // B9: cada peticion a Google con gcs o gcd, por fase. Solo se lee (la resuelve `servir`).
+  let fase = "antes"; const senal = { antes: [], tras: [] };
+  p.on("request", (req) => {
+    if (fase === "fin") return;
+    let u; try { u = new URL(req.url()); } catch (e) { return; }
+    if (!GOOGLE.test(u.hostname)) return;
+    const q = u.search + "\n" + (req.postData() || "");
+    const gcd = (q.match(/(?:^|[?&\r\n])gcd=([^&\s]+)/) || [])[1], gcs = (q.match(/(?:^|[?&\r\n])gcs=([^&\s]+)/) || [])[1];
+    if (gcd || gcs) { let d = gcd || ""; try { d = decodeURIComponent(d); } catch (e) { /* tal cual */ }
+      senal[fase].push({ gcd: d, gcs: gcs || "", host: u.hostname }); }
+  });
 
   const cdp = await p.target().createCDPSession();
   const cookiesRastreo = async () => {
@@ -228,6 +256,7 @@ const res = (estado, id, texto, dato) => {
     else res("PASA", "B4", "no es un muro", `${Math.round(a.area * 100)} % de la pantalla`);
 
     if (no) {
+      fase = "tras";   // B9: desde el clic en Rechazar, y al recargar (la decision recordada), hasta B8
       const pulsado = await p.evaluate((t) => {
         const norm = (x) => (x || "").replace(/\s+/g, " ").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’]/g, "'");
         const caja = document.querySelector("[data-banner-probe]");
@@ -246,6 +275,7 @@ const res = (estado, id, texto, dato) => {
         const otra = await buscar();
         otra ? res("FALLA", "B7", "al recargar, el aviso vuelve: la decision no se recuerda")
              : res("PASA", "B7", "al recargar, la decision se recuerda");
+        fase = "fin";
         // B8: un control fuera del aviso que lo reabre. Un enlace a la POLITICA no
         // reabre nada: tiene que ser un boton, o un enlace que no lleva a otra pagina.
         const pulsaReabre = () => p.evaluate((src) => {
@@ -283,6 +313,39 @@ const res = (estado, id, texto, dato) => {
     } else {
       res("NO MEDIDO", "B6", "sin boton Rechazar no se puede medir lo que pasa al rechazar");
     }
+  }
+
+  // B9 · lo que llego a Google. Cada peticion cuenta: tras Rechazar tambien la de la recarga, y una sola que
+  // conceda basta (la ultima puede ser la de la decision recordada, y taparia la del clic).
+  fase = "fin";
+  {
+    const fallos = new Set(), dudas = new Set();
+    const pulsoRechazar = senal.tras.length > 0 || lineas.some((l) => l.id === "B6" && l.estado !== "NO MEDIDO");
+    for (const [f, lista] of Object.entries(senal)) for (const s of lista) {
+      const donde = f === "antes" ? "antes de decidir" : "tras Rechazar";
+      if (/^G1[01]{2}$/.test(s.gcs) && s.gcs !== "G100") fallos.add(`${donde}, gcs=${s.gcs}: concedido`);
+      else if (s.gcs && !/^G1[01]{2}$/.test(s.gcs)) dudas.add(`gcs=${s.gcs} no tiene la forma calibrada (G1 y dos cifras)`);
+      if (!s.gcd) continue;
+      const l = letrasGcd(s.gcd);
+      if (!l) { dudas.add(`gcd=${s.gcd} no trae cuatro letras`); continue; }
+      l.forEach((x, i) => {
+        const e = GCD[x];
+        if (!e) dudas.add(`la letra «${x}» de ${SENALES[i]} (gcd=${s.gcd}) no esta en la calibracion: volver a calibrar`);
+        else if (e === "concedida") fallos.add(`${donde}, ${SENALES[i]} concedida (gcd=${s.gcd})`);
+        else if (e === "no puesta" && i >= 2) fallos.add(`${donde}, ${SENALES[i]} no puesta (gcd=${s.gcd}): Consent Mode sin v2, un hueco en Europa`);
+        else if (e === "no puesta") fallos.add(`${donde}, ${SENALES[i]} no puesta (gcd=${s.gcd}): Google no recibe esa senal`);
+      });
+    }
+    const n = senal.antes.length + senal.tras.length;
+    const cargaGoogle = /googletagmanager\.com\/(gtag\/js|gtm\.js)|google-analytics\.com\/(analytics|ga)\.js/i.test(fuente);
+    const muestra = (lst) => { const v = [...new Set(lst.map((s) => s.gcd || `gcs=${s.gcs}`))]; return v.slice(0, 2).join(", ") + (v.length > 2 ? ` y ${v.length - 2} mas` : ""); };
+    if (fallos.size) res("FALLA", "B9", "Google recibe consentimiento concedido o senales sin poner", [...fallos].slice(0, 3).join(" · ") + (fallos.size > 3 ? ` · y ${fallos.size - 3} mas` : ""));
+    else if (dudas.size) res("NO MEDIDO", "B9", "lo que llega a Google no se puede leer con la calibracion", [...dudas].slice(0, 2).join(" · "));
+    else if (!n) cargaGoogle
+      ? res("NO MEDIDO", "B9", "carga etiquetas de Google y no les sale ninguna peticion ni antes de decidir ni tras Rechazar (modo basico o bloqueadas): lo que llega tras Aceptar no se mide, la sonda nunca acepta")
+      : res("PASA", "B9", "la pagina no manda nada a Google");
+    else res("PASA", "B9", `a Google le llega todo denegado y con las cuatro senales puestas${!senal.tras.length ? (pulsoRechazar ? "; tras Rechazar no le sale nada" : "; Rechazar no se pudo pulsar") : ""}`,
+      `${n} peticiones · antes: ${senal.antes.length ? muestra(senal.antes) : "ninguna"}${senal.tras.length ? ` · tras: ${muestra(senal.tras)}` : ""}`);
   }
 
   // `candidato` cuenta lo servido del disco: 0 con GATE_CANDIDATO es que no se midio el candidato.

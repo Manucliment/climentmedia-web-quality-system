@@ -27,7 +27,7 @@ function pagina(o = {}) {
   return `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>Fixture</title>
   <style>body{margin:0;font:16px sans-serif} .b{font:16px sans-serif;padding:10px 18px;border:1px solid #333;background:#eee} .l{background:none;border:0;text-decoration:underline}
   .hero{position:relative;height:900px} canvas{position:absolute;inset:0;width:100%;height:100%}</style>
-  <script>/* gtag( para que la sonda sepa que la pagina mide */ window.dataLayer=[];${o.cookieAntes ? 'document.cookie="_ga=GA1.1.1.1;path=/";' : ""}</script></head>
+  <script>/* gtag( para que la sonda sepa que la pagina mide */ window.dataLayer=[];${o.cookieAntes ? 'document.cookie="_ga=GA1.1.1.1;path=/";' : ""}${o.google && o.google.antes ? `new Image().src="https://region1.google-analytics.com/g/collect?v=2&${o.google.antes}";` : ""}</script>${o.gtagJs ? '<script async src="https://www.googletagmanager.com/gtag/js?id=G-EJEMPLO"></script>' : ""}</head>
   <body><main><section class="hero">${o.lienzo ? '<canvas id="neural"></canvas>' : ""}<h1>Portada</h1><p>Texto de la portada.</p></section>
   ${o.casilla ? `<form class="form" action="/contacto.php" method="post"><label for="n">Nombre</label> <input id="n" name="nombre">
     <div class="campo consent"><label><input type="checkbox" name="consentimiento" required> <span>He leido y acepto la <a href="/politica-privacidad/">politica de privacidad</a></span></label></div>
@@ -41,7 +41,7 @@ function pagina(o = {}) {
     ${o.olvida ? "" : 'if (localStorage.getItem("cc")) ver(false);'}
     document.addEventListener("click", function (e) {
       var b = e.target.closest("[data-cc-act]"); if (!b) return; var a = b.getAttribute("data-cc-act");
-      if (a === "none") { localStorage.setItem("cc", "no"); ${o.rechazoFalso ? 'document.cookie="_fbp=fb.1.1.1;path=/";' : ""} ver(false); }
+      if (a === "none") { localStorage.setItem("cc", "no"); ${o.rechazoFalso ? 'document.cookie="_fbp=fb.1.1.1;path=/";' : ""}${o.google && o.google.tras ? `new Image().src="https://www.google.com/ccm/collect?${o.google.tras}";` : ""} ver(false); }
       if (a === "reopen") { e.preventDefault(); ver(true); }
     });
   </script></body></html>`;
@@ -53,7 +53,19 @@ const politica = (o = {}) => `<!DOCTYPE html><html lang="es"><head><meta charset
 
 const CASOS = [
   // [nombre, opciones de la portada, opciones de la politica, { comprobacion: estado esperado }]
-  ["bueno", {}, {}, { B0: "PASA", B1: "PASA", B2: "PASA", B3: "PASA", B4: "PASA", B5: "PASA", B6: "PASA", B7: "PASA", B8: "PASA" }],
+  ["bueno", {}, {}, { B0: "PASA", B1: "PASA", B2: "PASA", B3: "PASA", B4: "PASA", B5: "PASA", B6: "PASA", B7: "PASA", B8: "PASA", B9: "PASA" }],
+  // 15-nov-2026 · B9, LO QUE LLEGA A GOOGLE (t-20261109-sw4m8d, linea 5). La pagina manda una peticion a GA4 al
+  // cargar (y otra igual en la recarga) y otra a ccm al Rechazar, con el gcs y el gcd de cada caso; `servir` las
+  // corta y la sonda las lee. Las letras, las del gtag.js de Google (gcd-calibracion.js, abajo). El de «Rechazar
+  // concede» es el que B6 no ve: sin cookies, pero Google recibe un concedido.
+  ["Google: todo denegado antes y tras Rechazar", { google: { antes: "gcs=G100&gcd=13p3p3p2p5l1", tras: "gcs=G100&gcd=13q3q3q2q5l1" } }, {}, { B9: "PASA" }],
+  ["Google: solo Consent Mode v1", { google: { antes: "gcs=G100&gcd=13p3p3l2l5l1" } }, {}, { B9: "FALLA" }],
+  ["Google: concedido antes de decidir", { google: { antes: "gcs=G111&gcd=13t3t3t2t5l1" } }, {}, { B9: "FALLA" }],
+  ["Google: Rechazar concede", { google: { antes: "gcs=G100&gcd=13p3p3p2p5l1", tras: "gcs=G111&gcd=13r3r3r2r5l1" } }, {}, { B6: "PASA", B9: "FALLA" }],
+  ["Google: ad_personalization concedida por defecto", { google: { antes: "gcs=G100&gcd=13p3p3p2t5l1" } }, {}, { B9: "FALLA" }],
+  ["Google: sin Consent Mode", { google: { antes: "gcd=13l3l3l2l1l1" } }, {}, { B9: "FALLA" }],
+  ["Google: una letra que no esta en la calibracion", { google: { antes: "gcs=G100&gcd=13x3p3p2p5l1" } }, {}, { B9: "NO MEDIDO" }],
+  ["Google: carga gtag.js y no le sale nada", { gtagJs: true }, {}, { B9: "NO MEDIDO" }],
   ["lienzo decorativo no es un muro", { lienzo: true }, {}, { B4: "PASA" }],
   ["muro con velo", { muro: true }, {}, { B4: "FALLA" }],
   ["Rechazar corto, mismo boton", { si: "Aceptar todas", no: "Rechazar" }, {}, { B3: "PASA" }],
@@ -176,6 +188,9 @@ async function cortar(d, senal) {
   fs.mkdirSync(path.join(d6, `wqs-chrome-${muerto}-muerto`));           // su sonda ya no existe
   const r6 = medir(d6), q6 = perfiles(d6).join();
   ver("perfil: el barrido deja el de una sonda viva y el ajeno, y se lleva el de la muerta", r6.status === 0 && q6 === ["puppeteer_dev_chrome_profile-ajeno", `wqs-chrome-${process.pid}-vivo`].sort().join(), `rc ${r6.status} · quedan [${q6}]`);
+
+  // 15-nov-2026 · LA CALIBRACION DEL gcd (B9): el gtag.js de Google con estados conocidos; todo envio, cortado.
+  await require("./gcd-calibracion.js").calibrar({ lanzar: require(RG).lanzar, ver });
 
   fs.rmSync(raiz, { recursive: true, force: true });
   console.log(`\n  OK ${ok}  ·  MAL ${mal}`);

@@ -5902,9 +5902,9 @@ sub lente_medicion {
     }
 
     nv(lente=>'MEDICION', id=>'MED-14', titulo=>'que pasa cuando el visitante pulsa RECHAZAR',
-       umbral=>'0 cookies de terceros y gcs=G100 despues de rechazar',
-       proc=>'PC5 · se ha comprobado el estado ANTES de elegir y tras ACEPTAR. La rama de rechazo no se ha mirado nunca en ninguna web',
-       hacer=>'abrir el banner, pulsar Rechazar, y mirar cookies + dataLayer en el panel');
+       umbral=>'0 cookies de medicion tras rechazar, y a Google todo denegado con las cuatro senales puestas: gcs=G100 y ninguna letra del gcd concedida ni sin poner (ad_user_data y ad_personalization, Consent Mode v2)',
+       proc=>'PC5 · la rama de rechazo no se miraba en ninguna web. Desde el 3-nov la mide banner-probe.js en el servidor (B6, cookies) y desde el 15-nov tambien lo que llega a Google antes de decidir y tras Rechazar (B9, gcs y gcd, con la tabla de letras calibrada contra el gtag.js de Google: Google no la publica). Este gate, con curl, no ve las peticiones del navegador',
+       hacer=>'node banner-probe.js <URL> en el host de medida (la puerta lo corre en la portada); con B6 y B9 en PASA, firmarlo en _deploy/measured.conf (CHECK MED-14)');
 }
 
 # =============================================================================

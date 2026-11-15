@@ -10,6 +10,6 @@ H="$(nav_host "$REF")"
 ssh -n -o BatchMode=yes -o ConnectTimeout=10 "$H" 'mkdir -p ~/webtools/banco-banner/banner-probe-tests' 2>/dev/null \
   || { echo "  N/M   banner-probe: NOT MEASURED, no llego a $H"; exit 0; }
 scp -q "$REF/banner-probe.js" "$REF/run-gate.js" "$H:webtools/banco-banner/" </dev/null && \
-scp -q "$REF/banner-probe-tests/run.js" "$H:webtools/banco-banner/banner-probe-tests/run.js" </dev/null || { echo "  N/M   banner-probe: no se pudo copiar"; exit 0; }
+scp -q "$REF/banner-probe-tests/run.js" "$REF/banner-probe-tests/gcd-calibracion.js" "$H:webtools/banco-banner/banner-probe-tests/" </dev/null || { echo "  N/M   banner-probe: no se pudo copiar"; exit 0; }
 echo "== banner-probe · el aviso de cookies como lo ve un visitante · en $H"
 ssh -n -o BatchMode=yes "$H" 'cd ~/webtools/banco-banner && node banner-probe-tests/run.js'
