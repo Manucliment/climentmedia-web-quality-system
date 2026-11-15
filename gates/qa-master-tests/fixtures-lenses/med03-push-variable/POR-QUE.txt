@@ -1,0 +1,31 @@
+med03-push-variable · 15-nov-2026
+
+Una web nuestra empuja sus eventos con un ayudante que arma el objeto en una variable:
+
+    function empuja(evento, datos) {
+      var payload = { event: evento };
+      for (var k in datos) { ... payload[k] = datos[k]; }
+      window.dataLayer.push(payload);
+    }
+
+Las reglas de MED-03 cuentan `push({ event: ... })` y `push({ event, ... })`, siempre con el objeto
+escrito DENTRO del `push(`. Un `push(payload)` no lo veian, y los eventos de ese ayudante no existian
+para el gate (lo vio el chat de esa web el 14-nov).
+
+Ahora un `push(IDENT)` cuenta cuando IDENT se asigna en el mismo JS a un objeto con la clave `event`
+(justo tras la llave o tras una coma). Con el nombre entero entre comillas, cuenta como ese nombre y se
+cruza con el contenedor. Con una variable o un nombre que se compone, cuenta como compuesto.
+
+La cifra exacta es la prueba. De los seis push de variable de script.js cuentan 3:
+  1 · `payload = { event: evento }`             compuesto
+  2 · `compuesto = { event: "cm_" + nombre }`   compuesto (el trozo «cm_» no es un nombre)
+  3 · `envio = { event: "devis_envoye", ... }`   devis_envoye, que el contenedor escucha por patron
+  4 · `datos = { valor: 1, ... }`               NO cuenta: no tiene la clave event
+  5 · `ev = { origen: event, ... }`             NO cuenta: `event` es el valor, no la clave
+  6 · `marca = { event_id: 7 }`                 NO cuenta: es otra clave
+Y `push(arguments)` del gtag de la pagina, tampoco.
+
+Esperado: MED-03 PASA, «por un disparador con patron: devis_envoye», y «y 2 con un nombre que el JS
+compone». Con la regla anterior sale AVISO «no emite ningun evento con nombre». Si se tomara «cm_» por
+un nombre, saldria FALLO (el contenedor no lo escucha). Si contaran el valor, la clave que empieza igual
+o el objeto sin event, saldrian 3, 4 o 5 compuestos. Todas esas, en rojo.

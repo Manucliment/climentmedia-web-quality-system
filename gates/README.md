@@ -682,6 +682,14 @@ without blocking. Why the order changed is trap §89.
   name the JS builds (`"cm_" + name`) is counted and named in the verdict, never crossed
   as its quoted fragment; when that is all a site emits, the WARN says so instead of "no
   named event".
+- **MED-03 reads the object a site pushes through a variable.** `var payload = { event: name };
+  … dataLayer.push(payload)` (a helper that adds keys in a loop) was not read: every rule
+  wanted the object written inside the `push(`. A `push(IDENT)` now counts when IDENT is
+  assigned, in the same JS, an object with the key `event` (right after `{` or a comma): a
+  full quoted name counts as that name and is crossed with the container; a variable or a
+  built name counts as composed. An object without that key, `{ origin: event }`,
+  `{ event_id }` and `push(arguments)` do not count. One of our sites, with a branch that
+  drops its only quoted event, went from "no named event" to "the JS builds the name".
 - **REN-05's fingerprint is what was decided, not how it was measured (`CLAVE=`).** Its
   data line carries how many pages were measured, which came out worst and the exact KB,
   so the same site under the same decision gave three fingerprints with 1, 3 and 40

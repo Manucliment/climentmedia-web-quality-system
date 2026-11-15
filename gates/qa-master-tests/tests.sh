@@ -737,6 +737,18 @@ texto  "MED-03 · la clave abreviada cuenta: 2 de los 4 push"        SI "2 push 
        perl $QA https://climentmedia.com --repo fixtures-lenses/med03-abreviada --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
 texto  "MED-03 · y no dice que el sitio no emite"                   NO "no emite ningun evento" \
        perl $QA https://climentmedia.com --repo fixtures-lenses/med03-abreviada --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+# 🔴 15-nov-2026 · EL OBJETO EN UNA VARIABLE. `var payload = { event: evento }; … push(payload)` (un
+#    ayudante que anade las claves en un bucle, en una web nuestra) no se veia: las reglas piden el
+#    objeto escrito dentro del `push(`. De los seis push de variable de med03-push-variable cuentan 3:
+#    devis_envoye, que se cruza (el contenedor lo escucha por patron), y 2 compuestos. Visto en ROJO
+#    contra el gate anterior (AVISO «no emite ningun evento con nombre») y con dos mutantes: sin el
+#    ancla de la clave salen 3 compuestos, y con el nombre tomado por compuesto, AVISO.
+espera "MED-03 · push de una variable: PASA"                        PASA    MED-03 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-push-variable --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+texto  "MED-03 · el nombre de la variable se cruza"                 SI "por un disparador con patron: devis_envoye" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-push-variable --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
+texto  "MED-03 · y cuenta 2 compuestos de los 6 push"               SI "y 2 con un nombre que el JS compone" \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med03-push-variable --contenedor fixtures-lenses/contenedor-med03-patron.js $_M03
 # ⚠️ `--sin-recibo` en TODA prueba que apunte a un repo de verdad (anadido el
 #    11-ago-2026). Sin el, estas dos lineas escribian un `.qa-recibo` DENTRO de
 #    site-d-web cada vez que se corria la bateria —y encima un recibo de

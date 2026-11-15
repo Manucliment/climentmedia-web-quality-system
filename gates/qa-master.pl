@@ -5007,6 +5007,26 @@ sub lente_medicion {
                 #    `{ origen: event }` (el evento del DOM como valor) y `{ event_id, … }` no cuentan.
                 #    Control: med03-abreviada (2 de 4 push; cualquier otra cifra, en rojo).
                 $compuestos += () = $s =~ /\.push\(\s*\{(?:[^{}]*?,)?\s*event\s*[,}]/g;
+                # 🔴 15-nov-2026 · Y EL OBJETO QUE SE EMPUJA POR UNA VARIABLE (`var payload = { event: evento };
+                #    … dataLayer.push(payload)`). Es como lo escribe un ayudante que anade las claves en un
+                #    bucle (una web nuestra, 14-nov). Las reglas de arriba piden el objeto escrito DENTRO del
+                #    `push(`, y los eventos de ese ayudante no existian para el gate. Ahora un `push(IDENT)`
+                #    cuenta cuando IDENT se asigna en el mismo JS a un objeto con la clave `event` (justo tras
+                #    `{` o tras una coma): con el nombre entero entre comillas, como ese nombre, y se cruza;
+                #    con una variable o un nombre que se compone, como compuesto. No cuentan un objeto sin la
+                #    clave `event`, `{ origen: event }`, `{ event_id }` ni `push(arguments)`. Como las reglas
+                #    de arriba, solo objetos sin llaves dentro.
+                #    Control: med03-push-variable (devis_envoye por su patron y 2 compuestos, de 6 push).
+                my %obj_ev;
+                while ($s =~ /(?<![\w.\$])([A-Za-z_\$][\w\$]*)\s*=\s*\{([^{}]*)\}/g) {
+                    my ($id, $c) = ($1, $2);
+                    if ($c =~ /(?:^|,)\s*(['"]?)event\1\s*:\s*['"]([a-z0-9_]+)['"]\s*(?:,|\z)/i) { $obj_ev{$id} = $2 }
+                    elsif ($c =~ /(?:^|,)\s*(['"]?)event\1\s*(?::|,|\z)/) { $obj_ev{$id} = '' }
+                }
+                for my $id ($s =~ /\.push\(\s*([A-Za-z_\$][\w\$]*)\s*\)/g) {
+                    next unless exists $obj_ev{$id};
+                    if ($obj_ev{$id} ne '') { $emit{$obj_ev{$id}}++ } else { $compuestos++ }
+                }
                 $emit{$_}++ for $s =~ /gtag\(\s*['"]event['"]\s*,\s*['"]([a-z0-9_]+)['"]/gi;
                 $emit{$_}++ for $s =~ /data-thanks\s*=\s*["']([a-z0-9_]+)["']/gi;
             }
