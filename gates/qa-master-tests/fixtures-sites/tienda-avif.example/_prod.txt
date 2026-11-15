@@ -1,0 +1,2 @@
+# 15-nov-2026 · el CDN de una tienda negocia el formato: con «Accept: image/avif» la foto es AVIF (3 KB); sin el, JPEG (10 KB).
+avif /foto.jpg _foto.avif

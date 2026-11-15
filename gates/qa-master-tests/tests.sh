@@ -681,6 +681,10 @@ espera "REN-02 · sizes con un width grande: lee sizes, PASA" PASA REN-02 \
 # pedia «peq&amp;w.jpg» literal (en una tienda, la foto original). Visto en ROJO contra 620c5d8.
 espera "REN-02 · &amp; en el srcset: pide lo que pide el navegador, PASA" PASA REN-02 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/ren02-srcset-amp --candidato --una-sola --solo rendimiento --sin-recibo
+# 15-nov-2026 · el CDN de una tienda negocia el formato por Accept: Chrome pide la imagen con «image/avif» y baja otra cosa
+# que curl sin ese Accept. Se juzga lo que baja Chrome. Visto en ROJO contra 24553e6 (FALLO por el JPEG de 10 KB).
+espera "REN-02 · el CDN da AVIF a Chrome: se juzga eso, PASA" PASA REN-02 \
+       perl $QA http://tienda-avif.example/ --solo rendimiento --una-sola --cache "$CACHE"
 # ⚠️ 22-sep-2026 · `--contenedor` en los casos de site-d que necesitan el
 #    contenedor (MED-03/07/08): antes se descargaba de googletagmanager.com por
 #    HTTPS, y el banco ya no sale a internet. Sin el, esos checks salen NO

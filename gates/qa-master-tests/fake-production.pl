@@ -35,6 +35,8 @@
 #     sinsello <ruta> <_fichero>    pedida SIN query (?v=…), <ruta> sirve <_fichero>:
 #                                   el CDN que guarda la copia vieja en la URL desnuda
 #                                   mientras la sellada da la nueva (5-nov-2026)
+#     avif <ruta> <_fichero>        pedida con «Accept: image/avif», <ruta> sirve <_fichero>:
+#                                   el CDN de una tienda que negocia el formato (15-nov-2026)
 #  Los ficheros que empiezan por `_` no se sirven nunca (salvo por un sinsello).
 #
 #  Solo modulos del nucleo: en esta maquina no hay python, y en la de quien
@@ -78,7 +80,7 @@ sub leer { my ($f) = @_; open my $h, '<:raw', $f or return undef; local $/; my $
 
 sub conf {
     my ($raiz) = @_;
-    my %c = (gzip => 1, header => [], status => {}, sinsello => {});
+    my %c = (gzip => 1, header => [], status => {}, sinsello => {}, avif => {});
     my $t = leer("$raiz/_prod.txt");
     return \%c unless defined $t;
     for my $l (split /\r?\n/, $t) {
@@ -87,6 +89,7 @@ sub conf {
         elsif ($l =~ /^\s*header\s+(\S+)\s+(.+?)\s*$/i)      { push @{$c{header}}, [$1, $2] }
         elsif ($l =~ /^\s*status\s+(\S+)\s+(\d{3})\s*$/i)    { $c{status}{$1} = $2 }
         elsif ($l =~ /^\s*sinsello\s+(\S+)\s+(_[^\s\/\\]+)\s*$/i) { $c{sinsello}{$1} = $2 }
+        elsif ($l =~ /^\s*avif\s+(\S+)\s+(_[^\s\/\\]+)\s*$/i)     { $c{avif}{$1} = $2 }
     }
     return \%c;
 }
@@ -150,6 +153,10 @@ while (my $c = $s->accept) {
     }
     if ($ruta !~ /\?/ && defined $cf->{sinsello}{$sinq} && -f "$raiz/$cf->{sinsello}{$sinq}") {
         $f = "$raiz/$cf->{sinsello}{$sinq}";
+    }
+    # 15-nov-2026 · el CDN de una tienda negocia el formato por Accept: con «image/avif» da la variante AVIF.
+    if (($h{accept} // '') =~ m{image/avif}i && defined $cf->{avif}{$sinq} && -f "$raiz/$cf->{avif}{$sinq}") {
+        $f = "$raiz/$cf->{avif}{$sinq}";
     }
     my ($cod, $cuerpo, $ext);
     if (defined $f) {

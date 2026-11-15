@@ -254,6 +254,10 @@ binmode(STDERR, ':encoding(UTF-8)');
 # ── Constantes de instrumento ────────────────────────────────────────────────
 my $UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
        . '(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
+# 15-nov-2026 · LO QUE PIDE CHROME PARA UNA IMAGEN. El CDN de una tienda negocia el formato por Accept: sin el, da PNG o JPEG
+#    (un logo, 13.119 B); con el del navegador, AVIF (5.208 B). REN-02 y el peso de la pagina pedian sin Accept y juzgaban
+#    un fichero que el navegador no baja. Se manda en las imagenes (tipo img e icon); el resto sigue con el de curl.
+my $ACCEPT_IMG = 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8';
 # ⚠️ Sin -L se mide el cuerpo de un 301, no la pagina. Sin UA de navegador,
 #    shop.site-b.example devuelve 403 (y sus .js piden Referer).
 
@@ -648,8 +652,12 @@ sub codigo_sin_seguir {
 my %FETCHED;
 sub fetch {
     my ($url, %o) = @_;
-    return $FETCHED{$url} if exists $FETCHED{$url};
-    if ($opt{'sin-red'}) { return $FETCHED{$url} = { code=>0, body=>'', hdr=>'', wire=>0, err=>'--sin-red' } }
+    # 15-nov-2026 · `accept => …` (las imagenes, ver $ACCEPT_IMG): la misma URL con otro Accept es otra respuesta, asi que
+    #    va aparte en la memoria y en la cache de disco.
+    my $acc = $o{accept};
+    my $fk = defined $acc ? "$url\0ACCEPT\0$acc" : $url;
+    return $FETCHED{$fk} if exists $FETCHED{$fk};
+    if ($opt{'sin-red'}) { return $FETCHED{$fk} = { code=>0, body=>'', hdr=>'', wire=>0, err=>'--sin-red' } }
     # 🔴 LA FRONTERA. En modo candidato la MISMA URL de produccion se pide al
     #    servidor local; hacia dentro del programa no cambia nada. La clave de
     #    cache lleva el modo: la misma URL sirve otros bytes en cada uno, y una
@@ -698,7 +706,7 @@ sub fetch {
     #    que son dos claves. Chocan las SUBPAGINAS, que ambos escriben igual.
     #    Con `--una-sola` las dos corridas salen identicas y parece que no pasa
     #    nada: la diferencia solo aparece midiendo el sitio entero.
-    my $key  = md5_hex(($CAND_ON ? "CANDIDATO\0" : '') . $url);
+    my $key  = md5_hex(($CAND_ON ? "CANDIDATO\0" : '') . $fk);
     my $bodyf = "$CACHE/$key.body";
     my $hdrf  = "$CACHE/$key.hdr";
     my $metaf = "$CACHE/$key.meta";
@@ -707,7 +715,8 @@ sub fetch {
     # MIDE EL PASADO», junto a $CACHE.
     unless (defined(_meta_qam($metaf)) && _cache_reutilizable($whenf)) {
         my @cmd = ('curl', '-sSL', '--compressed', '--max-time', '30',
-                   '-A', $UA, '-e', ($CAND_ON ? "http://127.0.0.1:$CAND_PORT/" : "$ROOT/"),
+                   '-A', $UA, (defined $acc ? ('-H', "Accept: $acc") : ()),
+                   '-e', ($CAND_ON ? "http://127.0.0.1:$CAND_PORT/" : "$ROOT/"),
                    '-o', $bodyf, '-D', $hdrf,
                    '-w', '%{http_code}\t%{size_download}\t%{content_type}\t%{url_effective}\t%{time_total}',
                    $furl);
@@ -735,7 +744,7 @@ sub fetch {
     my ($enc) = $hdr =~ /^content-encoding:\s*(\S+)/mi;
     my ($cc)  = $hdr =~ /^cache-control:\s*([^\r\n]+)/mi;
     my ($clen)= $hdr =~ /^content-length:\s*(\d+)/mi;
-    return $FETCHED{$url} = {
+    return $FETCHED{$fk} = {
         code=>($code//0)+0, body=>$body, hdr=>$hdr, wire=>($wire//0)+0,
         # la URL efectiva vuelve al espacio de PRODUCCION: `base_ef` resuelve
         # los href relativos contra ella y el resto del programa la compara con
@@ -2950,7 +2959,7 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
     my ($total, $terceros, $por_tipo) = (0, 0, {});
     my (@sin_comprimir, @sellado_nostore, @pesadas, @blocking, @rotos, @fuera_del_arbol, @terceros_vacios);
     for my $ru (sort keys %res) {
-        my $x = fetch($ru);
+        my $x = fetch($ru, (($res{$ru}{tipo} // "") =~ /^(img|icon)$/ ? (accept => $ACCEPT_IMG) : ()));
         my $t = $res{$ru}{tipo} // '?';
         # 🔴 ARREGLO 0.6 · ANTES ESTO ERA `next unless code == 200`, y un recurso
         #    que no responde se quedaba a cero bytes y salia por PASA. Caso real:
@@ -3125,7 +3134,7 @@ my $REN_PARCIAL = (@muestra < $REN_DE)
     #    umbral y se dice que es otro criterio.
     my (@svg_gordos, %svg_vistos);
     for my $i (@imgs) {
-        my $x = fetch($i->{url}); next unless $x->{code} == 200 && $x->{wire} > 0;
+        my $x = fetch($i->{url}, accept => $ACCEPT_IMG); next unless $x->{code} == 200 && $x->{wire} > 0;   # 15-nov: lo que baja Chrome
         my $es_svg = ($i->{url} =~ /\.svgz?(\?|$)/i) || (($x->{ctype}//'') =~ m{image/svg}i);
         if ($es_svg) {
             $svg_vistos{ $i->{url} } = 1;
