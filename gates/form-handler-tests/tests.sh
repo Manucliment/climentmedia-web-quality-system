@@ -123,7 +123,11 @@ ssh "$HOST" "cd $REM && sed \"s/^const ALERT_LANG   = 'es';/const ALERT_LANG   =
 PORT=$(( 18000 + $$ % 1000 ))
 ssh "$HOST" "cd $REM && { nohup php -d 'sendmail_path=cat >> $REM/correo.txt' -d auto_prepend_file=$REM/polyfill-mb.php -d display_errors=stderr -d error_reporting=-1 \
   -S 127.0.0.1:$PORT -t $REM > servidor.log 2>&1 < /dev/null & echo \$! > servidor.pid; }" </dev/null >/dev/null 2>&1
-para () { ssh "$HOST" "kill \$(cat $REM/servidor.pid) 2>/dev/null; rm -rf $REM" </dev/null >/dev/null 2>&1; rm -rf "$LOC"; }
+# FH_GUARDA=<carpeta>: guarda ahi cada aviso capturado (<caso>.correo), para leerlo o adjuntarlo a una revision.
+para () {
+  if [ -n "${FH_GUARDA:-}" ]; then mkdir -p "$FH_GUARDA" && cp "$LOC"/*.correo "$FH_GUARDA"/ 2>/dev/null; fi
+  ssh "$HOST" "kill \$(cat $REM/servidor.pid) 2>/dev/null; rm -rf $REM" </dev/null >/dev/null 2>&1; rm -rf "$LOC"
+}
 trap para EXIT
 listo=0
 for i in 1 2 3 4 5 6 7 8 9 10; do
