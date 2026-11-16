@@ -193,3 +193,47 @@ Until 2026-09-26 no document here said where to look. There are official places 
 
 A visitor who declines cookies is not a session in GA4 (Consent Mode, §3–§4): read these numbers
 as a floor, never as the size of the channel.
+
+## 9 · Links we control carry one UTM taxonomy
+
+GA4 can only tell you where a visit came from if the link says so. Two sources are invisible without a tag:
+
+- **A Google Business Profile click** arrives as `google / organic`, the same as a search result. Without a tag, nobody can say
+  whether the profile or the website brought the lead, and for a local business that is the first question.
+- **Email, app and QR clicks** carry no referrer. Without a tag they arrive as `(direct)`, and that includes social bios opened
+  inside the Instagram or LinkedIn app.
+
+Directories and other websites do send a referrer, unless they strip it (`rel="noreferrer"`, which is common). A tag keeps
+them apart either way.
+
+**The rule.** Every link to the site that we or the client write *outside* the site carries a UTM from this table. Use lowercase
+and hyphens, with no spaces, no personal data and no new values without a row here.
+
+| Where the link is | `utm_source` | `utm_medium` | `utm_campaign` | `utm_content` | GA4 channel |
+|---|---|---|---|---|---|
+| Google Business Profile, the website button | `google` | `organic` | `gbp` | the profile, if there are several (`ticare`, `kine`) | Organic Search, separable by campaign |
+| Business Profile posts, products and offers | `google` | `organic` | `gbp-post` · `gbp-product` | the post date or the product slug | Organic Search |
+| Directories, listings and review sites | the site (`clutch`, `pages-dor`) | `referral` | `directory` | — | Referral |
+| Profiles: LinkedIn, Instagram, Facebook bios | `linkedin` · `instagram` · `facebook` | `social` | `profile` | — | Organic Social |
+| Organic social posts | the network | `social` | `post` | `aaaammdd-topic` | Organic Social |
+| Emails we send: newsletter, nurture, product mail | the list or product (`paid-media-os`) | `email` | the email's name | the button or link | Email |
+| Email signature | `signature` | `email` | `signature` | the person | Email |
+| Print and QR codes | `qr` | `offline` | the piece | — | Unassigned (expected) |
+| A partner's website that links by agreement | their domain | `referral` | `partner` | — | Referral |
+
+**Where a tag must NOT go:**
+- **Links inside the site.** A UTM on an internal link starts a new session and overwrites the real source.
+- **Ad links.** Google Ads uses auto-tagging, and Meta and the rest follow the taxonomy of whoever runs the ads, not this one.
+- **ChatGPT, including the ChatGPT Business Hub listing.** ChatGPT adds `utm_source=chatgpt.com` itself (§8). A second tag
+  would fight it.
+- **Links between our own sites.** The referrer already names the site. Add a tag only if one of them strips it.
+
+**How it is proved:**
+- Paste each tagged link in a browser and check that the final URL still carries the parameters. A redirect that drops them
+  makes the tag useless, so test the bare host and the `www.` host too.
+- Then look at GA4 Realtime for the source and medium.
+- The lead card (`05-forms.md`) prints the campaign in words: `gbp` → "Google · Business Profile", `directory` → "Directory ·
+  <source>".
+
+**What the tag gives back:** leads by source. Compare the website clicks a profile reports with the leads that came with
+`utm_campaign=gbp`, and the profile becomes a channel with a number instead of a guess.
