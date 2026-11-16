@@ -182,8 +182,9 @@ Five things, with your eyes. Ten minutes.
    page. Not audit them: **look at them.** Does any of them look broken? Is an image missing?
    > If the capture looks odd, **render the previous version with the same flags before believing the
    > defect**: it may be the capture method.
-2. **Fill in the form for real** and check three things: the email arrives, the copy lands on disk, and
-   **the conversion event fires.**
+2. **Fill in the form for real** and check four things: the email arrives, the copy lands on disk,
+   **the conversion event fires**, and the alert opens with the lead card (what they want, where they were,
+   how they came; `blueprint/05-forms.md`), sent from a campaign-tagged URL so block 3 has something to say.
 3. **Share the link on a messaging app** — to yourself. If a grey rectangle comes out, that page is
    missing its `og:image`. **It is the real recommendation channel for a local business.**
 4. **See it on a real phone**, not just by narrowing the window. Headless Chrome on Windows crops to

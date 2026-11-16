@@ -83,6 +83,42 @@ on-site services — **turn the locality field into a dropdown**:
 On one site that data was in the source with **57 localities**, and the form used a free-text
 input.
 
+## The lead card: every alert says what they wanted, where they were, how they came
+
+A lead alert that says only "Name, Email, see the admin panel" cannot be acted on from a phone.
+On a real site, the owner received an alert with a name and an address and had to work out
+from analytics, two days later, which site it came from and what the person wanted. The data
+was there: the form had sent the message and the page. **The alert just did not print it.**
+
+**Every alert opens with three blocks, in this order, before anything else:**
+
+| Block | What it carries | Where it comes from |
+|---|---|---|
+| **1 · What they want** | One line: the option they picked (service, plan, platform) and the first ~20 words of the message. Below it, **every** field they filled in, each with the label they saw | The form itself |
+| **2 · Where they were** | The page they sent it from (title + path), the block that opened the form (`data-cta`: hero, pricing, footer…), the previous page on the site, and the landing page of the visit with the number of pages seen | Page and `data-cta` always; previous page from `document.referrer` when it is the same site; landing page and page count **only with analytics consent** |
+| **3 · How they came** | In words: "Google Ads · campaign X", "Meta", "Google organic", "direct", "other: domain" | `gclid`/`gbraid`/`wbraid`, `fbclid`, `utm_*`, the external referrer |
+
+Then who they are and how to reply (name, email, phone, language of the page, mobile or
+desktop, local time), and at the bottom the site, the reference and the link to the sheet or CRM.
+
+**The subject is the triage.** `[<site>] <what they want, ≤ 8 words> · <how they came>`. One
+glance in the inbox says whether it is a client, a supplier or a pitch.
+
+### The rules that keep it honest
+
+- **No new cookie.** The landing page, the click ids and the page count are kept in
+  `sessionStorage` only once analytics consent is granted. Without it, block 2 prints the
+  landing page as `NOT MEASURED (no consent)`. A missing line reads as a pass.
+- **Nothing is dropped.** A field the handler does not know goes under "Other fields". A
+  form that grows a question must not lose it in the alert.
+- **The same fields in the log as in the email.** The disk copy written before sending carries
+  the three blocks too, so a lost email still leaves a readable lead.
+- **The privacy policy says so.** One line: the form sends the page it was filled in from and
+  how the visitor arrived, to answer them. Legal copy is the client's to approve.
+- **Proved by a real submission.** After deploying, send one test lead marked TEST from a
+  campaign-tagged URL and read the alert: the three blocks filled in, the subject readable.
+  Until then the line is `NOT VERIFIED`.
+
 ## Health data
 
 In clinics, physiotherapy or nursing, a "what do you need" or "message" field can contain
