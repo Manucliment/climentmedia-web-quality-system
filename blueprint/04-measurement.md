@@ -214,7 +214,7 @@ and hyphens, with no spaces, no personal data and no new values without a row he
 | Google Business Profile, the website button | `google` | `organic` | `gbp` | the profile, if there are several (`ticare`, `kine`) | Organic Search, separable by campaign |
 | Business Profile posts, products and offers | `google` | `organic` | `gbp-post` · `gbp-product` | the post date or the product slug | Organic Search |
 | Directories, listings and review sites | the site (`clutch`, `pages-dor`) | `referral` | `directory` | — | Referral |
-| Profiles: LinkedIn, Instagram, Facebook bios | `linkedin` · `instagram` · `facebook` | `social` | `profile` | — | Organic Social |
+| Profiles: any network bio or link button (LinkedIn, Instagram, Facebook, TikTok, Threads, WhatsApp Business, Torre, a Linktree page) | the network, one lowercase word (`linkedin` · `instagram` · `facebook` · `tiktok` · `threads` · `whatsapp` · `torre` · `linktree`) | `social` | `profile` | — | Organic Social |
 | Organic social posts | the network | `social` | `post` | `aaaammdd-topic` | Organic Social |
 | Emails we send: newsletter, nurture, product mail | the list or product (`paid-media-os`) | `email` | the email's name | the button or link | Email |
 | Email signature | `signature` | `email` | `signature` | the person | Email |
