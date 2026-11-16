@@ -218,7 +218,7 @@ and hyphens, with no spaces, no personal data and no new values without a row he
 | Organic social posts | the network | `social` | `post` | `aaaammdd-topic` | Organic Social |
 | Emails we send: newsletter, nurture, product mail | the list or product (`paid-media-os`) | `email` | the email's name | the button or link | Email |
 | Emails a shop sends: abandoned cart, order and shipping notifications (only if the platform does not tag them itself; read first) | the platform (`shopify`) | `email` | the email's name (`abandoned-cart`, `order-shipped`) | the button | Email |
-| Email signature | `signature` | `email` | `signature` | the person | Email |
+| Email signature | `signature` | `email` | `signature` | the mailbox's role, one word (`main` · `sales` · `assistant`), never the person's name; `main` if there is one signature | Email |
 | Print and QR codes | `qr` | `offline` | the piece | — | Unassigned (expected) |
 | A partner's website that links by agreement | their domain | `referral` | `partner` | — | Referral |
 
