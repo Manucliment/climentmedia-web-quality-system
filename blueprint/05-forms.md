@@ -47,7 +47,11 @@ badly" and "the site converts and nobody collects it".
 | A form service | +1, and it is a data processor | Only if no backend is possible |
 | A serverless function | still needs an email provider | More pieces, same result |
 
-Ready to use: **`gates/form-handler.php`**. Four constants to configure.
+Ready to use: **`gates/form-handler.php`**. Configure the constants at the top and `FIELDS`. Since 2026-11-16 it
+writes the lead card below, in the language of the inbox (`ALERT_LANG`: es, fr, en, nl). It also has a test mode (a cookie
+whose sha256 is in the file) that sends only to a test address and skips the thanks page. The hidden fields the form must
+fill in on submit are in its header. Bench: `gates/form-handler-tests/`, which posts real submissions to `php -S` on the
+measurement host, with the mail going to a file.
 
 > **Check there is a runtime first**: if `/index.php` returns 404, there is no PHP.
 
