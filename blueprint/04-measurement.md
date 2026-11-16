@@ -217,6 +217,7 @@ and hyphens, with no spaces, no personal data and no new values without a row he
 | Profiles: any network bio or link button (LinkedIn, Instagram, Facebook, TikTok, Threads, WhatsApp Business, Torre, a Linktree page) | the network, one lowercase word (`linkedin` · `instagram` · `facebook` · `tiktok` · `threads` · `whatsapp` · `torre` · `linktree`) | `social` | `profile` | — | Organic Social |
 | Organic social posts | the network | `social` | `post` | `aaaammdd-topic` | Organic Social |
 | Emails we send: newsletter, nurture, product mail | the list or product (`paid-media-os`) | `email` | the email's name | the button or link | Email |
+| Emails a shop sends: abandoned cart, order and shipping notifications (only if the platform does not tag them itself; read first) | the platform (`shopify`) | `email` | the email's name (`abandoned-cart`, `order-shipped`) | the button | Email |
 | Email signature | `signature` | `email` | `signature` | the person | Email |
 | Print and QR codes | `qr` | `offline` | the piece | — | Unassigned (expected) |
 | A partner's website that links by agreement | their domain | `referral` | `partner` | — | Referral |
