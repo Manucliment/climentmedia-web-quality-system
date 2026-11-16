@@ -3000,6 +3000,17 @@ espera "A11Y-09 · campos sin autocomplete, FALLA"       FALLO A11Y-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/a11y-pobre --candidato --una-sola --solo accesibilidad --sin-recibo
 espera "A11Y-09 · con autocomplete, PASA"               PASA  A11Y-09 \
        perl $QA https://climentmedia.com --repo fixtures-lenses/a11y-bueno --candidato --una-sola --solo accesibilidad --sin-recibo
+# A11Y-10 · la region viva de los errores. No tenia ni un caso hasta el 16-nov-2026, y por eso nadie vio que
+#   role="status" (una region viva educada en ARIA) daba FALLO a 6 paginas de formulario de un sitio, ni que
+#   aria-live="off" daba PASA. Vistos en ROJO contra el qa-master de antes: role-status FALLO y live-off PASA.
+espera "A11Y-10 · sin region viva, FALLA"               FALLO A11Y-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-pobre --candidato --una-sola --solo accesibilidad --sin-recibo
+espera "A11Y-10 · role=alert y aria-live=polite, PASA"  PASA  A11Y-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/med-bueno --candidato --una-sola --solo accesibilidad --sin-recibo
+espera "A11Y-10 · role=status solo, PASA (caja 3)"      PASA  A11Y-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/a11y-role-status --candidato --una-sola --solo accesibilidad --sin-recibo
+espera "A11Y-10 · aria-live=off, FALLA (no anuncia)"    FALLO A11Y-10 \
+       perl $QA https://climentmedia.com --repo fixtures-lenses/a11y-live-off --candidato --una-sola --solo accesibilidad --sin-recibo
 # 🔴 Y EL SEGUNDO FALLO DEL GATE QUE ENCONTRARON ESTOS CASOS: A11Y-11 buscaba
 #    `honeypot|hp_|_gotcha|bot-field`, y el cepo que tenemos EN VIVO en
 #    site-d.example se llama **`website`** -- el nombre clasico, elegido

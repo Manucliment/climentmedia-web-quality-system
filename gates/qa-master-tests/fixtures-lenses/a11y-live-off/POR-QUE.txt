@@ -1,0 +1,4 @@
+# fixture: el formulario de med-bueno con su region escrita como aria-live="off" y nada
+# mas. "off" es justo lo contrario de una region viva: el lector no anuncia el cambio.
+# Hasta el 16-nov-2026 A11Y-10 aceptaba cualquier aria-live= y esto daba PASA.
+# Tiene que dar FALLO. Es el espejo de a11y-role-status (que tiene que dar PASA).

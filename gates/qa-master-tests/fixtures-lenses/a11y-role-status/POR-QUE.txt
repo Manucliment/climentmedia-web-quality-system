@@ -1,0 +1,6 @@
+# fixture: el formulario de med-bueno con su region viva escrita como role="status"
+# y nada mas (ni aria-live ni role="alert"). En ARIA, role="status" ya es una region
+# viva educada (aria-live="polite" implicito). Hasta el 16-nov-2026 A11Y-10 solo
+# aceptaba aria-live= o role="alert", y daba FALLO a las 6 paginas de formulario de
+# climentmedia, que llevan role="status" en .lead-result (pmfaci-B, recibo a050317c).
+# Tiene que dar PASA. med-pobre (sin ninguna region) sigue teniendo que dar FALLO.

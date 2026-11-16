@@ -4439,12 +4439,16 @@ sub lente_a11y {
                         hacer=>'autocomplete="given-name|family-name|email|tel". Ahorra teclear en movil, que es donde llega el lead')
                 : pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-09', titulo=>'campos con autocomplete', donde=>$form_de);
 
-        ($formsrc =~ /aria-live=|role=["']alert["']/i)
+        # 16-nov-2026 · CAJA 3. Solo valian aria-live= y role="alert". Pero role="status" y role="log" son
+        #   tambien regiones vivas en ARIA (aria-live="polite" implicito), y 6 paginas de formulario de un sitio con
+        #   role="status" en su caja de resultado salian FALLO (fixture a11y-role-status). Y al reves: aria-live="off"
+        #   pasaba, y "off" es justo NO anunciar (fixture a11y-live-off, que tiene que FALLAR).
+        ($formsrc =~ /aria-live=["']?(?:polite|assertive)\b|role=["'](?:alert|status|log)["']/i)
           ? pasa(lente=>'ACCESIBILIDAD', id=>'A11Y-10', titulo=>'region viva para los errores del formulario',
                 donde=>$form_de)
           : fallo(lente=>'ACCESIBILIDAD', id=>'A11Y-10', titulo=>'sin region viva para los errores',
                   donde=>$form_de,
-                  umbral=>'un contenedor con aria-live="polite" o role="alert"',
+                  umbral=>'un contenedor con aria-live="polite" o "assertive", o con role="status", "alert" o "log" (aria-live="off" no anuncia)',
                   proc=>'G8 · 0 en site-d, site-a y site-c',
                   hacer=>'quien no ve la pantalla no se entera de que el formulario ha fallado: se queda esperando');
 
