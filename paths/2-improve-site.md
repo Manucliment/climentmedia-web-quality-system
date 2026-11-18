@@ -386,6 +386,9 @@ migration **the rule came from**. It was fixed there and it never left.
   removing their assets breaks the checkout. Map who draws it before dismantling anything.
 - `[trap:deploy-D5]` A CDN keeps one copy per node: one request says nothing about what visitors see. Ask 10-16 times and group
   by node; compare the served file against the ORIGIN with a forced miss. If the origin is right and one node is stale, waiting is the cheap exit.
+- `[trap:deploy-A15]` The receipt's local server answers `/x/` with `x.html`; production may not. When the door's
+  new-versus-production comparison flags a loose `.html` page (not `index.html`) as a NEW failure, `curl -sI` that same
+  route in production before fixing anything: a 404 there means the comparison had no pair, not that the page got worse.
 - `[trap:deploy-D11]` `php -v` over SSH is the command-line binary; the PHP serving the site is read from a real request's header.
 - `[trap:deploy-E3]` Purging by hand is not a fix: it convinces you the problem is solved. Put the file's hash in its URL;
   a different stylesheet is a URL the CDN has never seen.
