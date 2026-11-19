@@ -1889,12 +1889,23 @@ fi
 #  frente a lo que se ve, las acciones y la indexacion. `qa-master SEO-11` solo
 #  pregunta si hay JSON-LD, y da verde a cualquiera.
 #
-#  🔴 NO BLOQUEA, misma norma que 2-quinquies: se cablea PARA QUE SE VEA.
 #  14-nov-2026, medido sobre lo servido de las webs de la casa (58 paginas que
 #  venden): 4 FALLO y ninguna sin leer. Una portada sin WebSite, real y ya vista
 #  el 5-nov, y tres portadas con un FAQPage suelto, que es la fila de la portada
-#  en page-types.tsv (las preguntas SI se ven: PT-06 pasa). CUANDO PASA A
-#  BLOQUEAR: cuando los FALLO de dos semanas aqui sean todos reales.
+#  en page-types.tsv (las preguntas SI se ven: PT-06 pasa). Se cableo como AVISO
+#  hasta que los FALLO de las subidas fueran todos reales.
+#
+#  🔴 19-nov-2026 · BLOQUEA. Del 14 al 19-nov, 28 subidas de 9 webs y 5 paginas con
+#  FALLO, ninguna falsa:
+#    · 4 son la caja 2: las dos guias de la API de un sitio, sin indexar a
+#      proposito desde el 8-nov (PT-09), en dos subidas.
+#    · 1 es la caja 1: una pagina de servicio declarada «ficha» en su spec para
+#      no pedirle las secciones de servicio (PT-03 pide un Product).
+#  Lo de la caja 2 se firma en _deploy/accepted.conf, una entrada por pagina y
+#  regla: CHECK PT-xx y FINDING `DONDE=<fichero del arbol>`. Las lee
+#  `qa-master.pl --aceptados`, el mismo lector y las mismas cinco cerraduras que
+#  el resto. Un FALLO sin firmar PARA --subir antes de la linea que sube (paso 3).
+#  En ensayo se dice y sigue, como 2-ter.
 #
 #  Mide el ARBOL, no lo servido: aqui aun se arregla. Las paginas de
 #  URLS_NAVEGADOR y TODAS las que cambian en esta subida, cada una en su fichero.
@@ -1916,8 +1927,11 @@ elif [ ! -f "$REF/page-type-gate.pl" ]; then
   echo "  2-septies · marcado por tipo: no encuentro page-type-gate.pl. NO MEDIDO."
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO no medido: falta el programa" --repo "$REPO" >/dev/null 2>&1
 else
-  linea; echo "  2-septies · el marcado de cada pagina, por su tipo (AVISO)"; linea
-  PT_N=0; PT_FALLO=0; PT_NM=0; PT_LISTA=""; PT_VISTOS=" "
+  linea; echo "  2-septies · el marcado de cada pagina, por su tipo"; linea
+  PT_N=0; PT_FALLO=0; PT_NM=0; PT_ACEP=0; PT_LISTA=""; PT_VISTOS=" "
+  # Las aceptaciones firmadas del repo, por el lector de qa-master (VALE, CADUCADA o NO VALE).
+  PT_ACEPTADOS="$(perl "$REF/qa-master.pl" --aceptados "$REPO" 2>/dev/null | grep -E $'^(VALE|CADUCADA|NO VALE)\tPT-|^NO VALE\t' || true)"
+  printf '%s\n' "$PT_ACEPTADOS" | awk -F'\t' '$1 == "NO VALE" { print "  ⚠ aceptado.conf, linea " $2 ": NO VALE (" $3 "). El FALLO sigue contando." }'
   for f in $(for r in ${URLS_NAVEGADOR:-/}; do pt_fichero "$r"; done) ${CAMBIADAS_TODAS:-}; do
     case "$PT_VISTOS" in *" $f "*) continue ;; esac
     PT_VISTOS="$PT_VISTOS$f "
@@ -1927,20 +1941,48 @@ else
     PT_SAL="$(perl "$REF/page-type-gate.pl" "$REPO/$f" 2>&1)"; PT_RC=$?
     PT_N=$((PT_N+1))
     if [ "$PT_RC" = 1 ]; then
-      PT_FALLO=$((PT_FALLO+1)); PT_LISTA="$PT_LISTA $f"
-      printf '%s\n' "$PT_SAL" | grep -E '^[[:space:]]*FALLO[[:space:]]+PT-' | head -3 | sed -E "s|^[[:space:]]*|  $f · |" | cut -c1-200
+      # Cada regla en FALLO, contra su entrada firmada: PT-xx y DONDE=<este fichero>.
+      PT_SIN=""; PT_ACEP_TXT=""
+      for pt_id in $(printf '%s\n' "$PT_SAL" | sed -nE 's/^[[:space:]]*FALLO[[:space:]]+(PT-[0-9]+).*/\1/p' | sort -u); do
+        pt_e="$(printf '%s\n' "$PT_ACEPTADOS" | awk -F'\t' -v c="$pt_id" -v h="DONDE=$f" '($1 == "VALE" || $1 == "CADUCADA") && $2 == c && $3 == h' | head -1)"
+        case "$pt_e" in
+          VALE*)     PT_ACEP_TXT="$PT_ACEP_TXT  $f · ACEPTADO $pt_id · hasta $(printf '%s' "$pt_e" | cut -f4) · firma $(printf '%s' "$pt_e" | cut -f5) · $(printf '%s' "$pt_e" | cut -f6 | cut -c1-90)"$'\n' ;;
+          CADUCADA*) PT_SIN="$PT_SIN $pt_id"; echo "  $f · $pt_id: su aceptacion CADUCO el $(printf '%s' "$pt_e" | cut -f4) y vuelve a ser FALLO" ;;
+          *)         PT_SIN="$PT_SIN $pt_id" ;;
+        esac
+      done
+      if [ -z "$PT_SIN" ]; then
+        PT_ACEP=$((PT_ACEP+1)); printf '%s' "$PT_ACEP_TXT"
+      else
+        PT_FALLO=$((PT_FALLO+1)); PT_LISTA="$PT_LISTA $f"
+        printf '%s' "$PT_ACEP_TXT"
+        for pt_id in $PT_SIN; do
+          printf '%s\n' "$PT_SAL" | grep -E "^[[:space:]]*FALLO[[:space:]]+$pt_id[[:space:]]" | head -1 | sed -E "s|^[[:space:]]*|  $f · |" | cut -c1-200
+        done
+      fi
     elif [ "$PT_RC" = 3 ]; then
       PT_NM=$((PT_NM+1)); echo "  NO MEDIDO  $f: page-type-gate no la pudo leer"
     fi
   done
-  echo "  $PT_N paginas medidas · $PT_FALLO con FALLO · $PT_NM NO MEDIDO"
-  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · $PT_FALLO con FALLO${PT_LISTA:+ (${PT_LISTA# })} · $PT_NM no medidas · AVISO, no bloquea" --repo "$REPO" >/dev/null 2>&1
+  echo "  $PT_N paginas medidas · $PT_FALLO con FALLO · $PT_ACEP aceptadas · $PT_NM NO MEDIDO"
   if [ "$PT_FALLO" != 0 ]; then
+    [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · $PT_FALLO con FALLO (${PT_LISTA# }) · $PT_ACEP aceptadas · $PT_NM no medidas · PARA" --repo "$REPO" >/dev/null 2>&1
     echo
-    echo "  ⚠ AVISO: el marcado de esas paginas no es el de su tipo. Queda anotado y"
-    echo "    NO bloquea todavia (el motivo, con fecha, arriba). Se arregla en la"
-    echo "    FUENTE; si es un falso positivo, se arregla EL GATE o su fila de"
-    echo "    page-types.tsv, con su caso rojo."
+    echo "  🔴 El marcado de esas paginas no es el de su tipo."
+    echo "     · Si es nuestro: se arregla en la FUENTE (el tipo que declara la"
+    echo "       pagina, o el JSON-LD que le falta) y se vuelve a medir."
+    echo "     · Si lo ha decidido el cliente: una entrada en _deploy/accepted.conf"
+    echo "       por pagina y regla, con CHECK PT-xx y FINDING DONDE=<fichero>."
+    echo "     · Si es un falso positivo: se arregla EL GATE o su fila de"
+    echo "       page-types.tsv, con su caso rojo. Nunca el accepted.conf."
+    if [ "$SUBIR" = 1 ]; then
+      echo
+      echo "  🔴 NO SUBO: $PT_FALLO pagina(s) con FALLO de marcado sin aceptar. No se ha subido nada."
+      exit 1
+    fi
+    echo "  (ensayo: con --subir, la puerta pararia aqui)"
+  else
+    [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · 0 con FALLO · $PT_ACEP aceptadas · $PT_NM no medidas" --repo "$REPO" >/dev/null 2>&1
   fi
 fi
 # <<< marcado-por-tipo

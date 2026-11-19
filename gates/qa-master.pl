@@ -327,6 +327,24 @@ my @targets;
             $opt{$1} = 1;
         } elsif ($x eq '-q') {
             $opt{q} = 1;
+        } elsif ($x eq '--aceptados' || $x eq '--accepted') {
+            # 19-nov-2026 · LAS ACEPTACIONES DE UN REPO, CON LAS MISMAS CINCO CERRADURAS, PARA OTRO PASO.
+            #    La puerta (2-septies) juzga el marcado con page-type-gate.pl, que no es este programa, y
+            #    tiene que aceptar un FALLO firmado igual que aqui: un lector, no dos (dos copias de una
+            #    regla divergen). Solo lectura; sin red y sin recibo. Una linea por entrada, con tabuladores:
+            #      VALE      CHECK  HALLAZGO  HASTA  ACEPTA  MOTIVO
+            #      CADUCADA  CHECK  HALLAZGO  HASTA
+            #      NO VALE   LINEA  POR QUE
+            my $r = shift(@a) // '';
+            die "uso: perl qa-master.pl --aceptados <repo>\n" if $r eq '' || !-d $r;
+            my ($buenas, $malas) = lee_aceptados($r);
+            binmode STDOUT, ':encoding(UTF-8)';
+            for my $e (@$buenas) {
+                my @c = map { my $v = $_ // ''; $v =~ s/[\t\r\n]+/ /g; $v } ($e->{CHECK}, _norm_ev($e->{HALLAZGO}), $e->{_hasta_iso}, $e->{ACEPTA}, $e->{MOTIVO});
+                print join("\t", (time > $e->{_fin} ? 'CADUCADA' : 'VALE'), (time > $e->{_fin} ? @c[0..2] : @c)), "\n";
+            }
+            print join("\t", 'NO VALE', $_->{_linea} // '?', $_->{_mal}), "\n" for @$malas;
+            exit 0;
         } elsif ($x =~ /^-h|^--help$/) {
             exec($^X, '-e', 'open my $f,"<",$ARGV[0]; while(<$f>){ last unless /^#/; print substr($_,2) }', $0);
         } elsif ($x =~ /^-/) {
@@ -7309,9 +7327,12 @@ use constant ACEPT_AVISO  => 14;    # a partir de aqui el recibo avisa
 #    que salia rechazada por «faltan campos», y el FALLO seguia contando. Es la
 #    misma enfermedad que el nombre del fichero (26-sep), un nivel mas abajo.
 #    Vale tambien para measured.conf (10-ter).
-my %CAMPO_EN = (FINDING => 'HALLAZGO', REASON => 'MOTIVO', ACCEPTS => 'ACEPTA', DATE => 'FECHA',
-                UNTIL => 'HASTA', RESULT => 'RESULTADO', HOW => 'COMO', 'MEASURED-BY' => 'MIDE',
-                DATA => 'DATO');
+# En BEGIN (19-nov-2026): `--aceptados` llama a lee_aceptados nada mas leer las opciones, mucho antes de esta
+# linea, y con una asignacion normal el mapa estaria vacio a esa hora (los campos en ingles saldrian «faltan campos»).
+my %CAMPO_EN;
+BEGIN { %CAMPO_EN = (FINDING => 'HALLAZGO', REASON => 'MOTIVO', ACCEPTS => 'ACEPTA', DATE => 'FECHA',
+                     UNTIL => 'HASTA', RESULT => 'RESULTADO', HOW => 'COMO', 'MEASURED-BY' => 'MIDE',
+                     DATA => 'DATO') }
 sub lee_aceptados {
     my ($repo) = @_;
     my $f = "$repo/_deploy/aceptado.conf";
@@ -7595,7 +7616,8 @@ if ($opt{repo} ne '' && -d $opt{repo}) {
     # hallazgo ya se arreglo (y sobra), o cambio (y el fallo ha vuelto a contar,
     # que es justo lo que se queria). Se dice, para que no se quede ahi de
     # adorno tapando algo que nadie vuelve a mirar.
-    push @ACEPT_SOBRAN, $_ for grep { !$usada{"$_"} } @$buenas;
+    # Las PT-* no son de este programa: las juzga page-type-gate.pl en la puerta (2-septies, 19-nov-2026).
+    push @ACEPT_SOBRAN, $_ for grep { !$usada{"$_"} && ($_->{CHECK} // '') !~ /^PT-\d/ } @$buenas;
 }
 
 my %ICONO = ('FALLO'=>'FALLO', 'AVISO'=>'AVISO', 'NV'=>'NO VERIF', 'PASA'=>'PASA', 'ACEPTADO'=>'ACEPTADO');

@@ -766,8 +766,14 @@ else
   pt_pagina() { printf '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tienda</title><link rel="canonical" href="https://tienda.example/%s">%s%s</head><body><main data-tipo="home"><h1>Tienda de lamparas</h1></main></body></html>\n' "$1" "$2" "$PT_ORG"; }
   pt_pagina ""             "$PT_WS" > "$PT_ARBOL/index.html"
   pt_pagina "sin-website/" ""       > "$PT_ARBOL/sin-website/index.html"
-  pt_corre() { ( REPO="$PT_ARBOL"; REDIR="${PT_REDIR:-0}"; SUBIR=0; URLS_NAVEGADOR="$1"; CAMBIADAS_TODAS="${2:-}"
-                 no_aplica() { echo "  $1 · NO APLICA"; }; . "$PT_BLOQUE" ) > "$TMP" 2>&1; }
+  # 19-nov: con PT_SUBIR=1 el bloque corre como en --subir; receipt.pl es un doble que solo escribe lo que anotaria
+  # (el de verdad escribe en el historial central). PT_RC, la salida del bloque: 1 si paro.
+  PT_ANOTA="$(mktemp -t anotapt-XXXXXXXX)"
+  pt_corre() { : > "$PT_ANOTA"
+               ( REPO="$PT_ARBOL"; REDIR="${PT_REDIR:-0}"; SUBIR="${PT_SUBIR:-0}"; URLS_NAVEGADOR="$1"; CAMBIADAS_TODAS="${2:-}"
+                 no_aplica() { echo "  $1 · NO APLICA"; }
+                 perl() { case "$1" in */receipt.pl) shift; echo "ANOTA: $*" >> "$PT_ANOTA" ;; *) command perl "$@" ;; esac; }
+                 . "$PT_BLOQUE" ) > "$TMP" 2>&1; PT_RC=$?; }
   pt_espera() { # nombre · TIENE que salir · NO puede salir
     local bien=1
     [ -n "$2" ] && ! grep -q -- "$2" "$TMP" && bien=0
@@ -776,21 +782,46 @@ else
     else ko=$((ko+1)); printf '  MAL   %s\n' "$1"; sed 's/^/        /' "$TMP"; fi
   }
   pt_corre "/"
-  pt_espera "2-septies: una portada con WebSite y Organization, 1 medida y sin FALLO" "1 paginas medidas · 0 con FALLO · 0 NO MEDIDO" "AVISO:"
+  pt_espera "2-septies: una portada con WebSite y Organization, 1 medida y sin FALLO" "1 paginas medidas · 0 con FALLO · 0 aceptadas · 0 NO MEDIDO" "El marcado de esas"
   pt_corre "/ /sin-website/"
-  pt_espera "2-septies: la portada sin WebSite sale con su PT-03, y es AVISO" "sin-website/index.html · FALLO  PT-03" ""
-  pt_espera "2-septies: y el recuento la cuenta" "2 paginas medidas · 1 con FALLO · 0 NO MEDIDO" ""
+  pt_espera "2-septies: la portada sin WebSite sale con su PT-03" "sin-website/index.html · FALLO  PT-03" ""
+  pt_espera "2-septies: y el recuento la cuenta" "2 paginas medidas · 1 con FALLO · 0 aceptadas · 0 NO MEDIDO" ""
+  pt_espera "2-septies: en ensayo dice que pararia, y no para" "con --subir, la puerta pararia aqui" "NO SUBO"
+  [ "$PT_RC" = 0 ] && { ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: en ensayo sale 0"; } || { ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: en ensayo sale 0 (sale $PT_RC)"; }
+  # 🔴 19-nov · BLOQUEA (D-049): el mismo FALLO, con --subir y sin aceptar, PARA. Es el caso que DEBE parar.
+  PT_SUBIR=1 pt_corre "/ /sin-website/"
+  if [ "$PT_RC" = 1 ] && grep -q "NO SUBO: 1 pagina(s) con FALLO de marcado sin aceptar" "$TMP" && grep -q "ANOTA: --anotar MARCADO 2 medidas · 1 con FALLO (sin-website/index.html) · 0 aceptadas · 0 no medidas · PARA" "$PT_ANOTA"; then
+    ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: con --subir, un FALLO sin aceptar PARA (exit 1) y lo anota"
+  else ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: con --subir, un FALLO sin aceptar PARA (exit 1) y lo anota (sale $PT_RC)"; sed 's/^/        /' "$TMP"; fi
+  # La caja 2: una entrada firmada para ESA pagina y ESA regla la deja subir, dicha con su firma y su fecha.
+  mkdir -p "$PT_ARBOL/_deploy"
+  pt_acepta() { printf '[ACCEPTED]\nCHECK:     %s\nFINDING:   DONDE=%s\nREASON:    la portada vieja, sin WebSite a proposito hasta la migracion\nACCEPTS:   Persona Que Firma\nDATE:      %s\nUNTIL:     %s\n' "$1" "$2" "$3" "$4" > "$PT_ARBOL/_deploy/accepted.conf"; }
+  PT_HOY="$(date +%F)"; PT_LUEGO="$(date -d '+30 days' +%F 2>/dev/null || date -v+30d +%F)"
+  pt_acepta PT-03 sin-website/index.html "$PT_HOY" "$PT_LUEGO"
+  PT_SUBIR=1 pt_corre "/ /sin-website/"
+  if [ "$PT_RC" = 0 ] && grep -q "sin-website/index.html · ACEPTADO PT-03 · hasta $PT_LUEGO · firma Persona Que Firma" "$TMP" && grep -q "2 paginas medidas · 0 con FALLO · 1 aceptadas" "$TMP" && ! grep -q "NO SUBO" "$TMP"; then
+    ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: aceptado por pagina y regla, firmado y vigente: sube, y lo dice"
+  else ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: aceptado por pagina y regla, firmado y vigente: sube, y lo dice (sale $PT_RC)"; sed 's/^/        /' "$TMP"; fi
+  # Y lo que NO lo cubre: otra pagina, otra regla, o caducada. Las tres PARAN.
+  pt_acepta PT-03 otra/index.html "$PT_HOY" "$PT_LUEGO"; PT_SUBIR=1 pt_corre "/ /sin-website/"; PT_R1=$PT_RC
+  pt_acepta PT-09 sin-website/index.html "$PT_HOY" "$PT_LUEGO"; PT_SUBIR=1 pt_corre "/ /sin-website/"; PT_R2=$PT_RC
+  pt_acepta PT-03 sin-website/index.html 2026-01-01 2026-03-01; PT_SUBIR=1 pt_corre "/ /sin-website/"; PT_R3=$PT_RC
+  if [ "$PT_R1" = 1 ] && [ "$PT_R2" = 1 ] && [ "$PT_R3" = 1 ] && grep -q "su aceptacion CADUCO el 2026-03-01" "$TMP"; then
+    ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: una entrada de otra pagina, de otra regla o caducada no la cubre: PARA"
+  else ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: una entrada de otra pagina, de otra regla o caducada no la cubre: PARA ($PT_R1 $PT_R2 $PT_R3)"; sed 's/^/        /' "$TMP"; fi
+  rm -rf "$PT_ARBOL/_deploy"
   pt_corre "/ /no-existe/"
-  pt_espera "2-septies: una ruta declarada sin fichero es NO MEDIDO, no un aprobado" "1 paginas medidas · 0 con FALLO · 1 NO MEDIDO" ""
+  pt_espera "2-septies: una ruta declarada sin fichero es NO MEDIDO, no un aprobado" "1 paginas medidas · 0 con FALLO · 0 aceptadas · 1 NO MEDIDO" ""
   pt_corre "/" "sin-website/index.html index.html"
   pt_espera "2-septies: las cambiadas tambien se miden, y una repetida, una vez" "2 paginas medidas · 1 con FALLO" ""
   PT_REDIR=1 pt_corre "/"
   pt_espera "2-septies: un arbol de redirecciones no aplica" "NO APLICA" "paginas medidas"
-  # El bloque nunca para la subida: ni un exit ni un return que no sea el de pt_fichero.
-  if grep -vE '^[[:space:]]*#' "$PT_BLOQUE" | grep -qE '(^|[^_a-z])exit([^_a-z]|$)'; then
-    ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: el bloque lleva un exit (un AVISO no para la subida)"
-  else ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: el bloque no lleva ningun exit: avisa y sigue"; fi
-  rm -rf "$PT_BLOQUE" "$PT_ARBOL"
+  # Desde el 19-nov el bloque para, pero solo en un sitio: un exit, y solo con --subir.
+  PT_EXITS="$(grep -vE '^[[:space:]]*#' "$PT_BLOQUE" | grep -cE '(^|[^_a-z])exit([^_a-z]|$)')"
+  if [ "$PT_EXITS" = 1 ] && grep -B3 -E '^[[:space:]]*exit 1$' "$PT_BLOQUE" | grep -q 'if \[ "\$SUBIR" = 1 \]'; then
+    ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: un solo exit, dentro de --subir"
+  else ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: un solo exit, dentro de --subir ($PT_EXITS exits)"; fi
+  rm -rf "$PT_BLOQUE" "$PT_ARBOL" "$PT_ANOTA"
 fi
 
 # ── 2-octies (14-nov-2026): la revision de lo que sube, AVISO y nunca parada ─

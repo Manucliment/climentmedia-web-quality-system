@@ -79,6 +79,12 @@
 #                            entry signed earlier with DATO= and DONDE= keeps
 #                            matching while those hold.
 #
+#  THE MARKUP OF A PAGE (page-type-gate, PT-01 to PT-11). It prints no HUELLA.
+#  The door accepts it per PAGE and RULE: CHECK is the PT id and FINDING is
+#  `DONDE=` plus the page's file in the tree, as the door names it
+#  (`DONDE=guides/api/index.html`). Another page, another rule or an expired
+#  entry does not cover it, and the upload stops.
+#
 #  WHY A HASH AND NOT THE LIST. Because this line gets read in a diff: with 25
 #  paths inside it would be 3 KB and the file would stop being reviewable, which
 #  is the FIRST lock of the whole mechanism. The `DATA` beside it shows at a
