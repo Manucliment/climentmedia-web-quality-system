@@ -769,10 +769,18 @@ else
   # 19-nov: con PT_SUBIR=1 el bloque corre como en --subir; receipt.pl es un doble que solo escribe lo que anotaria
   # (el de verdad escribe en el historial central). PT_RC, la salida del bloque: 1 si paro.
   PT_ANOTA="$(mktemp -t anotapt-XXXXXXXX)"
+  # 19-nov (D-057): con PT_SITIO=http://prod.example la pagina publicada es un doble, el arbol PT_PROD.
   pt_corre() { : > "$PT_ANOTA"
                ( REPO="$PT_ARBOL"; REDIR="${PT_REDIR:-0}"; SUBIR="${PT_SUBIR:-0}"; URLS_NAVEGADOR="$1"; CAMBIADAS_TODAS="${2:-}"
+                 SITIO="${PT_SITIO:-}"
                  no_aplica() { echo "  $1 · NO APLICA"; }
-                 perl() { case "$1" in */receipt.pl) shift; echo "ANOTA: $*" >> "$PT_ANOTA" ;; *) command perl "$@" ;; esac; }
+                 perl() { case "$1" in
+                            */receipt.pl) shift; echo "ANOTA: $*" >> "$PT_ANOTA" ;;
+                            */page-type-gate.pl) case "${2:-}" in
+                                http://prod.example/*) local p="${2#http://prod.example/}"; case "$p" in ""|*/) p="${p}index.html" ;; esac
+                                                       command perl "$1" "$PT_PROD/$p" ;;
+                                *) command perl "$@" ;; esac ;;
+                            *) command perl "$@" ;; esac; }
                  . "$PT_BLOQUE" ) > "$TMP" 2>&1; PT_RC=$?; }
   pt_espera() { # nombre · TIENE que salir · NO puede salir
     local bien=1
@@ -810,6 +818,36 @@ else
     ok=$((ok+1)); printf '  PASA  %s\n' "2-septies: una entrada de otra pagina, de otra regla o caducada no la cubre: PARA"
   else ko=$((ko+1)); printf '  MAL   %s\n' "2-septies: una entrada de otra pagina, de otra regla o caducada no la cubre: PARA ($PT_R1 $PT_R2 $PT_R3)"; sed 's/^/        /' "$TMP"; fi
   rm -rf "$PT_ARBOL/_deploy"
+  # 🔴 19-nov · D-057 EN EL 2-SEPTIES. Un FALLO de marcado que la pagina publicada ya tiene igual, con
+  #    una fila abierta con dueño y fecha que nombra la regla y la pagina, no para (el caso de las
+  #    variantes de un quiz, 19-nov). El primero PASA y es ROJO contra la puerta de antes (paraba);
+  #    los otros cuatro tienen que PARAR: nuevo, sin fila de esa pagina, fila vencida, produccion sin leer.
+  PT_PROD="$(mktemp -d -t prodpt-XXXXXXXX)"; mkdir -p "$PT_PROD/sin-website" "$PT_ARBOL/_seo"
+  cp "$PT_ARBOL/sin-website/index.html" "$PT_PROD/sin-website/index.html"
+  pt_fila() { printf '| Que | Estado | Dueño | Fecha |\n|---|---|---|---|\n| %s | abierta | el chat de la web | %s |\n' "$1" "$2" > "$PT_ARBOL/_seo/BASE.md"; }
+  pt_fila "PT-03 de /sin-website/: sin WebSite hasta la migracion" "$PT_LUEGO"
+  PT_SITIO=http://prod.example PT_SUBIR=1 pt_corre "/ /sin-website/"
+  if [ "$PT_RC" = 0 ] && grep -q "2 paginas medidas · 0 con FALLO · 0 aceptadas · 0 NO MEDIDO · 1 viejas por D-057 (no paran): sin-website/index.html PT-03" "$TMP" \
+     && grep -q "D-057 .*PT-03 .*igual en produccion · fila _seo/BASE.md:3" "$TMP" \
+     && grep -q "ANOTA: --anotar MARCADO 2 medidas · 0 con FALLO · 0 aceptadas · 0 no medidas · 1 viejas por D-057 (sin-website/index.html PT-03)" "$PT_ANOTA" && ! grep -q "NO SUBO" "$TMP"; then
+    ok=$((ok+1)); printf '  PASA  %s\n' "2-septies · D-057: igual en produccion y con fila de esa regla y pagina: sube, nombrado en el recibo"
+  else ko=$((ko+1)); printf '  MAL   %s\n' "2-septies · D-057: igual en produccion y con fila de esa regla y pagina: sube, nombrado en el recibo (sale $PT_RC)"; sed 's/^/        /' "$TMP"; cat "$PT_ANOTA" | sed 's/^/        /'; fi
+  pt_d57_para() { # nombre · lo que TIENE que salir
+    PT_SITIO=http://prod.example PT_SUBIR=1 pt_corre "/ /sin-website/"
+    if [ "$PT_RC" = 1 ] && grep -q "NO SUBO: 1 pagina(s)" "$TMP" && grep -q -- "$2" "$TMP"; then ok=$((ok+1)); printf '  PASA  %s\n' "$1"
+    else ko=$((ko+1)); printf '  MAL   %s\n' "$1 (sale $PT_RC)"; sed 's/^/        /' "$TMP"; fi
+  }
+  pt_pagina "sin-website/" "$PT_WS" > "$PT_PROD/sin-website/index.html"
+  pt_d57_para "2-septies · D-057: produccion no tiene ese FALLO (es nuevo): PARA" "PT-03 no falla: es NUEVO"
+  cp "$PT_ARBOL/sin-website/index.html" "$PT_PROD/sin-website/index.html"
+  pt_fila "PT-03 de /otra/: lo mismo en otra pagina" "$PT_LUEGO"
+  pt_d57_para "2-septies · D-057: la fila nombra otra pagina: PARA" "ninguna fila de _seo/BASE.md ni del plan nombra PT-03 y la pagina /sin-website/"
+  pt_fila "PT-03 de /sin-website/: sin WebSite hasta la migracion" "2026-01-01"
+  pt_d57_para "2-septies · D-057: la fila vencio: PARA" "su fila vencio"
+  pt_fila "PT-03 de /sin-website/: sin WebSite hasta la migracion" "$PT_LUEGO"
+  rm -f "$PT_PROD/sin-website/index.html"
+  pt_d57_para "2-septies · D-057: produccion no se pudo leer: NO MEDIDO, y PARA" "NO-MEDIDO .*produccion no medida"
+  rm -rf "$PT_PROD" "$PT_ARBOL/_seo"
   pt_corre "/ /no-existe/"
   pt_espera "2-septies: una ruta declarada sin fichero es NO MEDIDO, no un aprobado" "1 paginas medidas · 0 con FALLO · 0 aceptadas · 1 NO MEDIDO" ""
   pt_corre "/" "sin-website/index.html index.html"

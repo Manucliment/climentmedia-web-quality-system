@@ -50,7 +50,10 @@
 #    perl d057.pl --repo DIR --navegador LISTA [--hoy AAAA-MM-DD] [--salida FICHERO]
 #    --navegador   el 1-quater de la puerta: las FALLA de los gates de navegador sobre
 #                  el candidato, cada una con la misma medida sobre produccion (ver «N»)
-#    En ingles: --no-ga4-or-ads · --out · --production-dom · --production · --today · --browser
+#    perl d057.pl --repo DIR --marcado LISTA [--hoy AAAA-MM-DD] [--salida FICHERO]
+#    --marcado     el 2-septies de la puerta: los FALLO de page-type-gate sobre el arbol,
+#                  cada uno con la misma medida sobre la pagina publicada (ver «M»)
+#    En ingles: --no-ga4-or-ads · --out · --production-dom · --production · --today · --browser · --markup
 #
 #  SALIDA (lineas que lee deploy.sh)
 #    D057-RESULTADO: PASA | PARA | NO MEDIDO
@@ -58,6 +61,7 @@
 #    D057-QUITA: N
 #    D057-RECIBO: el SELLO del recibo juzgado (lo comprueba apuntar-seguimiento)
 #    D057-NAV: <n> D-057 | PARA | NO-MEDIDO   (solo con --navegador: la linea n de la lista)
+#    D057-PT: <n> D-057 | PARA | NO-MEDIDO    (solo con --marcado: la linea n de la lista)
 #  exit 0 = ningun FALLO que pare · 1 = alguno para · 2 = no se ha podido medir.
 #  Un sin mirar que D-057 no cubre no para aqui: sigue su camino de siempre en la
 #  puerta (paso 2), y sale como SIGUE.
@@ -74,11 +78,12 @@ require "$MIDIR57/receipt.pl";   # lee_recibo, hash_estandar, solo_ascii
 # ya son UTF-8: sin esto, cada «·» sale «Â·».
 binmode(STDOUT, ':raw');
 
-my %o = (repo => '', ga4 => '', salida => '', produccion => '', hoy => '', dom => '', nav => '');
+my %o = (repo => '', ga4 => '', salida => '', produccion => '', hoy => '', dom => '', nav => '', pt => '');
 {
     my %AL = ('--no-ga4-or-ads' => '--sin-ga4-ni-ads', '--out' => '--salida',
               '--production' => '--produccion', '--today' => '--hoy',
-              '--production-dom' => '--dom-produccion', '--browser' => '--navegador');
+              '--production-dom' => '--dom-produccion', '--browser' => '--navegador',
+              '--markup' => '--marcado');
     my @a = map { $AL{$_} // $_ } @ARGV;
     while (@a) {
         my $x = shift @a;
@@ -89,6 +94,7 @@ my %o = (repo => '', ga4 => '', salida => '', produccion => '', hoy => '', dom =
         elsif ($x eq '--dom-produccion')  { $o{dom} = shift(@a) // '' }
         elsif ($x eq '--hoy')             { $o{hoy} = shift(@a) // '' }
         elsif ($x eq '--navegador')       { $o{nav} = shift(@a) // '' }
+        elsif ($x eq '--marcado')         { $o{pt} = shift(@a) // '' }
         elsif ($x eq '-h' || $x eq '--help') {
             open my $f, '<', $0 or exit 2;
             while (<$f>) { next if $. == 1; last unless /^#/; print substr($_, 2) }
@@ -318,6 +324,83 @@ if ($o{nav} ne '') {
     }
     my $rc = $cuenta{PARA} ? 1 : $cuenta{'NO-MEDIDO'} ? 2 : 0;
     d57_di('    (ninguna medida en FALLA que decidir)') unless @med;
+    d57_di('', 'D057-RESULTADO: ' . ($rc == 1 ? 'PARA' : $rc == 2 ? 'NO MEDIDO' : 'PASA'));
+    d57_fin($rc);
+}
+
+# ── M · el marcado del 2-septies (--marcado) ─────────────────────────────────
+#  19-nov-2026 · POR QUE. El 2-septies paso a parar la subida (D-049) el 19-nov, y
+#  la misma manana un chat pregunto lo que la puerta no sabia contestar: dos
+#  variantes de un quiz con el mismo PT-09 en produccion, con dueño y fecha en su
+#  BASE (1-dic) y quietas hasta su lectura a 14 dias, paraban una subida que solo
+#  les cambia el ?v= de un fichero. D-057 no excluye el marcado (su punto 3 nombra
+#  medicion, seo-guardia, cookies, G11 y D-011): la regla ya era esta, y la puerta
+#  solo la aplicaba a qa-master y al navegador. Aqui la misma pregunta, con el
+#  mismo gate.
+#  Entra una lista, una regla de una pagina por linea:
+#    fichero ruta PT-xx candidato.out produccion.out
+#  (las salidas de page-type-gate.pl: la del arbol y la de la pagina publicada,
+#  medida AHORA, cada una con su ultima linea «PT-RC: <exit>»). Cada FALLO pasa si:
+#    · produccion se leyo de verdad (cabecera del gate y exit 0 o 1). Si no, NO
+#      MEDIDO: ni viejo ni nuevo.
+#    · cada linea FALLO de esa regla en el candidato esta en produccion, con el
+#      mismo texto y los numeros fuera. Produccion sin ese FALLO = es NUEVO.
+#    · una fila abierta, con fecha de hoy en adelante y dueño, nombra la regla
+#      (PT-xx) Y la pagina, como en el navegador.
+sub d57_pt_lee {
+    my ($f) = @_;
+    return { mal => 'no hay medida' } unless defined $f && -s $f;
+    open my $h, '<:raw', $f or return { mal => "no puedo abrir $f" };
+    my @l = map { s/\r?\n\z//r } <$h>; close $h;
+    my ($rc) = map { /^PT-RC:\s*(\d+)\s*$/ ? $1 : () } @l;
+    return { mal => 'la medida no trae su exit' } unless defined $rc;
+    return { mal => 'el gate no pudo leer la pagina' } if $rc == 3;
+    return { mal => "el gate salio $rc" } unless $rc == 0 || $rc == 1;
+    return { mal => 'no es una salida de page-type-gate' } unless grep { /^PAGE TYPE GATE \xC2\xB7 / } @l;
+    my %fallo;
+    for (@l) {
+        next unless /^\s*FALLO\s+(PT-\d+)\s+(.*?)\s*$/;
+        my ($id, $t) = ($1, $2);   # antes de la s///: una sustitucion que casa pisa $1
+        $t =~ s/\d+(?:[.,]\d+)?/#/g;
+        $t =~ s/\s+/ /g;
+        push @{ $fallo{$id} }, $t;
+    }
+    return { fallo => \%fallo };
+}
+if ($o{pt} ne '') {
+    open my $l, '<:raw', $o{pt} or d57_no_medido("no puedo abrir la lista del marcado $o{pt}");
+    my @med = grep { /\S/ } map { s/\r?\n\z//r } <$l>;
+    close $l;
+    d57_di("  el marcado del 2-septies: " . scalar(@med) . " regla(s) en FALLO, contra la pagina publicada");
+    my %cuenta;
+    my $k = 0;
+    for my $linea (@med) {
+        $k++;
+        my ($fich, $ruta, $id, $fc, $fp) = split ' ', $linea;
+        my ($r, $por);
+        my $c = d57_pt_lee($fc);
+        my $p = d57_pt_lee($fp);
+        if (!defined $fp || !defined $id || $id !~ /^PT-\d+$/) { ($r, $por) = ('NO-MEDIDO', 'la linea de la lista no esta entera') }
+        elsif ($c->{mal}) { ($r, $por) = ('NO-MEDIDO', "el arbol: $c->{mal}") }
+        elsif (!@{ $c->{fallo}{$id} || [] }) { ($r, $por) = ('NO-MEDIDO', "el arbol no da FALLO en $id: no hay nada que decidir aqui") }
+        elsif ($p->{mal}) { ($r, $por) = ('NO-MEDIDO', "produccion no medida: $p->{mal}") }
+        elsif (!@{ $p->{fallo}{$id} || [] }) { ($r, $por) = ('PARA', "en produccion $id no falla: es NUEVO") }
+        else {
+            my %prod = map { $_ => 1 } @{ $p->{fallo}{$id} };
+            my @nuevos = grep { !$prod{$_} } @{ $c->{fallo}{$id} };
+            if (@nuevos) {
+                ($r, $por) = ('PARA', 'en produccion falla distinto: ' . solo_ascii(substr($nuevos[0], 0, 90)));
+            } else {
+                my ($ok, $fila) = d57_fila_por("$id y la pagina $ruta", sub { d57_nombra_pagina($_[0], $id, $ruta) });
+                ($r, $por) = $ok ? ('D-057', "igual en produccion · $fila") : ('PARA', $fila);
+            }
+        }
+        $cuenta{$r}++;
+        d57_di(sprintf('    %-9s %-6s %-34s %s', $r, $id // '?', $fich // '?', $por));
+        d57_di("D057-PT: $k $r");
+    }
+    my $rc = $cuenta{PARA} ? 1 : $cuenta{'NO-MEDIDO'} ? 2 : 0;
+    d57_di('    (ningun FALLO de marcado que decidir)') unless @med;
     d57_di('', 'D057-RESULTADO: ' . ($rc == 1 ? 'PARA' : $rc == 2 ? 'NO MEDIDO' : 'PASA'));
     d57_fin($rc);
 }

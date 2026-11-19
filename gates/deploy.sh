@@ -1906,6 +1906,12 @@ fi
 #  `qa-master.pl --aceptados`, el mismo lector y las mismas cinco cerraduras que
 #  el resto. Un FALLO sin firmar PARA --subir antes de la linea que sube (paso 3).
 #  En ensayo se dice y sigue, como 2-ter.
+#  🔴 19-nov, tarde · Y D-057, como en qa-master y en el navegador: un FALLO sin
+#  firmar que la pagina PUBLICADA ya tiene igual (mismo gate, regla y texto) y
+#  que nombra una fila abierta con dueño y fecha (la regla PT-xx Y la pagina) no
+#  para. Lo contesta `d057.pl --marcado` y va nombrado en el recibo. Lo pidio un
+#  chat el mismo dia: dos variantes de un quiz, iguales en produccion y con su
+#  fila al 1-dic, paraban una subida que solo les cambiaba el ?v= de un fichero.
 #
 #  Mide el ARBOL, no lo servido: aqui aun se arregla. Las paginas de
 #  URLS_NAVEGADOR y TODAS las que cambian en esta subida, cada una en su fichero.
@@ -1929,6 +1935,7 @@ elif [ ! -f "$REF/page-type-gate.pl" ]; then
 else
   linea; echo "  2-septies · el marcado de cada pagina, por su tipo"; linea
   PT_N=0; PT_FALLO=0; PT_NM=0; PT_ACEP=0; PT_LISTA=""; PT_VISTOS=" "
+  PT_PEND=""; PT_VIEJ=0; PT_VIEJAS=""; PT_D57="$(mktemp -d 2>/dev/null || true)"
   # Las aceptaciones firmadas del repo, por el lector de qa-master (VALE, CADUCADA o NO VALE).
   PT_ACEPTADOS="$(perl "$REF/qa-master.pl" --aceptados "$REPO" 2>/dev/null | grep -E $'^(VALE|CADUCADA|NO VALE)\tPT-|^NO VALE\t' || true)"
   printf '%s\n' "$PT_ACEPTADOS" | awk -F'\t' '$1 == "NO VALE" { print "  ⚠ aceptado.conf, linea " $2 ": NO VALE (" $3 "). El FALLO sigue contando." }'
@@ -1954,7 +1961,9 @@ else
       if [ -z "$PT_SIN" ]; then
         PT_ACEP=$((PT_ACEP+1)); printf '%s' "$PT_ACEP_TXT"
       else
-        PT_FALLO=$((PT_FALLO+1)); PT_LISTA="$PT_LISTA $f"
+        # Pendiente de D-057 (abajo): la medida del arbol se guarda para compararla con produccion.
+        PT_PEND="$PT_PEND$f|${PT_SIN# }|$PT_N"$'\n'
+        [ -n "$PT_D57" ] && printf '%s\nPT-RC: %s\n' "$PT_SAL" "$PT_RC" > "$PT_D57/c$PT_N.out"
         printf '%s' "$PT_ACEP_TXT"
         for pt_id in $PT_SIN; do
           printf '%s\n' "$PT_SAL" | grep -E "^[[:space:]]*FALLO[[:space:]]+$pt_id[[:space:]]" | head -1 | sed -E "s|^[[:space:]]*|  $f · |" | cut -c1-200
@@ -1964,9 +1973,46 @@ else
       PT_NM=$((PT_NM+1)); echo "  NO MEDIDO  $f: page-type-gate no la pudo leer"
     fi
   done
-  echo "  $PT_N paginas medidas · $PT_FALLO con FALLO · $PT_ACEP aceptadas · $PT_NM NO MEDIDO"
+  # 19-nov-2026 · D-057 EN EL 2-SEPTIES. Lo viejo que ya esta igual en produccion, con
+  #    fila con dueño y fecha, no para (D-057 no excluye el marcado). Cada regla en FALLO
+  #    sin aceptar se mide otra vez sobre la pagina PUBLICADA, con el mismo gate (aun no
+  #    se ha subido nada: es el paso 2), y d057.pl --marcado hace la pregunta. Una pagina
+  #    sale de los FALLO solo si TODAS sus reglas lo son; lo que no conteste sigue en rojo.
+  PT_D57_N=0
+  if [ -n "$PT_PEND" ] && [ -n "$PT_D57" ] && [ -n "${SITIO:-}" ] && [ -f "$REF/d057.pl" ]; then
+    : > "$PT_D57/lista"
+    while IFS='|' read -r f ids n; do
+      [ -n "$f" ] || continue
+      case "$f" in index.html) r="/" ;; */index.html) r="/${f%index.html}" ;; *) r="/$f" ;; esac
+      perl "$REF/page-type-gate.pl" "${SITIO%/}$r" > "$PT_D57/p$n.out" 2>&1; echo "PT-RC: $?" >> "$PT_D57/p$n.out"
+      for id in $ids; do echo "$f $r $id $PT_D57/c$n.out $PT_D57/p$n.out" >> "$PT_D57/lista"; done
+    done <<< "$PT_PEND"
+    echo
+    echo "  D-057 · $(grep -c . "$PT_D57/lista") regla(s) en FALLO, medidas otra vez sobre ${SITIO%/} (mismo gate y pagina)"
+    perl "$REF/d057.pl" --repo "$REPO" --marcado "$PT_D57/lista" > "$PT_D57/d057.txt" 2>&1
+    grep -v '^D057-\|^  D-057 · lo viejo\|^  el marcado del 2-septies' "$PT_D57/d057.txt" | grep . | sed 's/^/  /'
+    PT_D57_N=1
+  elif [ -n "$PT_PEND" ]; then
+    echo "  D-057 no medido: $( [ -z "${SITIO:-}" ] && echo 'sin SITIO no hay pagina publicada que medir' || echo 'falta d057.pl' ). Los FALLO cuentan."
+  fi
+  # Cada pagina pendiente: FALLO si alguna de sus reglas no salio D-057 de la lista.
+  k=0
+  while IFS='|' read -r f ids n; do
+    [ -n "$f" ] || continue
+    quedan=""; viejas=""
+    for id in $ids; do
+      k=$((k+1))
+      if [ "$PT_D57_N" = 1 ] && grep -qx "D057-PT: $k D-057" "$PT_D57/d057.txt"; then viejas="$viejas $id"; else quedan="$quedan $id"; fi
+    done
+    if [ -z "$quedan" ]; then PT_VIEJ=$((PT_VIEJ+1)); PT_VIEJAS="$PT_VIEJAS, $f${viejas}"
+    else PT_FALLO=$((PT_FALLO+1)); PT_LISTA="$PT_LISTA $f"; fi
+  done <<< "$PT_PEND"
+  PT_VIEJAS="${PT_VIEJAS#, }"
+  [ -n "$PT_D57" ] && rm -rf "$PT_D57"
+  echo "  $PT_N paginas medidas · $PT_FALLO con FALLO · $PT_ACEP aceptadas · $PT_NM NO MEDIDO$( [ "$PT_VIEJ" -gt 0 ] && echo " · $PT_VIEJ viejas por D-057 (no paran): $PT_VIEJAS")"
+  PT_NOTA_D57="$( [ "$PT_VIEJ" -gt 0 ] && echo " · $PT_VIEJ viejas por D-057 ($PT_VIEJAS)")"
   if [ "$PT_FALLO" != 0 ]; then
-    [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · $PT_FALLO con FALLO (${PT_LISTA# }) · $PT_ACEP aceptadas · $PT_NM no medidas · PARA" --repo "$REPO" >/dev/null 2>&1
+    [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · $PT_FALLO con FALLO (${PT_LISTA# }) · $PT_ACEP aceptadas · $PT_NM no medidas$PT_NOTA_D57 · PARA" --repo "$REPO" >/dev/null 2>&1
     echo
     echo "  🔴 El marcado de esas paginas no es el de su tipo."
     echo "     · Si es nuestro: se arregla en la FUENTE (el tipo que declara la"
@@ -1982,7 +2028,7 @@ else
     fi
     echo "  (ensayo: con --subir, la puerta pararia aqui)"
   else
-    [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · 0 con FALLO · $PT_ACEP aceptadas · $PT_NM no medidas" --repo "$REPO" >/dev/null 2>&1
+    [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "MARCADO $PT_N medidas · 0 con FALLO · $PT_ACEP aceptadas · $PT_NM no medidas$PT_NOTA_D57" --repo "$REPO" >/dev/null 2>&1
   fi
 fi
 # <<< marcado-por-tipo
