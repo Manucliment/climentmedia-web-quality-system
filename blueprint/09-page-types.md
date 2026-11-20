@@ -185,7 +185,7 @@ promise two different pages. Do not read it as the voice contract being live. It
 
 | Audience | What it does on the page | What it needs | Checked by |
 |---|---|---|---|
-| **person** | reads a screen, decides, clicks, fills the form | the promise, the proof and the action on screens 1-2 at 390 px; few fields; nothing between them and the button | `cro-pagina` (CTA on screen 1), `structure-gate.js`, `14-accessibility.md` |
+| **person** | reads a screen, decides, clicks, fills the form | the promise, the proof and the action on screens 1-2 at 390 px; few fields; nothing between them and the button | `cro-pagina` (CTA on screen 1; `foco`, rule 1 below), `structure-gate.js`, `14-accessibility.md` |
 | **reader agent** (answer engines: AI Overviews and AI Mode, ChatGPT search, Perplexity, Copilot) | extracts one passage and cites it; never sees the layout | text in the HTML (not in an image, not loaded on click), self-contained paragraphs, facts with a figure and a source, markup by type | `citable.pl`, `page-type-gate.pl`, `ai-crawlers.pl` (`03-content-and-seo.md` §8) |
 | **acting agent** (agentic browsers that open the page on someone's behalf and click or fill) | finds the price, the conditions and the form, and completes it | native controls with an accessible name, a real `<button>`, a label on every field, price and conditions as text, nothing reachable only by hover | A6 and A8 of `14-accessibility.md`. **Whether these agents bring leads: NOT MEASURED** |
 
@@ -213,6 +213,12 @@ extracts it) · `A` = agent only (not visible).
    the first call to action** — no FAQ, no comparison table, no specification paragraph "for the
    AI". The L blocks follow, in the order of the anatomy (§2). It is §3 and §3-bis said for agents:
    the concrete proof goes up in one line, the paragraph goes down.
+   *Measured* since 20-nov by the `foco` check of `cro-pagina`, at 390 px, above the first call to
+   action of the content (on a shop, the first link into the catalogue):
+   - a `<details>` or a `<table>` FAILS;
+   - a run of text over 60 words WARNS. 60 is the capsule ceiling (`03-content-and-seo.md`); measured
+     heroes on pages that sell run 17 to 45.
+   A screenshot at 390 is still needed for anything that is not one of those shapes.
 2. **On an informational page, L leads and U routes.** The answer capsule under the H1 and each H2
    (`03-content-and-seo.md`), then one bridge to the layer that sells (§1-bis). The bridge is one
    call to action, not a form in the middle of the answer.
