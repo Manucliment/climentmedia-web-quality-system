@@ -174,6 +174,83 @@ without the `objective` field. What it does catch is the failure that comes free
 title written for the search result and an `<h1>` written for the visitor, drifting apart until they
 promise two different pages. Do not read it as the voice contract being live. It is not.
 
+## 1-ter · Who each block is FOR — the person, the reader, or the agent
+
+> Added 20-nov-2026 (climent-web D-093). Manuel, that day: *«aunque prefiero una web fácil para
+> agentes, es importante que las páginas clave o bloques clave que nos vayan a traer conversiones
+> estén adecuados y podamos diferenciar agent friendly de user friendly»*. This section is that
+> difference, written per role and per page type, so it is decided once and not per page.
+
+**Three audiences, not two.** "Agent" covers two different machines, and they want different things:
+
+| Audience | What it does on the page | What it needs | Checked by |
+|---|---|---|---|
+| **person** | reads a screen, decides, clicks, fills the form | the promise, the proof and the action on screens 1-2 at 390 px; few fields; nothing between them and the button | `cro-pagina` (CTA on screen 1), `structure-gate.js`, `14-accessibility.md` |
+| **reader agent** (answer engines: AI Overviews and AI Mode, ChatGPT search, Perplexity, Copilot) | extracts one passage and cites it; never sees the layout | text in the HTML (not in an image, not loaded on click), self-contained paragraphs, facts with a figure and a source, markup by type | `citable.pl`, `page-type-gate.pl`, `ai-crawlers.pl` (`03-content-and-seo.md` §8) |
+| **acting agent** (agentic browsers that open the page on someone's behalf and click or fill) | finds the price, the conditions and the form, and completes it | native controls with an accessible name, a real `<button>`, a label on every field, price and conditions as text, nothing reachable only by hover | A6 and A8 of `14-accessibility.md`. **Whether these agents bring leads: NOT MEASURED** |
+
+🔑 **The finding that sets the rule:** most blocks serve the person and the reader at once, if they
+are written as text — the paragraph a person reads is the one an engine extracts. The conflict is
+not in the content. It is in the **order**, and in three kinds of block: the hero, the form or
+quiz, and the long fact blocks (FAQ, comparison and specification tables). So the rule is about
+**zones on the page**, never about two versions of the site.
+
+### The focus of each role
+
+`U` = the person (interaction and conversion) · `L` = both (reading: a person reads it, an engine
+extracts it) · `A` = agent only (not visible).
+
+| Focus | Roles (§1) | What it means |
+|---|---|---|
+| **U · person** | hero, form, resource, closing, evidence | built for the eye and the thumb. Agent floor only: the H1 says what and where in text; the form passes A6 and A8 with a real `<button>`; what a quiz or configurator promises (price, time) also exists as text on the page; a testimonial's words are text, not a picture |
+| **L · both** | offer, proof, qualification, process, alternatives, objections, context, map, catalogue, siblings | text first, in the HTML: tables as `<table>`, the FAQ as `<details>` with the answer already in the HTML, figures with their source. **This is where "agent-friendly" is won** |
+| **A · agent only** | no visible role: JSON-LD by type, `llms.txt`, sitemap with a real `lastmod`, `robots.txt`, `hreflang`, `dateModified`, meta and Open Graph | lives in the `<head>` or in files (`03-content-and-seo.md`); **never a block on the page** |
+
+### The four rules
+
+1. **On a page that sells, screens 1-2 at 390 px belong to the person.** Transactional and capture
+   intent, and the home (§1-bis): hero, the proof in one line, the action. **No L block goes above
+   the first call to action** — no FAQ, no comparison table, no specification paragraph "for the
+   AI". The L blocks follow, in the order of the anatomy (§2). It is §3 and §3-bis said for agents:
+   the concrete proof goes up in one line, the paragraph goes down.
+2. **On an informational page, L leads and U routes.** The answer capsule under the H1 and each H2
+   (`03-content-and-seo.md`), then one bridge to the layer that sells (§1-bis). The bridge is one
+   call to action, not a form in the middle of the answer.
+3. **Every U block keeps its agent floor, and every L block stays readable for a person.** A fact
+   table an engine would want is still written for a person (headings, short rows): it goes
+   lower, it does not get hidden.
+4. **Nothing visible is written only for agents, and nothing for agents is hidden from people.**
+   No paragraph of keywords "for the AI" (keyword stuffing, about −10 % in the GEO study,
+   `03-content-and-seo.md` §8.3); no text hidden with CSS for crawlers (that is cloaking). And
+   **no page type exists only for agents**: what moves citations is third-party corroboration and
+   extractable text. An agent-only page is built only when a measurement shows the demand.
+
+### Where each type sits
+
+Types as `cro-pagina --tipo` names them (skill `cro`, `PLANTILLAS-POR-TIPO.md`).
+
+| Types | Focus | Top of the page | Below it |
+|---|---|---|---|
+| portada-servicio, portada-saas, servicio, ciudad, plataforma, agente, precios, guia-compra | U on top, L below | promise, proof in one line, the action | offer, process, alternatives, objections, map: all L |
+| ficha | U on top, L below | name, exact price, buy button | the fact table (price, measures, materials, delivery) as HTML text: the kind of page that earned one client shop 23 AI citations with almost no authority, when two other sites had 0 |
+| landing, quiz, contacto, carrito | U | the resource or the form | on contact, the name, address and phone as text (L), the same as the Google profile |
+| guia-info, comparativa, nosotros, hub, listado | L, with a U bridge | the answer (capsule) or the catalogue | siblings, and the bridge to the layer that sells |
+| gracias, legal, 404 | utility | — | — |
+
+### How a site is set up with it
+
+- **A new site, and every new page:** the anatomy (§2) already gives the roles in order, and the
+  focus comes from the role table above — **no new field**. Rule 1 is read on the 390 px capture of
+  each selling page: what sits above the first call to action.
+- **An existing site:** the CRO pass (skill `cro`) reads rule 1 on the pages that sell; a block in
+  the wrong zone is a row in the site's queue, not a fire.
+- ⚠️ **Not gated yet, said on purpose.** Rule 1 has no instrument: `cro-pagina` measures the CTA on
+  screen 1, and whether an L block sits above it is read by eye until that check exists. The
+  acting-agent column is a floor the accessibility checks already measure; whether those agents
+  convert is NOT MEASURED, and nothing here claims they do.
+
+---
+
 ## 2 · The fourteen anatomies (15 types: legal and 404 share §2.11)
 
 > **THE SINGLE SOURCE of "which sections each page type carries."** There is no other. Another
