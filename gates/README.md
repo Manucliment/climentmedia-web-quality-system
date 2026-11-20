@@ -852,7 +852,6 @@ without blocking. Why the order changed is trap §89.
 | `audit-vs-source-wordpress.py` | The same, when the source was WordPress. |
 | `extract-wordpress.py` | Pulls content out of a WordPress export and counts it against the source: anything that does not add up exits 1. Its bench, `extract-wordpress-tests/tests.sh`, needs python3. |
 | `audit-source.sh` | Reads the source repository before anything is touched. |
-| `to-webp.sh` | Image conversion, with the sizes recorded. |
 
 ### The gates that watch the gates
 
