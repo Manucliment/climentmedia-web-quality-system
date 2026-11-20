@@ -1,6 +1,6 @@
 # The gates
 
-49 programs and 45 test batteries. This file is the index: what each program is for,
+48 programs and 45 test batteries. This file is the index: what each program is for,
 how to run them all, which flags exist in English, and — the part most repositories
 leave out — **what does not ship, and why.**
 
@@ -31,7 +31,7 @@ bash gates/run-all.sh --fast
 ```
 
 `--fast` skips the eighteen slow batteries: the ones that need a browser, a host, or the network, plus the WordPress write door's, which drives a fake host through every case. On a clean
-install the fast run is **1183 cases green, 0 red**, with the deploy-history bank reporting
+install the fast run is **1215 cases green, 0 red**, with the deploy-history bank reporting
 `NOT MEASURED` because a fresh install has never deployed anything.
 
 **The full run is a different number, and the file now says which run it came from.** On
@@ -76,7 +76,7 @@ Store shortcut on Windows does not count). (`qa-master` left that list on 2026-0
 **That number is a promise about a clean install, and the gate now knows it.** Once this
 machine has deployed once, the deploy-history bank stops saying `NOT MEASURED` and starts
 passing, so the total goes up: on the machine these numbers were taken from the fast run reads
-1185, not 1183, because that machine has deployed. `run-all.sh`
+1217, not 1215, because that machine has deployed. `run-all.sh`
 therefore records two figures, `verde` and `verde-instalacion-limpia`, and the
 documentation gate accepts either.
 
@@ -98,7 +98,7 @@ came from, because the two runs do not print the same total:
 
 ```
 $ bash gates/run-all.sh --fast
-  1183 casos en verde · 0 en rojo
+  1215 casos en verde · 0 en rojo
   NO MEDIDOS: historial
 ```
 
@@ -858,7 +858,7 @@ without blocking. Why the order changed is trap §89.
 | Program | What it does |
 |---|---|
 | `doc-gate.pl` | Every program, flag and id the documentation cites must exist — and every count it publishes of the battery (D6), of the coverage (D8) and of one instrument or one bank (D9) must be the last one measured. |
-| `coverage.pl` | How many checks have a test case. Today: **156 of 163 (95%)**. |
+| `coverage.pl` | How many checks have a test case. Today: **157 of 163 (96%)**. |
 | `gate-index.js` | The RULE → INSTRUMENT index, **and since 2026-09-02 the reverse**: which checks run that no rule claims. **162 cases.** See below. |
 | `rule-instrument-index.pl` | Builds that index from the rules themselves. |
 | `holes.pl` | What is missing and is not ours, declared out loud. |
@@ -871,7 +871,7 @@ without blocking. Why the order changed is trap §89.
 | `run-gate.js` | The harness the browser gates run inside. With `GATE_CANDIDATO=<dir>` and `GATE_SITIO=<origin>` it serves that folder from disk under the production origin, which is how the door measures the candidate; `"candidato": N` on its first line counts what it served, and 0 means production was measured. In both modes, candidate and production, it aborts the same measurement hits as `banner-probe.js` (`"medicionAbortada": N`): the gates click the banner, and each click counted as a visitor on the site's counter and in its GA4. As a module it gives `servir` and `MEDICION`, so there is one copy of how a tree is served. |
 | `nav-host.sh` | Where the measurement host comes from, read once for the door and the four host banks: `NAV_HOST`, then `config/nav-host.local.conf` (gitignored), then nothing — and nothing is reported as `NOT MEASURED`, never tried as a placeholder. Sourced, not run. |
 
-The coverage figure has a scope you should know: **95% is measured over 5 programs of 49**,
+The coverage figure has a scope you should know: **96% is measured over 5 programs of 48**,
 not over everything. It is in the README of the repository root with the same caveat. A
 number quoted without its denominator is how a partial measurement becomes a claim.
 

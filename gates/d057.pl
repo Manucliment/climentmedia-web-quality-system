@@ -232,7 +232,9 @@ sub d57_fila_por {
 #      servir el candidato. Si no, NO MEDIDO: ni viejo ni nuevo.
 #    · cada fallo del candidato esta en produccion: mismo texto con los numeros fuera
 #      (60 caracteres) y su numero no mayor (el primero: 5 elementos donde produccion
-#      tiene 3 son 2 NUEVOS). Produccion en PASA = todo NUEVO.
+#      tiene 3 son 2 NUEVOS). Donde el fallo cuenta lo que FALTA (ENLACES, «solo N
+#      CTA»: @D57_FALTA) es al reves: no menor que en produccion. Produccion en
+#      PASA = todo NUEVO.
 #    · una fila abierta, con fecha de hoy en adelante y dueño, nombra el gate (con o
 #      sin .js) Y la pagina: su ruta entera (`/a/` no es `/a/b/` ni `/es/a/`), su
 #      ultimo trozo suelto (una fila «guias (8: ai-max, …)») o, la portada, «`/`»,
@@ -257,6 +259,15 @@ sub d57_nav_lee {
     }
     return { v => $v, fallos => \@fallos, candidato => $cand // 0 };
 }
+# Casi todos los fallos cuentan lo que SOBRA (avisos, px, pantallas): mas es peor. Estos
+# cuentan lo que FALTA, y ahi mas es mejor: 2 enlaces de cuerpo donde produccion tiene 1
+# arreglan parte, no son 1 nuevo (20-nov-2026: la puerta paro asi una ficha que mejoraba,
+# por eso). Se reconocen por la huella (los numeros ya son #), desde el principio.
+my @D57_FALTA = (
+    qr/^ENLACES · # enlace\(s\) internos de CUERPO/,   # structure-gate: minimo de enlaces
+    qr/^solo # CTA en toda la pagina/,                 # measure-screens: minimo de CTA
+);
+sub d57_falta { my ($h) = @_; return scalar grep { $h =~ $_ } @D57_FALTA }
 sub d57_huella {
     my ($m) = @_;
     my ($n) = $m =~ /(\d+(?:[.,]\d+)?)/;
@@ -305,11 +316,12 @@ if ($o{nav} ne '') {
             my @nuevos;
             for my $m (@{ $c->{fallos} }) {
                 my ($hh, $n) = d57_huella($m);
-                my $esta = grep { !defined $n || (defined $_ && $n <= $_) } @{ $prod{$hh} || [] };
+                my $falta = d57_falta($hh);   # mas es mejor: el candidato no puede tener MENOS
+                my $esta = grep { !defined $n || (defined $_ && ($falta ? $n >= $_ : $n <= $_)) } @{ $prod{$hh} || [] };
                 push @nuevos, $m unless $esta;
             }
             if (@nuevos) {
-                ($r, $por) = ('PARA', sprintf('%d de %d NUEVO en el candidato (o mas que en produccion): %s', scalar(@nuevos),
+                ($r, $por) = ('PARA', sprintf('%d de %d NUEVO en el candidato (o peor que en produccion): %s', scalar(@nuevos),
                               scalar(@{ $c->{fallos} }), solo_ascii(substr($nuevos[0], 0, 90))));
             } else {
                 my ($ok, $fila) = d57_fila_por("$gate y la pagina $ruta", sub { d57_nombra_pagina($_[0], $gate, $ruta) });

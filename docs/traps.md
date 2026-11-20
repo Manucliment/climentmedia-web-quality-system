@@ -1,6 +1,6 @@
-# The trap log — 90 traps, read before debugging
+# The trap log — 91 traps, read before debugging
 
-Every one of these cost real time on real work. They are numbered **§1–§90** and the numbers are
+Every one of these cost real time on real work. They are numbered **§1–§91** and the numbers are
 stable: other documents cite them, so nothing is ever renumbered. Within each part they keep their
 original order, which is **by how much they cost**, not by when they happened.
 
@@ -25,6 +25,7 @@ original order, which is **by how much they cost**, not by when they happened.
 | §88 | [`traps/88.md`](traps/88.md) |
 | §89 | [`traps/89.md`](traps/89.md) |
 | §90 | [`traps/90.md`](traps/90.md) |
+| §91 | [`traps/91.md`](traps/91.md) |
 
 ---
 
@@ -109,6 +110,7 @@ Families overlap; each trap carries the tag that best describes **why it was exp
 | §84 | A probe forced a state and read it back in the same tick, so it measured the state it had just left |
 | §85 | Three checks written for sites that collect leads failed two sites that collect nothing |
 | §86 | Four browser checks failed two one-page sites, and the brief blamed the wrong things |
+| §91 | The "old in production" check read "more" as "worse", also where the number counts what is missing |
 
 ### B · Green over nothing — it passed without looking
 

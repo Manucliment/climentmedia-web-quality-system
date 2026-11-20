@@ -687,6 +687,17 @@ nav57 "arregla parte (2 avisos donde produccion tiene 3): D-057" 0 "D057-NAV: 1 
 nav57 "la fila nombra el gate con .js y la ruta sin barra"   0 "D057-NAV: 1 D-057"  '| 2 | `structure-gate.js` en `/servicios` | m | pendiente | 17-dic | x |\n' $S1 /servicios/ "$(jc "$AV3")" "$(jp "$AV3")"
 nav57 "una fila de grupo nombra el trozo suelto: D-057"     0 "D057-NAV: 1 D-057"  '| 2 | `structure-gate`, guias (3: ai-max, servicios-web, faq): VARIEDAD | m | pendiente | 17-dic | x |\n' $S1 /guias/ai-max/ "$(jc "$AV3")" "$(jp "$AV3")"
 nav57 "la portada se nombra «portada»: D-057"               0 "D057-NAV: 1 D-057"  '| 2 | `structure-gate`, la portada: 3 avisos | m | pendiente | 17-dic | x |\n' $S1 / "$(jc "$AV3")" "$(jp "$AV3")"
+# 🔴 20-nov-2026 · LO QUE FALTA, al reves: en ENLACES y en «solo N CTA» mas es mejor. La
+#    puerta paro una ficha con 2 enlaces de cuerpo donde produccion tenia 1.
+EN1='"ENLACES · 1 enlace(s) internos de CUERPO (minimo 3 para «ficha»). El nav no cuenta"'
+EN2='"ENLACES · 2 enlace(s) internos de CUERPO (minimo 3 para «ficha»). El nav no cuenta"'
+EN0='"ENLACES · 0 enlace(s) internos de CUERPO (minimo 3 para «ficha»). El nav no cuenta"'
+F_EN='| 2 | `structure-gate`, `/servicios/`: ENLACES | m | pendiente | 17-dic | x |\n'
+nav57 "ENLACES: 2 donde produccion tiene 1 arregla parte: D-057" 0 "D057-NAV: 1 D-057" "$F_EN" $S1 /servicios/ "$(jc "$EN2")" "$(jp "$EN1")"
+nav57 "ENLACES: igual que en produccion: D-057"             0 "D057-NAV: 1 D-057"  "$F_EN" $S1 /servicios/ "$(jc "$EN1")" "$(jp "$EN1")"
+nav57 "ENLACES: 0 donde produccion tiene 1 es peor: PARA"   1 "D057-NAV: 1 PARA"   "$F_EN" $S1 /servicios/ "$(jc "$EN0")" "$(jp "$EN1")"
+nav57 "«solo N CTA»: 1 donde produccion tiene 0: D-057"     0 "D057-NAV: 1 D-057"  '| 2 | `measure-screens`, `/servicios/` | m | pendiente | 17-dic | x |\n' measure-screens.js /servicios/ "$(jc '"solo 1 CTA en toda la pagina"')" "$(jp '"solo 0 CTA en toda la pagina"')"
+nav57 "«solo N CTA»: 0 donde produccion tiene 1: PARA"      1 "D057-NAV: 1 PARA"   '| 2 | `measure-screens`, `/servicios/` | m | pendiente | 17-dic | x |\n' measure-screens.js /servicios/ "$(jc '"solo 0 CTA en toda la pagina"')" "$(jp '"solo 1 CTA en toda la pagina"')"
 # NUEVO: nada nuevo pasa en rojo
 nav57 "produccion PASA: es NUEVO, PARA"                      1 "D057-NAV: 1 PARA"   "$F_OK" $S1 /servicios/ "$(jc "$AV3")" "$(jp "" PASA)"
 nav57 "un fallo que produccion no tiene: PARA"              1 "D057-NAV: 1 PARA"   "$F_OK" $S1 /servicios/ "$(jc "$AV3, $HERO")" "$(jp "$AV3")"
