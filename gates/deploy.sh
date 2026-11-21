@@ -2042,12 +2042,25 @@ fi
 #  que cambia frente a la subida anterior (sus huellas, con el HTML sin los
 #  sellos ?v=) y enseña sus dos lineas.
 #
-#  🔴 NO BLOQUEA, misma norma que 2-quinquies. 14-nov-2026, medido sobre las
+#  14-nov-2026 · NO BLOQUEABA, misma norma que 2-quinquies. Medido sobre las
 #  subidas de una semana de las webs de la casa: de 39, el revisor cubria 34,
 #  el aprobado 32, los dos 28 y ninguno 1. Bloquear el primer dia habria parado
 #  11 de 39, y las mas de las miradas a mano llevaban un aprobado que no citaba
 #  su commit: revisadas, pero sin nada que atar. Por eso el comando puede dar
 #  una tercera linea (SIN COMMIT) y la puerta la ensena con las otras dos.
+#
+#  🔴 21-nov-2026 · BLOQUEA. Medida la semana del 14 al 20-nov (39 subidas de 10
+#  webs, con el comando ya arreglado para los subdominios): 30 con los dos
+#  veredictos en todo y 9 con FALTA, mirados uno a uno y ninguno falso:
+#    · 5 de una landing en un subdominio, cuyo revisor acabo en VUELVE.
+#    · 1 con un CSS servido que el revisor habia devuelto dos veces.
+#    · 3 fusiones de dos piezas aprobadas que nadie releyo juntas. Una fusion
+#      ya habia descuadrado una fila ese mismo dia en otra web: cuenta.
+#  Con --subir, un FALTA PARA antes de la linea que sube (paso 3). Se arregla
+#  con el veredicto que falta (el revisor relee el commit que sube, o el Pod
+#  Manager lo aprueba con su commit), NUNCA con un accepted.conf: no es una
+#  decision del cliente. En ensayo se dice y sigue. NO MEDIDO no para: se dice
+#  y queda en el recibo, como antes.
 #
 #  De donde sale REVISION_CMD: del deploy.conf o del entorno, y si no, de
 #  config/revision.local.conf (REVISION_CMD=...), fuera de git por `*.conf`
@@ -2070,7 +2083,7 @@ elif [ ! -s "$HUELLAS_ANT" ] || [ "$(head -1 "$HUELLAS_ANT")" != "$HUELLAS_VERSI
   echo "  2-octies · la revision de lo que sube: sin huellas (de esta version) de la subida anterior. NO MEDIDO."
   [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "REVISION no medida: sin huellas de la subida anterior" --repo "$REPO" >/dev/null 2>&1
 else
-  linea; echo "  2-octies · ¿lo que sube lo ha revisado alguien? (AVISO)"; linea
+  linea; echo "  2-octies · ¿lo que sube lo ha revisado alguien?"; linea
   REV_LISTA="$(mktemp -t revision-XXXXXXXX)"
   arbol_huellas | awk 'NR==FNR { if ($0 !~ /^#/) h[$3]=$1; next } !($3 in h) || h[$3] != $1 { print $3 }' "$HUELLAS_ANT" - > "$REV_LISTA"
   REV_N="$(grep -c . "$REV_LISTA")"
@@ -2078,13 +2091,24 @@ else
   rm -f "$REV_LISTA"
   echo "  $REV_N fichero(s) cambian frente a la subida anterior"
   printf '%s\n' "${REV_SALIDA:-(REVISION_CMD no dijo nada: NO MEDIDO)}" | sed 's/^/  /' | cut -c1-240
-  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "REVISION $REV_N cambian · $(printf '%s' "${REV_SALIDA:-sin salida}" | tr '\n' ' ' | cut -c1-300) · AVISO, no bloquea" --repo "$REPO" >/dev/null 2>&1
-  case "$REV_SALIDA" in
-    *FALTA*)
+  case "$REV_SALIDA" in *FALTA*) REV_FIN="PARA" ;; *) REV_FIN="sigue" ;; esac
+  [ "$SUBIR" = 1 ] && perl "$REF/receipt.pl" --anotar "REVISION $REV_N cambian · $(printf '%s' "${REV_SALIDA:-sin salida}" | tr '\n' ' ' | cut -c1-300) · $REV_FIN" --repo "$REPO" >/dev/null 2>&1
+  if [ "$REV_FIN" = PARA ]; then
+    echo
+    echo "  🔴 Hay ficheros que suben sin un veredicto que los cubra."
+    echo "     · Lo arregla el veredicto que falta: revisor-web relee el commit que"
+    echo "       sube (tambien una fusion de dos piezas ya aprobadas), o el Pod"
+    echo "       Manager lo aprueba citando ese commit."
+    echo "     · Nunca un accepted.conf: no es una decision del cliente."
+    echo "     · Si el comando se equivoca (un veredicto que si lo cubre), se"
+    echo "       arregla EL COMANDO, con su caso."
+    if [ "$SUBIR" = 1 ]; then
       echo
-      echo "  ⚠ AVISO: hay ficheros que suben sin un veredicto que los cubra. Queda"
-      echo "    anotado y NO bloquea todavia (el motivo, con fecha, arriba)." ;;
-  esac
+      echo "  🔴 NO SUBO: hay ficheros sin su veredicto. No se ha subido nada."
+      exit 1
+    fi
+    echo "  (ensayo: con --subir, la puerta pararia aqui)"
+  fi
 fi
 # <<< revision-de-lo-que-sube
 
