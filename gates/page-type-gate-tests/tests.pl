@@ -82,7 +82,7 @@ caso('un nombre pendiente (gtin) es AVISO, no FALLO',
 # 5-nov-2026 · Physiotherapy es miembro de MedicalSpecialty Y tipo (subClassOf MedicalBusiness): el vocabulario lo leia
 #  solo como miembro y el gate lo daba por inexistente en la pagina de un fisioterapeuta.
 caso('un tipo medico que tambien es especialidad (Physiotherapy) existe: PASA',
-     fichero(pagina('legal', ['{"@context":"https://schema.org","@type":"Physiotherapy","name":"Kine Nube","telephone":"+32 2 000 00 00","address":"Rue Nube 1, Bruxelles"}'], '<h1>Aviso legal</h1>')), [],
+     fichero(pagina('legal', ['{"@context":"https://schema.org","@type":"Physiotherapy","name":"Fisio Nube","telephone":"+32 2 000 00 00","address":"Rue Nube 1, Bruxelles"}'], '<h1>Aviso legal</h1>')), [],
      ['^PASA\s+PT-02'], ['tipo «Physiotherapy»'], 0);
 caso('una especialidad que NO es tipo (Dentistry) usada como @type: FALLO',
      fichero(pagina('legal', ['{"@context":"https://schema.org","@type":"Dentistry","name":"x"}'], '<h1>Aviso legal</h1>')), [],

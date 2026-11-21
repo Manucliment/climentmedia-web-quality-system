@@ -10,7 +10,7 @@
 #     aqui estaba prohibido y hecho.
 #
 #     Lo que costo: tokenizaba con la puntuacion PEGADA, asi que `energias:` y
-#     `energias,` eran dos palabras distintas. Al desplegar nora acuso a 5
+#     `energias,` eran dos palabras distintas. Al desplegar una web acuso a 5
 #     paginas de «perder palabras del cliente» y no faltaba ninguna: mover una
 #     coma disparaba el aviso.
 #
@@ -93,7 +93,7 @@ print "  " . '=' x 62 . "\n\n";
 
 # --- LO QUE NO PUEDE ACUSAR · el motivo por el que existe este banco ---------
 {
-  # 🔴 EL DEFECTO REAL DE NORA. Mover la puntuacion no es perder texto.
+  # 🔴 EL DEFECTO REAL, EL DE UNA WEB DEL PARQUE. Mover la puntuacion no es perder texto.
   my ($a, $b) = par(
     "<p>Esto es lo que representa a nivel de energias:</p>",
     "<p>A nivel de energias, la luna nueva representa:</p>");

@@ -197,7 +197,7 @@ page('i2', '_candidato/learn/incrementality-testing/index.html',
 # 26-sep-2026 · la lista era solo de castellano e ingles. En una web en frances
 # «pour» y «les» contaban como contenido, asi que dos temas distintos salian en
 # la zona gris por compartir dos palabras vacias.
-page('j', 'fr/kine-sportifs/index.html', 'Kine pour les sportifs', 'Kine pour les sportifs');
+page('j', 'fr/osteo-sportifs/index.html', 'Osteo pour les sportifs', 'Osteo pour les sportifs');
 {
   my ($rc, $out) = run('j', '--keyword', 'massage pour les seniors');
   check('STOP3 · FR: «pour les» no acerca dos temas distintos -> NUEVO limpio', $rc, $out, 0,

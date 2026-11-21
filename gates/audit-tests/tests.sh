@@ -136,12 +136,12 @@ sitio_base "$T/v1" plano
 caso "sitemap sin extension + ficheros .html"           VERDE - "$T/v1"
 
 # El otro lado de c14: un & suelto en texto plano NO es una entidad. Si el
-# patron nuevo casara con «Kine & osteo», «R&D» o «AT&T», acusaria a un
+# patron nuevo casara con «Fisio & osteo», «R&D» o «AT&T», acusaria a un
 # llms.txt correcto. (Un «&co;» SI casaria: un & pegado a letras y cerrado con
 # punto y coma no se distingue de una entidad, y ese falso positivo se acepta
 # porque en texto plano tambien sobra.)
 sitio_base "$T/v14" dir-barra
-printf '# Marca\n\n> Kine & osteo, R&D y AT&T, 3 & 4.\n\n- [Portada](https://ejemplo.test/): la portada del sitio\n' > "$T/v14/llms.txt"
+printf '# Marca\n\n> Fisio & osteo, R&D y AT&T, 3 & 4.\n\n- [Portada](https://ejemplo.test/): la portada del sitio\n' > "$T/v14/llms.txt"
 caso "llms.txt con & suelto (no es entidad)"            VERDE - "$T/v14"
 
 sitio_base "$T/v2" dir-barra

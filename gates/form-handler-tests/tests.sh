@@ -272,7 +272,7 @@ Bcc: victima@example.com" "phone=600111222" "email=ana@ejemplo-real.be" "city=Ce
   no    "y no manda aviso"                              falta.correo "To:"
 
   echo "-- en el idioma del buzon"
-  envia fr fr.php "" "$@" "need=Kine a domicile" "page=/" "ref=https://www.google.be/"
+  envia fr fr.php "" "$@" "need=Osteo a domicile" "page=/" "ref=https://www.google.be/"
   abre  "en frances abre con CE QU'IL CHERCHE"          fr.correo "CE QU'IL CHERCHE"
   si    "y la llegada en frances"                       fr.correo "Google naturel"
 

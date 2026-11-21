@@ -229,7 +229,7 @@ else {
       #    no conocia `_candidato`: la primera corrida real sobre un sitio en portugues midio
       #    82 paginas -13 reales + 69 copias del candidato-, o sea que cualquier
       #    defecto salia CONTADO DOS VECES. Es el mismo agujero que ya costo 78
-      #    FALLOS falsos por `_og/` en nora, arreglado alli y no traido aqui.
+      #    FALLOS falsos por `_og/` en otra web, arreglado alli y no traido aqui.
       #    Ahora es una REGLA, no una lista: ningun directorio `_*` se publica
       #    -comprobado sobre los 13 que hay en las 6 webs-, asi que ninguno se
       #    mide. Una lista no puede enterarse de un directorio que aun no existe.

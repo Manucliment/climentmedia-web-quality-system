@@ -171,7 +171,7 @@ MATIZ_CONSENTIMIENTO='(until|unless|opt-?s? ?in|opts in|consent|accept|declin|by
 #     plano-sin-ext   /contacto  ->  contacto.html         (las otras 2)
 #
 #  `conformidad.conf` ya nombraba las dos por web (`modo = ...`) y el auditor no
-#  se habia enterado: la primera vez que se le corrio a kine marco 363 FALLOS en
+#  se habia enterado: la primera vez que se le corrio a una web del parque marco 363 FALLOS en
 #  un sitio correcto -310 de ellos "enlace roto"-. Es la tercera vez que este
 #  fichero paga el mismo error: un supuesto de convencion que nadie declaro.
 #  *Si el barrido dice que todo esta roto a la vez, el roto es el barrido.*
@@ -235,7 +235,7 @@ rel_a_root() {                 # deja el resultado en RUTA_REL
 # La INVERSA de resolver_ruta: de un fichero en disco a las URLs con las que se
 # puede estar publicando. Existe por el mismo motivo y en la misma pareja: S1.3
 # mapeaba fichero -> URL conociendo UNA sola convencion, y por eso acusaba a
-# kine de tener 15 paginas «fuera del sitemap» que estan perfectamente dentro
+# una web de tener 15 paginas «fuera del sitemap» que estan perfectamente dentro
 # (contacto.html se publica como /contacto). Las dos funciones son las dos
 # direcciones de la MISMA regla, y por eso viven juntas.
 urls_de_fichero() {
@@ -621,7 +621,7 @@ for p in $PAGES; do
   # Un telefono escrito en texto y no enlazado obliga a copiarlo a mano en un
   # movil, que es donde se llama. Solo se exige si la pagina lo ENSENA.
   #
-  # 🔴 LA PRIMERA VERSION MIRABA EL FICHERO ENTERO Y ACUSO A 29 PAGINAS DE NORA.
+  # 🔴 LA PRIMERA VERSION MIRABA EL FICHERO ENTERO Y ACUSO A 29 PAGINAS DE UNA WEB.
   #    El numero estaba dentro del JSON-LD ("telephone":"+34..."), donde tiene
   #    que ser texto plano: un tel: ahi seria incorrecto. Se mira solo lo que el
   #    visitante VE -- fuera <script> y fuera <head>-, que es el mismo error de
@@ -705,7 +705,7 @@ for p in $PAGES; do
     [ -z "$tgt" ] && continue
     # Tercer sitio donde vivia la regla de resolucion, y el unico que quedaba:
     # probaba "$d/$tgt" y, si fallaba, "$ROOT$tgt", ninguno de los dos con la
-    # convencion de fichero plano. Por eso kine daba 310 "enlaces rotos" hacia
+    # convencion de fichero plano. Por eso una web daba 310 "enlaces rotos" hacia
     # paginas que existen (/a-propos -> a-propos.html). Ahora despacha por si la
     # ruta es absoluta o relativa y deja la CONVENCION a resolver_ruta, que es
     # el unico sitio donde esa regla esta escrita.
@@ -750,7 +750,7 @@ for p in $PAGES; do
           #    huerfanas en un sitio bien enlazado. Se aceptan LAS DOS.
           # La misma regla que el sitemap, y por eso la misma funcion: aqui vivia
           # duplicada -solo la mitad, la de la barra final- y por eso el grafo de
-          # enlaces de kine daba 310 rotos que no lo estaban.
+          # enlaces de una web daba 310 rotos que no lo estaban.
           resolver_ruta "$cand" >/dev/null; cand="$RUTA_RESUELTA"
         rel_a_root "$cand"; r="$RUTA_REL"
         [ -n "$r" ] && echo "$r|$p"

@@ -204,7 +204,7 @@ else
   printf '%s\n' "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "cccccccc 10 guias/index.html" "dddddddd 10 404.html" \
     "eeeeeeee 10 estilo.css" > "$RP/hoy"
   cambia "nada cambia: solo las declaradas"                "/ /contact" 8 "/ /contact||0|"
-  # 🔴 EL CASO DE INFI: una guia nueva, que no esta en URLS_NAVEGADOR, se mide.
+  # 🔴 EL CASO DE LA GUIA NUEVA: una guia nueva, que no esta en URLS_NAVEGADOR, se mide.
   printf '%s\n' "aaaaaaaa 10 index.html" "bbbbbbbb 10 contact.html" "c2c2c2c2 11 guias/index.html" "dddddddd 10 404.html" \
     "e2e2e2e2 10 estilo.css" "ffffffff 10 guias/reembolso.html" "11111111 10 _og/x.html" "22222222 10 google0a1b2c.html" > "$RP/hoy"
   cambia "un alta y su hub cambiado entran; ni CSS, ni _, ni 404, ni la de Google" "/ /contact" 8 "/ /contact /guias/reembolso /guias/||0|"
@@ -226,7 +226,7 @@ else
   cambia "sin huellas: solo las altas, y lo dice"          "/" 8 "/ /guias/reembolso||0|sin huellas (de esta version) de la subida anterior: solo las altas (las cambiadas, desde la proxima subida)"
   rm -f "$RP/_deploy/.desplegado.txt"
   cambia "sin ninguna lista: las declaradas, y lo dice"    "/" 8 "/||0|sin lista de la subida anterior: solo URLS_NAVEGADOR"
-  # 🔴 EL SELLO ?v= (1-nov, kine): cambiar el CSS reescribe `styles.css?v=` en todas las paginas.
+  # 🔴 EL SELLO ?v= (1-nov): cambiar el CSS reescribe `styles.css?v=` en todas las paginas.
   #    arbol_huellas de verdad (no la fingida), con un receipt.pl de mentira que solo lista.
   HREF="$(mktemp -d -t ref-XXXXXXXX)"
   printf '%s\n' 'print "aaaaaaaa 10 a.html\naaaaaaaa 10 b.html\naaaaaaaa 10 c.html\n"; exit 0;' > "$HREF/receipt.pl"

@@ -19,7 +19,7 @@ my @V = (
   [ 'h1-hero',        'index.html',
     '<h1>Tarot del amor</h1>', '<h1>hero</h1>' ],
   [ 'solo-marca',     'contacto/index.html',
-    '<h1>Contacto</h1>', '<h1>Fixture Nora te escucha</h1>' ],
+    '<h1>Contacto</h1>', '<h1>Fixture Varo te escucha</h1>' ],
   [ 'desc-ajena',     'precios/index.html',
     'Precios de cada sesion, sin permanencia y con primera consulta breve.',
     'Envio gratis a partir de treinta euros en toda la peninsula.' ],

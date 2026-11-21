@@ -211,7 +211,7 @@ and hyphens, with no spaces, no personal data and no new values without a row he
 
 | Where the link is | `utm_source` | `utm_medium` | `utm_campaign` | `utm_content` | GA4 channel |
 |---|---|---|---|---|---|
-| Google Business Profile, the website button | `google` | `organic` | `gbp` | the profile, if there are several (`ticare`, `kine`) | Organic Search, separable by campaign |
+| Google Business Profile, the website button | `google` | `organic` | `gbp` | the profile, if there are several (`profile-a`, `profile-b`) | Organic Search, separable by campaign |
 | Business Profile posts, products and offers | `google` | `organic` | `gbp-post` · `gbp-product` | the post date or the product slug | Organic Search |
 | Directories, listings and review sites | the site (`clutch`, `pages-dor`) | `referral` | `directory` | — | Referral |
 | Profiles: any network bio or link button (LinkedIn, Instagram, Facebook, TikTok, Threads, WhatsApp Business, Torre, a Linktree page, a GitHub profile or a repository's website field) | the network, one lowercase word (`linkedin` · `instagram` · `facebook` · `tiktok` · `threads` · `whatsapp` · `torre` · `linktree` · `github`) | `social` | `profile` | — | Organic Social |

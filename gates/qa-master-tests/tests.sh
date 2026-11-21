@@ -51,7 +51,7 @@ ok=0; ko=0
 # reason counters can add up to more than nm: one case can lack two things.
 nm=0; nmb=0; nm_repo=0; nm_anon=0; nm_https=0; nm_vivo=0; nm_lista=0; nm_prod=0
 
-# ── LA CACHE CONGELADA DE KINE ──────────────────────────────────────────────
+# ── LA CACHE CONGELADA ─────────────────────────────────────────────────────
 # 🔴 POR QUE (11-ago-2026). Esta bateria decia «OK 180 · MAL 0» y con una cache
 #    NUEVA daba «OK 172 · MAL 10». Los 10 eran de site-a.example y todos
 #    decian lo mismo: *esperaba FALLO y salio PASA*. No es que el gate fallara:
@@ -378,7 +378,7 @@ espera "SEO-05 · <h1>hero</h1> contra su title: AVISA"  AVISO SEO-05 \
        perl $QA $FU --repo "$FSEO05/h1-hero" $QA5
 
 # 🔴 EL CASO QUE PRUEBA EL FILTRO DE CROMO, y sin el no esta probado: el h1
-#    «Fixture Nora te escucha» comparte con su title las DOS palabras de marca
+#    «Fixture Varo te escucha» comparte con su title las DOS palabras de marca
 #    y ninguna mas. Si el gate no descontara el cromo —medido del propio sitio,
 #    no escrito en una lista— esto saldria PASA y el check no serviria en
 #    ninguna web con sufijo de marca en el title, o sea en casi ninguna.
@@ -2739,7 +2739,7 @@ if mide_bloque "D-057 · d057.pl contra la produccion de mentira" http://d057.ex
     printf '  MAL   %-46s %s\n' "receipt.pl · --except-verdict = --salvo-veredicto" "la salida no es la misma, o sin el no dice EN ROJO"; ko=$((ko+1))
   fi
 
-  # ── 6-nov · LO QUE SALE DEL DOM (EST-06, EST-07: infi y ecomm) ──
+  # ── 6-nov · LO QUE SALE DEL DOM (EST-06, EST-07) ──
   # 🔴 la puerta vuelve a medir produccion sin --dom (el del candidato es del
   #    candidato): alli EST-06 sale sin medir y EST-07 ni sale, y el FALLO viejo
   #    paraba como «NUEVO». Con el DOM de produccion se compara; sin el, o si no es
@@ -3448,7 +3448,7 @@ else
 fi
 
 echo "== LA PRODUCCION DE MENTIRA NO HA TENIDO QUE INVENTARSE NADA · 22-sep-2026"
-# 🔴 EL HEREDERO DEL «FIXTURE DE KINE HERMETICO» (11-ago-2026). Aquel contaba
+# 🔴 EL HEREDERO DEL «FIXTURE HERMETICO» (11-ago-2026). Aquel contaba
 #    los ficheros de la cache congelada antes y despues: uno nuevo solo podia
 #    ser una DESCARGA, o sea media medida hecha contra produccion sin decirlo.
 #    Aqui la pregunta es la misma y se contesta en el registro del servidor:

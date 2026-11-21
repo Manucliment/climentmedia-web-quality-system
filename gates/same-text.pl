@@ -43,7 +43,7 @@ sub palabras {
     $h =~ s/&([a-z]+|#\d+);/ /gi;          # el resto de entidades, a espacio
     # 🔴 26-ago-2026 · LA PUNTUACION IBA PEGADA AL TOKEN, y eso convertia
     #    cualquier reescritura en «perdida de texto del cliente».
-    #    Medido ese dia al desplegar nora: el gate acuso a 5 paginas de perder
+    #    Medido ese dia al desplegar una web: el gate acuso a 5 paginas de perder
     #    palabras y decia «FALTAN 9: ... energias: ... profundo ...». Contadas
     #    a mano en el fichero: `profundo` 2->2, `representa` 3->3, `energias`
     #    3->3. No faltaba NINGUNA. Lo unico que habia cambiado era la
