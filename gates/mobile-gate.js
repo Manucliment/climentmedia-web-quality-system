@@ -209,6 +209,27 @@ function convierte (el) {
     return /^(tel:|mailto:|sms:)/.test(h) || /(wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)/.test(h);
   };
 
+  // 23-nov-2026 · UNA COLUMNA PEGADA ES CONTENIDO, NO CROMO. La ficha de una tienda
+  // pega su columna de compra (position: sticky) al lado de la galeria: no tapa
+  // nada, porque sticky no sale de su bloque contenedor y en ese bloque no hay nada
+  // a su lado ni debajo. Se contaba como cromo flotante (su boton de compra no
+  // contaba para M1 y su area sumaba en M3). Sticky es cromo solo si otra caja del
+  // mismo bloque se le cruza en horizontal (la barra pegada abajo, encima del texto).
+  // La misma regla que scripts/cro-pagina.mjs.
+  const pegadaEnColumna = n => {
+    let cb = n.parentElement;
+    while (cb && getComputedStyle(cb).display === 'contents') cb = cb.parentElement;
+    if (!cb || cb === document.body || cb === document.documentElement) return false;
+    const r = n.getBoundingClientRect(), cajas = [];
+    const junta = p => { for (const k of p.children) { if (k === n) continue;
+      if (getComputedStyle(k).display === 'contents') junta(k); else cajas.push(k); } };
+    junta(cb);
+    return !cajas.some(k => { const kr = k.getBoundingClientRect();
+      return kr.width >= 2 && kr.height >= 2 && Math.min(kr.right, r.right) - Math.max(kr.left, r.left) > 8; });
+  };
+  const esFlotante = (el, cs = getComputedStyle(el)) =>
+    cs.position === 'fixed' || (cs.position === 'sticky' && !pegadaEnColumna(el));
+
   // Cromo flotante = lo que puede tapar: fixed o sticky, visible y con cuerpo.
   // Solo el ancestro mas alto de cada grupo, o se cuenta el mismo banner tres
   // veces (el div, su caja y sus botones) y el % sale inflado.
@@ -216,7 +237,7 @@ function convierte (el) {
     const out = [];
     document.querySelectorAll('body *').forEach(el => {
       const cs = getComputedStyle(el);
-      if (cs.position !== 'fixed' && cs.position !== 'sticky') return;
+      if (!esFlotante(el, cs)) return;
       if (!visible(el)) return;
       const r = el.getBoundingClientRect();
       if (r.width * r.height < 400) return;
@@ -378,15 +399,31 @@ function convierte (el) {
   // de <main> que sea CTA o que convierta (un «Reserveer» en texto llano tambien
   // es la accion), menos lo flotante.
   const flotanteDe = el => { for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
-    const p = getComputedStyle(n).position; if (p === 'fixed' || p === 'sticky') return true; } return false; };
+    if (esFlotante(n)) return true; } return false; };
+  // 23-nov-2026 · EN UNA TIENDA, LA FICHA Y LA COLECCION SON LA ACCION. La portada
+  // de una tienda ponia a la vista sus cuatro cantidades con su precio (tarjetas <a>
+  // a la ficha) y un «ver los kits» a la coleccion, enteras y sin tapar, y salia
+  // FALLA: esCTA pide clase de boton y convierte() una ruta de conversion, y una
+  // tarjeta de producto no es ninguna de las dos. Con ecommerce:true (09 §3.1, el
+  // hero de una tienda puede llevar al catalogo) cuenta un enlace de <main> a una
+  // ficha o a una coleccion del MISMO sitio. Las migas de pan no: estan arriba en
+  // cada ficha y la harian pasar sin su boton de compra.
+  const RE_CATALOGO = /\/(products|collections|product|producto|produto|product-category|categoria-producto|categoria-produto|shop|tienda|loja)(\/|$)/i;
+  const aCatalogo = el => {
+    if (!CFG.ecommerce || el.tagName !== 'A') return false;
+    if (el.closest('nav,[aria-label*="breadcrumb" i],[class*="breadcrumb" i]')) return false;
+    let u; try { u = new URL(el.getAttribute('href') || '', BASE); } catch (e) { return false; }
+    return mismoSitio(u) && RE_CATALOGO.test(u.pathname);
+  };
   const candM1 = [...main.querySelectorAll('a[href],button,input[type=submit]')]
-    .filter(e => visible(e) && !flotanteDe(e) && (esCTA(e) || convierte(e)))
+    .filter(e => visible(e) && !flotanteDe(e) && (esCTA(e) || convierte(e) || aCatalogo(e)))
     .map(el => {
       const r = el.getBoundingClientRect();
       const top = r.top + scrollY, bottom = r.bottom + scrollY;
       const e = estado(el);
       return Object.assign(e, {
         convierte: convierte(el),
+        catalogo: aCatalogo(el),
         destino: (el.getAttribute('href') || (el.closest('form') ? '(formulario)' : '')).slice(0, 60),
         entero: top >= 0 && bottom <= vh && r.left >= 0 && r.right <= vw,
         asoma: top < vh && bottom > vh,
@@ -597,7 +634,7 @@ function convierte (el) {
       exigeConversion,
       // M1, lo que se vio: cada accion con si convierte y si cabe ENTERA arriba
       m1: candM1.slice(0, 8).map(c => ({ txt: c.txt, destino: c.destino, convierte: c.convierte,
-            entero: c.entero, tapado: c.tapadoPor || null, pantallas: c.pantallas })),
+            catalogo: c.catalogo, entero: c.entero, tapado: c.tapadoPor || null, pantallas: c.pantallas })),
       ctas: info.length,
       ctasSobrePliegue: info.filter(c => c.sobrePliegue).length,
       ctasUtilesSobrePliegue: utilesArriba.length,

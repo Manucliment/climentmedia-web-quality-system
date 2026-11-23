@@ -139,6 +139,18 @@ res SOLO-FLOTANTE    m1-solo-flotante-rojo.html FALLA 'DE CONVERSION'
 # misma web no contaba como convertir. El mismo fichero con dos origenes: de la casa, y de otra web.
 res SUBDOMINIO-V     m1-subdominio.html PASA  ''  '{"origen":"https://www.ejemplo.test"}'
 res SUBDOMINIO-R     m1-subdominio.html FALLA 'CONVIERTE' '{"origen":"https://www.otro.test"}'
+# 23-nov-2026 · una tienda: las tarjetas <a> a la ficha y el enlace a la coleccion son la accion del hero,
+# sin clase de boton. Sus espejos: sin ecommerce no cuentan; la miga de pan no cuenta (esta arriba en cada
+# ficha); y el catalogo de OTRO sitio tampoco.
+res TIENDA-CATALOGO  m1-tienda-catalogo.html PASA  '"catalogo": true' '{"ecommerce":true}'
+res TIENDA-SIN-DECL  m1-tienda-catalogo.html FALLA 'M1 ·'
+res TIENDA-MIGAS     m1-tienda-migas.html    FALLA 'cae a'  '{"ecommerce":true}'
+res TIENDA-MISMA     m1-tienda-absoluta.html PASA  ''  '{"ecommerce":true,"origen":"https://www.tienda.test"}'
+res TIENDA-OTRA      m1-tienda-absoluta.html FALLA 'M1 ·' '{"ecommerce":true,"origen":"https://www.otra.test"}'
+# 23-nov-2026 · sticky no es siempre cromo: la columna de compra pegada al lado de la galeria es contenido
+# (nada de su bloque le pasa por debajo); la barra sticky de abajo, con el texto pasandole por debajo, si es cromo.
+TAM="1366 768" res COLUMNA-PEGADA m1-columna-pegada.html PASA
+res BARRA-PEGADA     m1-barra-pegada-rojo.html FALLA 'M1 ·'
 # Los cuatro tamanos de la puerta: el mismo boton cabe a 390 y asoma cortado a 360.
 TAM="390 844"  res ASOMA-390   m1-asoma.html  PASA
 TAM="360 740"  res ASOMA-360   m1-asoma.html  FALLA 'ASOMA CORTADA'

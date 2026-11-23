@@ -1,0 +1,7 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="_base.css"><title>M1 columna pegada</title><style>.ficha{display:grid;grid-template-columns:3fr 2fr;gap:32px;align-items:start}.galeria{height:1600px;background:#eee}.compra{position:sticky;top:80px}</style></head><body>
+<!-- 23-nov-2026 · la ficha de una tienda a 1366: la columna de compra va pegada (position:sticky) al lado de la galeria. Sticky no sale de su bloque, y en su bloque no hay nada debajo de ella: es contenido, no cromo. Su boton de compra cuenta para M1 (PASA). Antes, todo sticky era cromo y la ficha salia FALLA. -->
+<header class="nav">Marca</header>
+<main data-tipo="producto"><section data-sec="hero" class="ficha"><div class="galeria"></div>
+<div class="compra"><h1>Kit de inicio</h1><p>14,90 €. Llega en dos dias, con su guia.</p>
+<form action="/cart/add" method="post"><button class="btn" type="submit">Anadir al carrito</button></form></div></section>
+<div class="relleno"><h2>Que lleva</h2><p>El kit lleva el lecho, la guia y una caja con ventilacion. Se monta en diez minutos y no necesita nada mas que un sitio a la sombra. La primera semana se alimenta poco.</p><p>Si algo llega mal, se repone sin preguntas. Las dudas de despues se contestan por correo, normalmente el mismo dia.</p></div></main></body></html>
