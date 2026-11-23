@@ -25,8 +25,21 @@ const fs = require("fs");
 //              contador; una sonda que pulsa el aviso contaba como una visita. Las cookies
 //              que juzgan las sondas no salen de esos envios (_ga la pone el JS), asi que
 //              abortarlos no esconde nada de lo que se mide.
-const MEDICION = (u) => /\/consent-count\.php$/i.test(u.pathname) ||
-  (/(^|\.)google-analytics\.com$|^analytics\.google\.com$/i.test(u.hostname) && /\/(g\/)?collect$/i.test(u.pathname));
+//  23-nov-2026 · Y LA ANALITICA DE UNA TIENDA SHOPIFY. Medido en la portada de una tienda (sin pulsar
+//  nada): 15 POST a /.well-known/shopify/monorail/…/produce_batch con los page_viewed de sus web pixels
+//  y el page_rendered de storefront_customer_tracking, 6 a /api/collect y 1 a /.well-known/shopify/fec/
+//  produce, mas monorail-edge.shopifysvc.com. Ninguno se cortaba: cada pasada del vigia por una tienda
+//  podia contar como una sesion suya. Se cortan los cuatro. /api/collect, solo en una pagina de Shopify
+//  (`tienda`, que pone servir() al ver pasar su CDN): con ese nombre puede haber un envio propio de otra web.
+//  Y GA4 desde una region: la misma pagina mandaba a region1.analytics.google.com/g/collect, y solo se
+//  cortaba analytics.google.com tal cual. Doubleclick sigue sin cortarse: sus cookies si se juzgan.
+//  Ninguna cookie que juzgue banner-probe (RASTREO) sale de estos envios.
+const ES_SHOPIFY = (u) => /(^|\.)(cdn\.shopify\.com|shopifycdn\.com|shopifysvc\.com)$/i.test(u.hostname) ||
+  /^\/(cdn\/shopifycloud|\.well-known\/shopify)\//i.test(u.pathname);
+const MEDICION = (u, tienda = false) => /\/consent-count\.php$/i.test(u.pathname) ||
+  (/(^|\.)google-analytics\.com$|(^|\.)analytics\.google\.com$/i.test(u.hostname) && /\/(g\/)?collect$/i.test(u.pathname)) ||
+  /^\/\.well-known\/shopify\/(monorail|fec)\//i.test(u.pathname) || /^monorail-edge\.shopifysvc\.com$/i.test(u.hostname) ||
+  (tienda && /^\/api\/collect$/i.test(u.pathname));
 async function servir(p, { raiz = "", sitio = "", fuera = "red", medicion = false } = {}) {
   const path = require("path");
   const n = { servidas: 0, abortadas: 0 };
@@ -52,9 +65,11 @@ async function servir(p, { raiz = "", sitio = "", fuera = "red", medicion = fals
     return [null, null];
   };
   await p.setRequestInterception(true);
+  let tienda = false;
   p.on("request", req => {
     let u; try { u = new URL(req.url()); } catch (e) { return req.continue(); }
-    if (medicion && MEDICION(u)) { n.abortadas++; return req.abort(); }
+    if (!tienda && ES_SHOPIFY(u)) tienda = true;
+    if (medicion && MEDICION(u, tienda)) { n.abortadas++; return req.abort(); }
     if (!origen || u.origin !== origen) return fuera === "abortar" ? req.abort() : req.continue();
     const [f, redir] = resolver(u.pathname);
     n.servidas++;
@@ -289,4 +304,4 @@ if (require.main === module) (async () => {
   console.log(typeof out === "string" ? out : JSON.stringify(out, null, 1));
   await b.close();
 })().catch(e => { console.error("RUNNER-ERROR " + e.message); process.exit(3); });
-module.exports = { servir, MEDICION, lanzar, barrerPerfiles, procesosCon };
+module.exports = { servir, MEDICION, ES_SHOPIFY, lanzar, barrerPerfiles, procesosCon };

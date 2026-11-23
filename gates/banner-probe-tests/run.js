@@ -112,6 +112,18 @@ ver("MEDICION: el contador del aviso y los envios de GA4", esMed("https://fx.tes
   && esMed("https://www.google-analytics.com/collect") && esMed("https://analytics.google.com/g/collect"), "alguno no se aborta");
 ver("MEDICION: ni gtag.js, ni un /collect ajeno, ni doubleclick (sus cookies si se juzgan)", !esMed("https://www.googletagmanager.com/gtag/js?id=G-X")
   && !esMed("https://fx.test/api/collect") && !esMed("https://stats.g.doubleclick.net/g/collect") && !esMed("https://fx.test/consent-count.php.bak"), "alguno se abortaria");
+// 23-nov-2026 · la analitica de una tienda Shopify y GA4 desde una region (lo medido en una tienda ese dia).
+const esMedT = (u) => MEDICION(new URL(u), true);
+ver("MEDICION: GA4 desde una region (region1.analytics.google.com)", esMed("https://region1.analytics.google.com/g/collect?v=2"), "no se aborta");
+ver("MEDICION: la analitica de Shopify (monorail, fec, monorail-edge; /api/collect en una tienda)",
+  esMed("https://tienda.test/.well-known/shopify/monorail/unstable/produce_batch") && esMed("https://tienda.test/.well-known/shopify/fec/produce")
+  && esMed("https://monorail-edge.shopifysvc.com/v1/produce") && esMedT("https://tienda.test/api/collect"), "alguno no se aborta");
+ver("MEDICION: en una tienda, ni sus scripts, ni sus imagenes, ni su carrito", !esMedT("https://tienda.test/cdn/shopifycloud/storefront/a.js")
+  && !esMedT("https://cdn.shopify.com/s/files/1/a.jpg") && !esMedT("https://tienda.test/cart/add.js") && !esMedT("https://tienda.test/api/2026-01/graphql.json")
+  && !esMedT("https://tienda.test/api/collect/otra"), "alguno se abortaria");
+const ES_SHOPIFY = require(path.join(__dirname, "..", "run-gate.js")).ES_SHOPIFY || (() => false);   // sin ella: rojo, no un fallo del banco
+ver("ES_SHOPIFY: su CDN y sus rutas, no un /cdn/ cualquiera", ES_SHOPIFY(new URL("https://cdn.shopify.com/s/a.js")) && ES_SHOPIFY(new URL("https://t.test/cdn/shopifycloud/a.js"))
+  && ES_SHOPIFY(new URL("https://t.test/.well-known/shopify/monorail/x")) && !ES_SHOPIFY(new URL("https://t.test/cdn/a.js")) && !ES_SHOPIFY(new URL("https://notshopify.com.test/a.js")), "mal clasificado");
 const candidato = (nom, o) => {
   const dir = path.join(raiz, "cand-" + nom.replace(/\W+/g, "-"));
   fs.mkdirSync(path.join(dir, "politica-cookies"), { recursive: true });
@@ -188,6 +200,26 @@ async function cortar(d, senal) {
   fs.mkdirSync(path.join(d6, `wqs-chrome-${muerto}-muerto`));           // su sonda ya no existe
   const r6 = medir(d6), q6 = perfiles(d6).join();
   ver("perfil: el barrido deja el de una sonda viva y el ajeno, y se lleva el de la muerta", r6.status === 0 && q6 === ["puppeteer_dev_chrome_profile-ajeno", `wqs-chrome-${process.pid}-vivo`].sort().join(), `rc ${r6.status} · quedan [${q6}]`);
+
+  // 23-nov-2026 · LA TIENDA, SERVIDA DEL DISCO POR run-gate.js. Una pagina que carga un script de /cdn/shopifycloud/ y
+  // envia a monorail, a /api/collect y al GA4 de una region: se cortan los tres. La misma pagina sin el script de Shopify
+  // envia a /api/collect y a GA4: se corta GA4, y /api/collect llega (al disco, un 404), porque no es una tienda.
+  const envia = (destinos) => `<script>for (const d of ${JSON.stringify(destinos)}) fetch(d, { method: "POST", mode: "no-cors", body: "{}" }).catch(() => {});</script>`;
+  const tiendaDir = path.join(raiz, "tienda-fx");
+  fs.mkdirSync(path.join(tiendaDir, "cdn", "shopifycloud"), { recursive: true });
+  fs.mkdirSync(path.join(tiendaDir, "otra"), { recursive: true });
+  fs.writeFileSync(path.join(tiendaDir, "cdn", "shopifycloud", "a.js"), "window.__tienda = 1;");
+  const cuerpo = '<main><h1>Tienda</h1><p>Texto de la pagina de la tienda.</p></main>';
+  fs.writeFileSync(path.join(tiendaDir, "index.html"), `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Tienda</title><script src="/cdn/shopifycloud/a.js"></script></head><body>${cuerpo}` +
+    envia(["/.well-known/shopify/monorail/unstable/produce_batch", "/api/collect", "https://region1.analytics.google.com/g/collect?v=2"]) + "</body></html>");
+  fs.writeFileSync(path.join(tiendaDir, "otra", "index.html"), `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Otra</title></head><body>${cuerpo}` +
+    envia(["/api/collect", "https://region1.analytics.google.com/g/collect?v=2"]) + "</body></html>");
+  const envT = { ...process.env, GATE_PERFILES: nueva("tienda"), GATE_CANDIDATO: tiendaDir, GATE_SITIO: "https://tienda.invalid" };
+  const abortadas = (ruta) => { const r = spawnSync("node", [RG, "https://tienda.invalid" + ruta, "390", "844", gateJs], { env: envT, encoding: "utf8", timeout: 120000 });
+    return { rc: r.status, n: +((r.stdout.match(/"medicionAbortada":(\d+)/) || [])[1] ?? -1), linea: (r.stdout.split("\n")[0] || r.stderr || "").slice(0, 160) }; };
+  const t1 = abortadas("/"), t2 = abortadas("/otra/");
+  ver("tienda: monorail, /api/collect y GA4 regional se cortan (3)", t1.rc === 0 && t1.n === 3, `rc ${t1.rc} · abortadas ${t1.n} · ${t1.linea}`);
+  ver("tienda: sin Shopify, /api/collect no se corta y GA4 si (1)", t2.rc === 0 && t2.n === 1, `rc ${t2.rc} · abortadas ${t2.n} · ${t2.linea}`);
 
   // 15-nov-2026 · LA CALIBRACION DEL gcd (B9): el gtag.js de Google con estados conocidos; todo envio, cortado.
   await require("./gcd-calibracion.js").calibrar({ lanzar: require(RG).lanzar, ver });
