@@ -81,7 +81,7 @@ ensaya.
    **41 eran del instrumento**. Si un barrido dice que varias cosas estan rotas a la vez,
    el sospechoso es el barrido.
 
-**Y antes de escribir o editar cualquier texto de una web, dos cosas:**
+**Y antes de escribir o editar cualquier texto de una web, tres cosas:**
 
 1. **Su voz:** `_seo/VOZ.md` en el repo de esa web (quien habla, a quien, con que trato, que
    la hace unica y que palabras nunca). **Sin ella no se escribe:** si falta, lo primero es
@@ -92,6 +92,22 @@ ensaya.
    propia del duenio o del cliente sobre el, **antes de escribir se le mandan preguntas
    concretas** (respondibles en cuatro lineas o una nota de voz) y se espera la respuesta.
    La experiencia no se inventa; sin ella la pagina es relleno.
+3. **Quien lee, primero (climent-web D-096; Manuel, 25-nov: «menos NOsotros y YO… quiere
+   solucionar un problema suyo»):**
+   - La apertura (H1 y subtitulo) dice el problema de quien lee o lo que gana, hablandole de tu
+     (o vous, voce, you, usted, segun la voz). Ni el H1 ni el subtitulo en primera persona: la
+     historia y la cifra propias van despues, en el bloque de prueba.
+   - Estructura de lectura: problema → lo que cambia → como → prueba → boton.
+   - Cada pantalla lleva un recurso que explica: pasos dibujados, un flujo, un grafico, una
+     captura real o motion graphics propios. Una foto que adorna no cuenta.
+   - Nada de imagenes con IA hasta que la hoja describa la imagen exacta que falta y por que no
+     vale una captura o un diagrama.
+   - En una pagina protegida (`seo-guardia.mjs`), lo que posiciona no se reescribe: lo del lector
+     se anade alrededor.
+   - Se lee la seccion «1b · Como le hablamos a quien lee» de `_seo/VOZ.md`; si falta, se escribe
+     antes (plantilla en `climent-web/system/plantilla-voz.md`).
+   - Se mide antes de subir: `node <climent-web>/scripts/lector-primero.mjs --url <URL del
+     candidato>` (L1, L2 o L3 = no se sube asi).
 
 ## Correr los gates
 
